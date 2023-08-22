@@ -1,0 +1,16 @@
+site_name: WireUp
+nav:
+  - Home: index.md
+  - Introduction: introduction.md
+  - Why use Dependency Injection: why_di.md
+  - Getting started: getting_started.md
+  - Advanced Topics:
+      - Automatic registration: automatic_registration.md
+      - Manual configuration: manual_configuration.md
+      - Interfaces: interfaces.md
+      - Multiple containers: multiple_containers.md
+  - Examples:
+      - Fastapi: examples/fastapi.md
+      - Flask: examples/flask.md
+theme: readthedocs
+docs_dir: pages

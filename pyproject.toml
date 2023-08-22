@@ -1,0 +1,29 @@
+[tool.poetry]
+name = "pythonproject"
+version = "0.1.0"
+description = ""
+authors = ["Aldo Mateli <aldo.mateli@gmail.com>"]
+license = "MIT"
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.8"
+
+[tool.poetry.group.dev.dependencies]
+black = "^23.7.0"
+ruff = "^0.0.284"
+setuptools = "^68.0.0"
+mkdocs = "^1.5.2"
+
+[tool.black]
+line-length = 120
+
+[tool.ruff]
+line-length = 120
+src = ["src"]
+fixable = ["ALL"]
+select = ["ALL"]
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
