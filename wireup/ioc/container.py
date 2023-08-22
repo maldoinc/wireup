@@ -18,7 +18,7 @@ from .util import find_classes_in_package, get_class_parameter_type_hints, get_p
 
 T = TypeVar("T")
 
-
+# TODO: Do we call this something registry?
 class Container:
     def __init__(self, parameter_bag: ParameterBag) -> None:
         self.__known_interfaces: Dict[Type, Dict[str, Type]] = {}
@@ -132,6 +132,7 @@ class Container:
         return sync_inner
 
     def register_all_in_module(self, package) -> None:
+        # TODO: Maybe accept a glob pattern to filter classes??
         """
         Register all modules inside a given package. Useful when your components reside in one place,
         and you'd like to avoid having to @register each of them.
