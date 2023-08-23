@@ -72,7 +72,8 @@ if __name__ == "__main__":
             "env": "dev",
             "cache_dir": "/var/cache",
             "mailer_config": MailerConfig(
-                from_address="aldo.mateli@gmail.com", to_addresses=["aldo.mateli@yahoo.com", "aldo.mateli@outlook.com"],
+                from_address="aldo.mateli@gmail.com",
+                to_addresses=["aldo.mateli@yahoo.com", "aldo.mateli@outlook.com"],
             ),
         },
     )

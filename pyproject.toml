@@ -27,7 +27,8 @@ fixable = ["ALL"]
 select = ["ALL"]
 ignore = [
     "ANN401", # Allow returning any. Parameter bag has to store/retrieve arbitraty types.
-    "PT009" # Prefer using assertEqual instead of plain asserts
+    "PT009", # Prefer using assertEqual instead of plain asserts
+    "ANN101", # Exclude self from type hint requirement
 ]
 
 [build-system]
