@@ -6,7 +6,7 @@ from wireup.ioc.util import (
     is_builtin_class,
     get_class_parameter_type_hints,
     get_params_with_default_values,
-    find_classes_in_package,
+    find_classes_in_module,
 )
 from examples.services.baz_service import BazService
 from examples.services.db_service import DbService
@@ -36,8 +36,14 @@ class TestUtilityFunctions(unittest.TestCase):
 
     def test_find_classes_in_package(self):
         self.assertListEqual(
-            list(find_classes_in_package(examples.services)),
+            list(find_classes_in_module(examples.services)),
             [BazService, DbService, FooService, RandomService, TrulyRandomService],
+        )
+
+    def test_find_classes_in_package_uses_pattern(self):
+        self.assertListEqual(
+            list(find_classes_in_module(examples.services, "*Random*")),
+            [RandomService, TrulyRandomService],
         )
 
 

@@ -1,7 +1,9 @@
 import builtins
+import fnmatch
 import inspect
 import pkgutil
 from inspect import Parameter
+from types import ModuleType
 from typing import Any, Callable, Dict, ItemsView, Type, Union
 
 
@@ -24,12 +26,12 @@ def get_params_with_default_values(obj: Callable) -> Dict[str, Parameter]:
     return {name: val for name, val in params if val.default is not Parameter.empty}
 
 
-def find_classes_in_package(package):
-    for _, modname, __ in pkgutil.walk_packages(package.__path__, prefix=package.__name__ + "."):
-        module = __import__(modname, fromlist="dummy")
+def find_classes_in_module(module: ModuleType, pattern: str = "*"):
+    for _, modname, __ in pkgutil.walk_packages(module.__path__, prefix=module.__name__ + "."):
+        mod = __import__(modname, fromlist="dummy")
 
-        for name in dir(module):
-            obj = getattr(module, name)
+        for name in dir(mod):
+            obj = getattr(mod, name)
 
-            if isinstance(obj, type) and obj.__module__ == module.__name__:
+            if isinstance(obj, type) and obj.__module__ == mod.__name__ and fnmatch.fnmatch(obj.__name__, pattern):
                 yield obj

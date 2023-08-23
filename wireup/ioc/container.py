@@ -3,6 +3,7 @@ import functools
 import importlib
 from collections import defaultdict
 from inspect import Parameter
+from types import ModuleType
 from typing import Any, Callable, Optional, Set, Type, TypeVar, Dict
 
 from .container_util import (
@@ -14,9 +15,10 @@ from .container_util import (
     TemplatedString,
 )
 from .parameter import ParameterBag
-from .util import find_classes_in_package, get_class_parameter_type_hints, get_params_with_default_values
+from .util import find_classes_in_module, get_class_parameter_type_hints, get_params_with_default_values
 
 T = TypeVar("T")
+
 
 # TODO: Do we call this something registry?
 class Container:
@@ -131,16 +133,18 @@ class Container:
 
         return sync_inner
 
-    def register_all_in_module(self, package) -> None:
-        # TODO: Maybe accept a glob pattern to filter classes??
+    def register_all_in_module(self, module: ModuleType, pattern: str = "*") -> None:
         """
         Register all modules inside a given package. Useful when your components reside in one place,
         and you'd like to avoid having to @register each of them.
         Alternatively this can be used if you wish to use the library without having to rely on decorators.
 
         See Also: self.initialization_context to wire parameters without having to use a default value.
+
+        :param module: The package name to recursively search for classes.
+        :param pattern: A pattern that will be fed to fnmatch to determine if a class will be registered or not.
         """
-        for klass in find_classes_in_package(package):
+        for klass in find_classes_in_module(module, pattern):
             self.register(klass)
 
     def __register_inner(self, klass: Type[T], qualifier: str) -> Type[T]:

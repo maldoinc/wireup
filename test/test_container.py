@@ -7,7 +7,7 @@ from unittest.mock import Mock, patch
 from wireup.ioc.container import Container, ContainerProxy
 from wireup.ioc.container_util import ParameterWrapper
 from wireup.ioc.parameter import ParameterBag, TemplatedString
-from wireup.ioc.util import find_classes_in_package
+from wireup.ioc.util import find_classes_in_module
 from examples.services.random_service import RandomService
 from examples.services.truly_random_service import TrulyRandomService
 
@@ -146,7 +146,7 @@ class TestContainer(unittest.IsolatedAsyncioTestCase):
 
     def test_register_all_in_module(self):
         # These classes are registered in setup
-        for c in find_classes_in_package(examples.services):
+        for c in find_classes_in_module(examples.services, glob_pattern):
             self.assertIsInstance(self.container.get(c), ContainerProxy)
 
     def test_get_unknown_class(self):
