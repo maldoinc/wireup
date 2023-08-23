@@ -72,9 +72,9 @@ class Container:
             # Allow fastapi users to do .get() without any params
             # It is meant to be used as a default value in where Depends() is expected
             return importlib.import_module("fastapi").Depends(lambda: None)
-        except ModuleNotFoundError:
+        except ModuleNotFoundError as e:
             msg = "One of param, expr, qualifier or dep must be set"
-            raise Exception(msg)
+            raise ValueError(msg) from e
 
     def get(self, klass: type[T]) -> T:
         """Get an instance of the requested type. If there is already an initialized instance, that will be returned.
@@ -162,10 +162,11 @@ class Container:
 
         if klass.__base__ in self.__known_interfaces:
             if qualifier in self.__known_interfaces[klass.__base__]:
-                msg = f"Cannot register concrete class {klass} for {klass.__base__} with qualifier '{qualifier}' as it already exists"
-                raise ValueError(
-                    msg,
+                msg = (
+                    f"Cannot register concrete class {klass} for {klass.__base__} "
+                    f"with qualifier '{qualifier}' as it already exists"
                 )
+                raise ValueError(msg)
 
             self.__known_interfaces[klass.__base__][qualifier] = klass
 
