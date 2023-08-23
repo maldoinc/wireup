@@ -2,7 +2,7 @@ import functools
 import re
 from typing import Dict, Any
 
-from wireup.ioc.container_util import ParameterReference, TemplatedString
+from .container_util import ParameterReference, TemplatedString
 
 
 class ParameterBag:

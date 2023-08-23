@@ -28,20 +28,17 @@ container.initialization_context.add_param(
 )
 
 
-# Alternatively you can update the context in bulk using a dict 
-# where keys are service types with a nested dictionary representing argument names as keys 
-# and parameter references as values.
+# Alternatively you can update the context in bulk using a dict of initializer parameter name as keys
+# and container parameter reference as values. 
+# To use interpolated strings you must wrap the string with TemplatedString.
 
 # NOTE: Parameter references MUST be wrapped with ParameterWrapper here!
 container.initialization_context.update(
+    DbService,
     {
-        DbService: {
-            "connection_str": ParameterWrapper("connection_str"),
-            "cache_dir": ParameterWrapper(
-                TemplatedString("${cache_dir}/${USER}/db")
-            ),
-        }
-    }
+        "connection_str": "connection_str",
+        "cache_dir": TemplatedString("${cache_dir}/${USER}/db"),
+    },
 )
 ```
 

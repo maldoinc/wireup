@@ -61,13 +61,10 @@ if __name__ == "__main__":
     container.params.update(os.environ)
     container.register_all_in_module(examples.services)
 
-    container.initialization_context.update(
-        {
-            DbService: {
+    container.initialization_context.update(DbService, {
                 "connection_str": ParameterWrapper("connection_str"),
                 "cache_dir": ParameterWrapper(TemplatedString("${cache_dir}/${USER}/db")),
             }
-        }
     )
 
     app.register_blueprint(HomeBlueprint.bp)

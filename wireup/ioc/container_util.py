@@ -1,6 +1,6 @@
 from collections import defaultdict
 from dataclasses import dataclass
-from typing import Dict, Type, Callable, Any, Union
+from typing import Any, Callable, Dict, Type, Union
 
 
 @dataclass(frozen=True)
@@ -30,9 +30,8 @@ class DependencyInitializationContext:
     def add_param(self, klass: Type, argument_name, parameter_ref: ParameterReference):
         self.context[klass][argument_name] = ParameterWrapper(parameter_ref)
 
-    def update(self, other_context: Dict[Type, Dict[str, ParameterWrapper]]) -> None:
-        for klass, context in other_context.items():
-            self.context[klass].update(context)
+    def update(self, klass: Type, params: Dict[str, ParameterReference]):
+        self.context[klass].update({k: ParameterWrapper(v) for k, v in params.items()})
 
 
 class ContainerProxy:

@@ -1,16 +1,15 @@
 import os
-import examples
 from dataclasses import dataclass
-
-from wireup.ioc.container_util import ParameterWrapper
-from wireup.ioc.parameter import TemplatedString
-from examples.services.baz_service import BazService
-from examples.services.db_service import DbService
-from examples.services.foo_service import FooService
 from typing import List
 
 from flask import Blueprint, Flask, Response, jsonify
 from wireup import container
+from wireup.ioc.parameter import TemplatedString
+
+import examples
+from examples.services.baz_service import BazService
+from examples.services.db_service import DbService
+from examples.services.foo_service import FooService
 
 
 @container.abstract
@@ -73,27 +72,18 @@ if __name__ == "__main__":
             "env": "dev",
             "cache_dir": "/var/cache",
             "mailer_config": MailerConfig(
-                from_address="aldo.mateli@gmail.com", to_addresses=["aldo.mateli@yahoo.com", "aldo.mateli@outlook.com"]
+                from_address="aldo.mateli@gmail.com", to_addresses=["aldo.mateli@yahoo.com", "aldo.mateli@outlook.com"],
             ),
-        }
+        },
     )
     container.params.update(os.environ)
     container.register_all_in_module(examples.services)
-
-    container.initialization_context.add_param(
-        klass=DbService, argument_name="connection_str", parameter_ref="connection_str"
-    )
-    container.initialization_context.add_param(
-        klass=DbService, argument_name="connection_str", parameter_ref=TemplatedString("${cache_dir}/${USER}/db")
-    )
-
     container.initialization_context.update(
+        DbService,
         {
-            DbService: {
-                "connection_str": ParameterWrapper("connection_str"),
-                "cache_dir": ParameterWrapper(TemplatedString("${cache_dir}/${USER}/db")),
-            }
-        }
+            "connection_str": "connection_str",
+            "cache_dir": TemplatedString("${cache_dir}/${USER}/db"),
+        },
     )
 
     app.register_blueprint(HomeBlueprint.bp)
