@@ -17,8 +17,10 @@ class DbService:
         self.connection_str = connection_str
         self.cache_dir = cache_dir
         
+# Constructor injection is also supported for dataclasses.
+# The decorator is used only to capture metadata and will not alter the class.
 @container.register
-@dataclass  # Constructor injection is also supported for dataclasses.
+@dataclass  
 class UserRepository:
     db: DbService  # Services may also depend on any other services.
     user: str = conttainer.wire(param="auth.user") 
