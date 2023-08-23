@@ -3,6 +3,7 @@ from __future__ import annotations
 import asyncio
 import functools
 import importlib
+import inspect
 from collections import defaultdict
 from typing import TYPE_CHECKING, Any, Callable, TypeVar
 
@@ -14,7 +15,7 @@ from .container_util import (
     ParameterWrapper,
     TemplatedString,
 )
-from .util import find_classes_in_module, get_class_parameter_type_hints, get_params_with_default_values
+from .util import find_classes_in_module
 
 if TYPE_CHECKING:
     from inspect import Parameter
@@ -129,13 +130,13 @@ class Container:
         if asyncio.iscoroutinefunction(fn):
 
             @functools.wraps(fn)
-            async def async_inner(*args, **kwargs):
+            async def async_inner(*args: Any, **kwargs: Any) -> Any:
                 return await self.__autowire_inner(fn, *args, **kwargs)
 
             return async_inner
 
         @functools.wraps(fn)
-        def sync_inner(*args, **kwargs):
+        def sync_inner(*args: Any, **kwargs: Any) -> Any:
             return self.__autowire_inner(fn, *args, **kwargs)
 
         return sync_inner
@@ -172,10 +173,10 @@ class Container:
 
         return klass
 
-    def __autowire_inner(self, fn: Callable, *args, **kwargs) -> Any:
+    def __autowire_inner(self, fn: Callable[..., Any], *args: Any, **kwargs: Any) -> Any:
         return fn(*args, **{**kwargs, **self.__callable_get_params_to_inject(fn)})
 
-    def __callable_get_params_to_inject(self, fn, klass: type[T] | None = None):
+    def __callable_get_params_to_inject(self, fn: Callable[..., Any], klass: type[T] | None = None) -> dict:
         params_from_context = (
             {
                 name: self.params.get(wrapper.param)
@@ -185,17 +186,15 @@ class Container:
             else {}
         )
 
-        params_with_default_val_wrapper = {
-            name: self.__initialize_from_default_value(parameter)
-            for name, parameter in get_params_with_default_values(fn).items()
-            if isinstance(parameter.default, ContainerParameterInitializationType)
-        }
+        params_with_default_val_wrapper = {}
+        dependencies = {}
 
-        dependencies = {
-            name: self.wire(dep=t)
-            for name, t in get_class_parameter_type_hints(fn).items()
-            if t in self.__known_classes or t in self.__known_interfaces
-        }
+        for name, parameter in inspect.signature(fn).parameters.items():
+            if isinstance(parameter.default, ContainerParameterInitializationType):
+                params_with_default_val_wrapper[name] = self.__initialize_from_param_with_default_value(parameter)
+
+            if parameter.annotation in self.__known_classes or parameter.annotation in self.__known_interfaces:
+                dependencies[name] = self.wire(dep=parameter.annotation)
 
         return {**dependencies, **params_from_context, **params_with_default_val_wrapper}
 
@@ -203,36 +202,39 @@ class Container:
     def __get(self, klass: type[T], qualifier: str | None = None) -> T:
         self.__assert_class_is_known(klass)
 
-        if concrete_classes := self.__known_interfaces.get(klass):
+        concrete_classes = self.__known_interfaces.get(klass)
+        if concrete_classes:
             available_qualifiers = concrete_classes.keys()
 
             if qualifier is not None:
                 if qualifier in available_qualifiers:
                     return self.__get(concrete_classes[qualifier])
-                else:
-                    msg = f"Cannot instantiate concrete class for {klass} as qualifier '{qualifier}' is unknown. Available qualifiers: {available_qualifiers}"
-                    raise ValueError(
-                        msg,
-                    )
+
+                msg = (
+                    f"Cannot instantiate concrete class for {klass} as qualifier '{qualifier}' is unknown. "
+                    f"Available qualifiers: {available_qualifiers}"
+                )
+                raise ValueError(msg)
 
             if len(available_qualifiers) == 1:
                 concrete_class = next(iter(available_qualifiers))
 
                 return self.__get(concrete_class)
 
-            msg = f"Qualifier needed to instantiate concrete class for {klass}. Available qualifiers: {available_qualifiers}"
-            raise ValueError(
-                msg,
+            msg = (
+                f"Qualifier needed to instantiate concrete class for {klass}. "
+                f"Available qualifiers: {available_qualifiers}"
             )
+            raise ValueError(msg)
 
         return klass(**self.__callable_get_params_to_inject(klass.__init__, klass))
 
-    def __assert_class_is_known(self, klass):
+    def __assert_class_is_known(self, klass: type[T]) -> None:
         if not (klass in self.__known_classes or klass in self.__known_interfaces):
-            msg = f"Cannot wire unknown class {klass}. Use @Container.register to enable autowiring"
+            msg = f"Cannot wire unknown class {klass}. Use @Container.{{register,abstract}} to enable autowiring"
             raise ValueError(msg)
 
-    def __initialize_from_default_value(self, parameter: Parameter):
+    def __initialize_from_param_with_default_value(self, parameter: Parameter) -> Any:
         default = parameter.default
 
         if isinstance(default, ContainerProxyQualifier):
