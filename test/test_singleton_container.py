@@ -1,6 +1,6 @@
 import unittest
 
-from wireup import container, Container
+from wireup import Container, container
 
 
 class TestSingletonContainer(unittest.TestCase):

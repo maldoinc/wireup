@@ -1,7 +1,7 @@
 import unittest
 
 from wireup.ioc.container_util import ParameterWrapper
-from wireup.ioc.parameter import TemplatedString, ParameterBag
+from wireup.ioc.parameter import ParameterBag, TemplatedString
 
 
 class TestTemplatedString(unittest.TestCase):

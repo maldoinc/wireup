@@ -7,7 +7,7 @@ license = "MIT"
 readme = "README.md"
 
 [tool.poetry.dependencies]
-python = "^3.8"
+python = "^3.6"
 
 [tool.poetry.group.dev.dependencies]
 black = "^23.7.0"
@@ -20,10 +20,15 @@ pylint = "^2.17.5"
 line-length = 120
 
 [tool.ruff]
+target-version = "py37"
 line-length = 120
 src = ["src"]
 fixable = ["ALL"]
 select = ["ALL"]
+ignore = [
+    "ANN401", # Allow returning any. Parameter bag has to store/retrieve arbitraty types.
+    "PT009" # Prefer using assertEqual instead of plain asserts
+]
 
 [build-system]
 requires = ["poetry-core"]
