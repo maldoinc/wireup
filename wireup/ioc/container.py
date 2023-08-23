@@ -4,13 +4,13 @@ import importlib
 from collections import defaultdict
 from inspect import Parameter
 from types import ModuleType
-from typing import Any, Callable, Optional, Set, Type, TypeVar, Dict
+from typing import Any, Callable, Dict, Optional, Set, Type, TypeVar
 
 from .container_util import (
-    DependencyInitializationContext,
+    ContainerParameterInitializationType,
     ContainerProxy,
     ContainerProxyQualifier,
-    ContainerParameterInitializationType,
+    DependencyInitializationContext,
     ParameterWrapper,
     TemplatedString,
 )
@@ -37,9 +37,8 @@ class Container:
         dep: Optional[Type[T]] = None,
         qualifier: Optional[str] = None,
     ) -> Callable[..., Any] | ParameterWrapper | ContainerProxy | Any:
-        """
-        Inject resources from the container to constructor or autowired method arguments.
-        The arguments are exclusive and only one of them must be used at any time
+        """Inject resources from the container to constructor or autowired method arguments.
+        The arguments are exclusive and only one of them must be used at any time.
 
         :param param: Allows injecting a given parameter by name
         :param expr: Interpolate the templated string.
@@ -67,11 +66,11 @@ class Container:
             # It is meant to be used as a default value in where Depends() is expected
             return importlib.import_module("fastapi").Depends(lambda: None)
         except ModuleNotFoundError:
-            raise Exception("One of param, expr, qualifier or dep must be set")
+            msg = "One of param, expr, qualifier or dep must be set"
+            raise Exception(msg)
 
     def get(self, klass: Type[T]) -> T:
-        """
-        Get an instance of the requested type. If there is already an initialized instance, that will be returned.
+        """Get an instance of the requested type. If there is already an initialized instance, that will be returned.
         :param klass: Class of the component already registered in the container.
         :return:
         """
@@ -80,17 +79,15 @@ class Container:
         return self.wire(dep=klass)
 
     def abstract(self, klass: Type[T]) -> Type[T]:
-        """
-        Register a type as an interface. This type cannot be initialized directly and
+        """Register a type as an interface. This type cannot be initialized directly and
         one of the components implementing this will be injected instead.
         """
         self.__known_interfaces[klass] = defaultdict()
 
         return klass
 
-    def register(self, klass: Type[T] = None, *, qualifier: str = "") -> Type[T]:
-        """
-        Register a component in the container. Use @register without parameters on a class
+    def register(self, klass: Optional[Type[T]] = None, *, qualifier: str = "") -> Type[T]:
+        """Register a component in the container. Use @register without parameters on a class
         or with a single parameter @register(qualifier=name) to register this with a given name
         when there are multiple implementations of the interface this implements.
 
@@ -107,8 +104,7 @@ class Container:
         return self.__register_inner(klass, "")
 
     def autowire(self, fn: Callable) -> Callable:
-        """
-        Automatically inject resources from the container to the decorated methods.
+        """Automatically inject resources from the container to the decorated methods.
         Any arguments which the container does not know about will be ignored
         so that another decorator or framework can supply their values.
         This decorator can be used on both async and blocking methods.
@@ -134,8 +130,7 @@ class Container:
         return sync_inner
 
     def register_all_in_module(self, module: ModuleType, pattern: str = "*") -> None:
-        """
-        Register all modules inside a given package. Useful when your components reside in one place,
+        """Register all modules inside a given package. Useful when your components reside in one place,
         and you'd like to avoid having to @register each of them.
         Alternatively this can be used if you wish to use the library without having to rely on decorators.
 
@@ -149,13 +144,14 @@ class Container:
 
     def __register_inner(self, klass: Type[T], qualifier: str) -> Type[T]:
         if klass in self.__known_classes:
-            raise ValueError("Class already registered in container.")
+            msg = "Class already registered in container."
+            raise ValueError(msg)
 
         if klass.__base__ in self.__known_interfaces:
             if qualifier in self.__known_interfaces[klass.__base__]:
+                msg = f"Cannot register concrete class {klass} for {klass.__base__} with qualifier '{qualifier}' as it already exists"
                 raise ValueError(
-                    f"Cannot register concrete class {klass} for "
-                    f"{klass.__base__} with qualifier '{qualifier}' as it already exists"
+                    msg,
                 )
 
             self.__known_interfaces[klass.__base__][qualifier] = klass
@@ -167,7 +163,7 @@ class Container:
     def __autowire_inner(self, fn: Callable, *args, **kwargs) -> Any:
         return fn(*args, **{**kwargs, **self.__callable_get_params_to_inject(fn)})
 
-    def __callable_get_params_to_inject(self, fn, klass: Type[T] = None):
+    def __callable_get_params_to_inject(self, fn, klass: Optional[Type[T]] = None):
         params_from_context = (
             {
                 name: self.params.get(wrapper.param)
@@ -202,9 +198,9 @@ class Container:
                 if qualifier in available_qualifiers:
                     return self.__get(concrete_classes[qualifier])
                 else:
+                    msg = f"Cannot instantiate concrete class for {klass} as qualifier '{qualifier}' is unknown. Available qualifiers: {available_qualifiers}"
                     raise ValueError(
-                        f"Cannot instantiate concrete class for {klass} as qualifier '{qualifier}' is unknown. "
-                        f"Available qualifiers: {available_qualifiers}"
+                        msg,
                     )
 
             if len(available_qualifiers) == 1:
@@ -212,16 +208,17 @@ class Container:
 
                 return self.__get(concrete_class)
 
+            msg = f"Qualifier needed to instantiate concrete class for {klass}. Available qualifiers: {available_qualifiers}"
             raise ValueError(
-                f"Qualifier needed to instantiate concrete class for {klass}. "
-                f"Available qualifiers: {available_qualifiers}"
+                msg,
             )
 
         return klass(**self.__callable_get_params_to_inject(klass.__init__, klass))
 
     def __assert_class_is_known(self, klass):
         if not (klass in self.__known_classes or klass in self.__known_interfaces):
-            raise ValueError(f"Cannot wire unknown class {klass}. Use @Container.register to enable autowiring")
+            msg = f"Cannot wire unknown class {klass}. Use @Container.register to enable autowiring"
+            raise ValueError(msg)
 
     def __initialize_from_default_value(self, parameter: Parameter):
         default = parameter.default
@@ -232,4 +229,5 @@ class Container:
         if isinstance(default, ParameterWrapper):
             return self.params.get(default.param)
 
-        raise ValueError("Unknown Type to initialize from default value")
+        msg = "Unknown Type to initialize from default value"
+        raise ValueError(msg)
