@@ -7,20 +7,19 @@ license = "MIT"
 readme = "README.md"
 
 [tool.poetry.dependencies]
-python = "^3.6"
+python = "^3.8"
 
 [tool.poetry.group.dev.dependencies]
 black = "^23.7.0"
 ruff = "^0.0.284"
 setuptools = "^68.0.0"
 mkdocs = "^1.5.2"
-pylint = "^2.17.5"
 
 [tool.black]
 line-length = 120
 
 [tool.ruff]
-target-version = "py37"
+target-version = "py38"
 line-length = 120
 src = ["src"]
 fixable = ["ALL"]
