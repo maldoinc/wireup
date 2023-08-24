@@ -28,7 +28,20 @@ T = TypeVar("T")
 
 # TODO: Do we call this something registry?
 class Container:
+    """Container registry containing all the necessary information on initializing registered classes.
+
+    It provides the following decorators: register, abstract and autowire. Use register on concrete classes
+    which are to be injected from the container. Abstract classes are to be used as interfaces and will not be
+    injected directly, rather concrete classes which implement them will be injected instead.
+
+    Use autowire decorator on methods where dependency injection must be performed.
+    To enable parameter injection use default values for parameters in conjunction with the wire method.
+
+    Note: Fastapi users MUST use ` = .wire()` method without arguments when injecting dependencies.
+    """
+
     def __init__(self, parameter_bag: ParameterBag) -> None:
+        """:param parameter_bag: ParameterBag instance holding parameter information."""
         self.__known_interfaces: dict[type, dict[str, type]] = {}
         self.__known_classes: set[type] = set()
         self.params: ParameterBag = parameter_bag
