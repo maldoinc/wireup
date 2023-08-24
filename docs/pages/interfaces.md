@@ -1,10 +1,11 @@
-# Interfaces
+# Working with Interfaces
 
-When autowiring services it is often desirable to inject an interface rather than the concrete implementation directly.
-Since Python does not have interfaces, we can use any class which is marked as abstract in the container.
+When you're autowiring services, you might want to inject an interface rather than directly
+using the concrete implementation. Since Python doesn't have built-in interfaces, 
+you can leverage any class that's marked as abstract within the container.
 
-The following would register `Engine` as an interface. This means that it cannot be injected directly and there must
-be another service which inherits it that is also registered in the container for this.
+The following code registers `Engine` as an interface. This implies that `Engine` can't be directly injected. 
+Instead, you need another service that inherits from it, and that service must also be registered in the container.
 
 ```python
 @container.abstract
@@ -13,8 +14,8 @@ class Engine:
         ...
 ```
 
-To autowire interfaces simply register a service that implements it into the container. 
-When injecting ask for the interface rather than the implementation.
+To autowire interfaces, you can simply register a service that implements the interface within the container. 
+When injecting, ask for the interface itself, not its concrete implementation.
 
 ```python
 @container.register
@@ -28,8 +29,8 @@ def home(engine: Engine):
     ...
 ```
 
-For cases where there are multiple implementations, each implementation must be associated with a qualifier.
-
+In scenarios where there are multiple implementations of an interface, each implementation must be 
+associated with a qualifier.
 
 ```python
 @container.register(qualifier="electric")
@@ -44,8 +45,8 @@ class CombustionEngine(Engine):
         return "I'm a Combustion Engine"
 ```
 
-When injecting an interface for which there are multiple services implementing it, a qualifier needs to be used when
-injecting the dependency to specify which concrete class should be resolved.
+While injecting an interface with multiple implementing services, you need to specify a qualifier to indicate 
+which concrete class should be resolved.
 
 ```python
 def home(

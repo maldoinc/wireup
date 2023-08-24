@@ -1,21 +1,20 @@
-# Manual configuration
+# Manual Configuration
 
-To avoid using decorators see [Automatic Registration](automatic_registration.md).
+If you want to avoid using decorators for registration, please refer to [Automatic Registration](automatic_registration.md).
 
+## Making Use of the Initialization Context
 
-## Using the initialization context
+Given that parameters can't be resolved from type annotations alone, the `container.wire` method offers two shortcuts 
+for parameter injection: `container.wire(name="")` and `container.wire(expr="")`.
 
-Since parameter injection cannot be inferred from typing alone the `container.wire` method has two 
-shortcuts to inject parameters: `container.wire(name="")` and `container.wire(expr="")`. 
-
-To achieve the same effect without having to rely on the default value you can use the container's 
-initialization context. This manually provides data the library would have otherwise picked up using the decorators.
-
+To achieve the same outcome without relying on default values, you can actively employ the container's 
+initialization context. This allows you to manually provide data that the library would 
+otherwise gather from the decorators.
 
 ```python
 container.register_all_in_module(app.services)
 
-# Register parameters one by one using add_param
+# Register parameters individually using add_param
 container.initialization_context.add_param(
     klass=DbService,
     argument_name="connection_str",
@@ -27,10 +26,9 @@ container.initialization_context.add_param(
     parameter_ref=TemplatedString("${cache_dir}/${USER}/db"),
 )
 
-
-# Alternatively you can update the context in bulk using a dict of initializer parameter name as keys
-# and container parameter reference as values. 
-# To use interpolated strings you must wrap the string with TemplatedString.
+# Alternatively, you can update the context in bulk using a dictionary of initializer parameter names as keys
+# and container parameter references as values.
+# When using interpolated strings, make sure you wrap the string with TemplatedString.
 
 # NOTE: Parameter references MUST be wrapped with ParameterWrapper here!
 container.initialization_context.update(
@@ -42,5 +40,4 @@ container.initialization_context.update(
 )
 ```
 
-To use it you must populate the context manually with information for a particular service.
-Configuration can also be stored in json/yaml documents which you can read and update the container accordingly.
+Configuration can also be stored in JSON or YAML documents that can be read and used to update the container accordingly.
