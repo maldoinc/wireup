@@ -28,7 +28,13 @@ select = ["ALL"]
 ignore = [
     "ANN401", # Allow returning any. Parameter bag has to store/retrieve arbitraty types.
     "PT009", # Prefer using assertEqual instead of plain asserts
-    "ANN101", # Exclude self from type hint requirement
+    "ANN101", # Exclude self from type hint requirement,
+    "TD003", # Exclude "missing issue link for todos",
+    "FIX002", # Disable "Line contains to do, consider resolving the issue". It will be done, in due time.
+    "D100", # Disable undocumented public module. The definitions themselves will be documented
+    "D104", # Same as above, disable missing docstring in public package,
+    "D203", # Ignore "one blank line before class". Using "no blank lines before class rule".
+    "D213", # Disable "Summary must go into next line"
 ]
 
 [build-system]
