@@ -9,6 +9,11 @@ if TYPE_CHECKING:
 
 
 def find_classes_in_module(module: ModuleType, pattern: str = "*") -> Generator[type, None, None]:
+    """Return a list of object types found in a given module that matches the pattern in the argument.
+
+    :param module: The module under which to recursively look for types.
+    :param pattern: A fnmatch pattern which the type name will be tested against.
+    """
     for _, modname, __ in pkgutil.walk_packages(module.__path__, prefix=module.__name__ + "."):
         mod = __import__(modname, fromlist="dummy")
 

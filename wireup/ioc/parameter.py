@@ -30,6 +30,7 @@ class ParameterBag:
 
     def get(self, param: ParameterReference) -> Any:
         """Get the value of a parameter.
+
         If the parameter is templated, interpolate it first by replacing placeholders with parameter values.
 
         :param param: The parameter to retrieve.
@@ -41,6 +42,7 @@ class ParameterBag:
 
     def update(self, new_params: Dict[str, Any]) -> None:
         """Update the bag with new set of parameters.
+
         Parameters from new_params will overwrite any existing parameters set with the same name.
 
         :param new_params: A dictionary of parameter names and their updated values.
