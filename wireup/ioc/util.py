@@ -1,19 +1,11 @@
 from __future__ import annotations
 
 import fnmatch
-import inspect
 import pkgutil
-from inspect import Parameter
-from typing import TYPE_CHECKING, Callable, Generator, ItemsView
+from typing import TYPE_CHECKING, Generator
 
 if TYPE_CHECKING:
     from types import ModuleType
-
-
-def get_params_with_default_values(obj: Callable) -> dict[str, Parameter]:
-    params: ItemsView[str, Parameter] = inspect.signature(obj).parameters.items()
-
-    return {name: val for name, val in params if val.default is not Parameter.empty}
 
 
 def find_classes_in_module(module: ModuleType, pattern: str = "*") -> Generator[type, None, None]:
