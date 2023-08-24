@@ -70,7 +70,7 @@ class Container:
         :param dep: Inject a component given a class name. Prefer type-hinting parameters instead
         :param qualifier: Qualify which implementation to bind when there are multiple components
         implementing an interface that is registered in the container via @abstract.
-        :return:
+        Can be used in conjunction with dep.
         """
         if param:
             return ParameterWrapper(param)
@@ -78,9 +78,8 @@ class Container:
         if expr:
             return ParameterWrapper(TemplatedString(expr))
 
-        # TODO(mateli): Allow dep and qualifier to be used together
         if dep:
-            return ContainerProxy(lambda: self.__get(dep))
+            return ContainerProxy(lambda: self.__get(dep, qualifier))
 
         if qualifier:
             return ContainerProxyQualifier(qualifier)
