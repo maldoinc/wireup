@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import functools
 import re
 from typing import Any
 
@@ -21,6 +20,7 @@ class ParameterBag:
         The ParameterBag holds a flat key-value store of parameter values.
         """
         self.__bag: dict[str, Any] = {}
+        self.__cache: dict[str, str] = {}
 
     def put(self, name: str, val: Any) -> None:
         """Put a parameter value into the bag. This overwrites any previous values.
@@ -67,12 +67,17 @@ class ParameterBag:
 
         return self.__bag[name]
 
-    @functools.lru_cache(maxsize=256)
     def __interpolate(self, val: str) -> str:
-        return re.sub(
+        if val in self.__cache:
+            return self.__cache[val]
+
+        res = re.sub(
             r"\${(.*?)}",  # Let's accept anything here as we don't impose any rules when adding params
             # Since we're concatenating strings we need to convert any parameters we get to str
             lambda match: str(self.__get_value_from_name(match.group(1))),
             val,
             flags=re.DOTALL,
         )
+        self.__cache[val] = res
+
+        return res

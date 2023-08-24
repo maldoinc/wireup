@@ -50,12 +50,12 @@ class Container:
         self.initialization_context = DependencyInitializationContext()
 
     def wire(
-            self,
-            *,
-            param: str | None = None,
-            expr: str | None = None,
-            dep: type[T] | None = None,
-            qualifier: str | None = None,
+        self,
+        *,
+        param: str | None = None,
+        expr: str | None = None,
+        dep: type[T] | None = None,
+        qualifier: str | None = None,
     ) -> Callable[..., Any] | ParameterWrapper | ContainerProxy | Any:
         """Inject resources from the container to constructor or autowired method arguments.
 
@@ -121,6 +121,7 @@ class Container:
         """
         # Allow register to be used either with or without arguments
         if klass is None:
+
             def decorated(inner_class: type[T]) -> type[T]:
                 return self.__register_inner(inner_class, qualifier)
 
@@ -142,6 +143,7 @@ class Container:
 
         """
         if asyncio.iscoroutinefunction(fn):
+
             @functools.wraps(fn)
             async def async_inner(*args: Any, **kwargs: Any) -> Any:
                 return await self.__autowire_inner(fn, *args, **kwargs)
