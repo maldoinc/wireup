@@ -31,7 +31,9 @@ T = TypeVar("T")
 class Container:
     """Container registry containing all the necessary information on initializing registered classes.
 
-    It provides the following decorators: register, abstract and autowire. Use register on concrete classes
+    Objects instantiated by the container are lazily loaded and initialized only on first use.
+
+    Provides the following decorators: register, abstract and autowire. Use register on concrete classes
     which are to be injected from the container. Abstract classes are to be used as interfaces and will not be
     injected directly, rather concrete classes which implement them will be injected instead.
 
