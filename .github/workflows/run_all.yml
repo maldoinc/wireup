@@ -23,10 +23,10 @@ jobs:
           poetry install
       - name: Lint
         run: |
-          ruff --format=github wireup
+          poetry run ruff --format=github wireup
       - name: Check formatting
         run: |
-          black --check .
+          poetry run black --check .
       - name: Run tests
         run: |
           python -m unittest discover -s test/
