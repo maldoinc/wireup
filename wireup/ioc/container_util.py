@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from collections import defaultdict
 from dataclasses import dataclass
-from typing import Any, Callable, Union
+from typing import Any, Callable
 
 
 @dataclass(frozen=True)
@@ -16,7 +16,7 @@ class TemplatedString:
     value: str
 
 
-ParameterReference = Union[str, TemplatedString]
+ParameterReference = str | TemplatedString
 
 
 @dataclass(frozen=True)
@@ -37,7 +37,7 @@ class ContainerProxyQualifier:
     qualifier: str
 
 
-ContainerParameterInitializationType = Union[ContainerProxyQualifier, ParameterWrapper]
+ContainerParameterInitializationType = ContainerProxyQualifier | ParameterWrapper
 
 
 class DependencyInitializationContext:

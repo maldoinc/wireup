@@ -207,7 +207,7 @@ class DependencyContainer:
         dependencies = {}
 
         for name, parameter in inspect.signature(fn).parameters.items():
-            if isinstance(parameter.default, ContainerParameterInitializationType):
+            if isinstance(parameter.default, ContainerParameterInitializationType.__args__):
                 params_with_default_val_wrapper[name] = self.__initialize_from_param_with_default_value(parameter)
 
             if parameter.annotation in self.__known_classes or parameter.annotation in self.__known_interfaces:
