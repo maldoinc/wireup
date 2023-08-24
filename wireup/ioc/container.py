@@ -27,7 +27,7 @@ if TYPE_CHECKING:
 T = TypeVar("T")
 
 
-# TODO: Do we call this something registry?
+# TODO(mateli): Do we call this something registry?
 class Container:
     """Container registry containing all the necessary information on initializing registered classes.
 
@@ -78,7 +78,7 @@ class Container:
         if expr:
             return ParameterWrapper(TemplatedString(expr))
 
-        # TODO: Allow dep and qualifier to be used together
+        # TODO(mateli): Allow dep and qualifier to be used together
         if dep:
             return ContainerProxy(lambda: self.__get(dep))
 
