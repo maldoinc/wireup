@@ -45,7 +45,7 @@ class Container:
 
     def __init__(self, parameter_bag: ParameterBag) -> None:
         """:param parameter_bag: ParameterBag instance holding parameter information."""
-        self.__known_interfaces: dict[type[T], dict[str, type]] = {}
+        self.__known_interfaces: dict[type[T], dict[str, type[T]]] = {}
         self.__known_classes: set[type[T]] = set()
         self.__initialized_objects: dict[_InitializedObjectIdentifier, object] = {}
         self.params: ParameterBag = parameter_bag
@@ -224,9 +224,9 @@ class Container:
 
         self.__assert_class_is_known(klass)
 
-        concrete_classes = self.__known_interfaces.get(klass)
+        concrete_classes: dict[str, type[T]] = self.__known_interfaces.get(klass)
         if concrete_classes:
-            available_qualifiers = concrete_classes.keys()
+            available_qualifiers: list[str] = list(concrete_classes.keys())
 
             if qualifier is not None:
                 if qualifier in available_qualifiers:
@@ -239,9 +239,7 @@ class Container:
                 raise ValueError(msg)
 
             if len(available_qualifiers) == 1:
-                concrete_class = next(iter(available_qualifiers))
-
-                return self.__get(concrete_class)
+                return self.__get(klass, available_qualifiers[0])
 
             msg = (
                 f"Qualifier needed to instantiate concrete class for {klass}. "

@@ -2,13 +2,15 @@ from __future__ import annotations
 
 import fnmatch
 import pkgutil
-from typing import TYPE_CHECKING, Generator
+from typing import TYPE_CHECKING, Generator, TypeVar
 
 if TYPE_CHECKING:
     from types import ModuleType
 
+T = TypeVar("T")
 
-def find_classes_in_module(module: ModuleType, pattern: str = "*") -> Generator[type, None, None]:
+
+def find_classes_in_module(module: ModuleType, pattern: str = "*") -> Generator[type[T], None, None]:
     """Return a list of object types found in a given module that matches the pattern in the argument.
 
     :param module: The module under which to recursively look for types.
