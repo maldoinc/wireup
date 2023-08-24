@@ -1,6 +1,8 @@
+from __future__ import annotations
+
 from collections import defaultdict
 from dataclasses import dataclass
-from typing import Any, Callable, Dict, Type, Union
+from typing import Any, Callable, Union
 
 
 @dataclass(frozen=True)
@@ -25,12 +27,12 @@ ContainerParameterInitializationType = Union[ContainerProxyQualifier, ParameterW
 
 
 class DependencyInitializationContext:
-    context: Dict[Type, Dict[str, ParameterWrapper]] = defaultdict(dict)
+    context: dict[type, dict[str, ParameterWrapper]] = defaultdict(dict)
 
-    def add_param(self, klass: Type, argument_name, parameter_ref: ParameterReference):
+    def add_param(self, klass: type, argument_name, parameter_ref: ParameterReference):
         self.context[klass][argument_name] = ParameterWrapper(parameter_ref)
 
-    def update(self, klass: Type, params: Dict[str, ParameterReference]):
+    def update(self, klass: type, params: dict[str, ParameterReference]):
         self.context[klass].update({k: ParameterWrapper(v) for k, v in params.items()})
 
 
@@ -44,3 +46,14 @@ class ContainerProxy:
             self.__proxy_object = self.__supplier()
 
         return getattr(self.__proxy_object, name)
+
+
+@dataclass(frozen=True, eq=True)
+class _InitializedObjectIdentifier:
+    """Identifies a dependency instance.
+
+    Used to store and retrieve instances from the in-memory cache.
+    """
+
+    class_type: type
+    qualifier: str | None

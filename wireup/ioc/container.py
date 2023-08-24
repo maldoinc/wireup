@@ -14,6 +14,7 @@ from .container_util import (
     DependencyInitializationContext,
     ParameterWrapper,
     TemplatedString,
+    _InitializedObjectIdentifier,
 )
 from .util import find_classes_in_module
 
@@ -42,19 +43,19 @@ class Container:
 
     def __init__(self, parameter_bag: ParameterBag) -> None:
         """:param parameter_bag: ParameterBag instance holding parameter information."""
-        self.__known_interfaces: dict[type, dict[str, type]] = {}
-        self.__known_classes: set[type] = set()
+        self.__known_interfaces: dict[type[T], dict[str, type]] = {}
+        self.__known_classes: set[type[T]] = set()
+        self.__initialized_objects: dict[_InitializedObjectIdentifier, object] = {}
         self.params: ParameterBag = parameter_bag
         self.initialization_context = DependencyInitializationContext()
 
-    @functools.cache
     def wire(
-        self,
-        *,
-        param: str | None = None,
-        expr: str | None = None,
-        dep: type[T] | None = None,
-        qualifier: str | None = None,
+            self,
+            *,
+            param: str | None = None,
+            expr: str | None = None,
+            dep: type[T] | None = None,
+            qualifier: str | None = None,
     ) -> Callable[..., Any] | ParameterWrapper | ContainerProxy | Any:
         """Inject resources from the container to constructor or autowired method arguments.
 
@@ -75,6 +76,7 @@ class Container:
         if expr:
             return ParameterWrapper(TemplatedString(expr))
 
+        # TODO: Allow dep and qualifier to be used together
         if dep:
             return ContainerProxy(lambda: self.__get(dep))
 
@@ -119,7 +121,6 @@ class Container:
         """
         # Allow register to be used either with or without arguments
         if klass is None:
-
             def decorated(inner_class: type[T]) -> type[T]:
                 return self.__register_inner(inner_class, qualifier)
 
@@ -141,7 +142,6 @@ class Container:
 
         """
         if asyncio.iscoroutinefunction(fn):
-
             @functools.wraps(fn)
             async def async_inner(*args: Any, **kwargs: Any) -> Any:
                 return await self.__autowire_inner(fn, *args, **kwargs)
@@ -212,8 +212,12 @@ class Container:
 
         return {**dependencies, **params_from_context, **params_with_default_val_wrapper}
 
-    @functools.cache
     def __get(self, klass: type[T], qualifier: str | None = None) -> T:
+        object_type_id = _InitializedObjectIdentifier(klass, qualifier)
+
+        if object_type_id in self.__initialized_objects:
+            return self.__initialized_objects[object_type_id]
+
         self.__assert_class_is_known(klass)
 
         concrete_classes = self.__known_interfaces.get(klass)
@@ -241,7 +245,10 @@ class Container:
             )
             raise ValueError(msg)
 
-        return klass(**self.__callable_get_params_to_inject(klass.__init__, klass))
+        instance = klass(**self.__callable_get_params_to_inject(klass.__init__, klass))
+        self.__initialized_objects[object_type_id] = instance
+
+        return instance
 
     def __assert_class_is_known(self, klass: type[T]) -> None:
         if not (klass in self.__known_classes or klass in self.__known_interfaces):

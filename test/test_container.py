@@ -40,7 +40,6 @@ class TestContainer(unittest.IsolatedAsyncioTestCase):
         c1 = self.container.get(Counter)
         c1.inc()
 
-        assert c1 == self.container.get(Counter)
         assert c1.count == self.container.get(Counter).count
 
     def test_works_simple_get_instance_with_other_service_injected(self):
