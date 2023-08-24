@@ -1,12 +1,13 @@
 import os
 import random
-import examples.services
 from dataclasses import dataclass
-from examples.services.db_service import DbService
 from typing import Optional
 
 from fastapi import FastAPI
 from wireup import container
+
+import examples.services
+from examples.services.db_service import DbService
 
 app = FastAPI()
 
@@ -63,5 +64,5 @@ container.params.put("env", "prod")
 container.params.put("auth.user", "anon")
 container.params.update(dict(os.environ))
 
-for k, v in container.params.all().items():
+for k, v in container.params.get_all().items():
     print(f"> {k}={v}")

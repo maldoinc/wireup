@@ -58,7 +58,7 @@ class TestParameterBag(unittest.TestCase):
         bag.put("foo", "bar")
         bag.update({"bar": "baz", "baz": "qux"})
 
-        self.assertEqual(bag.all(), {"foo": "bar", "bar": "baz", "baz": "qux"})
+        self.assertEqual(bag.get_all(), {"foo": "bar", "bar": "baz", "baz": "qux"})
 
 
 class TestParameterPlaceholder(unittest.TestCase):

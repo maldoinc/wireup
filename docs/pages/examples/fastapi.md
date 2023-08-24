@@ -39,12 +39,12 @@ class GreeterService:
 @app.get("/")
 @container.wire
 async def root(
-    name: Optional[str] = None,  # This is a fastapi query parameter
-    # The default value is not needed by the container. It is only to make fastapi happy.
-    # It is the equivalent of Depends(lambda: None) and will have to be used for any deps that are to be injected
-    dummy_service: DummyService = container.wire(),
-    # This will have precedence over fastapi and will not contain the value found in query string.
-    logs_cache_dir: str = container.wire(expr="${cache_dir}/logs"),
+        name: Optional[str] = None,  # This is a fastapi query parameter
+        # The default value is not needed by the container. It is only to make fastapi happy.
+        # It is the equivalent of Depends(lambda: None) and will have to be used for any deps that are to be injected
+        dummy_service: DummyService = container.wire(),
+        # This will have precedence over fastapi and will not contain the value found in query string.
+        logs_cache_dir: str = container.wire(expr="${cache_dir}/logs"),
 ):
     # If you really need to, you can also get services this way.
     # Although injection is the recommended way this is left available for cases
@@ -66,7 +66,7 @@ container.params.put("env", "prod")
 container.params.put("auth.user", "anon")
 container.params.update(dict(os.environ))
 
-for k, v in container.params.all().items():
+for k, v in container.params.get_all().items():
     print(f"> {k}={v}")
 
 ```
