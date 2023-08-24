@@ -1,4 +1,4 @@
-from wireup.ioc.container import Container
+from wireup.ioc.dependency_container import DependencyContainer
 from wireup.ioc.parameter import ParameterBag
 
-container = Container(ParameterBag())
+container = DependencyContainer(ParameterBag())

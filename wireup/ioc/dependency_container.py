@@ -28,7 +28,7 @@ T = TypeVar("T")
 
 
 # TODO(mateli): Do we call this something registry?
-class Container:
+class DependencyContainer:
     """Container registry containing all the necessary information on initializing registered classes.
 
     Objects instantiated by the container are lazily loaded and initialized only on first use.

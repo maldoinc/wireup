@@ -5,15 +5,15 @@ from unittest.mock import Mock, patch
 import examples.services
 from examples.services.random_service import RandomService
 from examples.services.truly_random_service import TrulyRandomService
-from wireup.ioc.container import Container, ContainerProxy
 from wireup.ioc.container_util import ParameterWrapper
+from wireup.ioc.dependency_container import ContainerProxy, DependencyContainer
 from wireup.ioc.parameter import ParameterBag, TemplatedString
 from wireup.ioc.util import find_classes_in_module
 
 
 class TestContainer(unittest.IsolatedAsyncioTestCase):
     def setUp(self) -> None:
-        self.container = Container(ParameterBag())
+        self.container = DependencyContainer(ParameterBag())
         self.container.register_all_in_module(examples.services)
 
     def test_works_simple_get_instance(self):
@@ -180,7 +180,7 @@ class TestContainer(unittest.IsolatedAsyncioTestCase):
             connection_str: str = self.container.wire(param="connection_str")
             cache_dir: str = self.container.wire(expr="${cache_dir}/${auth.user}/db")
 
-        self.container = Container(ParameterBag())
+        self.container = DependencyContainer(ParameterBag())
         self.container.register(MyDbService)
         self.container.params.update(
             {"cache_dir": "/var/cache", "connection_str": "sqlite://memory", "auth.user": "anon"},

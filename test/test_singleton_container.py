@@ -1,8 +1,8 @@
 import unittest
 
-from wireup import Container, container
+from wireup import DependencyContainer, container
 
 
 class TestSingletonContainer(unittest.TestCase):
     def test_singleton_instantiated(self):
-        self.assertIsInstance(container, Container)
+        self.assertIsInstance(container, DependencyContainer)
