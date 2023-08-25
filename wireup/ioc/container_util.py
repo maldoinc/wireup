@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from collections import defaultdict
 from dataclasses import dataclass
-from typing import Any, Callable, Optional, Union
+from typing import Any, Callable, Optional, TypeVar, Union
 
 
 @dataclass(frozen=True)
@@ -101,6 +101,9 @@ class ContainerProxy:
         return getattr(self.__proxy_object, name)
 
 
+__T = TypeVar("__T")
+
+
 @dataclass(frozen=True, eq=True)
 class _ContainerObjectIdentifier:
     """Identifies a dependency instance.
@@ -108,5 +111,5 @@ class _ContainerObjectIdentifier:
     Used to store and retrieve instances from the in-memory cache.
     """
 
-    class_type: type
+    class_type: type[__T]
     qualifier: ContainerProxyQualifierValue

@@ -78,15 +78,6 @@ class TestContainer(unittest.IsolatedAsyncioTestCase):
         assert isinstance(result.param, TemplatedString)
         assert result.param.value == "some ${param}"
 
-    def test_inject_dep(self):
-        class TestInjectDep:
-            foo: int = 4
-
-        self.container.register(TestInjectDep)
-        result = self.container.wire(dep=TestInjectDep)
-        assert isinstance(result, ContainerProxy)
-        assert result.foo == 4
-
     @patch("importlib.import_module")
     def test_inject_fastapi_dep(self, mock_import_module):
         mock_import_module.return_value = Mock(Depends=Mock())
@@ -99,17 +90,7 @@ class TestContainer(unittest.IsolatedAsyncioTestCase):
         with self.assertRaises(Exception) as context:
             self.container.wire()
 
-        assert "One of param, expr, qualifier or dep must be set" in str(context.exception)
-
-    def test_get_known_class(self):
-        class TestGetUnknown:
-            pass
-
-        self.container.register(TestGetUnknown)
-        self.container.wire = Mock()
-        result = self.container.get(TestGetUnknown)
-        assert result == self.container.wire.return_value
-        self.container.wire.assert_called_once_with(dep=TestGetUnknown, qualifier=None)
+        assert "One of param, expr or qualifier must be set" in str(context.exception)
 
     def test_register_known_class(self):
         class TestRegisterKnown:

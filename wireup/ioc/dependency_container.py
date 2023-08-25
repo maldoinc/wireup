@@ -55,7 +55,6 @@ class DependencyContainer:
         *,
         param: str | None = None,
         expr: str | None = None,
-        dep: type[__T] | None = None,
         qualifier: ContainerProxyQualifierValue = None,
     ) -> Callable[..., Any] | ParameterWrapper | ContainerProxy | Any:
         """Inject resources from the container to constructor or autowired method arguments.
@@ -66,7 +65,6 @@ class DependencyContainer:
         :param expr: Interpolate the templated string.
         Parameters inside ${} will be replaced with their corresponding value
 
-        :param dep: Inject a component given a class name. Prefer type-hinting parameters instead
         :param qualifier: Qualify which implementation to bind when there are multiple components
         implementing an interface that is registered in the container via @abstract.
         Can be used in conjunction with dep.
@@ -77,9 +75,6 @@ class DependencyContainer:
         if expr:
             return ParameterWrapper(TemplatedString(expr))
 
-        if dep:
-            return ContainerProxy(lambda: self.__get(dep, qualifier))
-
         if qualifier:
             return ContainerProxyQualifier(qualifier)
 
@@ -88,7 +83,7 @@ class DependencyContainer:
             # It is meant to be used as a default value in where Depends() is expected
             return importlib.import_module("fastapi").Depends(lambda: None)
         except ModuleNotFoundError as e:
-            msg = "One of param, expr, qualifier or dep must be set"
+            msg = "One of param, expr or qualifier must be set"
             raise ValueError(msg) from e
 
     def get(self, klass: type[__T], qualifier: ContainerProxyQualifierValue = None) -> __T:
@@ -101,7 +96,7 @@ class DependencyContainer:
         """
         self.__assert_class_is_registered(klass, qualifier)
 
-        return self.wire(dep=klass, qualifier=qualifier)
+        return self.__get_proxy_object(_ContainerObjectIdentifier(klass, qualifier))
 
     def abstract(self, klass: type[__T]) -> type[__T]:
         """Register a type as an interface.
@@ -271,6 +266,9 @@ class DependencyContainer:
         qualifier_value = default.qualifier if isinstance(default, ContainerProxyQualifier) else None
 
         if self.__is_class_known(parameter.annotation, qualifier_value):
-            return self.wire(dep=parameter.annotation, qualifier=qualifier_value)
+            return self.__get_proxy_object(_ContainerObjectIdentifier(parameter.annotation, qualifier_value))
 
         return None
+
+    def __get_proxy_object(self, obj_id: _ContainerObjectIdentifier) -> ContainerProxy:
+        return ContainerProxy(lambda: self.__get(obj_id.class_type, obj_id.qualifier))
