@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from collections import defaultdict
 from dataclasses import dataclass
-from typing import Any, Callable, Union
+from typing import Any, Callable, Optional, Union
 
 
 @dataclass(frozen=True)
@@ -26,6 +26,9 @@ class ParameterWrapper:
     param: ParameterReference
 
 
+ContainerProxyQualifierValue = Optional[str]
+
+
 @dataclass(frozen=True)
 class ContainerProxyQualifier:
     """Hint the container registry which dependency to load when there are multiple ones registered with the same type.
@@ -34,10 +37,7 @@ class ContainerProxyQualifier:
     is that of the base class acting as an interface.
     """
 
-    qualifier: str
-
-
-ContainerParameterInitializationType = Union[ContainerProxyQualifier, ParameterWrapper]
+    qualifier: ContainerProxyQualifierValue
 
 
 class DependencyInitializationContext:
@@ -102,11 +102,11 @@ class ContainerProxy:
 
 
 @dataclass(frozen=True, eq=True)
-class _InitializedObjectIdentifier:
+class _ContainerObjectIdentifier:
     """Identifies a dependency instance.
 
     Used to store and retrieve instances from the in-memory cache.
     """
 
     class_type: type
-    qualifier: str | None
+    qualifier: ContainerProxyQualifierValue
