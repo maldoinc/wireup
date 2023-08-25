@@ -58,8 +58,6 @@ class ParameterBag:
         """
         self.__bag.update(new_params)
 
-    # Private methods...
-
     def __get_value_from_name(self, name: str) -> Any:
         if name not in self.__bag:
             msg = f"Unknown parameter {name} requested"

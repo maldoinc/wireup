@@ -28,7 +28,7 @@ class TestContainer(unittest.IsolatedAsyncioTestCase):
         rand = self.container.get(RandomService)
 
         assert isinstance(rand, ContainerProxy), "Assert that we never interact directly with the instantiated classes"
-        assert rand.get_random() == 4, "Assert that proxy pass-through works"
+        self.assertEqual(rand.get_random(), 4, "Assert that proxy pass-through works")
 
     def test_raises_on_unknown_dependency(self):
         class UnknownDep:
@@ -41,13 +41,13 @@ class TestContainer(unittest.IsolatedAsyncioTestCase):
         c1 = self.container.get(Counter)
         c1.inc()
 
-        assert c1.count == self.container.get(Counter).count
+        self.assertEqual(c1.count, self.container.get(Counter).count)
 
     def test_works_simple_get_instance_with_other_service_injected(self):
         truly_random = self.container.get(TrulyRandomService)
 
         assert isinstance(truly_random, ContainerProxy)
-        assert truly_random.get_truly_random() == 5
+        self.assertEqual(truly_random.get_truly_random(), 5)
 
     def test_get_class_with_param_bindings(self) -> None:
         @self.container.register
@@ -64,25 +64,25 @@ class TestContainer(unittest.IsolatedAsyncioTestCase):
         self.container.params.put("cache_dir", "/var/cache")
         svc = self.container.get(ServiceWithParams)
 
-        assert svc.connection_str == "sqlite://memory"
-        assert svc.cache_dir == "/var/cache/etc"
+        self.assertEqual(svc.connection_str, "sqlite://memory")
+        self.assertEqual(svc.cache_dir, "/var/cache/etc")
 
     def test_inject_param(self):
         result = self.container.wire(param="value")
         assert isinstance(result, ParameterWrapper)
-        assert result.param == "value"
+        self.assertEqual(result.param, "value")
 
     def test_inject_expr(self):
         result = self.container.wire(expr="some ${param}")
         assert isinstance(result, ParameterWrapper)
         assert isinstance(result.param, TemplatedString)
-        assert result.param.value == "some ${param}"
+        self.assertEqual(result.param.value, "some ${param}")
 
     @patch("importlib.import_module")
     def test_inject_fastapi_dep(self, mock_import_module):
         mock_import_module.return_value = Mock(Depends=Mock())
         result = self.container.wire()
-        assert result == mock_import_module.return_value.Depends.return_value
+        self.assertEqual(result, mock_import_module.return_value.Depends.return_value)
         mock_import_module.assert_called_once_with("fastapi")
 
     @patch("importlib.import_module", side_effect=ModuleNotFoundError)
@@ -106,23 +106,23 @@ class TestContainer(unittest.IsolatedAsyncioTestCase):
         self.container.params.put("env", "test")
 
         def test_function(random: TrulyRandomService, env: str = self.container.wire(param="env")) -> int:
-            assert env == "test"
+            self.assertEqual(env, "test")
             return random.get_truly_random()
 
         autowired_fn = self.container.autowire(test_function)
         assert callable(autowired_fn)
-        assert autowired_fn() == 5
+        self.assertEqual(autowired_fn(), 5)
 
     async def test_autowire_async(self):
         self.container.params.put("env", "test")
 
         async def test_function(random: RandomService, env: str = self.container.wire(param="env")) -> int:
-            assert env == "test"
+            self.assertEqual(env, "test")
             return random.get_random()
 
         autowired_fn = self.container.autowire(test_function)
         assert callable(autowired_fn)
-        assert await autowired_fn() == 4
+        self.assertEqual(await autowired_fn(), 4)
 
     def test_register_all_in_module(self):
         # These classes are registered in setup
@@ -152,9 +152,9 @@ class TestContainer(unittest.IsolatedAsyncioTestCase):
         self.container.params.update({"first": "foo", "second": "bar", "env": "test", "mambo_number": 5})
         obj = self.container.get(NoHints)
 
-        assert obj.interpolated == "foo-bar"
-        assert obj.env == "test"
-        assert obj.mambo_number == 5
+        self.assertEqual(obj.interpolated, "foo-bar")
+        self.assertEqual(obj.env, "test")
+        self.assertEqual(obj.mambo_number, 5)
 
     def test_db_service_dataclass_with_params(self):
         @dataclass
@@ -170,8 +170,8 @@ class TestContainer(unittest.IsolatedAsyncioTestCase):
 
         db = self.container.get(MyDbService)
 
-        assert db.cache_dir == "/var/cache/anon/db"
-        assert db.connection_str == "sqlite://memory"
+        self.assertEqual(db.cache_dir, "/var/cache/anon/db")
+        self.assertEqual(db.connection_str, "sqlite://memory")
 
     def test_locates_service_with_qualifier(self):
         self.container.register(Counter, qualifier="foo_qualified")
