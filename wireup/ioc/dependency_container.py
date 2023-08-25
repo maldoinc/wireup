@@ -24,7 +24,7 @@ if TYPE_CHECKING:
 
     from .parameter import ParameterBag
 
-T = TypeVar("T")
+__T = TypeVar("__T")
 
 
 class DependencyContainer:
@@ -44,7 +44,7 @@ class DependencyContainer:
 
     def __init__(self, parameter_bag: ParameterBag) -> None:
         """:param parameter_bag: ParameterBag instance holding parameter information."""
-        self.__known_interfaces: dict[type[T], dict[str, type[T]]] = {}
+        self.__known_interfaces: dict[type[__T], dict[str, type[__T]]] = {}
         self.__known_classes: set[_ContainerObjectIdentifier] = set()
         self.__initialized_objects: dict[_ContainerObjectIdentifier, object] = {}
         self.params: ParameterBag = parameter_bag
@@ -55,7 +55,7 @@ class DependencyContainer:
         *,
         param: str | None = None,
         expr: str | None = None,
-        dep: type[T] | None = None,
+        dep: type[__T] | None = None,
         qualifier: ContainerProxyQualifierValue = None,
     ) -> Callable[..., Any] | ParameterWrapper | ContainerProxy | Any:
         """Inject resources from the container to constructor or autowired method arguments.
@@ -91,7 +91,7 @@ class DependencyContainer:
             msg = "One of param, expr, qualifier or dep must be set"
             raise ValueError(msg) from e
 
-    def get(self, klass: type[T], qualifier: ContainerProxyQualifierValue = None) -> T:
+    def get(self, klass: type[__T], qualifier: ContainerProxyQualifierValue = None) -> __T:
         """Get an instance of the requested type. If there is already an initialized instance, that will be returned.
 
         :param qualifier: Qualifier for the class if it was registered with one. If a type has only one qualifier
@@ -103,7 +103,7 @@ class DependencyContainer:
 
         return self.wire(dep=klass, qualifier=qualifier)
 
-    def abstract(self, klass: type[T]) -> type[T]:
+    def abstract(self, klass: type[__T]) -> type[__T]:
         """Register a type as an interface.
 
         This type cannot be initialized directly and one of the components implementing this will be injected instead.
@@ -112,7 +112,7 @@ class DependencyContainer:
 
         return klass
 
-    def register(self, klass: type[T] | None = None, *, qualifier: ContainerProxyQualifierValue = None) -> type[T]:
+    def register(self, klass: type[__T] | None = None, *, qualifier: ContainerProxyQualifierValue = None) -> type[__T]:
         """Register a component in the container.
 
         Use @register without parameters on a class
@@ -124,7 +124,7 @@ class DependencyContainer:
         # Allow register to be used either with or without arguments
         if klass is None:
 
-            def decorated(inner_class: type[T]) -> type[T]:
+            def decorated(inner_class: type[__T]) -> type[__T]:
                 return self.__register_inner(inner_class, qualifier)
 
             return decorated
@@ -172,7 +172,7 @@ class DependencyContainer:
         for klass in find_classes_in_module(module, pattern):
             self.register(klass)
 
-    def __register_inner(self, klass: type[T], qualifier: ContainerProxyQualifierValue) -> type[T]:
+    def __register_inner(self, klass: type[__T], qualifier: ContainerProxyQualifierValue) -> type[__T]:
         object_type_id = _ContainerObjectIdentifier(klass, qualifier)
 
         if self.__is_class_known(klass, qualifier):
@@ -196,7 +196,7 @@ class DependencyContainer:
     def __autowire_inner(self, fn: Callable[..., Any], *args: Any, **kwargs: Any) -> Any:
         return fn(*args, **{**kwargs, **self.__callable_get_params_to_inject(fn)})
 
-    def __callable_get_params_to_inject(self, fn: Callable[..., Any], klass: type[T] | None = None) -> dict:
+    def __callable_get_params_to_inject(self, fn: Callable[..., Any], klass: type[__T] | None = None) -> dict:
         params_from_context = (
             {
                 name: self.params.get(wrapper.param)
@@ -213,7 +213,7 @@ class DependencyContainer:
 
         return {**params_from_context, **{k: v for k, v in values_from_parameters.items() if v}}
 
-    def __get(self, klass: type[T], qualifier: ContainerProxyQualifierValue = None) -> T:
+    def __get(self, klass: type[__T], qualifier: ContainerProxyQualifierValue = None) -> __T:
         object_type_id = _ContainerObjectIdentifier(klass, qualifier)
 
         if object_type_id in self.__initialized_objects:
@@ -221,7 +221,7 @@ class DependencyContainer:
 
         self.__assert_class_is_registered(klass, qualifier)
 
-        concrete_classes: dict[str, type[T]] = self.__known_interfaces.get(klass)
+        concrete_classes: dict[str, type[__T]] = self.__known_interfaces.get(klass)
         if concrete_classes:
             available_qualifiers: list[str] = list(concrete_classes.keys())
 
@@ -249,13 +249,13 @@ class DependencyContainer:
 
         return instance
 
-    def __is_class_known(self, klass: type[T], qualifier: ContainerProxyQualifierValue) -> bool:
+    def __is_class_known(self, klass: type[__T], qualifier: ContainerProxyQualifierValue) -> bool:
         is_known_class = _ContainerObjectIdentifier(klass, qualifier) in self.__known_classes
         is_known_interface = klass in self.__known_interfaces
 
         return is_known_class or is_known_interface
 
-    def __assert_class_is_registered(self, klass: type[T], qualifier: ContainerProxyQualifierValue) -> None:
+    def __assert_class_is_registered(self, klass: type[__T], qualifier: ContainerProxyQualifierValue) -> None:
         """Verify that either the class is a known dependency with this identifier or the type is abstract."""
         if not self.__is_class_known(klass, qualifier):
             msg = f"Cannot wire unknown class {klass}. Use @Container.{{register,abstract}} to enable autowiring"
