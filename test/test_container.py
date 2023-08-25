@@ -192,3 +192,42 @@ class TestContainer(unittest.IsolatedAsyncioTestCase):
             "Use @Container.{register,abstract} to enable autowiring",
             str(context.exception),
         )
+
+    def test_two_qualifiers_are_injected(self):
+        @self.container.abstract
+        class Base:
+            def __init__(self):
+                self.foo = "foo"
+
+        @self.container.register(qualifier="sub1")
+        class Sub1(Base):
+            def __init__(self):
+                super().__init__()
+                self.foo = "bar"
+
+        @self.container.register(qualifier="sub2")
+        class Sub2(Base):
+            def __init__(self):
+                super().__init__()
+                self.foo = "baz"
+
+        @self.container.autowire
+        def inner(
+            sub1: Base = self.container.wire(qualifier="sub1"), sub2: Base = self.container.wire(qualifier="sub2")
+        ):
+            self.assertEqual(sub1.foo, "bar")
+            self.assertEqual(sub2.foo, "baz")
+
+        inner()
+
+    def test_qualifier_raises_wire_called_on_unknown_type(self):
+        @self.container.abstract
+        class Base:
+            def __init__(self):
+                self.foo = "foo"
+
+        @self.container.autowire
+        def inner(sub1: Base = self.container.wire(qualifier="sub1")):
+            ...
+
+        self.assertRaises(ValueError, inner)

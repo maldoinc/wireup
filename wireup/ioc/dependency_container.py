@@ -28,7 +28,7 @@ __T = TypeVar("__T")
 
 
 class DependencyContainer:
-    """Container registry containing all the necessary information on initializing registered classes.
+    """Container registry containing all the necessary information for initializing registered classes.
 
     Objects instantiated by the container are lazily loaded and initialized only on first use.
 
@@ -208,7 +208,7 @@ class DependencyContainer:
 
         return {**params_from_context, **{k: v for k, v in values_from_parameters.items() if v}}
 
-    def __get(self, klass: type[__T], qualifier: ContainerProxyQualifierValue = None) -> __T:
+    def __get(self, klass: type[__T], qualifier: ContainerProxyQualifierValue) -> __T:
         object_type_id = _ContainerObjectIdentifier(klass, qualifier)
 
         if object_type_id in self.__initialized_objects:
@@ -216,28 +216,10 @@ class DependencyContainer:
 
         self.__assert_class_is_registered(klass, qualifier)
 
-        concrete_classes: dict[str, type[__T]] = self.__known_interfaces.get(klass)
-        if concrete_classes:
-            available_qualifiers: list[str] = list(concrete_classes.keys())
-
-            if qualifier is not None:
-                if qualifier in available_qualifiers:
-                    return self.__get(concrete_classes[qualifier])
-
-                msg = (
-                    f"Cannot instantiate concrete class for {klass} as qualifier '{qualifier}' is unknown. "
-                    f"Available qualifiers: {available_qualifiers}"
-                )
-                raise ValueError(msg)
-
-            if len(available_qualifiers) == 1:
-                return self.__get(klass, available_qualifiers[0])
-
-            msg = (
-                f"Qualifier needed to instantiate concrete class for {klass}. "
-                f"Available qualifiers: {available_qualifiers}"
-            )
-            raise ValueError(msg)
+        if klass in self.__known_interfaces and qualifier:
+            concrete_class = self.__get_concrete_class_from_qualifier(klass, qualifier)
+            if concrete_class:
+                return self.get(concrete_class, qualifier)
 
         instance = klass(**self.__callable_get_params_to_inject(klass.__init__, klass))
         self.__initialized_objects[object_type_id] = instance
@@ -246,7 +228,7 @@ class DependencyContainer:
 
     def __is_class_known(self, klass: type[__T], qualifier: ContainerProxyQualifierValue) -> bool:
         is_known_class = _ContainerObjectIdentifier(klass, qualifier) in self.__known_classes
-        is_known_interface = klass in self.__known_interfaces
+        is_known_interface = klass in self.__known_interfaces and qualifier in self.__known_interfaces[klass]
 
         return is_known_class or is_known_interface
 
@@ -263,12 +245,39 @@ class DependencyContainer:
         if isinstance(default, ParameterWrapper):
             return self.params.get(default.param)
 
+        # When injecting values and a qualifier is used, throw if it's being used on an unknown type.
+        # This prevents the default value from being used by the runtime.
+        # We don't actually want that to happen as the value is used only for hinting the container
+        # and all values should be supplied.
         qualifier_value = default.qualifier if isinstance(default, ContainerProxyQualifier) else None
+        class_to_instantiate = (
+            self.__get_concrete_class_from_qualifier(parameter.annotation, qualifier_value)
+            if qualifier_value
+            else parameter.annotation
+        )
 
-        if self.__is_class_known(parameter.annotation, qualifier_value):
-            return self.__get_proxy_object(_ContainerObjectIdentifier(parameter.annotation, qualifier_value))
+        if self.__is_class_known(class_to_instantiate, qualifier_value):
+            return self.__get_proxy_object(_ContainerObjectIdentifier(class_to_instantiate, qualifier_value))
 
         return None
 
     def __get_proxy_object(self, obj_id: _ContainerObjectIdentifier) -> ContainerProxy:
         return ContainerProxy(lambda: self.__get(obj_id.class_type, obj_id.qualifier))
+
+    def __get_concrete_class_from_qualifier(
+        self,
+        klass: type[__T],
+        qualifier: ContainerProxyQualifierValue,
+    ) -> type[__T]:
+        concrete_classes = self.__known_interfaces.get(klass, {})
+
+        if qualifier in concrete_classes:
+            return concrete_classes[qualifier]
+
+        # We have to raise here otherwise if we have a default hinting the qualifier for an unknown type
+        # which will result in the value of the parameter being ContainerProxyQualifier.
+        msg = (
+            f"Cannot instantiate concrete class for {klass} as qualifier '{qualifier}' is unknown. "
+            f"Available qualifiers: {set(concrete_classes.keys())}"
+        )
+        raise ValueError(msg)
