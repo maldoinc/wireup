@@ -1,6 +1,6 @@
 import unittest
 
-from wireup.ioc.container_util import ParameterWrapper
+from wireup.ioc.container_util import ParameterWrapper, ParameterReference
 from wireup.ioc.parameter import ParameterBag, TemplatedString
 
 
@@ -43,6 +43,12 @@ class TestParameterBag(unittest.TestCase):
         self.bag.update({"bar": "baz", "baz": "qux"})
 
         self.assertEqual(self.bag.get_all(), {"foo": "bar", "bar": "baz", "baz": "qux"})
+
+    def test_parameter_interpolation_is_cached(self):
+        self.bag.put("foo", "bar")
+        self.assertEqual(self.bag.get(TemplatedString("${foo}-${foo}")), "bar-bar")
+        self.assertEqual(self.bag.get(TemplatedString("${foo}-${foo}")), "bar-bar")
+        self.assertEqual(self.bag._ParameterBag__cache, {"${foo}-${foo}": "bar-bar"})  # noqa: SLF001
 
 
 class TestParameterPlaceholder(unittest.TestCase):
