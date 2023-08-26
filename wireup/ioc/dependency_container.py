@@ -245,11 +245,18 @@ class DependencyContainer:
         if isinstance(default, ParameterWrapper):
             return self.params.get(default.param)
 
-        # When injecting values and a qualifier is used, throw if it's being used on an unknown type.
+        qualifier_value = default.qualifier if isinstance(default, ContainerProxyQualifier) else None
+
+        # When injecting an abstract class without a qualifier throw in order to prevent a probable mistake
+        # This is an artificial limitation as the container can instantiate "abstract" classes just fine.
+        if not qualifier_value and parameter.annotation in self.__known_interfaces:
+            msg = f"Cannot instantiate abstract class {parameter.default} directly. Please use a qualifier"
+            raise ValueError(msg)
+
+        # When injecting dependencies and a qualifier is used, throw if it's being used on an unknown type.
         # This prevents the default value from being used by the runtime.
         # We don't actually want that to happen as the value is used only for hinting the container
         # and all values should be supplied.
-        qualifier_value = default.qualifier if isinstance(default, ContainerProxyQualifier) else None
         class_to_instantiate = (
             self.__get_concrete_class_from_qualifier(parameter.annotation, qualifier_value)
             if qualifier_value

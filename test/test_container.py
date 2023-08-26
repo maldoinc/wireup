@@ -5,18 +5,11 @@ from unittest.mock import Mock, patch
 import examples.services
 from examples.services.random_service import RandomService
 from examples.services.truly_random_service import TrulyRandomService
+from test.fixtures import Counter, FooBase, FooBar, FooBaz
 from wireup.ioc.container_util import ParameterWrapper
 from wireup.ioc.dependency_container import ContainerProxy, DependencyContainer
 from wireup.ioc.parameter import ParameterBag, TemplatedString
 from wireup.ioc.util import find_classes_in_module
-
-
-@dataclass
-class Counter:
-    count: int = 0
-
-    def inc(self):
-        self.count += 1
 
 
 class TestContainer(unittest.IsolatedAsyncioTestCase):
@@ -188,46 +181,49 @@ class TestContainer(unittest.IsolatedAsyncioTestCase):
             self.container.get(Counter)
 
         self.assertEqual(
-            "Cannot wire unknown class <class 'test_container.Counter'>. "
+            "Cannot wire unknown class <class 'test.fixtures.Counter'>. "
             "Use @Container.{register,abstract} to enable autowiring",
             str(context.exception),
         )
 
     def test_two_qualifiers_are_injected(self):
-        @self.container.abstract
-        class Base:
-            def __init__(self):
-                self.foo = "foo"
-
-        @self.container.register(qualifier="sub1")
-        class Sub1(Base):
-            def __init__(self):
-                super().__init__()
-                self.foo = "bar"
-
-        @self.container.register(qualifier="sub2")
-        class Sub2(Base):
-            def __init__(self):
-                super().__init__()
-                self.foo = "baz"
-
         @self.container.autowire
         def inner(
-            sub1: Base = self.container.wire(qualifier="sub1"), sub2: Base = self.container.wire(qualifier="sub2")
+            sub1: FooBase = self.container.wire(qualifier="sub1"), sub2: FooBase = self.container.wire(qualifier="sub2")
         ):
             self.assertEqual(sub1.foo, "bar")
             self.assertEqual(sub2.foo, "baz")
 
+        self.container.abstract(FooBase)
+        self.container.register(FooBar, qualifier="sub1")
+        self.container.register(FooBaz, qualifier="sub2")
         inner()
 
     def test_qualifier_raises_wire_called_on_unknown_type(self):
-        @self.container.abstract
-        class Base:
-            def __init__(self):
-                self.foo = "foo"
-
         @self.container.autowire
-        def inner(sub1: Base = self.container.wire(qualifier="sub1")):
+        def inner(sub1: FooBase = self.container.wire(qualifier="sub1")):
             ...
 
-        self.assertRaises(ValueError, inner)
+        self.container.abstract(FooBase)
+        with self.assertRaises(ValueError) as context:
+            inner()
+
+        self.assertIn(
+            "Cannot instantiate concrete class for <class 'test.fixtures.FooBase'> "
+            "as qualifier 'sub1' is unknown. Available qualifiers: set()",
+            str(context.exception),
+        )
+
+    def test_inject_abstract_directly_raises(self):
+        @self.container.autowire
+        def inner(sub1: FooBase):
+            ...
+
+        self.container.abstract(FooBase)
+        with self.assertRaises(Exception) as context:
+            inner()
+
+        self.assertIn(
+            "Cannot instantiate abstract class <class 'inspect._empty'> directly. Please use a qualifier",
+            str(context.exception),
+        )
