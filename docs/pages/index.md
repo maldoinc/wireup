@@ -2,7 +2,18 @@
 
 Effortless dependency injection in Python.
 
-**1. Register services with the container**
+
+**1. Set application parameters in the container** 
+```python
+container.params.update({
+    "db.connection_str": "sqlite://memory",
+    "auth.user": os.environ.get("USER"),
+    "cache_dir": "/var/cache/",
+    "env": os.environ.get("ENV", "dev")
+})
+```
+
+**2. Register services with the container**
 
 ```python
 @container.register
@@ -26,26 +37,17 @@ class UserRepository:
     user: str = conttainer.wire(param="auth.user") 
 ```
 
-**2. Set your application's parameters in the container** 
-```python
-container.params.update({
-    "db.connection_str": "sqlite://memory",
-    "auth.user": os.environ.get("USER"),
-    "cache_dir": "/var/cache/",
-    "env": os.environ.get("ENV", "dev")
-})
-```
 
 **3. Inject into classes, services or routes**
 
 ```python
-# Decorate all the routes where the library must perform injection. 
-@app.route("/<name>")
+# Decorate all methods where the library must perform injection. 
+@app.route("/greet/<str:name>")
 @container.autowire
 # Classes are automatically injected based on annotated type. 
 # Parameters will be located based on the hint given in their default value.
 # Unknown arguments will not be processed.
-def home(name: str, user_repository: UserRepository, env: str = wire(param="env")):
+def greet(name: str, user_repository: UserRepository, env: str = wire(param="env")):
   ...
 ```
 
