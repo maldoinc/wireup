@@ -323,3 +323,21 @@ class TestContainer(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(c2.get(Counter).count, 0)
         c2.get(Counter).inc()
         self.assertEqual(c2.get(Counter).count, 1)
+
+    def test_autowire_supports_multiple_containers(self):
+        c1 = DependencyContainer(ParameterBag())
+        c2 = DependencyContainer(ParameterBag())
+
+        c1.params.put("param1", "param_value")
+        c2.params.put("param1", "param_value")
+
+        c1.register(Counter)
+        c2.register(Counter)
+
+        def inner(counter: Counter, p1: str = wire(param="param1")):
+            counter.inc()
+            self.assertEqual(counter.count, 1)
+            self.assertEqual(p1, "param_value")
+
+        c1.autowire(inner)()
+        c2.autowire(inner)()
