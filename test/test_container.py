@@ -93,7 +93,12 @@ class TestContainer(unittest.IsolatedAsyncioTestCase):
         with self.assertRaises(ValueError) as context:
             self.container.register(TestRegisterKnown)
 
-        assert "Class already registered in container" in str(context.exception)
+        self.assertIn(
+            "Cannot register type "
+            "<class 'test_container.TestContainer.test_register_known_class.<locals>.TestRegisterKnown'> "
+            "with qualifier 'None' as it already exists.",
+            str(context.exception),
+        )
 
     def test_autowire_sync(self):
         self.container.params.put("env", "test")
@@ -199,6 +204,39 @@ class TestContainer(unittest.IsolatedAsyncioTestCase):
         self.container.register(FooBaz, qualifier="sub2")
         inner()
 
+    def test_get_with_interface_and_qualifier(self):
+        self.container.abstract(FooBase)
+        self.container.register(FooBar, qualifier="sub1")
+
+        foo = self.container.get(FooBase, qualifier="sub1")
+        self.assertEqual(foo.foo, "bar")
+
+    def test_register_twice_should_raise(self):
+        self.container.abstract(FooBase)
+        self.container.register(FooBar, qualifier="foo")
+
+        with self.assertRaises(ValueError) as context:
+            self.container.register(FooBar, qualifier="foo")
+
+        self.assertIn(
+            "Cannot register type " "<class 'test.fixtures.FooBar'> with qualifier 'foo' as it already exists.",
+            str(context.exception),
+        )
+
+    def test_register_same_qualifier_should_raise(self):
+        self.container.abstract(FooBase)
+        self.container.register(FooBar, qualifier="foo")
+
+        with self.assertRaises(ValueError) as context:
+            self.container.register(FooBaz, qualifier="foo")
+
+        self.assertIn(
+            "Cannot register implementation class "
+            "<class 'test.fixtures.FooBaz'> for <class 'test.fixtures.FooBase'> "
+            "with qualifier 'foo' as it already exists",
+            str(context.exception),
+        )
+
     def test_qualifier_raises_wire_called_on_unknown_type(self):
         @self.container.autowire
         def inner(sub1: FooBase = self.container.wire(qualifier="sub1")):
@@ -220,10 +258,56 @@ class TestContainer(unittest.IsolatedAsyncioTestCase):
             ...
 
         self.container.abstract(FooBase)
+        self.container.register(FooBar, qualifier="foobar")
         with self.assertRaises(Exception) as context:
             inner()
 
         self.assertIn(
-            "Cannot instantiate abstract class <class 'inspect._empty'> directly. Please use a qualifier",
+            "Cannot instantiate abstract class <class 'inspect._empty'> directly. Available qualifiers {'foobar'}.",
+            str(context.exception),
+        )
+
+    def test_register_with_qualifier_fails_when_invoked_without(self):
+        @self.container.register(qualifier=__name__)
+        class RegisterWithQualifierClass:
+            ...
+
+        @self.container.autowire
+        def inner(foo: RegisterWithQualifierClass):
+            ...
+
+        with self.assertRaises(Exception) as context:
+            inner()
+
+        self.assertIn(
+            f"Cannot instantiate concrete class for {RegisterWithQualifierClass} "
+            "as qualifier 'None' is unknown. Available qualifiers: {'test_container'}",
+            str(context.exception),
+        )
+
+    def test_register_with_qualifier_injects_based_on_qualifier(self):
+        @self.container.register(qualifier=__name__)
+        @dataclass
+        class RegisterWithQualifierClass:
+            foo = "bar"
+
+        @self.container.autowire
+        def inner(foo: RegisterWithQualifierClass = self.container.wire(qualifier=__name__)):
+            self.assertEqual(foo.foo, "bar")
+
+        inner()
+        foo = self.container.get(RegisterWithQualifierClass, qualifier=__name__)
+        self.assertEqual(foo.foo, "bar")
+
+    def test_inject_qualifier_on_unknown_type(self):
+        @self.container.autowire
+        def inner(foo: str = self.container.wire(qualifier=__name__)):
+            ...
+
+        with self.assertRaises(ValueError) as context:
+            inner()
+
+        self.assertEqual(
+            "Cannot use qualifier test_container on a type that is not managed by the container.",
             str(context.exception),
         )
