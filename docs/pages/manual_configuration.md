@@ -5,7 +5,7 @@ If you want to avoid using decorators for registration, please refer to [Automat
 ## Making Use of the Initialization Context
 
 Given that parameters can't be resolved from type annotations alone, the `container.wire` method offers two shortcuts 
-for parameter injection: `container.wire(name="")` and `container.wire(expr="")`.
+for parameter injection: `wire(name="")` and `wire(expr="")`.
 
 To achieve the same outcome without relying on default values, you can actively employ the container's 
 initialization context. This allows you to manually provide data that the library would 

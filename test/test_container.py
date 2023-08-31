@@ -6,6 +6,7 @@ import examples.services
 from examples.services.random_service import RandomService
 from examples.services.truly_random_service import TrulyRandomService
 from test.fixtures import Counter, FooBase, FooBar, FooBaz
+from wireup import wire
 from wireup.ioc.container_util import ParameterWrapper
 from wireup.ioc.dependency_container import ContainerProxy, DependencyContainer
 from wireup.ioc.parameter import ParameterBag, TemplatedString
@@ -47,8 +48,8 @@ class TestContainer(unittest.IsolatedAsyncioTestCase):
         class ServiceWithParams:
             def __init__(
                 self,
-                connection_str: str = self.container.wire(param="connection_str"),
-                cache_dir: str = self.container.wire(expr="${cache_dir}/etc"),
+                connection_str: str = wire(param="connection_str"),
+                cache_dir: str = wire(expr="${cache_dir}/etc"),
             ) -> None:
                 self.connection_str = connection_str
                 self.cache_dir = cache_dir
@@ -61,12 +62,12 @@ class TestContainer(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(svc.cache_dir, "/var/cache/etc")
 
     def test_inject_param(self):
-        result = self.container.wire(param="value")
+        result = wire(param="value")
         assert isinstance(result, ParameterWrapper)
         self.assertEqual(result.param, "value")
 
     def test_inject_expr(self):
-        result = self.container.wire(expr="some ${param}")
+        result = wire(expr="some ${param}")
         assert isinstance(result, ParameterWrapper)
         assert isinstance(result.param, TemplatedString)
         self.assertEqual(result.param.value, "some ${param}")
@@ -74,14 +75,14 @@ class TestContainer(unittest.IsolatedAsyncioTestCase):
     @patch("importlib.import_module")
     def test_inject_fastapi_dep(self, mock_import_module):
         mock_import_module.return_value = Mock(Depends=Mock())
-        result = self.container.wire()
+        result = wire()
         self.assertEqual(result, mock_import_module.return_value.Depends.return_value)
         mock_import_module.assert_called_once_with("fastapi")
 
     @patch("importlib.import_module", side_effect=ModuleNotFoundError)
     def test_inject_missing_fastapi(self, _):
         with self.assertRaises(Exception) as context:
-            self.container.wire()
+            wire()
 
         assert "One of param, expr or qualifier must be set" in str(context.exception)
 
@@ -103,7 +104,7 @@ class TestContainer(unittest.IsolatedAsyncioTestCase):
     def test_autowire_sync(self):
         self.container.params.put("env", "test")
 
-        def test_function(random: TrulyRandomService, env: str = self.container.wire(param="env")) -> int:
+        def test_function(random: TrulyRandomService, env: str = wire(param="env")) -> int:
             self.assertEqual(env, "test")
             return random.get_truly_random()
 
@@ -114,7 +115,7 @@ class TestContainer(unittest.IsolatedAsyncioTestCase):
     async def test_autowire_async(self):
         self.container.params.put("env", "test")
 
-        async def test_function(random: RandomService, env: str = self.container.wire(param="env")) -> int:
+        async def test_function(random: RandomService, env: str = wire(param="env")) -> int:
             self.assertEqual(env, "test")
             return random.get_random()
 
@@ -157,8 +158,8 @@ class TestContainer(unittest.IsolatedAsyncioTestCase):
     def test_db_service_dataclass_with_params(self):
         @dataclass
         class MyDbService:
-            connection_str: str = self.container.wire(param="connection_str")
-            cache_dir: str = self.container.wire(expr="${cache_dir}/${auth.user}/db")
+            connection_str: str = wire(param="connection_str")
+            cache_dir: str = wire(expr="${cache_dir}/${auth.user}/db")
 
         self.container = DependencyContainer(ParameterBag())
         self.container.register(MyDbService)
@@ -193,9 +194,7 @@ class TestContainer(unittest.IsolatedAsyncioTestCase):
 
     def test_two_qualifiers_are_injected(self):
         @self.container.autowire
-        def inner(
-            sub1: FooBase = self.container.wire(qualifier="sub1"), sub2: FooBase = self.container.wire(qualifier="sub2")
-        ):
+        def inner(sub1: FooBase = wire(qualifier="sub1"), sub2: FooBase = wire(qualifier="sub2")):
             self.assertEqual(sub1.foo, "bar")
             self.assertEqual(sub2.foo, "baz")
 
@@ -239,7 +238,7 @@ class TestContainer(unittest.IsolatedAsyncioTestCase):
 
     def test_qualifier_raises_wire_called_on_unknown_type(self):
         @self.container.autowire
-        def inner(sub1: FooBase = self.container.wire(qualifier="sub1")):
+        def inner(sub1: FooBase = wire(qualifier="sub1")):
             ...
 
         self.container.abstract(FooBase)
@@ -292,7 +291,7 @@ class TestContainer(unittest.IsolatedAsyncioTestCase):
             foo = "bar"
 
         @self.container.autowire
-        def inner(foo: RegisterWithQualifierClass = self.container.wire(qualifier=__name__)):
+        def inner(foo: RegisterWithQualifierClass = wire(qualifier=__name__)):
             self.assertEqual(foo.foo, "bar")
 
         inner()
@@ -301,7 +300,7 @@ class TestContainer(unittest.IsolatedAsyncioTestCase):
 
     def test_inject_qualifier_on_unknown_type(self):
         @self.container.autowire
-        def inner(foo: str = self.container.wire(qualifier=__name__)):
+        def inner(foo: str = wire(qualifier=__name__)):
             ...
 
         with self.assertRaises(ValueError) as context:
@@ -311,3 +310,16 @@ class TestContainer(unittest.IsolatedAsyncioTestCase):
             "Cannot use qualifier test_container on a type that is not managed by the container.",
             str(context.exception),
         )
+
+    def test_register_supports_multiple_containers(self):
+        c1 = DependencyContainer(ParameterBag())
+        c2 = DependencyContainer(ParameterBag())
+
+        c1.register(Counter)
+        c2.register(Counter)
+
+        c1.get(Counter).inc()
+        self.assertEqual(c1.get(Counter).count, 1)
+        self.assertEqual(c2.get(Counter).count, 0)
+        c2.get(Counter).inc()
+        self.assertEqual(c2.get(Counter).count, 1)

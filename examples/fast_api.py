@@ -19,8 +19,8 @@ class DummyService:
     db: DbService
 
     # Parameters cannot be located from type alone, so they need some more information.
-    env: str = container.wire(param="env")  # Get parameter with this value
-    logs_cache_dir: str = container.wire(expr="${cache_dir}/logs")  # Interpolate parameters within curly brackets
+    env: str = wire(param="env")  # Get parameter with this value
+    logs_cache_dir: str = wire(expr="${cache_dir}/logs")  # Interpolate parameters within curly brackets
 
     def dummy(self):
         return f"Running in env={self.env}; db={self.db.get_result()}"
@@ -35,14 +35,14 @@ class GreeterService:
 
 
 @app.get("/")
-@container.wire
+@wire
 async def root(
     name: Optional[str] = None,  # This is a fastapi query parameter
     # The default value is not needed by the container. It is only to make fastapi happy.
     # It is the equivalent of Depends(lambda: None) and will have to be used for any deps that are to be injected
-    dummy_service: DummyService = container.wire(),
+    dummy_service: DummyService = wire(),
     # This will have precedence over fastapi and will not contain the value found in query string.
-    logs_cache_dir: str = container.wire(expr="${cache_dir}/logs"),
+    logs_cache_dir: str = wire(expr="${cache_dir}/logs"),
 ):
     # If you really need to, you can also get services this way.
     # Although injection is the recommended way this is left available for cases

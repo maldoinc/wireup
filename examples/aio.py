@@ -11,7 +11,7 @@ class GreeterService:
 
 
 @container.autowire
-async def handle(request, greeter: GreeterService, cache_dir=container.wire(param="cache_dir")):
+async def handle(request, greeter: GreeterService, cache_dir=wire(param="cache_dir")):
     name = request.match_info.get("name", "Anonymous")
 
     return web.Response(text=f"{greeter.greet(name)}, cache is located in {cache_dir}")

@@ -10,9 +10,9 @@ class DbService:
     def __init__(
         self,
         # Locate a parameter by name
-        connection_str: str = container.wire(param="db.connection_str"),
+        connection_str: str = wire(param="db.connection_str"),
         # Or by interpolating multiple parameters into a string
-        cache_dir: str = container.wire(expr="${cache_dir}/${auth.user}/db"),
+        cache_dir: str = wire(expr="${cache_dir}/${auth.user}/db"),
     ):
         self.connection_str = connection_str
         self.cache_dir = cache_dir
@@ -43,7 +43,7 @@ container.params.update({
 # Classes are automatically injected based on annotated type. 
 # Parameters will be located based on the hint given in their default value.
 # Unknown arguments will not be processed.
-def home(name: str, user_repository: UserRepository, env: str = container.wire(param="env")):
+def home(name: str, user_repository: UserRepository, env: str = wire(param="env")):
   ...
 ```
 

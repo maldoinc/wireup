@@ -32,10 +32,10 @@ class HomeBlueprint:
     @bp.route("/<name>")
     @container.autowire
     def home(
-        name: str,
-        foo: FooService,
-        baz: BazService,
-        env: str = container.wire(param="env"),
+            name: str,
+            foo: FooService,
+            baz: BazService,
+            env: str = wire(param="env"),
     ) -> Response:
         return jsonify(
             {
@@ -62,10 +62,10 @@ if __name__ == "__main__":
     container.register_all_in_module(examples.services)
 
     container.initialization_context.update(DbService, {
-                "connection_str": ParameterWrapper("connection_str"),
-                "cache_dir": ParameterWrapper(TemplatedString("${cache_dir}/${USER}/db")),
-            }
-    )
+        "connection_str": ParameterWrapper("connection_str"),
+        "cache_dir": ParameterWrapper(TemplatedString("${cache_dir}/${USER}/db")),
+    }
+                                            )
 
     app.register_blueprint(HomeBlueprint.bp)
     app.run()

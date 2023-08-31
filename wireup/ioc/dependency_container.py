@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import asyncio
 import functools
-import importlib
 import inspect
 from collections import defaultdict
 from inspect import Parameter
@@ -14,7 +13,6 @@ from .container_util import (
     ContainerProxyQualifierValue,
     DependencyInitializationContext,
     ParameterWrapper,
-    TemplatedString,
     _ContainerObjectIdentifier,
 )
 from .util import find_classes_in_module
@@ -49,42 +47,6 @@ class DependencyContainer:
         self.__initialized_objects: dict[_ContainerObjectIdentifier, object] = {}
         self.params: ParameterBag = parameter_bag
         self.initialization_context = DependencyInitializationContext()
-
-    def wire(
-        self,
-        *,
-        param: str | None = None,
-        expr: str | None = None,
-        qualifier: ContainerProxyQualifierValue = None,
-    ) -> Callable[..., Any] | ParameterWrapper | ContainerProxy | Any:
-        """Inject resources from the container to constructor or autowired method arguments.
-
-        The arguments are exclusive and only one of them must be used at any time.
-
-        :param param: Allows injecting a given parameter by name
-        :param expr: Interpolate the templated string.
-        Parameters inside ${} will be replaced with their corresponding value
-
-        :param qualifier: Qualify which implementation to bind when there are multiple components
-        implementing an interface that is registered in the container via @abstract.
-        Can be used in conjunction with dep.
-        """
-        if param:
-            return ParameterWrapper(param)
-
-        if expr:
-            return ParameterWrapper(TemplatedString(expr))
-
-        if qualifier:
-            return ContainerProxyQualifier(qualifier)
-
-        try:
-            # Allow fastapi users to do .get() without any params
-            # It is meant to be used as a default value in where Depends() is expected
-            return importlib.import_module("fastapi").Depends(lambda: None)
-        except ModuleNotFoundError as e:
-            msg = "One of param, expr or qualifier must be set"
-            raise ValueError(msg) from e
 
     def get(self, klass: type[__T], qualifier: ContainerProxyQualifierValue = None) -> __T:
         """Get an instance of the requested type. If there is already an initialized instance, that will be returned.

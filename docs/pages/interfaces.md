@@ -50,8 +50,8 @@ which concrete class should be resolved.
 
 ```python
 def home(
-    engine: Engine = container.wire(qualifier="electric"),
-    combustion: Engine = container.wire(qualifier="combustion"),
+    engine: Engine = wire(qualifier="electric"),
+    combustion: Engine = wire(qualifier="combustion"),
 ):
     ...
 ```

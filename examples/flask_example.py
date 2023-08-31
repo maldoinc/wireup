@@ -49,9 +49,9 @@ class HomeBlueprint:
         name: str,
         foo: FooService,
         baz: BazService,
-        engine: Engine = container.wire(qualifier="electric"),
-        combustion: Engine = container.wire(qualifier="combustion"),
-        env: str = container.wire(param="env"),
+        engine: Engine = wire(qualifier="electric"),
+        combustion: Engine = wire(qualifier="combustion"),
+        env: str = wire(param="env"),
     ) -> Response:
         return jsonify(
             {
