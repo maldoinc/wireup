@@ -21,7 +21,9 @@ class TestContainer(unittest.IsolatedAsyncioTestCase):
     def test_works_simple_get_instance(self):
         rand = self.container.get(RandomService)
 
-        assert isinstance(rand, ContainerProxy), "Assert that we never interact directly with the instantiated classes"
+        self.assertIsInstance(
+            rand, ContainerProxy, "Assert that we never interact directly with the instantiated classes"
+        )
         self.assertEqual(rand.get_random(), 4, "Assert that proxy pass-through works")
 
     def test_raises_on_unknown_dependency(self):
@@ -40,7 +42,7 @@ class TestContainer(unittest.IsolatedAsyncioTestCase):
     def test_works_simple_get_instance_with_other_service_injected(self):
         truly_random = self.container.get(TrulyRandomService)
 
-        assert isinstance(truly_random, ContainerProxy)
+        self.assertIsInstance(truly_random, ContainerProxy)
         self.assertEqual(truly_random.get_truly_random(), 5)
 
     def test_get_class_with_param_bindings(self) -> None:
@@ -63,13 +65,13 @@ class TestContainer(unittest.IsolatedAsyncioTestCase):
 
     def test_inject_param(self):
         result = wire(param="value")
-        assert isinstance(result, ParameterWrapper)
+        self.assertIsInstance(result, ParameterWrapper)
         self.assertEqual(result.param, "value")
 
     def test_inject_expr(self):
         result = wire(expr="some ${param}")
-        assert isinstance(result, ParameterWrapper)
-        assert isinstance(result.param, TemplatedString)
+        self.assertIsInstance(result, ParameterWrapper)
+        self.assertIsInstance(result.param, TemplatedString)
         self.assertEqual(result.param.value, "some ${param}")
 
     @patch("importlib.import_module")
@@ -84,7 +86,7 @@ class TestContainer(unittest.IsolatedAsyncioTestCase):
         with self.assertRaises(Exception) as context:
             wire()
 
-        assert "One of param, expr or qualifier must be set" in str(context.exception)
+        self.assertIn("One of param, expr or qualifier must be set", str(context.exception))
 
     def test_register_known_class(self):
         class TestRegisterKnown:
@@ -109,7 +111,7 @@ class TestContainer(unittest.IsolatedAsyncioTestCase):
             return random.get_truly_random()
 
         autowired_fn = self.container.autowire(test_function)
-        assert callable(autowired_fn)
+        self.assertTrue(callable(autowired_fn))
         self.assertEqual(autowired_fn(), 5)
 
     async def test_autowire_async(self):
@@ -120,13 +122,13 @@ class TestContainer(unittest.IsolatedAsyncioTestCase):
             return random.get_random()
 
         autowired_fn = self.container.autowire(test_function)
-        assert callable(autowired_fn)
+        self.assertTrue(callable(autowired_fn))
         self.assertEqual(await autowired_fn(), 4)
 
     def test_register_all_in_module(self):
         # These classes are registered in setup
         for c in find_classes_in_module(examples.services):
-            assert isinstance(self.container.get(c), ContainerProxy)
+            self.assertIsInstance(self.container.get(c), ContainerProxy)
 
     def test_get_unknown_class(self):
         class TestGetUnknown:
@@ -135,7 +137,10 @@ class TestContainer(unittest.IsolatedAsyncioTestCase):
         with self.assertRaises(ValueError) as context:
             self.container.get(TestGetUnknown)
 
-        assert f"Cannot wire unknown class {TestGetUnknown}." in str(context.exception)
+        self.assertEqual(
+            f"Cannot wire unknown class {TestGetUnknown}. " "Use @Container.{register,abstract} to enable autowiring",
+            str(context.exception),
+        )
 
     def test_can_initialize_from_context_tests_add_update(self):
         @dataclass
