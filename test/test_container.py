@@ -208,6 +208,15 @@ class TestContainer(unittest.IsolatedAsyncioTestCase):
         self.container.register(FooBaz, qualifier="sub2")
         inner()
 
+    def test_interface_with_single_implementation_no_qualifier_gets_autowired(self):
+        @self.container.autowire
+        def inner(foo: FooBase):
+            self.assertEqual(foo.foo, "bar")
+
+        self.container.abstract(FooBase)
+        self.container.register(FooBar)
+        inner()
+
     def test_get_with_interface_and_qualifier(self):
         self.container.abstract(FooBase)
         self.container.register(FooBar, qualifier="sub1")
@@ -266,8 +275,24 @@ class TestContainer(unittest.IsolatedAsyncioTestCase):
         with self.assertRaises(Exception) as context:
             inner()
 
-        self.assertIn(
-            "Cannot instantiate abstract class <class 'inspect._empty'> directly. Available qualifiers {'foobar'}.",
+        self.assertEqual(
+            f"Cannot instantiate concrete class for {FooBase} as qualifier 'None' is unknown. "
+            "Available qualifiers: {'foobar'}",
+            str(context.exception),
+        )
+
+    def test_inject_abstract_directly_with_no_impls_raises(self):
+        @self.container.autowire
+        def inner(sub1: FooBase):
+            ...
+
+        self.container.abstract(FooBase)
+        with self.assertRaises(Exception) as context:
+            inner()
+
+        self.assertEqual(
+            f"Cannot instantiate concrete class for {FooBase} as qualifier 'None' is unknown. "
+            "Available qualifiers: set()",
             str(context.exception),
         )
 

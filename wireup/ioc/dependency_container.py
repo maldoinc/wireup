@@ -196,15 +196,6 @@ class DependencyContainer:
         annotated_type = parameter.annotation
 
         qualifier_value = default_val.qualifier if isinstance(default_val, ContainerProxyQualifier) else None
-        # When injecting an abstract class without a qualifier throw in order to prevent a probable mistake
-        # This is an artificial limitation as the container can instantiate "abstract" classes just fine.
-        if not qualifier_value and annotated_type in self.__known_interfaces:
-            available_qualifiers = set(self.__known_interfaces[annotated_type].keys())
-            msg = (
-                f"Cannot instantiate abstract class {parameter.default} directly. "
-                f"Available qualifiers {available_qualifiers}."
-            )
-            raise ValueError(msg)
 
         if self.__is_interface_known(annotated_type):
             concrete_class = self.__get_concrete_class_from_interface_and_qualifier(annotated_type, qualifier_value)
