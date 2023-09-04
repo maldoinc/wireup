@@ -2,10 +2,10 @@ import unittest
 from dataclasses import dataclass
 from unittest.mock import Mock, patch
 
-import examples.services
-from examples.services.random_service import RandomService
-from examples.services.truly_random_service import TrulyRandomService
+from test import services
 from test.fixtures import Counter, FooBase, FooBar, FooBaz
+from test.services.random_service import RandomService
+from test.services.truly_random_service import TrulyRandomService
 from wireup import wire
 from wireup.ioc.container_util import ParameterWrapper
 from wireup.ioc.dependency_container import ContainerProxy, DependencyContainer
@@ -16,7 +16,7 @@ from wireup.ioc.util import find_classes_in_module
 class TestContainer(unittest.IsolatedAsyncioTestCase):
     def setUp(self) -> None:
         self.container = DependencyContainer(ParameterBag())
-        self.container.register_all_in_module(examples.services)
+        self.container.register_all_in_module(services)
 
     def test_works_simple_get_instance(self):
         rand = self.container.get(RandomService)
@@ -127,7 +127,7 @@ class TestContainer(unittest.IsolatedAsyncioTestCase):
 
     def test_register_all_in_module(self):
         # These classes are registered in setup
-        for c in find_classes_in_module(examples.services):
+        for c in find_classes_in_module(services):
             self.assertIsInstance(self.container.get(c), ContainerProxy)
 
     def test_get_unknown_class(self):

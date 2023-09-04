@@ -1,6 +1,6 @@
 import unittest
 
-from wireup.ioc.container_util import ParameterWrapper, ParameterReference
+from wireup.ioc.container_util import ParameterWrapper
 from wireup.ioc.parameter import ParameterBag, TemplatedString
 
 

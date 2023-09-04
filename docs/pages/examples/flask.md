@@ -7,9 +7,9 @@ from dataclasses import dataclass
 
 from wireup.ioc.container_util import ParameterWrapper
 from wireup.ioc.parameter import TemplatedString
-from examples.services.baz_service import BazService
-from examples.services.db_service import DbService
-from examples.services.foo_service import FooService
+from test.services.baz_service import BazService
+from test.services.db_service import DbService
+from test.services.foo_service import FooService
 from typing import List
 
 from flask import Blueprint, Flask, Response, jsonify

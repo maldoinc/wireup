@@ -1,4 +1,4 @@
-from examples.services.random_service import RandomService
+from test.services.random_service import RandomService
 
 
 class TrulyRandomService:

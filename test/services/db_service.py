@@ -1,7 +1,5 @@
 from dataclasses import dataclass
 
-from wireup import container
-
 
 @dataclass
 class DbService:

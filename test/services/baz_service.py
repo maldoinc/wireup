@@ -1,5 +1,5 @@
-from examples.services.db_service import DbService
-from examples.services.foo_service import FooService
+from test.services.db_service import DbService
+from test.services.foo_service import FooService
 
 
 class BazService:

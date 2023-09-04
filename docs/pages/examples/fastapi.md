@@ -5,7 +5,7 @@ import os
 import random
 import examples.services
 from dataclasses import dataclass
-from examples.services.db_service import DbService
+from test.services.db_service import DbService
 from typing import Optional
 
 from fastapi import FastAPI
