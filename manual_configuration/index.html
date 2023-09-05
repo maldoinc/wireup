@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <link rel="shortcut icon" href="../img/favicon.ico" />
+    <title>Manual configuration - WireUp</title>
+    <link rel="stylesheet" href="../css/theme.css" />
+    <link rel="stylesheet" href="../css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = "Manual configuration";
+        var mkdocs_page_input_path = "manual_configuration.md";
+        var mkdocs_page_url = null;
+      </script>
+    
+    <!--[if lt IE 9]>
+      <script src="../js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+      <script>hljs.highlightAll();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href=".." class="icon icon-home"> WireUp
+        </a><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="..">Home</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../introduction/">Introduction</a>
+                </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Advanced Topics</span></p>
+              <ul class="current">
+                  <li class="toctree-l1"><a class="reference internal" href="../interfaces/">Working with Interfaces</a>
+                  </li>
+                  <li class="toctree-l1 current"><a class="reference internal current" href="./">Manual configuration</a>
+    <ul class="current">
+    <li class="toctree-l2"><a class="reference internal" href="#using-wireup-without-registration-decorators">Using wireup without registration decorators</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#manually-wiring-parameters">Manually wiring parameters</a>
+    </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../multiple_containers/">Multiple containers</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Examples</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../examples/fastapi/">Fastapi</a>
+                  </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="..">WireUp</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href=".." class="icon icon-home" aria-label="Docs"></a> &raquo;</li>
+          <li>Advanced Topics &raquo;</li>
+      <li class="breadcrumb-item active">Manual configuration</li>
+    <li class="wy-breadcrumbs-aside">
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <h1 id="manual-configuration">Manual Configuration</h1>
+<p>WireUp provides convenient decorators and functions for you to use and perform dependency injection.
+If using decorators or functions such as <code>wire</code> not appropriate for your application then manual container
+configuration is also possible.</p>
+<h2 id="using-wireup-without-registration-decorators">Using wireup without registration decorators</h2>
+<p>In addition to using <code>@container.register</code> to register each dependency, automatic registration is also possible by
+using the <code>container.regiter_all_in_module(module, pattern = "*")</code> method.</p>
+<p>Module represents the top level module containing all your dependencies, optionally a <code>fnmatch</code> pattern can be specified
+to only register classes that match the pattern. This is the equivalent of using <code>@container.register</code>
+on each.</p>
+<pre><code class="language-python">container.register_all_in_module(app.service, &quot;*Service&quot;)
+</code></pre>
+<h2 id="manually-wiring-parameters">Manually wiring parameters</h2>
+<p>Given that parameters can't be resolved from type annotations alone, the <code>container.wire</code> method offers two shortcuts 
+for parameter injection: <code>wire(name="")</code> and <code>wire(expr="")</code>.</p>
+<p>To achieve the same outcome without relying on default values, you can use the container's 
+initialization context. This allows you to manually provide data that the library would 
+otherwise gather from the decorators.</p>
+<pre><code class="language-python">container.register_all_in_module(app.services, &quot;*Service&quot;)
+
+# Register parameters individually using add_param
+container.initialization_context.add_param(
+    klass=DbService,
+    argument_name=&quot;connection_str&quot;,
+    parameter_ref=&quot;connection_str&quot;,
+)
+container.initialization_context.add_param(
+    klass=DbService,
+    argument_name=&quot;connection_str&quot;,
+    parameter_ref=TemplatedString(&quot;${cache_dir}/${auth_user}/db&quot;),
+)
+
+# Alternatively, you can update the context in bulk using a dictionary of initializer parameter names as keys
+# and container parameter references as values.
+# When using interpolated strings, make sure you wrap the string with TemplatedString.
+container.initialization_context.update(
+    DbService,
+    {
+        &quot;connection_str&quot;: &quot;connection_str&quot;,
+        &quot;cache_dir&quot;: TemplatedString(&quot;${cache_dir}/${USER}/db&quot;),
+    },
+)
+</code></pre>
+<p>Configuration can also be stored in JSON or YAML documents that can be read and used to update the container accordingly.</p>
+              
+            </div>
+          </div><footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
+        <a href="../interfaces/" class="btn btn-neutral float-left" title="Working with Interfaces"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="../multiple_containers/" class="btn btn-neutral float-right" title="Multiple containers">Next <span class="icon icon-circle-arrow-right"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+    
+      <span><a href="../interfaces/" style="color: #fcfcfc">&laquo; Previous</a></span>
+    
+    
+      <span><a href="../multiple_containers/" style="color: #fcfcfc">Next &raquo;</a></span>
+    
+  </span>
+</div>
+    <script src="../js/jquery-3.6.0.min.js"></script>
+    <script>var base_url = "..";</script>
+    <script src="../js/theme_extra.js"></script>
+    <script src="../js/theme.js"></script>
+      <script src="../search/main.js"></script>
+    <script>
+        jQuery(function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        });
+    </script>
+
+</body>
+</html>
