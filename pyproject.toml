@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "pythonproject"
+name = "wireup"
 version = "0.1.0"
 description = ""
 authors = ["Aldo Mateli <aldo.mateli@gmail.com>"]
