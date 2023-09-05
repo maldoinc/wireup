@@ -26,8 +26,9 @@ __T = TypeVar("__T")
 
 
 class DependencyContainer:
-    """Container registry containing all the necessary information for initializing registered classes.
+    """Dependency Injection and Service Locator container registry.
 
+    This contains all the necessary information to initialize registered classes.
     Objects instantiated by the container are lazily loaded and initialized only on first use.
 
     Provides the following decorators: register, abstract and autowire. Use register on concrete classes
@@ -49,10 +50,9 @@ class DependencyContainer:
         self.initialization_context = DependencyInitializationContext()
 
     def get(self, klass: type[__T], qualifier: ContainerProxyQualifierValue = None) -> __T:
-        """Get an instance of the requested type. If there is already an initialized instance, that will be returned.
+        """Get an instance of the requested type. Returns an existing initialized instance when possible.
 
-        :param qualifier: Qualifier for the class if it was registered with one. If a type has only one qualifier
-        then that will be returned if this parameter is left empty.
+        :param qualifier: Qualifier for the class if it was registered with one.
         :param klass: Class of the component already registered in the container.
         :return:
         """

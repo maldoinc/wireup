@@ -14,7 +14,7 @@ from wireup.ioc.dependency_container import DependencyContainer
 from wireup.ioc.parameter import ParameterBag
 
 container = DependencyContainer(ParameterBag())
-"""Singleton DI container initialized for convenience"""
+"""Singleton DI container automatically initialized."""
 
 
 def wire(
@@ -23,13 +23,14 @@ def wire(
     expr: str | None = None,
     qualifier: ContainerProxyQualifierValue = None,
 ) -> Callable[..., Any] | ParameterWrapper | ContainerProxy | Any:
-    """Inject resources from the container to constructor or autowired method arguments.
+    """Inject resources from the container to autowired method arguments.
 
-    The arguments are exclusive and only one of them must be used at any time.
+    Arguments are exclusive and only one of them must be used at any time.
+    Note: Methods MUST be still decorated with autowire for this to work.
 
-    :param param: Allows injecting a given parameter by name
-    :param expr: Interpolate the templated string.
-    Parameters inside ${} will be replaced with their corresponding value
+    :param param: Inject a given parameter by name.
+    :param expr: Inject a string value using a templated string.
+    Parameters inside ${} will be replaced with their corresponding value.
 
     :param qualifier: Qualify which implementation to bind when there are multiple components
     implementing an interface that is registered in the container via @abstract.

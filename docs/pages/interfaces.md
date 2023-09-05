@@ -5,7 +5,7 @@ the concrete implementation directly. Since Python doesn't have built-in interfa
 that's marked as abstract within the container.
 
 The following code registers `Engine` as an interface. This implies that `Engine` can't be directly injected. 
-Instead a service which will implement the interface must be present and also be registered in the container.
+Instead, a service that implements the interface must be present and also be registered in the container.
 
 ```python
 @container.abstract
@@ -25,8 +25,8 @@ class CombustionEngine(Engine):
 
 
 @container.autowire
-def home(engine: Engine):
-    ...
+def do_engine_things(engine: Engine):
+    return engine.do_thing() # Returns "I'm a Combustion Engine"
 ```
 
 In scenarios where there are multiple implementations of an interface, each implementation must be 
