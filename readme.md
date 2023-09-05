@@ -52,4 +52,4 @@ def greet(name: str, user_repository: UserRepository, env: str = wire(param="env
 
 ## Documentation
 
-For more information [read our documentation](#)
+For more information [refer to the documentation](https://maldoinc.github.io/wireup/)
