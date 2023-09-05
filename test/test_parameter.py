@@ -50,6 +50,18 @@ class TestParameterBag(unittest.TestCase):
         self.assertEqual(self.bag.get(TemplatedString("${foo}-${foo}")), "bar-bar")
         self.assertEqual(self.bag._ParameterBag__cache, {"${foo}-${foo}": "bar-bar"})  # noqa: SLF001
 
+    def test_get_parameter_unknown(self):
+        with self.assertRaises(ValueError) as context:
+            self.bag.get("name")
+
+        self.assertEqual("Unknown parameter name requested", str(context.exception))
+
+    def test_get_parameter_interpolation_unknown(self):
+        with self.assertRaises(ValueError) as context:
+            self.bag.get(TemplatedString("name/${dummy}"))
+
+        self.assertEqual("Unknown parameter dummy requested", str(context.exception))
+
 
 class TestParameterPlaceholder(unittest.TestCase):
     def test_init(self):

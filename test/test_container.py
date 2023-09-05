@@ -381,7 +381,7 @@ class TestContainer(unittest.IsolatedAsyncioTestCase):
 
     def test_wire_param_without_typing(self):
         @self.container.autowire
-        def inner(name = wire(param="name")):
+        def inner(name=wire(param="name")):
             self.assertEqual(name, "foo")
 
         self.container.params.put("name", "foo")
