@@ -371,3 +371,10 @@ class TestContainer(unittest.IsolatedAsyncioTestCase):
 
         c1.autowire(inner)()
         c2.autowire(inner)()
+
+    def test_container_get_with_interface_returns_impl(self):
+        self.container.abstract(FooBase)
+        self.container.register(FooBar)
+
+        foo_bar = self.container.get(FooBase)
+        self.assertEqual(foo_bar.foo, "bar")
