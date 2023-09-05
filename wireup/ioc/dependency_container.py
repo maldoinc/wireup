@@ -181,9 +181,6 @@ class DependencyContainer:
         return instance
 
     def __get_container_dependency_or_param(self, parameter: Parameter) -> Any:
-        if parameter.annotation is Parameter.empty:
-            return None
-
         default = parameter.default
         # Dealing with parameter, return the value as we cannot proxy int str etc.
         if isinstance(default, ParameterWrapper):
@@ -192,6 +189,9 @@ class DependencyContainer:
         return self.__initialize_container_proxy_object_from_parameter(parameter)
 
     def __initialize_container_proxy_object_from_parameter(self, parameter: Parameter) -> Any:
+        if parameter.annotation is Parameter.empty:
+            return None
+
         default_val = parameter.default
         annotated_type = parameter.annotation
 
