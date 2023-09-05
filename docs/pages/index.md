@@ -18,9 +18,11 @@ container.params.update({
 ```python
 @container.register
 class DbService:
+    # Registered services do not need to have any additional decorators.
+    # Dependency injection will be performed automatically.
     def __init__(
         self,
-        # Locate a parameter by name
+        # Inject a parameter by name
         connection_str: str = wire(param="db.connection_str"),
         # Or by interpolating multiple parameters into a string
         cache_dir: str = wire(expr="${cache_dir}/${auth.user}/db"),
@@ -36,8 +38,7 @@ class UserRepository:
     user: str = container.wire(param="auth.user") 
 ```
 
-
-**3. Inject into classes, services or routes**
+**3. Inject**
 
 ```python
 # Decorate all methods where the library must perform injection. 
