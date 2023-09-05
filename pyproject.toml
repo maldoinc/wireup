@@ -5,6 +5,11 @@ description = ""
 authors = ["Aldo Mateli <aldo.mateli@gmail.com>"]
 license = "MIT"
 readme = "readme.md"
+homepage = "https://github.com/maldoinc/wireup"
+packages = [
+    { include = "wireup" }
+]
+
 
 [tool.poetry.dependencies]
 python = "^3.8"
