@@ -7,12 +7,12 @@ If you want to avoid using decorators for registration, please refer to [Automat
 Given that parameters can't be resolved from type annotations alone, the `container.wire` method offers two shortcuts 
 for parameter injection: `wire(name="")` and `wire(expr="")`.
 
-To achieve the same outcome without relying on default values, you can actively employ the container's 
+To achieve the same outcome without relying on default values, you can use the container's 
 initialization context. This allows you to manually provide data that the library would 
 otherwise gather from the decorators.
 
 ```python
-container.register_all_in_module(app.services)
+container.register_all_in_module(app.services, "*Service")
 
 # Register parameters individually using add_param
 container.initialization_context.add_param(
@@ -23,7 +23,7 @@ container.initialization_context.add_param(
 container.initialization_context.add_param(
     klass=DbService,
     argument_name="connection_str",
-    parameter_ref=TemplatedString("${cache_dir}/${USER}/db"),
+    parameter_ref=TemplatedString("${cache_dir}/${auth_user}/db"),
 )
 
 # Alternatively, you can update the context in bulk using a dictionary of initializer parameter names as keys
