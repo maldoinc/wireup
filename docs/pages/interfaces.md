@@ -1,11 +1,11 @@
 # Working with Interfaces
 
-When you're autowiring services, you might want to inject an interface rather than 
+When you're autowiring dependencies, you might want to inject an interface rather than 
 the concrete implementation directly. Since Python doesn't have built-in interfaces, you can leverage any class 
 that's marked as abstract within the container.
 
 The following code registers `Engine` as an interface. This implies that `Engine` can't be directly injected. 
-Instead, a service that implements the interface must be present and also be registered in the container.
+Instead, a dependency that implements the interface must be present and also be registered in the container.
 
 ```python
 @container.abstract
@@ -14,7 +14,7 @@ class Engine:
         ...
 ```
 
-To autowire interfaces, you can simply register a service that implements the interface within the container. 
+To autowire interfaces, you can simply register a dependency that implements the interface within the container. 
 When injecting, ask for the interface itself, not its concrete implementation.
 
 ```python
@@ -45,7 +45,7 @@ class CombustionEngine(Engine):
         return "I'm a Combustion Engine"
 ```
 
-While injecting an interface with multiple implementing services, you need to specify a qualifier to indicate 
+While injecting an interface with multiple implementing dependencies, you need to specify a qualifier to indicate 
 which concrete class should be resolved.
 
 ```python

@@ -1,6 +1,10 @@
 # Manual Configuration
 
-If you want to avoid using decorators for registration, please refer to [Automatic Registration](automatic_registration.md).
+WireUp provides convenient decorators and functions for you to use and perform dependency injection.
+If using decorators or functions such as `wire` not appropriate for your application then manual container
+configuration is also possible.
+
+To eliminate usage of decorators for registration, please refer to [Automatic Registration](automatic_registration.md).
 
 ## Making Use of the Initialization Context
 

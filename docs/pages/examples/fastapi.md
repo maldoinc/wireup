@@ -28,7 +28,7 @@ class DummyService:
         return f"Running in env={self.env}; db={self.db.get_result()}"
 
 
-# Another service which doesn't have dependencies but can greet people in many languages
+# Another dependency which doesn't have dependencies but can greet people in many languages
 @container.register
 class GreeterService:
     @staticmethod
@@ -46,7 +46,7 @@ async def root(
         # This will have precedence over fastapi and will not contain the value found in query string.
         logs_cache_dir: str = wire(expr="${cache_dir}/logs"),
 ):
-    # If you really need to, you can also get services this way.
+    # If you really need to, you can also get dependencies this way.
     # Although injection is the recommended way this is left available for cases
     # where dynamic loading of some sort is required
     greeter: GreeterService = container.get(GreeterService)

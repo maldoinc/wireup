@@ -3,7 +3,7 @@
 Effortless dependency injection in Python.
 
 
-**1. Set application parameters in the container** 
+**1. Set application parameters** 
 ```python
 container.params.update({
     "db.connection_str": "sqlite://memory",
@@ -13,13 +13,11 @@ container.params.update({
 })
 ```
 
-**2. Register services with the container**
+**2. Register dependencies**
 
 ```python
 @container.register
 class DbService:
-    # Registered services do not need to have any additional decorators.
-    # Dependency injection will be performed automatically.
     def __init__(
         self,
         # Inject a parameter by name
@@ -30,11 +28,12 @@ class DbService:
         self.connection_str = connection_str
         self.cache_dir = cache_dir
         
-# Constructor injection is also supported for dataclasses.
+# Constructor injection is also supported for dataclasses
+# resulting in a more compact syntax.
 @container.register
 @dataclass  
 class UserRepository:
-    db: DbService  # Services may also depend on any other services.
+    db: DbService # Dependencies may also depend on other dependencies.
     user: str = container.wire(param="auth.user") 
 ```
 
@@ -50,4 +49,3 @@ class UserRepository:
 def greet(name: str, user_repository: UserRepository, env: str = wire(param="env")):
   ...
 ```
-

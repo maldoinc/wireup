@@ -1,8 +1,19 @@
 # WireUp
 
-Effortless dependency injection in Python
+Effortless dependency injection in Python.
 
-**1. Register services with the container**
+
+**1. Set application parameters** 
+```python
+container.params.update({
+    "db.connection_str": "sqlite://memory",
+    "auth.user": os.environ.get("USER"),
+    "cache_dir": "/var/cache/",
+    "env": os.environ.get("ENV", "dev")
+})
+```
+
+**2. Register dependencies**
 
 ```python
 @container.register
@@ -17,33 +28,25 @@ class DbService:
         self.connection_str = connection_str
         self.cache_dir = cache_dir
         
+# Constructor injection is also supported for dataclasses
+# resulting in a more compact syntax.
 @container.register
-@dataclass  # Constructor injection is also supported for dataclasses.
+@dataclass  
 class UserRepository:
-    db: DbService  # Services may also depend on any other services.
-    user: str = conttainer.wire(param="auth.user") 
+    db: DbService # Dependencies may also depend on other dependencies.
+    user: str = container.wire(param="auth.user") 
 ```
 
-**2. Set your application's parameters in the container** 
-```python
-container.params.update({
-    "db.connection_str": "sqlite://memory",
-    "auth.user": os.environ.get("USER"),
-    "cache_dir": "/var/cache/",
-    "env": os.environ.get("ENV", "dev")
-})
-```
-
-**3. Inject into classes, services or routes**
+**3. Inject**
 
 ```python
-# Decorate all the routes where the library must perform injection. 
-@app.route("/<name>")
+# Decorate all methods where the library must perform injection. 
+@app.route("/greet/<str:name>")
 @container.autowire
 # Classes are automatically injected based on annotated type. 
 # Parameters will be located based on the hint given in their default value.
 # Unknown arguments will not be processed.
-def home(name: str, user_repository: UserRepository, env: str = wire(param="env")):
+def greet(name: str, user_repository: UserRepository, env: str = wire(param="env")):
   ...
 ```
 
