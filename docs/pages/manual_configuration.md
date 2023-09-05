@@ -4,9 +4,20 @@ WireUp provides convenient decorators and functions for you to use and perform d
 If using decorators or functions such as `wire` not appropriate for your application then manual container
 configuration is also possible.
 
-To eliminate usage of decorators for registration, please refer to [Automatic Registration](automatic_registration.md).
+## Using wireup without registration decorators
 
-## Making Use of the Initialization Context
+In addition to using `@container.register` to register each dependency, automatic registration is also possible by
+using the `container.regiter_all_in_module(module, pattern = "*")` method.
+
+Module represents the top level module containing all your dependencies, optionally a `fnmatch` pattern can be specified
+to only register classes that match the pattern. This is the equivalent of using `@container.register`
+on each.
+
+```python
+container.register_all_in_module(app.service, "*Service")
+```
+
+## Manually wiring parameters
 
 Given that parameters can't be resolved from type annotations alone, the `container.wire` method offers two shortcuts 
 for parameter injection: `wire(name="")` and `wire(expr="")`.
@@ -33,8 +44,6 @@ container.initialization_context.add_param(
 # Alternatively, you can update the context in bulk using a dictionary of initializer parameter names as keys
 # and container parameter references as values.
 # When using interpolated strings, make sure you wrap the string with TemplatedString.
-
-# NOTE: Parameter references MUST be wrapped with ParameterWrapper here!
 container.initialization_context.update(
     DbService,
     {

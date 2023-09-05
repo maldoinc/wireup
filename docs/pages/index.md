@@ -1,9 +1,7 @@
 # WireUp
+Dependency and configuration injection library in Python.
 
-Effortless dependency injection in Python.
-
-
-**1. Set application parameters** 
+**1. Set application configuration parameters** 
 ```python
 container.params.update({
     "db.connection_str": "sqlite://memory",
@@ -49,3 +47,13 @@ class UserRepository:
 def greet(name: str, user_repository: UserRepository, env: str = wire(param="env")):
   ...
 ```
+
+**Installation**
+```bash
+# Install using poetry:
+poetry add wireup
+
+# Install using pip:
+pip install wireup
+```
+
