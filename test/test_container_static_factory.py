@@ -1,0 +1,121 @@
+from dataclasses import dataclass
+from unittest import TestCase
+
+from test.fixtures import Counter, FooBar
+from test.services.random_service import RandomService
+from wireup import DependencyContainer, ParameterBag, wire
+
+
+class ThingToBeCreated:
+    def __init__(self, val: str):
+        self.val = val
+
+
+class TestContainerStaticFactory(TestCase):
+    def setUp(self) -> None:
+        self.container = DependencyContainer(ParameterBag())
+
+    def test_injects_using_factory_with_dependencies(self):
+        self.container.register(RandomService)
+        self.container.params.put("dummy_val", "foo")
+
+        @self.container.register
+        def create_thing(val=wire(param="dummy_val")) -> ThingToBeCreated:
+            return ThingToBeCreated(val=val)
+
+        @self.container.autowire
+        def inner(thing: ThingToBeCreated):
+            self.assertEqual(thing.val, "foo")
+
+        inner()
+
+        self.assertEqual(create_thing("new").val, "new", msg="Assert fn is not modified")
+
+    def test_injects_using_factory_returns_singletons(self):
+        self.container.params.put("start", 5)
+
+        @self.container.register
+        def create_thing(start=wire(param="start")) -> Counter:
+            return Counter(count=start)
+
+        @self.container.autowire
+        def inner(c1: Counter, c2: Counter):
+            c1.inc()
+
+            self.assertEqual(c1.count, 6)
+            self.assertEqual(c1.count, c2.count)
+
+        inner()
+
+    def test_injects_on_instance_methods(self):
+        this = self
+
+        class Dummy:
+            @self.container.autowire
+            def inner(self, c1: Counter):
+                c1.inc()
+                this.assertEqual(c1.count, 1)
+
+        @self.container.register
+        def create_thing() -> Counter:
+            return Counter()
+
+        Dummy().inner()
+
+    def test_register_known_container_type(self):
+        self.container.register(RandomService)
+
+        with self.assertRaises(ValueError) as context:
+
+            @self.container.register
+            def create_random_service() -> RandomService:
+                return RandomService()
+
+        self.assertEqual(
+            f"Cannot register factory function as type {RandomService} is already known by the container.",
+            str(context.exception),
+        )
+
+    def test_register_factory_known_type_from_other_factory(self):
+        with self.assertRaises(ValueError) as context:
+
+            @self.container.register
+            def create_random_service() -> RandomService:
+                return RandomService()
+
+            @self.container.register
+            def create_random_service_too() -> RandomService:
+                return RandomService()
+
+        self.assertEqual(
+            f"A function is already registered as a factory for dependency type {RandomService}.",
+            str(context.exception),
+        )
+
+    def test_register_factory_no_return_type(self):
+        with self.assertRaises(ValueError) as context:
+
+            @self.container.register
+            def create_random_service():
+                return RandomService()
+
+        self.assertEqual(
+            "Factory functions must specify a return type denoting the type of dependency it can create.",
+            str(context.exception),
+        )
+
+    def test_factory_as_property_accessor(self):
+        @self.container.register
+        class FooGenerator:
+            def get_foo(self) -> FooBar:
+                return FooBar()
+
+        @self.container.autowire
+        def inner(foobar: FooBar):
+            self.assertEqual(foobar.foo, "bar")
+
+        @self.container.register
+        def foo_factory(foo_gen: FooGenerator) -> FooBar:
+            return foo_gen.get_foo()
+
+        inner()

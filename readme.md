@@ -6,7 +6,7 @@ Effortless dependency injection in Python.
 **1. Set application parameters** 
 ```python
 container.params.update({
-    "db.connection_str": "sqlite://memory",
+    "db.connection_str": "sqlite://",
     "auth.user": os.environ.get("USER"),
     "cache_dir": "/var/cache/",
     "env": os.environ.get("ENV", "dev")

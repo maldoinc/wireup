@@ -46,6 +46,7 @@ class DependencyContainer:
         self.__known_interfaces: dict[type[__T], dict[str, type[__T]]] = {}
         self.__known_impls: dict[type[__T], set[str]] = defaultdict(set)
         self.__initialized_objects: dict[_ContainerObjectIdentifier, object] = {}
+        self.__factory_functions: dict[type[__T], Callable[..., __T]] = {}
         self.params: ParameterBag = parameter_bag
         self.initialization_context = DependencyInitializationContext()
 
@@ -53,7 +54,7 @@ class DependencyContainer:
         """Get an instance of the requested type. Returns an existing initialized instance when possible.
 
         :param qualifier: Qualifier for the class if it was registered with one.
-        :param klass: Class of the component already registered in the container.
+        :param klass: Class of the dependency already registered in the container.
         :return:
         """
         self.__assert_dependency_exists(klass, qualifier)
@@ -69,24 +70,37 @@ class DependencyContainer:
 
         return klass
 
-    def register(self, klass: type[__T] | None = None, *, qualifier: ContainerProxyQualifierValue = None) -> type[__T]:
-        """Register a component in the container.
+    def register(
+        self,
+        obj: type[__T] | Callable | None = None,
+        *,
+        qualifier: ContainerProxyQualifierValue = None,
+    ) -> type[__T]:
+        """Register a dependency in the container.
 
         Use @register without parameters on a class
         or with a single parameter @register(qualifier=name) to register this with a given name
         when there are multiple implementations of the interface this implements.
 
+        Use @register on a function to register that function as a factory method which produces an object
+        that matches its return type. Use this for objects that the container does not own but should be able to build.
+
         The container stores all necessary metadata for this class and the underlying class remains unmodified.
         """
         # Allow register to be used either with or without arguments
-        if klass is None:
+        if obj is None:
 
             def decorated(inner_class: type[__T]) -> type[__T]:
                 return self.__register_inner(inner_class, qualifier)
 
             return decorated
 
-        return self.__register_inner(klass, qualifier)
+        if inspect.isclass(obj):
+            return self.__register_inner(obj, qualifier)
+
+        self.__register_factory_inner(obj)
+
+        return obj
 
     def autowire(self, fn: Callable) -> Callable:
         """Automatically inject resources from the container to the decorated methods.
@@ -114,6 +128,23 @@ class DependencyContainer:
             return self.__autowire_inner(fn, *args, **kwargs)
 
         return sync_inner
+
+    def __register_factory_inner(self, fn: Callable[[], __T]) -> None:
+        return_type = inspect.signature(fn).return_annotation
+
+        if return_type is Parameter.empty:
+            msg = "Factory functions must specify a return type denoting the type of dependency it can create."
+            raise ValueError(msg)
+
+        if self.__is_impl_known_from_factory(return_type):
+            msg = f"A function is already registered as a factory for dependency type {return_type}."
+            raise ValueError(msg)
+
+        if self.__is_impl_known(return_type):
+            msg = f"Cannot register factory function as type {return_type} is already known by the container."
+            raise ValueError(msg)
+
+        self.__factory_functions[return_type] = fn
 
     def register_all_in_module(self, module: ModuleType, pattern: str = "*") -> None:
         """Register all modules inside a given package.
@@ -164,18 +195,23 @@ class DependencyContainer:
         return {**params_from_context, **values_from_parameters}
 
     def __get(self, klass: type[__T], qualifier: ContainerProxyQualifierValue) -> __T:
+        """Create the real instances of dependencies. Additional dependencies they may have will be lazily created."""
         object_type_id = _ContainerObjectIdentifier(klass, qualifier)
         if object_type_id in self.__initialized_objects:
             return self.__initialized_objects[object_type_id]
 
         self.__assert_dependency_exists(klass, qualifier)
-
         class_to_initialize = klass
         if klass in self.__known_interfaces:  # noqa: SIM102
             if concrete_class := self.__get_concrete_class_from_interface_and_qualifier(klass, qualifier):
                 class_to_initialize = concrete_class
 
-        instance = class_to_initialize(**self.__callable_get_params_to_inject(klass.__init__, class_to_initialize))
+        if self.__is_impl_known_from_factory(class_to_initialize):
+            fn = self.__factory_functions[class_to_initialize]
+            instance = fn(**self.__callable_get_params_to_inject(fn))
+        else:
+            instance = class_to_initialize(**self.__callable_get_params_to_inject(klass.__init__, class_to_initialize))
+
         self.__initialized_objects[_ContainerObjectIdentifier(class_to_initialize, qualifier)] = instance
 
         return instance
@@ -194,6 +230,9 @@ class DependencyContainer:
 
         default_val = parameter.default
         annotated_type = parameter.annotation
+
+        if self.__is_impl_known_from_factory(annotated_type):
+            return self.__get_proxy_object(annotated_type, None)
 
         qualifier_value = default_val.qualifier if isinstance(default_val, ContainerProxyQualifier) else None
 
@@ -249,14 +288,18 @@ class DependencyContainer:
     def __is_interface_known(self, klass: type[__T]) -> bool:
         return klass in self.__known_interfaces
 
+    def __is_impl_known_from_factory(self, klass: type[__T]) -> bool:
+        return klass in self.__factory_functions
+
     def __is_impl_with_qualifier_known(self, klass: type[__T], qualifier_value: ContainerProxyQualifierValue) -> bool:
         return klass in self.__known_impls and qualifier_value in self.__known_impls[klass]
 
     def __is_dependency_known(self, klass: type[__T], qualifier: ContainerProxyQualifierValue) -> bool:
         is_known_impl = self.__is_impl_with_qualifier_known(klass, qualifier)
         is_known_intf = self.__is_interface_known_with_valid_qualifier(klass, qualifier)
+        is_known_from_factory = self.__is_impl_known_from_factory(klass)
 
-        return is_known_impl or is_known_intf
+        return is_known_impl or is_known_intf or is_known_from_factory
 
     def __assert_dependency_exists(self, klass: type[__T], qualifier: ContainerProxyQualifierValue) -> None:
         """Assert that there exists an impl with that qualifier or an interface with an impl and the same qualifier."""
