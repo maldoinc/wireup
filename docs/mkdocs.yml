@@ -2,6 +2,7 @@ site_name: WireUp
 nav:
   - Home: index.md
   - Introduction: introduction.md
+  - Parameters: parameters.md
   - Advanced Topics:
       - Factory functions: factory_functions.md
       - Working with Interfaces: interfaces.md

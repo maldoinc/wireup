@@ -35,7 +35,7 @@ class DbService:
 @dataclass
 class UserRepository:
     db: DbService  # Dependencies may also depend on other dependencies.
-    user: str = container.wire 
+    user: str = container.wire(param="auth.user")
 ```
 
 **3. Inject**
