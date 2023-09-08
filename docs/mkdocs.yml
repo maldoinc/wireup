@@ -10,7 +10,7 @@ nav:
   - Misc:
     - Introduce to an existing project: introduce_to_an_existing_project.md
   - Examples:
-      - Fastapi: examples/fastapi.md
+      - FastAPI: examples/fastapi.md
 theme: readthedocs
 markdown_extensions:
   - admonition

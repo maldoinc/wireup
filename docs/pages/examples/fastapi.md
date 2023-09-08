@@ -1,6 +1,6 @@
-# Fastapi example
+# FastAPI example
 
-The example below shows a simple implementation in a Fastapi application. 
+The example below shows a simple implementation in a FastAPI application. 
 The concepts are generic enough to be applicable to other python frameworks as well.
 
 ```python
@@ -42,9 +42,9 @@ class DummyService:
 @app.get("/")
 @container.autowire
 async def root(
-    # This is a fastapi query parameter.
+    # This is a FastAPI query parameter.
     name: Optional[str] = None,  
-    # Default value is not needed by the container, it is only to make fastapi happy.
+    # Default value is not needed by the container, it is only to make FastAPI happy.
     # It is the equivalent of Depends(lambda: None)
     # and will have to be used for any deps that are to be injected.
     # When using other frameworks the wire() call can be omitted.
