@@ -17,22 +17,23 @@ container.params.update({
 @container.register
 class DbService:
     def __init__(
-        self,
-        # Inject a parameter by name
-        connection_str: str = wire(param="db.connection_str"),
-        # Or by interpolating multiple parameters into a string
-        cache_dir: str = wire(expr="${cache_dir}/${auth.user}/db"),
+            self,
+            # Inject a parameter by name
+            connection_str: str = wire(param="db.connection_str"),
+            # Or by interpolating multiple parameters into a string
+            cache_dir: str = wire(expr="${cache_dir}/${auth.user}/db"),
     ):
         self.connection_str = connection_str
         self.cache_dir = cache_dir
-        
+
+
 # Constructor injection is also supported for dataclasses
 # resulting in a more compact syntax.
 @container.register
-@dataclass  
+@dataclass
 class UserRepository:
-    db: DbService # Dependencies may also depend on other dependencies.
-    user: str = container.wire(param="auth.user") 
+    db: DbService  # Dependencies may also depend on other dependencies.
+    user: str = container.wire 
 ```
 
 **3. Inject**

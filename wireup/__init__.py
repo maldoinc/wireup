@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import importlib
+from enum import Enum
 from typing import Any, Callable
 
 from wireup.ioc.container_util import (
@@ -52,3 +53,21 @@ def wire(
     except ModuleNotFoundError as e:
         msg = "One of param, expr or qualifier must be set"
         raise ValueError(msg) from e
+
+
+class ParameterEnum(Enum):
+    """Enum with a .wire method allowing easy injection of members.
+
+    This allows you to add application parameters as enum members and their names as values.
+    When you need to inject a parameter instead of referencing it by name you can
+    simply set the enum as the default value.
+
+    This will inject a parameter by name and won't work with expressions.
+    """
+
+    def wire(self) -> Any:
+        """Inject the parameter this enumeration member represents.
+
+        Equivalent of `wire(param=EnumParam.enum_member.value)`
+        """
+        return wire(param=self.value)
