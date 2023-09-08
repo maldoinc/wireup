@@ -31,14 +31,16 @@ class DependencyContainer:
     This contains all the necessary information to initialize registered classes.
     Objects instantiated by the container are lazily loaded and initialized only on first use.
 
-    Provides the following decorators: register, abstract and autowire. Use register on concrete classes
-    which are to be injected from the container. Abstract classes are to be used as interfaces and will not be
-    injected directly, rather concrete classes which implement them will be injected instead.
+    Provides the following decorators: `register`, `abstract` and `autowire`. Use register on factory functions
+    and concrete classes which are to be injected from the container.
+    Abstract classes are to be used as interfaces and will not be injected directly, rather concrete classes
+    which implement them will be injected instead.
 
     Use autowire decorator on methods where dependency injection must be performed.
     To enable parameter injection use default values for parameters in conjunction with the wire method.
 
-    Note: Fastapi users MUST use ` = .wire()` method without arguments when injecting dependencies.
+    !!! note
+        Fastapi users MUST use ` = .wire()` method without arguments when injecting dependencies.
     """
 
     def __init__(self, parameter_bag: ParameterBag) -> None:
@@ -78,8 +80,8 @@ class DependencyContainer:
     ) -> type[__T]:
         """Register a dependency in the container.
 
-        Use @register without parameters on a class
-        or with a single parameter @register(qualifier=name) to register this with a given name
+        Use `@register` without parameters on a class
+        or with a single parameter `@register(qualifier=name)` to register this with a given name
         when there are multiple implementations of the interface this implements.
 
         Use @register on a function to register that function as a factory method which produces an object
@@ -110,9 +112,9 @@ class DependencyContainer:
         This decorator can be used on both async and blocking methods.
 
         * Classes will be automatically injected.
-        * Parameters need a value to be provided via .wire(param=) or .wire(expr=) using a default value.
+        * Parameters need a value to be provided via `.wire(param=)` or `.wire(expr=)` using a default value.
         * When injecting an interface for which there are multiple implementations you need to supply a qualifier
-          via .wire(qualifier=) using a default value.
+          via `.wire(qualifier=)` using a default value.
 
         """
         if asyncio.iscoroutinefunction(fn):
@@ -147,12 +149,12 @@ class DependencyContainer:
         self.__factory_functions[return_type] = fn
 
     def register_all_in_module(self, module: ModuleType, pattern: str = "*") -> None:
-        """Register all modules inside a given package.
+        """Register all modules inside a given module.
 
-        Useful when your components reside in one place, and you'd like to avoid having to @register each of them.
+        Useful when your components reside in one place, and you'd like to avoid having to `@register` each of them.
         Alternatively this can be used if you wish to use the library without having to rely on decorators.
 
-        See Also: self.initialization_context to wire parameters without having to use a default value.
+        See Also: `self.initialization_context` to wire parameters without having to use a default value.
 
         :param module: The package name to recursively search for classes.
         :param pattern: A pattern that will be fed to fnmatch to determine if a class will be registered or not.

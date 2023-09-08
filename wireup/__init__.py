@@ -27,15 +27,15 @@ def wire(
     """Inject resources from the container to autowired method arguments.
 
     Arguments are exclusive and only one of them must be used at any time.
-    Note: Methods MUST be still decorated with autowire for this to work.
+    !!! note
+        Methods MUST be still decorated with autowire for this to work.
 
     :param param: Inject a given parameter by name.
     :param expr: Inject a string value using a templated string.
-    Parameters inside ${} will be replaced with their corresponding value.
+    Parameters inside `${}` will be replaced with their corresponding value.
 
     :param qualifier: Qualify which implementation to bind when there are multiple components
-    implementing an interface that is registered in the container via @abstract.
-    Can be used in conjunction with dep.
+    implementing an interface that is registered in the container via `@abstract`.
     """
     if param:
         return ParameterWrapper(param)
@@ -56,9 +56,9 @@ def wire(
 
 
 class ParameterEnum(Enum):
-    """Enum with a .wire method allowing easy injection of members.
+    """Enum with a `.wire` method allowing easy injection of members.
 
-    This allows you to add application parameters as enum members and their names as values.
+    Allows you to add application parameters as enum members and their names as values.
     When you need to inject a parameter instead of referencing it by name you can
     simply set the enum as the default value.
 
