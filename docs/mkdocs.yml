@@ -16,12 +16,15 @@ nav:
       - wireup: class/wireup.md
       - DependencyContainer: class/dependency_container.md
       - ParameterBag: class/parameter_bag.md
+      - ParameterEnum: class/parameter_enum.md
       - DependencyInitializationContext: class/dependency_initialization_context.md
 repo_url: https://github.com/maldoinc/wireup
 repo_name: maldoinc/wireup
 theme:
   name: material
   features:
+    - search.highlight
+    - navigation.sections
     - content.code.annotate
     - navigation.instant
   custom_dir: overrides
@@ -54,12 +57,9 @@ plugins:
       handlers:
         python:
           options:
-            show_symbol_type_heading: true
-            show_symbol_type_toc: true
-            heading_level: 4
-            docstring_section_style: spacy
+            group_by_category: true
+            show_category_heading: true
             docstring_style: sphinx
-            allow_inspection: false
             show_source: false
             filters:
               - "!^_"

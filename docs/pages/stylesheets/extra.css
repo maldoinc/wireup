@@ -9,3 +9,7 @@
 dd, dd p {
     margin-top: 0 !important;
 }
+
+.doc-heading {
+    font-size: 1rem !important;
+}
