@@ -10,7 +10,7 @@ class ParameterBag:
     """Parameter flat key-value store for use with a container.
 
     Allows storing and retrieving of parameters in the bag. Templated strings can be used to interpolate a string
-    referencing multiple parameters.
+    referencing parameters.
 
     """
 

@@ -36,8 +36,8 @@ class DependencyContainer:
     Abstract classes are to be used as interfaces and will not be injected directly, rather concrete classes
     which implement them will be injected instead.
 
-    Use autowire decorator on methods where dependency injection must be performed.
-    To enable parameter injection use default values for parameters in conjunction with the wire method.
+    Use the `autowire` decorator on methods where dependency injection must be performed.
+    To enable parameter injection use default values for parameters in conjunction with the `wire` method.
 
     !!! note
         Fastapi users MUST use ` = .wire()` method without arguments when injecting dependencies.
@@ -53,11 +53,13 @@ class DependencyContainer:
         self.initialization_context = DependencyInitializationContext()
 
     def get(self, klass: type[__T], qualifier: ContainerProxyQualifierValue = None) -> __T:
-        """Get an instance of the requested type. Returns an existing initialized instance when possible.
+        """Get an instance of the requested type.
+
+        Use this to locate services by their type but strongly prefer using injection instead.
 
         :param qualifier: Qualifier for the class if it was registered with one.
         :param klass: Class of the dependency already registered in the container.
-        :return:
+        :return: An instance of the requested object. Always returns an existing instance when one is available.
         """
         self.__assert_dependency_exists(klass, qualifier)
 
@@ -84,7 +86,7 @@ class DependencyContainer:
         to register this with a given name when there are multiple implementations of the interface this implements.
 
         Use `@register` on a function to register that function as a factory method which produces an object
-        that matches its return type. Use this for objects that the container does not own but should be able to build.
+        that matches its return type.
 
         The container stores all necessary metadata for this class and the underlying class remains unmodified.
         """
