@@ -1,9 +1,6 @@
 # :thread: WireUp
-Dependency and configuration injection library in Python.
 
----
-
-WireUp is a Python library designed to provide a powerful and flexible way to 
+Dependency and configuration injection library designed to provide a powerful and flexible way to 
 manage and inject dependencies across your application,
 making it easier to develop, test, and maintain your codebase.
 
