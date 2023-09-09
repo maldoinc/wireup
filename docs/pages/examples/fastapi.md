@@ -18,7 +18,9 @@ app = FastAPI()
 class GreeterService:
     @staticmethod
     def greet(name: str) -> str:
-        return "{} {}".format(random.choice(["Hi", "Oye", "Përshëndetje", "Guten Tag"]), name)
+        greeting = random.choice(["Hi", "Oye", "Përshëndetje", "Guten Tag"])
+        
+        return f"{greeting} {name}"
 
 
 @container.register
