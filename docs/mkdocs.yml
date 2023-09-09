@@ -1,7 +1,7 @@
 site_name: WireUp
 nav:
   - Home: index.md
-  - Introduction: introduction.md
+  - Quickstart: quickstart.md
   - Parameters: parameters.md
   - Advanced Topics:
       - Factory functions: factory_functions.md
@@ -12,7 +12,58 @@ nav:
     - Introduce to an existing project: introduce_to_an_existing_project.md
   - Examples:
       - FastAPI: examples/fastapi.md
-theme: readthedocs
+  - API Reference:
+      - wireup: class/wireup.md
+      - DependencyContainer: class/dependency_container.md
+      - ParameterBag: class/parameter_bag.md
+      - DependencyInitializationContext: class/dependency_initialization_context.md
+repo_url: https://github.com/maldoinc/wireup
+repo_name: maldoinc/wireup
+theme:
+  name: material
+  features:
+    - content.code.annotate
+    - navigation.instant
+  custom_dir: overrides
+  icon:
+    logo: simple/wire
+  font:
+    text: PT Sans
+    code: Noto Mono
+  palette:
+    - scheme: default
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - scheme: slate
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
 markdown_extensions:
+  - attr_list
   - admonition
+  - pymdownx.highlight
+  - pymdownx.superfences
+  - def_list
+  - pymdownx.emoji:
+        emoji_index: !!python/name:materialx.emoji.twemoji
+plugins:
+  - search
+  - mkdocstrings:
+      default_handler: python
+      handlers:
+        python:
+          options:
+            show_symbol_type_heading: true
+            show_symbol_type_toc: true
+            heading_level: 4
+            docstring_section_style: spacy
+            docstring_style: sphinx
+            allow_inspection: false
+            show_source: false
+            filters:
+              - "!^_"
+              - "^__init__$"
+extra_css:
+  - stylesheets/extra.css
 docs_dir: pages

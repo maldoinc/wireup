@@ -80,11 +80,10 @@ class DependencyContainer:
     ) -> type[__T]:
         """Register a dependency in the container.
 
-        Use `@register` without parameters on a class
-        or with a single parameter `@register(qualifier=name)` to register this with a given name
-        when there are multiple implementations of the interface this implements.
+        Use `@register` without parameters on a class or with a single parameter `@register(qualifier=name)`
+        to register this with a given name when there are multiple implementations of the interface this implements.
 
-        Use @register on a function to register that function as a factory method which produces an object
+        Use `@register` on a function to register that function as a factory method which produces an object
         that matches its return type. Use this for objects that the container does not own but should be able to build.
 
         The container stores all necessary metadata for this class and the underlying class remains unmodified.

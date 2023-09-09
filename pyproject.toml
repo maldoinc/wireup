@@ -19,6 +19,9 @@ black = "^23.7.0"
 ruff = "^0.0.284"
 setuptools = "^68.0.0"
 mkdocs = "^1.5.2"
+mkdocs-material = "^9.2.8"
+mkdocstrings-python = "^1.6.2"
+mkdocs-open-in-new-tab = "^1.0.2"
 
 [tool.black]
 line-length = 120

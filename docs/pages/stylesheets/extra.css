@@ -1,0 +1,11 @@
+.md-typeset {
+    font-size: .7rem;
+}
+
+.highlight {
+    font-size: .7rem;
+}
+
+dd, dd p {
+    margin-top: 0 !important;
+}
