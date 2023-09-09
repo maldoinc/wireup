@@ -19,7 +19,7 @@ making it easier to develop, test, and maintain Python codebases.
             <img src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@14.1.2/assets/72x72/1f3ed.png" />
             Factory pattern
         </div>
-        Optionally defer instantiation to specialized factories for full control over object creation.
+        Defer instantiation to specialized factories for full control over object creation when necessary.
     </div>
     <div class="card">
         <div class="card-title">
@@ -31,9 +31,9 @@ making it easier to develop, test, and maintain Python codebases.
     <div class="card">
         <div class="card-title">
             <img src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@14.1.2/assets/72x72/31-20e3.png" /> 
-            Singleton dependencies
+            Singletons
         </div>
-        Every dependency is initialized only once and all references to it will reuse the same instance.
+        Dependencies are initialized only once and all references to it will reuse the same instance.
     </div>
     <div class="card">
         <div class="card-title">
