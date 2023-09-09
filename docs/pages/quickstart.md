@@ -11,7 +11,7 @@ container.params.update({
 })
 ```
 
-1. Even though there are dots that does in parameter names, that not imply any nested structure. The parameter bag is a
+1. Even though there are dots in parameter names, that not imply any nested structure. The parameter bag is a
    flat key-value store.
 
 **2. Register dependencies**
