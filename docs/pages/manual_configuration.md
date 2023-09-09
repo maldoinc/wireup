@@ -39,8 +39,7 @@ container.initialization_context.add_param(
     parameter_ref=TemplatedString("${cache_dir}/${auth_user}/db"),
 )
 
-# Alternatively, you can update the context in bulk using a dictionary of initializer parameter names as keys
-# and container parameter references as values.
+# Alternatively, you can update the context in bulk using a dictionary.
 # When using interpolated strings, make sure you wrap the string with TemplatedString.
 container.initialization_context.update(
     DbService,
