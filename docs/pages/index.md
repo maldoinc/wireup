@@ -44,13 +44,6 @@ making it easier to develop, test, and maintain Python codebases.
     </div>
     <div class="card">
         <div class="card-title">
-            <img src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@14.1.2/assets/72x72/23f0.png" /> 
-            Async ready
-        </div>
-        Out of the box support for async code.
-    </div>
-    <div class="card">
-        <div class="card-title">
             <img src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@14.1.2/assets/72x72/2753.png" /> 
             Framework Agnostic
         </div>
@@ -62,6 +55,13 @@ making it easier to develop, test, and maintain Python codebases.
             Service/Configuration Locator
         </div>
         Dynamically retrieve services or configuration for more advanced use cases.
+    </div>
+    <div class="card">
+        <div class="card-title">
+            <img src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@14.1.2/assets/72x72/23f0.png" /> 
+            Async ready
+        </div>
+        Out of the box support for async code.
     </div>
 </div>
 
