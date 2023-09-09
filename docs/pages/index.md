@@ -16,10 +16,10 @@ making it easier to develop, test, and maintain Python codebases.
     </div>
     <div class="card">
         <div class="card-title">
-            <img src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@14.1.2/assets/72x72/1f3ed.png" />
-            Factory pattern
+            <img src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@14.1.2/assets/72x72/2699.png" /> 
+            Configuration Management
         </div>
-        Defer instantiation to specialized factories for full control over object creation when necessary.
+        Manage and inject application configuration values supporting parameter interpolation and referencing.
     </div>
     <div class="card">
         <div class="card-title">
@@ -37,10 +37,10 @@ making it easier to develop, test, and maintain Python codebases.
     </div>
     <div class="card">
         <div class="card-title">
-            <img src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@14.1.2/assets/72x72/2699.png" /> 
-            Configuration Management
+            <img src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@14.1.2/assets/72x72/1f3ed.png" />
+            Factory pattern
         </div>
-        Manage and inject application configuration values supporting parameter interpolation and referencing.
+        Defer instantiation to specialized factories for full control over object creation when necessary.
     </div>
     <div class="card">
         <div class="card-title">
