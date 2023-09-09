@@ -386,3 +386,18 @@ class TestContainer(unittest.IsolatedAsyncioTestCase):
 
         self.container.params.put("name", "foo")
         inner()
+
+    def test_injects_ctor(self):
+        class Dummy:
+            @self.container.autowire
+            def __init__(self, rand_service: RandomService, env: str = wire(param="env")):
+                self.env = env
+                self.rand_service = rand_service
+
+            def do_thing(self):
+                return f"Running in {self.env} with a result of {self.rand_service.get_random()}"
+
+        self.container.params.put("env", "test")
+
+        dummy = Dummy()
+        self.assertEqual(dummy.do_thing(), "Running in test with a result of 4")
