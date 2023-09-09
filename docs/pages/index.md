@@ -67,5 +67,5 @@ making it easier to develop, test, and maintain Python codebases.
 
 ## License
 
-This project is licensed under the terms of the [MIT](https://github.com/maldoinc/wireup/blob/master/license.md){:
-target=_blank } license.
+This project is licensed under the terms of the 
+[MIT](https://github.com/maldoinc/wireup/blob/master/license.md){: target=_blank } license.
