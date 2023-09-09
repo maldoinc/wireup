@@ -44,6 +44,7 @@ theme:
         name: Switch to light mode
 markdown_extensions:
   - attr_list
+  - md_in_html
   - admonition
   - pymdownx.highlight
   - pymdownx.superfences

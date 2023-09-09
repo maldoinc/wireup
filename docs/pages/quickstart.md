@@ -1,15 +1,20 @@
-**1. Set application configuration parameters** 
-```python
+**1. Set application configuration parameters**  
+
+```python 
 from wireup import container
 
 
 container.params.update({
-    "db.connection_str": os.environ.get("DATABASE_URL")
+    "db.connection_str": os.environ.get("DATABASE_URL") # (1)!
     "service_auth.user": os.environ.get("SVC_USER"),
     "cache_dir": gettempdir(),
     "env": os.environ.get("ENV", "dev")
 })
 ```
+
+1.  :man_raising_hand: I'm an annotation! I can contain `code`, __formatted
+    text__, images, ... basically anything that can be expressed in Markdown.
+
 
 **2. Register dependencies**
 
@@ -56,4 +61,3 @@ poetry add wireup
 # Install using pip:
 pip install wireup
 ```
-

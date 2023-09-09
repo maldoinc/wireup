@@ -13,3 +13,46 @@ dd, dd p {
 .doc-heading {
     font-size: 1rem !important;
 }
+
+.card-container {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+.card {
+    flex: 0 1 calc(50% - 5px);
+    background-color: #ffffff;
+    border: 1px solid #ddd;
+    border-radius: 3px;
+    padding: 20px;
+}
+
+.card-title{
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    padding-bottom: .5rem;
+    margin-bottom: .5rem;
+    border-bottom: .05rem solid var(--md-default-fg-color--lightest);
+}
+
+.card-title img {
+    height: 1rem; /* Set the height to match the font size (adjust as needed) */
+    width: auto; /* Maintain aspect ratio */
+    margin-right: 10px; /* Add spacing between the image and text (adjust as needed) */
+}
+
+
+@media (max-width: 768px) {
+    .card {
+        flex: 0 1 calc(50% - 20px); /* Two cards in a row for smaller screens */
+    }
+}
+
+@media (max-width: 480px) {
+    .card {
+        flex: 0 1 100%; /* Full width for mobile devices */
+    }
+}
