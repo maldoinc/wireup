@@ -1,5 +1,3 @@
-# FastAPI example
-
 The example below shows a simple implementation in a FastAPI application. 
 The concepts are generic enough to be applicable to other python frameworks as well.
 

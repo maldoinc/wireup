@@ -1,5 +1,3 @@
-# Manual Configuration
-
 WireUp provides convenient decorators and functions for you to use and perform dependency injection.
 If using decorators or functions such as `wire` not appropriate for your application then manual container
 configuration is also possible.

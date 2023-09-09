@@ -1,5 +1,3 @@
-# Introduce to an existing project
-
 It can be challenging to add DI to an existing project which doesn't yet use it. One of the issues you will run into
 sooner or later is being able to share resources between code which uses DI and the rest of the application 
 which does not. 

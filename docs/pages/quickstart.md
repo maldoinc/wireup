@@ -1,5 +1,3 @@
-# Quickstart
-
 **1. Set application configuration parameters** 
 ```python
 from wireup import container

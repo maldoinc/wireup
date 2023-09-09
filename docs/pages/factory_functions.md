@@ -1,5 +1,3 @@
-# Factory functions
-
 Factory functions allow the container to wire dependencies that require additional logic to create 
 or be able to inject objects it doesn't own.
 

@@ -1,5 +1,3 @@
-# Working with Interfaces
-
 When autowiring dependencies, you might want to inject an interface rather than 
 the concrete implementation directly. Since Python doesn't have built-in interfaces, you can leverage any class 
 that's marked as abstract within the container.

@@ -1,5 +1,3 @@
-# Multiple Containers
-
 As each container has its own state and does not modify the underlying classes, use of multiple containers is possible.
 A few things to keep in mind when using multiple containers.
 
