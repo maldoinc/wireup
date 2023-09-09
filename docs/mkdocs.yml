@@ -28,8 +28,6 @@ theme:
     - content.code.annotate
     - navigation.instant
   custom_dir: overrides
-  icon:
-    logo: simple/wire
   font:
     text: PT Sans
     code: Noto Mono
