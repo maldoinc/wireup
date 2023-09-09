@@ -8,7 +8,7 @@ Think of a database connection. Your application probably already has one. Inste
 using a new database service, you can instruct the container how to get the connection either via a service or
 by using factory functions.
 
-Another case might be an existing service that is already constructed, and you wish to be able to inject.
+Another case might be an existing service that is already constructed, and you want to inject.
 
 ## Using a Service
 

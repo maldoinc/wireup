@@ -43,7 +43,7 @@ class ContainerProxyQualifier:
 class DependencyInitializationContext:
     """Contains information about initializing a particular dependency.
 
-    Use in cases where you wish to avoid using `.wire` calls for parameter injection.
+    Use in cases where you want to avoid using `.wire` calls for parameter injection.
     """
 
     def __init__(self) -> None:

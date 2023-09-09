@@ -21,7 +21,7 @@ Such as injecting the same database connection as the rest of the application.
 
 ## Usage
 
-In order for the container to be able to inject these dependencies you must register the factory function.
+In order for the container to inject these dependencies you must register the factory function.
 You can do this by using the `@container.register` decorator or by calling `container.register(fn)` directly.
 
 When the container needs to inject a dependency it checks known factories to see if any of them can create it.

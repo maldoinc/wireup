@@ -153,7 +153,7 @@ class DependencyContainer:
         """Register all modules inside a given module.
 
         Useful when your components reside in one place, and you'd like to avoid having to `@register` each of them.
-        Alternatively this can be used if you wish to use the library without having to rely on decorators.
+        Alternatively this can be used if you want to use the library without having to rely on decorators.
 
         See Also: `self.initialization_context` to wire parameters without having to use a default value.
 
