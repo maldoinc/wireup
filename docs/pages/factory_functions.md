@@ -58,6 +58,20 @@ def get_user_logs(user: AuthenticatedUser):
     ...
 ```
 
+Assume a base class `Notifier` with implementations that define how the notification is sent (IMAP, POP, WebHooks, etc.)
+Given a user it is possible to instantiate the correct type of notifier based on user preferences.
+
+
+```python
+@container.register
+def get_user_notifier(user: AuthenticatedUser) -> Notifier:
+    notifier_type = ...
+
+    return container.get(notifier_type)
+```
+
+When injecting `Notifier` the correct type will be created based on the authenticated user's preferences.
+
 ## Links
 
 * [Introduce to an existing project](introduce_to_an_existing_project.md)

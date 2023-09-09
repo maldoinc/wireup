@@ -35,7 +35,7 @@ class DbService:
 @container.register
 @dataclass
 class UserRepository:
-    db: DbService  # Dependencies may also depend on other dependencies. (2)!
+    db: DbService# Dependencies may also depend on other dependencies. (2)!
 ```
 
 1. The decorators do not modify the classes in any way and only serve to collect metadata. This behavior can make
@@ -45,9 +45,8 @@ class UserRepository:
 **3. Inject**
 
 ```python
-# Decorate all methods where the library must perform injection. 
 @app.route("/greet/<str:name>")
-@container.autowire
+@container.autowire#(2)!
 # Classes are automatically injected based on annotated type. 
 # Parameters will be located based on the hint given in their default value.
 # Unknown arguments will not be processed.
@@ -57,6 +56,7 @@ def greet(name: str, user_repository: UserRepository, env: str = wire(param="env
 
 1. We know that this will be used in conjunction with many other libraries, so WireUp will not throw on unknown
    parameters in order to let other decorators to do their job.
+2. Decorate all methods where the library must perform injection. 
 
 **Installation**
 

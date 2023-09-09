@@ -15,6 +15,17 @@ on each.
 container.register_all_in_module(app.service, "*Service")
 ```
 
+## Interfaces
+
+Even though It's not possible to automatically register abstract types and implementation using qualifiers. 
+Manual registration is still possible.
+
+```python
+container.abstract(FooBase)
+container.register(FooBar, qualifier="bar")
+container.register(FooBaz, qualifier="baz")
+```
+
 ## Manually wiring parameters
 
 Given that parameters can't be resolved from type annotations alone, the `container.wire` method offers two shortcuts 

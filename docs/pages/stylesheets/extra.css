@@ -23,10 +23,13 @@ dd, dd p {
 
 .card {
     flex: 0 1 calc(50% - 5px);
-    background-color: #ffffff;
     border: 1px solid #ddd;
     border-radius: 3px;
     padding: 20px;
+}
+
+body[data-md-color-scheme="slate"] .card {
+    border: 1px solid var(--md-default-fg-color--lightest) !important;
 }
 
 .card-title{

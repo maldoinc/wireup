@@ -1,8 +1,7 @@
 # :thread: WireUp
 
 Dependency injection library designed to provide a powerful and flexible way to
-manage and inject dependencies across your application,
-making it easier to develop, test, and maintain Python codebases.
+manage and inject dependencies making it easier to develop, test, and maintain Python codebases.
 
 ## Key features
 
