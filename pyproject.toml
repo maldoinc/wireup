@@ -22,6 +22,7 @@ mkdocs = "^1.5.2"
 mkdocs-material = "^9.2.8"
 mkdocstrings-python = "^1.6.2"
 mkdocs-open-in-new-tab = "^1.0.2"
+mike = "^1.1.2"
 
 [tool.black]
 line-length = 120

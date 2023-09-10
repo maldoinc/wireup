@@ -49,6 +49,7 @@ markdown_extensions:
   - pymdownx.emoji:
         emoji_index: !!python/name:materialx.emoji.twemoji
 plugins:
+  - mike
   - search
   - mkdocstrings:
       default_handler: python
@@ -65,3 +66,6 @@ plugins:
 extra_css:
   - stylesheets/extra.css
 docs_dir: pages
+extra:
+  version:
+    provider: mike
