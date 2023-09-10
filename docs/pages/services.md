@@ -1,4 +1,4 @@
-Services are classes in the application that provide functionality.
+Services are classes known by the container that provide functionality.
 
 Contrary to static utility classes or methods they usually rely on other services or [parameters](parameters.md) to
 provide a part of their functionality.
