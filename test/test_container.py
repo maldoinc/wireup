@@ -401,3 +401,6 @@ class TestContainer(unittest.IsolatedAsyncioTestCase):
 
         dummy = Dummy()
         self.assertEqual(dummy.do_thing(), "Running in test with a result of 4")
+
+    def test_get_returns_same_container_proxy(self):
+        self.assertEqual(self.container.get(RandomService), self.container.get(RandomService))

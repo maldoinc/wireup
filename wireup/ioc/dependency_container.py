@@ -23,6 +23,7 @@ if TYPE_CHECKING:
     from .parameter import ParameterBag
 
 __T = TypeVar("__T")
+_SignatureParams = dict[str, Any]
 
 
 class DependencyContainer:
@@ -47,8 +48,12 @@ class DependencyContainer:
         """:param parameter_bag: ParameterBag instance holding parameter information."""
         self.__known_interfaces: dict[type[__T], dict[str, type[__T]]] = {}
         self.__known_impls: dict[type[__T], set[str]] = defaultdict(set)
-        self.__initialized_objects: dict[_ContainerObjectIdentifier, object] = {}
         self.__factory_functions: dict[type[__T], Callable[..., __T]] = {}
+
+        self.__initialized_objects: dict[_ContainerObjectIdentifier, object] = {}
+        self.__initialized_proxies: dict[_ContainerObjectIdentifier, ContainerProxy] = {}
+        self.__initialized_args: dict[tuple[Callable, __T], _SignatureParams] = {}
+
         self.params: ParameterBag = parameter_bag
         self.initialization_context = DependencyInitializationContext()
 
@@ -186,6 +191,10 @@ class DependencyContainer:
         return fn(*args, **{**kwargs, **self.__callable_get_params_to_inject(fn)})
 
     def __callable_get_params_to_inject(self, fn: Callable[..., Any], klass: type[__T] | None = None) -> dict:
+        key = fn, klass
+        if key in self.__initialized_args:
+            return self.__initialized_args[key]
+
         params_from_context = {
             name: self.params.get(wrapper.param) for name, wrapper in self.initialization_context.context[klass].items()
         }
@@ -195,7 +204,10 @@ class DependencyContainer:
             if obj := self.__get_container_dependency_or_param(parameter):
                 values_from_parameters[name] = obj
 
-        return {**params_from_context, **values_from_parameters}
+        args = {**params_from_context, **values_from_parameters}
+        self.__initialized_args[key] = args
+
+        return args
 
     def __get(self, klass: type[__T], qualifier: ContainerProxyQualifierValue) -> __T:
         """Create the real instances of dependencies. Additional dependencies they may have will be lazily created."""
@@ -258,7 +270,15 @@ class DependencyContainer:
         return None
 
     def __get_proxy_object(self, klass: type[__T], qualifier: ContainerProxyQualifierValue) -> ContainerProxy:
-        return ContainerProxy(lambda: self.__get(klass, qualifier))
+        obj_id = _ContainerObjectIdentifier(klass, qualifier)
+
+        if obj_id in self.__initialized_proxies:
+            return self.__initialized_proxies[obj_id]
+
+        proxy = ContainerProxy(lambda: self.__get(klass, qualifier))
+        self.__initialized_proxies[obj_id] = proxy
+
+        return proxy
 
     def __get_concrete_class_from_interface_and_qualifier(
         self,
