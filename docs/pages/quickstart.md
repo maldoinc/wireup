@@ -5,7 +5,6 @@ from wireup import container
 
 container.params.update({
     "db.connection_str": os.environ.get("DATABASE_URL")# (1)!
-    "service_auth.user": os.environ.get("SVC_USER"),
     "cache_dir": gettempdir(),
     "env": os.environ.get("ENV", "dev")
 })
@@ -24,7 +23,7 @@ class DbService:
             # Inject a parameter by name
             connection_str: str = wire(param="db.connection_str"),
             # Or by interpolating multiple parameters into a string
-            cache_dir: str = wire(expr="${cache_dir}/${service_auth.user}/db"),
+            cache_dir: str = wire(expr="${cache_dir}/${env}/db"),
     ):
         self.connection_str = connection_str
         self.cache_dir = cache_dir
@@ -38,7 +37,7 @@ class UserRepository:
     db: DbService# Dependencies may also depend on other dependencies. (2)!
 ```
 
-1. The decorators do not modify the classes in any way and only serve to collect metadata. This behavior can make
+1. Decorators do not modify the classes in any way and only serve to collect metadata. This behavior can make
    testing a lot simpler as you can still instantiate this like a regular class in your tests.
 2. Use type hints to tell the library what object to inject.
 
