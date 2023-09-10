@@ -1,7 +1,9 @@
-Services are classes in the application that provide functionality that the container knows about and is able to build.
-They can depend on other services or [parameters](parameters.md).
+Services are classes in the application that provide functionality.
 
-The examples refer to the default container provided by the library in `wireup.container` but any other instance can be
+Contrary to static utility classes or methods they usually rely on other services or [parameters](parameters.md) to
+provide a part of their functionality.
+
+Examples refer to the default container provided by the library in `wireup.container` but any other instance can be
 used in its place. The process is meant to be simple and the short [Quickstart](quickstart.md) page shows by example and
 already contains all the key concepts you need to know about.
 
