@@ -2,6 +2,7 @@ site_name: WireUp
 nav:
   - Home: index.md
   - Quickstart: quickstart.md
+  - Services: services.md
   - Parameters: parameters.md
   - Advanced Topics:
       - Factory functions: factory_functions.md

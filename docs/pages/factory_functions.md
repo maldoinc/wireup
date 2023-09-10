@@ -11,7 +11,7 @@ Some of the use cases for factories are as follows:
 
 * Object construction needs additional logic or configuration.
 * Depending on the runtime environment or configuration, you may need to create different objects 
-inheriting from the same base (See [Strategy Pattern](https://en.wikipedia.org/wiki/Strategy_pattern){: target=_blank }) or configure them differently. 
+inheriting from the same base (See: [Strategy Pattern](https://en.wikipedia.org/wiki/Strategy_pattern){: target=_blank }) or configure them differently. 
 * Gradually introduce DI into an existing project where the container should be able to inject dependencies created elsewhere. 
 Such as injecting the same database connection as the rest of the application.
 * Eliminate services which have only one method that returns the same object and instead inject the object directly.
