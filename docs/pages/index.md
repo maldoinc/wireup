@@ -22,6 +22,20 @@ manage and inject dependencies making it easier to develop, test, and maintain P
     </div>
     <div class="card">
         <div class="card-title">
+            <img src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@14.1.2/assets/72x72/1f465.png" /> 
+            Multiple Containers
+        </div>
+        Use the provided container or instantiate and use multiple ones depending on your project's needs.
+    </div>
+    <div class="card">
+        <div class="card-title">
+            <img src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@14.1.2/assets/72x72/1f4dc.png" /> 
+            Interfaces / Abstract classes
+        </div>
+        Define abstract types and have the container automatically inject the implementation.
+    </div>
+    <div class="card">
+        <div class="card-title">
             <img src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@14.1.2/assets/72x72/231b.png" /> 
             Lazy loading
         </div>
@@ -48,20 +62,7 @@ manage and inject dependencies making it easier to develop, test, and maintain P
         </div>
         Seamlessly integrate with popular web frameworks like FastAPI and Flask to simplify dependency management in web applications.
     </div>
-    <div class="card">
-        <div class="card-title">
-            <img src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@14.1.2/assets/72x72/1f4cd.png" /> 
-            Service/Configuration Locator
-        </div>
-        Dynamically retrieve services or configuration for more advanced use cases.
-    </div>
-    <div class="card">
-        <div class="card-title">
-            <img src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@14.1.2/assets/72x72/23f0.png" /> 
-            Async ready
-        </div>
-        Out of the box support for async code.
-    </div>
+
 </div>
 
 ## License
