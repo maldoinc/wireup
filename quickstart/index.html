@@ -9,10 +9,10 @@
       
       
       
-        <link rel="prev" href="../factory_functions/">
+        <link rel="prev" href="..">
       
       
-        <link rel="next" href="../manual_configuration/">
+        <link rel="next" href="../services/">
       
       
       <link rel="icon" href="../assets/images/favicon.png">
@@ -20,7 +20,7 @@
     
     
       
-        <title>Working with Interfaces - WireUp</title>
+        <title>Quickstart - WireUp</title>
       
     
     
@@ -114,7 +114,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Working with Interfaces
+              Quickstart
             
           </span>
         </div>
@@ -270,9 +270,16 @@
       
   
   
+    
   
-    <li class="md-nav__item">
-      <a href="../quickstart/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         
   
   <span class="md-ellipsis">
@@ -281,6 +288,7 @@
   
 
       </a>
+      
     </li>
   
 
@@ -327,21 +335,19 @@
       
   
   
-    
-  
   
     
     
     
       
     
-    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
       
         
         
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" checked>
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
         
           <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
             
@@ -354,7 +360,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="true">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_5">
             <span class="md-nav__icon md-icon"></span>
             Advanced Topics
@@ -385,16 +391,9 @@
                 
   
   
-    
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../interfaces/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -403,7 +402,6 @@
   
 
       </a>
-      
     </li>
   
 
@@ -696,50 +694,67 @@
   
 
 
-  <h1>Working with Interfaces</h1>
+  <h1>Quickstart</h1>
 
-<p>When autowiring dependencies, you might want to inject an interface rather than 
-the concrete implementation directly. Since Python doesn't have built-in interfaces, you can leverage any class 
-that's marked as abstract within the container.</p>
-<p>The following code registers <code>Engine</code> as an interface. This implies that <code>Engine</code> can't be directly injected. 
-Instead, a dependency that implements the interface must be present and also be registered in the container.</p>
-<div class="highlight"><pre><span></span><code><span class="nd">@container</span><span class="o">.</span><span class="n">abstract</span>
-<span class="k">class</span> <span class="nc">Engine</span><span class="p">:</span>
-    <span class="k">def</span> <span class="nf">do_thing</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="o">...</span>
+<p><strong>1. Set application configuration parameters</strong></p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">wireup</span> <span class="kn">import</span> <span class="n">container</span>
+
+<span class="n">container</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">update</span><span class="p">({</span>
+    <span class="s2">&quot;db.connection_str&quot;</span><span class="p">:</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;DATABASE_URL&quot;</span><span class="p">)</span><span class="c1"># (1)!</span>
+    <span class="s2">&quot;cache_dir&quot;</span><span class="p">:</span> <span class="n">gettempdir</span><span class="p">(),</span>
+    <span class="s2">&quot;env&quot;</span><span class="p">:</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;ENV&quot;</span><span class="p">,</span> <span class="s2">&quot;dev&quot;</span><span class="p">)</span>
+<span class="p">})</span>
 </code></pre></div>
-<p>To autowire interfaces, you can simply register a dependency that implements the interface within the container. 
-When injecting, ask for the interface itself, not its concrete implementation.</p>
-<div class="highlight"><pre><span></span><code><span class="nd">@container</span><span class="o">.</span><span class="n">register</span>
-<span class="k">class</span> <span class="nc">CombustionEngine</span><span class="p">(</span><span class="n">Engine</span><span class="p">):</span>
-    <span class="k">def</span> <span class="nf">do_thing</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="s2">&quot;I&#39;m a Combustion Engine&quot;</span>
+<ol>
+<li>Even though there are dots in parameter names, that not imply any nested structure. The parameter bag is a
+   flat key-value store.</li>
+</ol>
+<p><strong>2. Register dependencies</strong></p>
+<div class="highlight"><pre><span></span><code><span class="nd">@container</span><span class="o">.</span><span class="n">register</span><span class="c1"># (1)!</span>
+<span class="k">class</span> <span class="nc">DbService</span><span class="p">:</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span>
+            <span class="c1"># Inject a parameter by name</span>
+            <span class="n">connection_str</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">wire</span><span class="p">(</span><span class="n">param</span><span class="o">=</span><span class="s2">&quot;db.connection_str&quot;</span><span class="p">),</span>
+            <span class="c1"># Or by interpolating multiple parameters into a string</span>
+            <span class="n">cache_dir</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">wire</span><span class="p">(</span><span class="n">expr</span><span class="o">=</span><span class="s2">&quot;$</span><span class="si">{cache_dir}</span><span class="s2">/$</span><span class="si">{env}</span><span class="s2">/db&quot;</span><span class="p">),</span>
+    <span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">connection_str</span> <span class="o">=</span> <span class="n">connection_str</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cache_dir</span> <span class="o">=</span> <span class="n">cache_dir</span>
 
 
-<span class="nd">@container</span><span class="o">.</span><span class="n">autowire</span>
-<span class="k">def</span> <span class="nf">do_engine_things</span><span class="p">(</span><span class="n">engine</span><span class="p">:</span> <span class="n">Engine</span><span class="p">):</span>
-    <span class="k">return</span> <span class="n">engine</span><span class="o">.</span><span class="n">do_thing</span><span class="p">()</span> <span class="c1"># Returns &quot;I&#39;m a Combustion Engine&quot;</span>
+<span class="c1"># Constructor injection is also supported for dataclasses</span>
+<span class="c1"># resulting in a more compact syntax.</span>
+<span class="nd">@container</span><span class="o">.</span><span class="n">register</span>
+<span class="nd">@dataclass</span>
+<span class="k">class</span> <span class="nc">UserRepository</span><span class="p">:</span>
+    <span class="n">db</span><span class="p">:</span> <span class="n">DbService</span><span class="c1"># Dependencies may also depend on other dependencies. (2)!</span>
 </code></pre></div>
-<p>In scenarios where there are multiple implementations of an interface, each implementation must be 
-associated with a qualifier.</p>
-<div class="highlight"><pre><span></span><code><span class="nd">@container</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="n">qualifier</span><span class="o">=</span><span class="s2">&quot;electric&quot;</span><span class="p">)</span>
-<span class="k">class</span> <span class="nc">ElectricEngine</span><span class="p">(</span><span class="n">Engine</span><span class="p">):</span>
-    <span class="k">def</span> <span class="nf">do_thing</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="s2">&quot;I&#39;m an Electric Engine&quot;</span>
-
-
-<span class="nd">@container</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="n">qualifier</span><span class="o">=</span><span class="s2">&quot;combustion&quot;</span><span class="p">)</span>
-<span class="k">class</span> <span class="nc">CombustionEngine</span><span class="p">(</span><span class="n">Engine</span><span class="p">):</span>
-    <span class="k">def</span> <span class="nf">do_thing</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="s2">&quot;I&#39;m a Combustion Engine&quot;</span>
-</code></pre></div>
-<p>While injecting an interface with multiple implementing dependencies, you need to specify a qualifier to indicate 
-which concrete class should be resolved.</p>
-<div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">home</span><span class="p">(</span>
-    <span class="n">engine</span><span class="p">:</span> <span class="n">Engine</span> <span class="o">=</span> <span class="n">wire</span><span class="p">(</span><span class="n">qualifier</span><span class="o">=</span><span class="s2">&quot;electric&quot;</span><span class="p">),</span>
-    <span class="n">combustion</span><span class="p">:</span> <span class="n">Engine</span> <span class="o">=</span> <span class="n">wire</span><span class="p">(</span><span class="n">qualifier</span><span class="o">=</span><span class="s2">&quot;combustion&quot;</span><span class="p">),</span>
-<span class="p">):</span>
+<ol>
+<li>Decorators do not modify the classes in any way and only serve to collect metadata. This behavior can make
+   testing a lot simpler as you can still instantiate this like a regular class in your tests.</li>
+<li>Use type hints to tell the library what object to inject.</li>
+</ol>
+<p><strong>3. Inject</strong></p>
+<div class="highlight"><pre><span></span><code><span class="nd">@app</span><span class="o">.</span><span class="n">route</span><span class="p">(</span><span class="s2">&quot;/greet/&lt;str:name&gt;&quot;</span><span class="p">)</span>
+<span class="nd">@container</span><span class="o">.</span><span class="n">autowire</span><span class="c1">#(2)!</span>
+<span class="c1"># Classes are automatically injected based on annotated type. </span>
+<span class="c1"># Parameters will be located based on the hint given in their default value.</span>
+<span class="c1"># Unknown arguments will not be processed.</span>
+<span class="k">def</span> <span class="nf">greet</span><span class="p">(</span><span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">user_repository</span><span class="p">:</span> <span class="n">UserRepository</span><span class="p">,</span> <span class="n">env</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">wire</span><span class="p">(</span><span class="n">param</span><span class="o">=</span><span class="s2">&quot;env&quot;</span><span class="p">)):</span><span class="c1"># (1)!</span>
     <span class="o">...</span>
+</code></pre></div>
+<ol>
+<li>We know that this will be used in conjunction with many other libraries, so WireUp will not throw on unknown
+   parameters in order to let other decorators to do their job.</li>
+<li>Decorate all methods where the library must perform injection. </li>
+</ol>
+<p><strong>Installation</strong></p>
+<div class="highlight"><pre><span></span><code><span class="c1"># Install using poetry:</span>
+poetry<span class="w"> </span>add<span class="w"> </span>wireup
+
+<span class="c1"># Install using pip:</span>
+pip<span class="w"> </span>install<span class="w"> </span>wireup
 </code></pre></div>
 
 

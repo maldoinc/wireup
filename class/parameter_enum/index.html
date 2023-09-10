@@ -9,25 +9,25 @@
       
       
       
-        <link rel="prev" href="../factory_functions/">
+        <link rel="prev" href="../parameter_bag/">
       
       
-        <link rel="next" href="../manual_configuration/">
+        <link rel="next" href="../dependency_initialization_context/">
       
       
-      <link rel="icon" href="../assets/images/favicon.png">
+      <link rel="icon" href="../../assets/images/favicon.png">
       <meta name="generator" content="mkdocs-1.5.2, mkdocs-material-9.2.8">
     
     
       
-        <title>Working with Interfaces - WireUp</title>
+        <title>ParameterEnum - WireUp</title>
       
     
     
-      <link rel="stylesheet" href="../assets/stylesheets/main.046329b4.min.css">
+      <link rel="stylesheet" href="../../assets/stylesheets/main.046329b4.min.css">
       
         
-        <link rel="stylesheet" href="../assets/stylesheets/palette.85d0ee34.min.css">
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.85d0ee34.min.css">
       
       
 
@@ -46,11 +46,11 @@
       
     
     
-      <link rel="stylesheet" href="../assets/_mkdocstrings.css">
+      <link rel="stylesheet" href="../../assets/_mkdocstrings.css">
     
-      <link rel="stylesheet" href="../stylesheets/extra.css">
+      <link rel="stylesheet" href="../../stylesheets/extra.css">
     
-    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce((e,_)=>(e<<5)-e+_.charCodeAt(0),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce((e,_)=>(e<<5)-e+_.charCodeAt(0),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
     
       
 
@@ -78,6 +78,11 @@
     <label class="md-overlay" for="__drawer"></label>
     <div data-md-component="skip">
       
+        
+        <a href="#wireup.ParameterEnum" class="md-skip">
+          Skip to content
+        </a>
+      
     </div>
     <div data-md-component="announce">
       
@@ -94,7 +99,7 @@
 
 <header class="md-header md-header--shadow" data-md-component="header">
   <nav class="md-header__inner md-grid" aria-label="Header">
-    <a href=".." title="WireUp" class="md-header__button md-logo" aria-label="WireUp" data-md-component="logo">
+    <a href="../.." title="WireUp" class="md-header__button md-logo" aria-label="WireUp" data-md-component="logo">
       
   
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54Z"/></svg>
@@ -114,7 +119,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Working with Interfaces
+              ParameterEnum
             
           </span>
         </div>
@@ -224,7 +229,7 @@
 
 <nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
   <label class="md-nav__title" for="__drawer">
-    <a href=".." title="WireUp" class="md-nav__button md-logo" aria-label="WireUp" data-md-component="logo">
+    <a href="../.." title="WireUp" class="md-nav__button md-logo" aria-label="WireUp" data-md-component="logo">
       
   
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54Z"/></svg>
@@ -253,7 +258,7 @@
   
   
     <li class="md-nav__item">
-      <a href=".." class="md-nav__link">
+      <a href="../.." class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -272,7 +277,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../quickstart/" class="md-nav__link">
+      <a href="../../quickstart/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -291,7 +296,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../services/" class="md-nav__link">
+      <a href="../../services/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -310,7 +315,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../parameters/" class="md-nav__link">
+      <a href="../../parameters/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -327,21 +332,19 @@
       
   
   
-    
-  
   
     
     
     
       
     
-    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
       
         
         
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" checked>
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
         
           <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
             
@@ -354,7 +357,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="true">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_5">
             <span class="md-nav__icon md-icon"></span>
             Advanced Topics
@@ -367,7 +370,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../factory_functions/" class="md-nav__link">
+      <a href="../../factory_functions/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -385,16 +388,9 @@
                 
   
   
-    
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../../interfaces/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -403,7 +399,6 @@
   
 
       </a>
-      
     </li>
   
 
@@ -415,7 +410,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../manual_configuration/" class="md-nav__link">
+      <a href="../../manual_configuration/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -435,7 +430,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../multiple_containers/" class="md-nav__link">
+      <a href="../../multiple_containers/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -498,7 +493,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../introduce_to_an_existing_project/" class="md-nav__link">
+      <a href="../../introduce_to_an_existing_project/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -523,19 +518,21 @@
       
   
   
+    
+  
   
     
     
     
       
     
-    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
       
         
         
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7" checked>
         
           <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="0">
             
@@ -548,7 +545,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="true">
           <label class="md-nav__title" for="__nav_7">
             <span class="md-nav__icon md-icon"></span>
             API Reference
@@ -561,7 +558,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../class/wireup/" class="md-nav__link">
+      <a href="../wireup/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -581,7 +578,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../class/dependency_container/" class="md-nav__link">
+      <a href="../dependency_container/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -601,7 +598,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../class/parameter_bag/" class="md-nav__link">
+      <a href="../parameter_bag/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -619,9 +616,27 @@
                 
   
   
+    
   
-    <li class="md-nav__item">
-      <a href="../class/parameter_enum/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  <span class="md-ellipsis">
+    ParameterEnum
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         
   
   <span class="md-ellipsis">
@@ -630,6 +645,51 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#wireup.ParameterEnum" class="md-nav__link">
+    ParameterEnum
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#wireup.ParameterEnum-functions" class="md-nav__link">
+    Functions
+  </a>
+  
+    <nav class="md-nav" aria-label="Functions">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#wireup.ParameterEnum.wire" class="md-nav__link">
+    wire()
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -641,7 +701,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../class/dependency_initialization_context/" class="md-nav__link">
+      <a href="../dependency_initialization_context/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -680,6 +740,41 @@
   
   
   
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#wireup.ParameterEnum" class="md-nav__link">
+    ParameterEnum
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#wireup.ParameterEnum-functions" class="md-nav__link">
+    Functions
+  </a>
+  
+    <nav class="md-nav" aria-label="Functions">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#wireup.ParameterEnum.wire" class="md-nav__link">
+    wire()
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
 </nav>
                   </div>
                 </div>
@@ -696,51 +791,65 @@
   
 
 
-  <h1>Working with Interfaces</h1>
+  <h1>ParameterEnum</h1>
 
-<p>When autowiring dependencies, you might want to inject an interface rather than 
-the concrete implementation directly. Since Python doesn't have built-in interfaces, you can leverage any class 
-that's marked as abstract within the container.</p>
-<p>The following code registers <code>Engine</code> as an interface. This implies that <code>Engine</code> can't be directly injected. 
-Instead, a dependency that implements the interface must be present and also be registered in the container.</p>
-<div class="highlight"><pre><span></span><code><span class="nd">@container</span><span class="o">.</span><span class="n">abstract</span>
-<span class="k">class</span> <span class="nc">Engine</span><span class="p">:</span>
-    <span class="k">def</span> <span class="nf">do_thing</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="o">...</span>
-</code></pre></div>
-<p>To autowire interfaces, you can simply register a dependency that implements the interface within the container. 
-When injecting, ask for the interface itself, not its concrete implementation.</p>
-<div class="highlight"><pre><span></span><code><span class="nd">@container</span><span class="o">.</span><span class="n">register</span>
-<span class="k">class</span> <span class="nc">CombustionEngine</span><span class="p">(</span><span class="n">Engine</span><span class="p">):</span>
-    <span class="k">def</span> <span class="nf">do_thing</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="s2">&quot;I&#39;m a Combustion Engine&quot;</span>
+<div class="doc doc-object doc-class">
 
 
-<span class="nd">@container</span><span class="o">.</span><span class="n">autowire</span>
-<span class="k">def</span> <span class="nf">do_engine_things</span><span class="p">(</span><span class="n">engine</span><span class="p">:</span> <span class="n">Engine</span><span class="p">):</span>
-    <span class="k">return</span> <span class="n">engine</span><span class="o">.</span><span class="n">do_thing</span><span class="p">()</span> <span class="c1"># Returns &quot;I&#39;m a Combustion Engine&quot;</span>
-</code></pre></div>
-<p>In scenarios where there are multiple implementations of an interface, each implementation must be 
-associated with a qualifier.</p>
-<div class="highlight"><pre><span></span><code><span class="nd">@container</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="n">qualifier</span><span class="o">=</span><span class="s2">&quot;electric&quot;</span><span class="p">)</span>
-<span class="k">class</span> <span class="nc">ElectricEngine</span><span class="p">(</span><span class="n">Engine</span><span class="p">):</span>
-    <span class="k">def</span> <span class="nf">do_thing</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="s2">&quot;I&#39;m an Electric Engine&quot;</span>
+
+<a id="wireup.ParameterEnum"></a>
+  <div class="doc doc-contents first">
+          <p class="doc doc-class-bases">
+            Bases: <code><span title="enum.Enum">Enum</span></code></p>
+
+  
+      <p>Enum with a <code>.wire</code> method allowing easy injection of members.</p>
+<p>Allows you to add application parameters as enum members and their names as values.
+When you need to inject a parameter instead of referencing it by name you can
+simply set the enum as the default value.</p>
+<p>This will inject a parameter by name and won't work with expressions.</p>
 
 
-<span class="nd">@container</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="n">qualifier</span><span class="o">=</span><span class="s2">&quot;combustion&quot;</span><span class="p">)</span>
-<span class="k">class</span> <span class="nc">CombustionEngine</span><span class="p">(</span><span class="n">Engine</span><span class="p">):</span>
-    <span class="k">def</span> <span class="nf">do_thing</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="s2">&quot;I&#39;m a Combustion Engine&quot;</span>
-</code></pre></div>
-<p>While injecting an interface with multiple implementing dependencies, you need to specify a qualifier to indicate 
-which concrete class should be resolved.</p>
-<div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">home</span><span class="p">(</span>
-    <span class="n">engine</span><span class="p">:</span> <span class="n">Engine</span> <span class="o">=</span> <span class="n">wire</span><span class="p">(</span><span class="n">qualifier</span><span class="o">=</span><span class="s2">&quot;electric&quot;</span><span class="p">),</span>
-    <span class="n">combustion</span><span class="p">:</span> <span class="n">Engine</span> <span class="o">=</span> <span class="n">wire</span><span class="p">(</span><span class="n">qualifier</span><span class="o">=</span><span class="s2">&quot;combustion&quot;</span><span class="p">),</span>
-<span class="p">):</span>
-    <span class="o">...</span>
-</code></pre></div>
+  
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+<h2 id="wireup.ParameterEnum-functions">Functions</h2>
+
+
+<div class="doc doc-object doc-function">
+
+
+
+
+<h3 id="wireup.ParameterEnum.wire" class="doc doc-heading">
+          <code class="highlight language-python"><span class="n">wire</span><span class="p">()</span></code>
+
+</h3>
+
+
+  <div class="doc doc-contents ">
+  
+      <p>Inject the parameter this enumeration member represents.</p>
+<p>Equivalent of <code>wire(param=EnumParam.enum_member.value)</code></p>
+
+  </div>
+
+</div>
+
+
+
+  </div>
+
+  </div>
+
+</div>
 
 
 
@@ -762,10 +871,10 @@ which concrete class should be resolved.</p>
       <div class="md-dialog__inner md-typeset"></div>
     </div>
     
-    <script id="__config" type="application/json">{"base": "..", "features": ["search.highlight", "navigation.sections", "content.code.annotate", "navigation.instant"], "search": "../assets/javascripts/workers/search.dfff1995.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
+    <script id="__config" type="application/json">{"base": "../..", "features": ["search.highlight", "navigation.sections", "content.code.annotate", "navigation.instant"], "search": "../../assets/javascripts/workers/search.dfff1995.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
     
     
-      <script src="../assets/javascripts/bundle.dff1b7c8.min.js"></script>
+      <script src="../../assets/javascripts/bundle.dff1b7c8.min.js"></script>
       
     
   </body>

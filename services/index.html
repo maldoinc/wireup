@@ -9,10 +9,10 @@
       
       
       
-        <link rel="prev" href="../factory_functions/">
+        <link rel="prev" href="../quickstart/">
       
       
-        <link rel="next" href="../manual_configuration/">
+        <link rel="next" href="../parameters/">
       
       
       <link rel="icon" href="../assets/images/favicon.png">
@@ -20,7 +20,7 @@
     
     
       
-        <title>Working with Interfaces - WireUp</title>
+        <title>Services - WireUp</title>
       
     
     
@@ -78,6 +78,11 @@
     <label class="md-overlay" for="__drawer"></label>
     <div data-md-component="skip">
       
+        
+        <a href="#registration" class="md-skip">
+          Skip to content
+        </a>
+      
     </div>
     <div data-md-component="announce">
       
@@ -114,7 +119,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Working with Interfaces
+              Services
             
           </span>
         </div>
@@ -289,9 +294,27 @@
       
   
   
+    
   
-    <li class="md-nav__item">
-      <a href="../services/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  <span class="md-ellipsis">
+    Services
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         
   
   <span class="md-ellipsis">
@@ -300,6 +323,38 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#registration" class="md-nav__link">
+    Registration
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#injection" class="md-nav__link">
+    Injection
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -327,21 +382,19 @@
       
   
   
-    
-  
   
     
     
     
       
     
-    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
       
         
         
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" checked>
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
         
           <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
             
@@ -354,7 +407,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="true">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_5">
             <span class="md-nav__icon md-icon"></span>
             Advanced Topics
@@ -385,16 +438,9 @@
                 
   
   
-    
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../interfaces/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -403,7 +449,6 @@
   
 
       </a>
-      
     </li>
   
 
@@ -680,6 +725,28 @@
   
   
   
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#registration" class="md-nav__link">
+    Registration
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#injection" class="md-nav__link">
+    Injection
+  </a>
+  
+</li>
+      
+    </ul>
+  
 </nav>
                   </div>
                 </div>
@@ -696,51 +763,30 @@
   
 
 
-  <h1>Working with Interfaces</h1>
+  <h1>Services</h1>
 
-<p>When autowiring dependencies, you might want to inject an interface rather than 
-the concrete implementation directly. Since Python doesn't have built-in interfaces, you can leverage any class 
-that's marked as abstract within the container.</p>
-<p>The following code registers <code>Engine</code> as an interface. This implies that <code>Engine</code> can't be directly injected. 
-Instead, a dependency that implements the interface must be present and also be registered in the container.</p>
-<div class="highlight"><pre><span></span><code><span class="nd">@container</span><span class="o">.</span><span class="n">abstract</span>
-<span class="k">class</span> <span class="nc">Engine</span><span class="p">:</span>
-    <span class="k">def</span> <span class="nf">do_thing</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="o">...</span>
-</code></pre></div>
-<p>To autowire interfaces, you can simply register a dependency that implements the interface within the container. 
-When injecting, ask for the interface itself, not its concrete implementation.</p>
-<div class="highlight"><pre><span></span><code><span class="nd">@container</span><span class="o">.</span><span class="n">register</span>
-<span class="k">class</span> <span class="nc">CombustionEngine</span><span class="p">(</span><span class="n">Engine</span><span class="p">):</span>
-    <span class="k">def</span> <span class="nf">do_thing</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="s2">&quot;I&#39;m a Combustion Engine&quot;</span>
-
-
-<span class="nd">@container</span><span class="o">.</span><span class="n">autowire</span>
-<span class="k">def</span> <span class="nf">do_engine_things</span><span class="p">(</span><span class="n">engine</span><span class="p">:</span> <span class="n">Engine</span><span class="p">):</span>
-    <span class="k">return</span> <span class="n">engine</span><span class="o">.</span><span class="n">do_thing</span><span class="p">()</span> <span class="c1"># Returns &quot;I&#39;m a Combustion Engine&quot;</span>
-</code></pre></div>
-<p>In scenarios where there are multiple implementations of an interface, each implementation must be 
-associated with a qualifier.</p>
-<div class="highlight"><pre><span></span><code><span class="nd">@container</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="n">qualifier</span><span class="o">=</span><span class="s2">&quot;electric&quot;</span><span class="p">)</span>
-<span class="k">class</span> <span class="nc">ElectricEngine</span><span class="p">(</span><span class="n">Engine</span><span class="p">):</span>
-    <span class="k">def</span> <span class="nf">do_thing</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="s2">&quot;I&#39;m an Electric Engine&quot;</span>
-
-
-<span class="nd">@container</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="n">qualifier</span><span class="o">=</span><span class="s2">&quot;combustion&quot;</span><span class="p">)</span>
-<span class="k">class</span> <span class="nc">CombustionEngine</span><span class="p">(</span><span class="n">Engine</span><span class="p">):</span>
-    <span class="k">def</span> <span class="nf">do_thing</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="s2">&quot;I&#39;m a Combustion Engine&quot;</span>
-</code></pre></div>
-<p>While injecting an interface with multiple implementing dependencies, you need to specify a qualifier to indicate 
-which concrete class should be resolved.</p>
-<div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">home</span><span class="p">(</span>
-    <span class="n">engine</span><span class="p">:</span> <span class="n">Engine</span> <span class="o">=</span> <span class="n">wire</span><span class="p">(</span><span class="n">qualifier</span><span class="o">=</span><span class="s2">&quot;electric&quot;</span><span class="p">),</span>
-    <span class="n">combustion</span><span class="p">:</span> <span class="n">Engine</span> <span class="o">=</span> <span class="n">wire</span><span class="p">(</span><span class="n">qualifier</span><span class="o">=</span><span class="s2">&quot;combustion&quot;</span><span class="p">),</span>
-<span class="p">):</span>
-    <span class="o">...</span>
-</code></pre></div>
+<p>Services are classes known by the container that provide functionality.</p>
+<p>Contrary to static utility classes or methods they usually rely on other services or <a href="../parameters/">parameters</a> to
+provide a part of their functionality.</p>
+<p>Examples refer to the default container provided by the library in <code>wireup.container</code> but any other instance can be
+used in its place. The process is meant to be simple and the short <a href="../quickstart/">Quickstart</a> page shows by example and
+already contains all the key concepts you need to know about.</p>
+<h2 id="registration">Registration</h2>
+<p>Declaration and usage of services is designed to be as simple as possible. They may live anywhere in the application
+but must be registered with the container.</p>
+<p>To register a class as a service the following options are available.</p>
+<ul>
+<li>Decorate the class using the <code>container.register</code>.</li>
+<li>Call <code>container.register(YourService)</code> directly on the service.</li>
+<li>Use <code>container.register_all_in_module</code>.
+  (See: <a href="../manual_configuration/#using-wireup-without-registration-decorators">Manual Configuration</a>)</li>
+</ul>
+<h2 id="injection">Injection</h2>
+<p>The container will perform autowiring based on the type hints given. No manual configuration is needed to inject
+services.</p>
+<p>To perform autowiring the method to be autowired must be decorated with <code>@container.autowire</code>. Given the nature of
+Python decorators it is also possible to simply call it as a regular function which will return a callable with
+arguments the containers knows about already bound.</p>
 
 
 

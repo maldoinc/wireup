@@ -9,10 +9,10 @@
       
       
       
-        <link rel="prev" href="../factory_functions/">
+        <link rel="prev" href="../parameters/">
       
       
-        <link rel="next" href="../manual_configuration/">
+        <link rel="next" href="../interfaces/">
       
       
       <link rel="icon" href="../assets/images/favicon.png">
@@ -20,7 +20,7 @@
     
     
       
-        <title>Working with Interfaces - WireUp</title>
+        <title>Factory functions - WireUp</title>
       
     
     
@@ -78,6 +78,11 @@
     <label class="md-overlay" for="__drawer"></label>
     <div data-md-component="skip">
       
+        
+        <a href="#use-cases" class="md-skip">
+          Skip to content
+        </a>
+      
     </div>
     <div data-md-component="announce">
       
@@ -114,7 +119,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Working with Interfaces
+              Factory functions
             
           </span>
         </div>
@@ -365,26 +370,6 @@
                 
   
   
-  
-    <li class="md-nav__item">
-      <a href="../factory_functions/" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    Factory functions
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
     
   
   
@@ -394,7 +379,84 @@
       
       
       
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  <span class="md-ellipsis">
+    Factory functions
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
       <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  <span class="md-ellipsis">
+    Factory functions
+  </span>
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#use-cases" class="md-nav__link">
+    Use cases
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#usage" class="md-nav__link">
+    Usage
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#examples" class="md-nav__link">
+    Examples
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#links" class="md-nav__link">
+    Links
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../interfaces/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -403,7 +465,6 @@
   
 
       </a>
-      
     </li>
   
 
@@ -680,6 +741,42 @@
   
   
   
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#use-cases" class="md-nav__link">
+    Use cases
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#usage" class="md-nav__link">
+    Usage
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#examples" class="md-nav__link">
+    Examples
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#links" class="md-nav__link">
+    Links
+  </a>
+  
+</li>
+      
+    </ul>
+  
 </nav>
                   </div>
                 </div>
@@ -696,51 +793,74 @@
   
 
 
-  <h1>Working with Interfaces</h1>
+  <h1>Factory functions</h1>
 
-<p>When autowiring dependencies, you might want to inject an interface rather than 
-the concrete implementation directly. Since Python doesn't have built-in interfaces, you can leverage any class 
-that's marked as abstract within the container.</p>
-<p>The following code registers <code>Engine</code> as an interface. This implies that <code>Engine</code> can't be directly injected. 
-Instead, a dependency that implements the interface must be present and also be registered in the container.</p>
-<div class="highlight"><pre><span></span><code><span class="nd">@container</span><span class="o">.</span><span class="n">abstract</span>
-<span class="k">class</span> <span class="nc">Engine</span><span class="p">:</span>
-    <span class="k">def</span> <span class="nf">do_thing</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="o">...</span>
-</code></pre></div>
-<p>To autowire interfaces, you can simply register a dependency that implements the interface within the container. 
-When injecting, ask for the interface itself, not its concrete implementation.</p>
-<div class="highlight"><pre><span></span><code><span class="nd">@container</span><span class="o">.</span><span class="n">register</span>
-<span class="k">class</span> <span class="nc">CombustionEngine</span><span class="p">(</span><span class="n">Engine</span><span class="p">):</span>
-    <span class="k">def</span> <span class="nf">do_thing</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="s2">&quot;I&#39;m a Combustion Engine&quot;</span>
+<p>Factory functions allow the container to wire dependencies that require additional logic to create 
+or be able to inject objects it doesn't own.</p>
+<p>Typically getting the necessary dependencies is enough to construct an object. However, there are scenarios
+where you need to delegate the creation of an object to a special function called a 
+<a href="https://en.wikipedia.org/wiki/Factory_(object-oriented_programming)" target="_blank">factory</a>.</p>
+<h2 id="use-cases">Use cases</h2>
+<p>Some of the use cases for factories are as follows:</p>
+<ul>
+<li>Object construction needs additional logic or configuration.</li>
+<li>Depending on the runtime environment or configuration, you may need to create different objects 
+inheriting from the same base (See: <a href="https://en.wikipedia.org/wiki/Strategy_pattern" target="_blank">Strategy Pattern</a>) or configure them differently. </li>
+<li>Gradually introduce DI into an existing project where the container should be able to inject dependencies created elsewhere. 
+Such as injecting the same database connection as the rest of the application.</li>
+<li>Eliminate services which have only one method that returns the same object and instead inject the object directly.<ul>
+<li>A service that returns a db connection</li>
+<li>A service which returns the current authenticated user</li>
+<li>Register the result of a service's method as its own service. Instead of calling <code>auth_service.get_current_user()</code> every time, inject the authenticated user directly.</li>
+</ul>
+</li>
+</ul>
+<h2 id="usage">Usage</h2>
+<p>In order for the container to inject these dependencies you must register the factory function.
+You can do this by using the <code>@container.register</code> decorator or by calling <code>container.register(fn)</code> directly.</p>
+<p>When the container needs to inject a dependency it checks known factories to see if any of them can create it.</p>
+<div class="admonition info">
+<p class="admonition-title">Info</p>
+<p>The return type of the function tells the container what type of dependency it can create.</p>
+</div>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>Factories can only depend on objects known by the container!</p>
+</div>
+<h2 id="examples">Examples</h2>
+<p>Assume in the context of a web application a class <code>User</code> exists and represents a user of the system.</p>
+<div class="highlight"><pre><span></span><code><span class="c1"># Instead of doing the following over and over again</span>
+<span class="k">def</span> <span class="nf">get_user_logs</span><span class="p">(</span><span class="n">auth_service</span><span class="p">:</span> <span class="n">AuthService</span><span class="p">):</span>
+    <span class="n">current_user</span> <span class="o">=</span> <span class="n">auth_service</span><span class="o">.</span><span class="n">get_current_user</span><span class="p">()</span>
+    <span class="o">...</span>
 
 
-<span class="nd">@container</span><span class="o">.</span><span class="n">autowire</span>
-<span class="k">def</span> <span class="nf">do_engine_things</span><span class="p">(</span><span class="n">engine</span><span class="p">:</span> <span class="n">Engine</span><span class="p">):</span>
-    <span class="k">return</span> <span class="n">engine</span><span class="o">.</span><span class="n">do_thing</span><span class="p">()</span> <span class="c1"># Returns &quot;I&#39;m a Combustion Engine&quot;</span>
-</code></pre></div>
-<p>In scenarios where there are multiple implementations of an interface, each implementation must be 
-associated with a qualifier.</p>
-<div class="highlight"><pre><span></span><code><span class="nd">@container</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="n">qualifier</span><span class="o">=</span><span class="s2">&quot;electric&quot;</span><span class="p">)</span>
-<span class="k">class</span> <span class="nc">ElectricEngine</span><span class="p">(</span><span class="n">Engine</span><span class="p">):</span>
-    <span class="k">def</span> <span class="nf">do_thing</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="s2">&quot;I&#39;m an Electric Engine&quot;</span>
 
+<span class="c1"># You can create a factory and inject the authenticated user directly.</span>
+<span class="c1"># You may want to create a new type to make a disctinction on the type of user this is.</span>
+<span class="n">AuthenticatedUser</span> <span class="o">=</span> <span class="n">User</span>
 
-<span class="nd">@container</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="n">qualifier</span><span class="o">=</span><span class="s2">&quot;combustion&quot;</span><span class="p">)</span>
-<span class="k">class</span> <span class="nc">CombustionEngine</span><span class="p">(</span><span class="n">Engine</span><span class="p">):</span>
-    <span class="k">def</span> <span class="nf">do_thing</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="s2">&quot;I&#39;m a Combustion Engine&quot;</span>
-</code></pre></div>
-<p>While injecting an interface with multiple implementing dependencies, you need to specify a qualifier to indicate 
-which concrete class should be resolved.</p>
-<div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">home</span><span class="p">(</span>
-    <span class="n">engine</span><span class="p">:</span> <span class="n">Engine</span> <span class="o">=</span> <span class="n">wire</span><span class="p">(</span><span class="n">qualifier</span><span class="o">=</span><span class="s2">&quot;electric&quot;</span><span class="p">),</span>
-    <span class="n">combustion</span><span class="p">:</span> <span class="n">Engine</span> <span class="o">=</span> <span class="n">wire</span><span class="p">(</span><span class="n">qualifier</span><span class="o">=</span><span class="s2">&quot;combustion&quot;</span><span class="p">),</span>
-<span class="p">):</span>
+<span class="nd">@container</span><span class="o">.</span><span class="n">register</span>
+<span class="k">def</span> <span class="nf">get_current_user</span><span class="p">(</span><span class="n">auth_service</span><span class="p">:</span> <span class="n">AuthService</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">AuthenticatedUser</span><span class="p">:</span>
+    <span class="k">return</span> <span class="n">auth_service</span><span class="o">.</span><span class="n">get_current_user</span><span class="p">()</span>
+
+<span class="c1"># Now it is possible to inject the authenticated user directly wherever it is necessary.</span>
+<span class="k">def</span> <span class="nf">get_user_logs</span><span class="p">(</span><span class="n">user</span><span class="p">:</span> <span class="n">AuthenticatedUser</span><span class="p">):</span>
     <span class="o">...</span>
 </code></pre></div>
+<p>Assume a base class <code>Notifier</code> with implementations that define how the notification is sent (IMAP, POP, WebHooks, etc.)
+Given a user it is possible to instantiate the correct type of notifier based on user preferences.</p>
+<div class="highlight"><pre><span></span><code><span class="nd">@container</span><span class="o">.</span><span class="n">register</span>
+<span class="k">def</span> <span class="nf">get_user_notifier</span><span class="p">(</span><span class="n">user</span><span class="p">:</span> <span class="n">AuthenticatedUser</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Notifier</span><span class="p">:</span>
+    <span class="n">notifier_type</span> <span class="o">=</span> <span class="o">...</span>
+
+    <span class="k">return</span> <span class="n">container</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">notifier_type</span><span class="p">)</span>
+</code></pre></div>
+<p>When injecting <code>Notifier</code> the correct type will be created based on the authenticated user's preferences.</p>
+<h2 id="links">Links</h2>
+<ul>
+<li><a href="../introduce_to_an_existing_project/">Introduce to an existing project</a></li>
+</ul>
 
 
 
