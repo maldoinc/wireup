@@ -2,4 +2,5 @@
 .ruff_cache
 .idea
 dist
+docs/site
 __pycache__
