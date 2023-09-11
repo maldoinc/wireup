@@ -1,29 +1,28 @@
 # WireUp
 
-Effortless dependency injection in Python.
+Dependency injection library designed to provide a powerful and flexible way to manage and inject 
+dependencies making it easier to develop, test, and maintain Python codebases.
 
+**1. Register dependencies**
 
-**1. Set application parameters** 
 ```python
+from wireup import container
+
 container.params.update({
-    "db.connection_str": "sqlite://",
-    "auth.user": os.environ.get("USER"),
-    "cache_dir": "/var/cache/",
+    "db.connection_str": os.environ.get("DATABASE_URL") 
+    "cache_dir": gettempdir(),
     "env": os.environ.get("ENV", "dev")
 })
-```
 
-**2. Register dependencies**
 
-```python
-@container.register
+@container.register 
 class DbService:
     def __init__(
             self,
             # Inject a parameter by name
             connection_str: str = wire(param="db.connection_str"),
             # Or by interpolating multiple parameters into a string
-            cache_dir: str = wire(expr="${cache_dir}/${auth.user}/db"),
+            cache_dir: str = wire(expr="${cache_dir}/${env}/db"),
     ):
         self.connection_str = connection_str
         self.cache_dir = cache_dir
@@ -34,11 +33,10 @@ class DbService:
 @container.register
 @dataclass
 class UserRepository:
-    db: DbService  # Dependencies may also depend on other dependencies.
-    user: str = container.wire(param="auth.user")
+    db: DbService  # Services may also depend on other dependencies.
 ```
 
-**3. Inject**
+**2. Inject**
 
 ```python
 # Decorate all methods where the library must perform injection. 

@@ -1,22 +1,20 @@
-**1. Set application configuration parameters**
+The following is a short example demonstrating a simple application with two services (classes that provide
+functionality) and parameters (app configuration) showing automatic dependency resolution and injection (autowiring) 
+for services and a simple web view called "greet".
 
-```python 
+**1. Register dependencies**
+
+```python
 from wireup import container
 
 container.params.update({
-    "db.connection_str": os.environ.get("DATABASE_URL")# (1)!
+    "db.connection_str": os.environ.get("DATABASE_URL")  # (1)!
     "cache_dir": gettempdir(),
     "env": os.environ.get("ENV", "dev")
 })
-```
 
-1. Even though there are dots in parameter names, that not imply any nested structure. The parameter bag is a
-   flat key-value store.
 
-**2. Register dependencies**
-
-```python
-@container.register# (1)!
+@container.register  # (2)!
 class DbService:
     def __init__(
             self,
@@ -34,28 +32,30 @@ class DbService:
 @container.register
 @dataclass
 class UserRepository:
-    db: DbService# Dependencies may also depend on other dependencies. (2)!
+    db: DbService  # Services may also depend on other dependencies. (3)!
 ```
 
-1. Decorators do not modify the classes in any way and only serve to collect metadata. This behavior can make
+1. Even though there are dots in parameter names, that not imply any nested structure. The parameter bag is a
+   flat key-value store.
+2. Decorators do not modify the classes in any way and only serve to collect metadata. This behavior can make
    testing a lot simpler as you can still instantiate this like a regular class in your tests.
-2. Use type hints to tell the library what object to inject.
+3. Use type hints to tell the library what object to inject.
 
-**3. Inject**
+**2. Inject**
 
 ```python
 @app.route("/greet/<str:name>")
-@container.autowire#(2)!
+@container.autowire  # (2)!
 # Classes are automatically injected based on annotated type. 
 # Parameters will be located based on the hint given in their default value.
 # Unknown arguments will not be processed.
-def greet(name: str, user_repository: UserRepository, env: str = wire(param="env")):# (1)!
+def greet(name: str, user_repository: UserRepository, env: str = wire(param="env")):  # (1)!
     ...
 ```
 
 1. We know that this will be used in conjunction with many other libraries, so WireUp will not throw on unknown
    parameters in order to let other decorators to do their job.
-2. Decorate all methods where the library must perform injection. 
+2. Decorate all methods where the library must perform injection.
 
 **Installation**
 
