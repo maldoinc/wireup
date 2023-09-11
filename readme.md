@@ -62,3 +62,7 @@ poetry add wireup
 # Install using pip:
 pip install wireup
 ```
+
+## Documentation
+
+For more information [check out the documentation](https://maldoinc.github.io/wireup/)
