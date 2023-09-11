@@ -23,7 +23,6 @@ if TYPE_CHECKING:
     from .parameter import ParameterBag
 
 __T = TypeVar("__T")
-_SignatureParams = dict[str, Any]
 
 
 class DependencyContainer:
@@ -52,7 +51,7 @@ class DependencyContainer:
 
         self.__initialized_objects: dict[_ContainerObjectIdentifier, object] = {}
         self.__initialized_proxies: dict[_ContainerObjectIdentifier, ContainerProxy] = {}
-        self.__initialized_args: dict[tuple[Callable, __T], _SignatureParams] = {}
+        self.__initialized_args: dict[tuple[Callable, __T], dict[str, Any]] = {}
 
         self.params: ParameterBag = parameter_bag
         self.initialization_context = DependencyInitializationContext()
