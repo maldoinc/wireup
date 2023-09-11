@@ -11,6 +11,7 @@ nav:
       - Multiple containers: multiple_containers.md
   - Misc:
     - Introduce to an existing project: introduce_to_an_existing_project.md
+    - Demo application: demo_app.md
   - API Reference:
       - wireup: class/wireup.md
       - DependencyContainer: class/dependency_container.md
