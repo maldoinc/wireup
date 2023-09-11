@@ -1,10 +1,9 @@
 from __future__ import annotations
 
 import re
+from collections import defaultdict
 from re import Match
 from typing import Any
-
-from mypy.nodes import defaultdict
 
 from .container_util import ParameterReference, TemplatedString
 
