@@ -1,7 +1,10 @@
 from __future__ import annotations
 
 import re
+from re import Match
 from typing import Any
+
+from mypy.nodes import defaultdict
 
 from .container_util import ParameterReference, TemplatedString
 
@@ -17,10 +20,16 @@ class ParameterBag:
     def __init__(self) -> None:
         """Initialize an empty ParameterBag.
 
-        The ParameterBag holds a flat key-value store of parameter values.
+        ParameterBag holds a flat key-value store of parameter values.
+        __bag: A dictionary to store parameter values.
+        __cache: A cache for interpolated values.
+        __param_cache: A dictionary to keep track of which cache entries involve each parameter.
         """
         self.__bag: dict[str, Any] = {}
         self.__cache: dict[str, str] = {}
+        # __param_cache is used to invalidate cache entries related to specific parameters.
+        # It maps parameter names to the set of cache entry keys that involve that parameter.
+        self.__param_cache: dict[str, set[str]] = defaultdict(set)
 
     def put(self, name: str, val: Any) -> None:
         """Put a parameter value into the bag. This overwrites any previous values.
@@ -29,6 +38,8 @@ class ParameterBag:
         :param val: The value of the parameter.
         """
         self.__bag[name] = val
+        # Clear cache entries involving this parameter name
+        self.__clear_cache_for_name(name)
 
     def get_all(self) -> dict[str, Any]:
         """Get all parameters stored in the bag.
@@ -56,7 +67,8 @@ class ParameterBag:
 
         :param new_params: A dictionary of parameter names and their updated values.
         """
-        self.__bag.update(new_params)
+        for name, value in new_params.items():
+            self.put(name, value)
 
     def __get_value_from_name(self, name: str) -> Any:
         if name not in self.__bag:
@@ -69,13 +81,24 @@ class ParameterBag:
         if val in self.__cache:
             return self.__cache[val]
 
-        res = re.sub(
-            r"\${(.*?)}",  # Let's accept anything here as we don't impose any rules when adding params
-            # Since we're concatenating strings we need to convert any parameters we get to str
-            lambda match: str(self.__get_value_from_name(match.group(1))),
-            val,
-            flags=re.DOTALL,
-        )
+        def replace_param(match: Match) -> str:
+            param_name = match.group(1)
+            param_value = str(self.__get_value_from_name(param_name))
+
+            # Populate __param_cache with the parameter name involved in this cache entry
+            self.__param_cache[param_name].add(val)
+
+            return param_value
+
+        # Let's accept anything here as we don't impose any rules when adding params
+        res = re.sub(r"\${(.*?)}", replace_param, val, flags=re.DOTALL)
         self.__cache[val] = res
 
         return res
+
+    def __clear_cache_for_name(self, name: str) -> None:
+        """Clear cache entries that involve the specified parameter name."""
+        for key in self.__param_cache[name]:
+            del self.__cache[key]
+
+        del self.__param_cache[name]

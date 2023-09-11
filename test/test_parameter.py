@@ -62,6 +62,25 @@ class TestParameterBag(unittest.TestCase):
 
         self.assertEqual("Unknown parameter dummy requested", str(context.exception))
 
+    def test_get_interpolated_result_is_cached(self):
+        self.bag.put("name", "Bob")
+        self.assertEqual(self.bag.get(TemplatedString("Hi ${name}")), "Hi Bob")
+        self.assertEqual({"Hi ${name}": "Hi Bob"}, self.bag._ParameterBag__cache)
+
+    def test_interpolated_cache_entries_cleared(self):
+        self.bag.put("name", "Bob")
+        self.bag.put("env", "test")
+
+        self.assertEqual(self.bag.get(TemplatedString("Hi ${name}")), "Hi Bob")
+        self.assertEqual(self.bag.get(TemplatedString("Hi from ${env}")), "Hi from test")
+        self.assertEqual({"Hi ${name}": "Hi Bob", "Hi from ${env}": "Hi from test"}, self.bag._ParameterBag__cache)
+
+        self.bag.put("env", "prod")
+        self.assertEqual({"Hi ${name}": "Hi Bob"}, self.bag._ParameterBag__cache)  # Check that entry was removed.
+
+        self.assertEqual(self.bag.get(TemplatedString("Hi from ${env}")), "Hi from prod")
+        self.assertEqual({"Hi ${name}": "Hi Bob", "Hi from ${env}": "Hi from prod"}, self.bag._ParameterBag__cache)
+
 
 class TestParameterPlaceholder(unittest.TestCase):
     def test_init(self):
