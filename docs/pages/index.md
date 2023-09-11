@@ -60,12 +60,13 @@ manage and inject dependencies making it easier to develop, test, and maintain P
             <img src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@14.1.2/assets/72x72/2753.png" /> 
             Framework Agnostic
         </div>
-        Seamlessly integrate with popular web frameworks like FastAPI and Flask to simplify dependency management in web applications.
+        Seamlessly integrate with popular web frameworks like Django, Flask and FastAPI
+        to simplify dependency management.
     </div>
 
 </div>
 
 ## License
 
-This project is licensed under the terms of the 
+This project is licensed under the terms of the
 [MIT](https://github.com/maldoinc/wireup/blob/master/license.md){: target=_blank } license.
