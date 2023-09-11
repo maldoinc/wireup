@@ -1,7 +1,8 @@
 In addition to service objects, the container also holds configuration, called parameters.
 
 Parameters are stored as a flat key-value store. They are able to retrieved at a later time by 
-services when being constructed.
+services when being constructed. They serve as configuration for services. 
+Think of a database url or environment name.
 
 ## Management
 

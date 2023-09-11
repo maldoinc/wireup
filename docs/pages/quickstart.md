@@ -1,5 +1,5 @@
-The following is a short example demonstrating a simple application with two services (classes that provide
-functionality) and parameters (app configuration) showing automatic dependency resolution and injection (autowiring) 
+Demonstration of a simple application with two services (classes that provide functionality)
+and parameters (app configuration) showing automatic dependency resolution and injection (autowiring) 
 for services and a simple web view called "greet".
 
 **1. Register dependencies**
@@ -7,6 +7,8 @@ for services and a simple web view called "greet".
 ```python
 from wireup import container
 
+# Parameters serve as configuration for services. 
+# Think of a database url or environment name.
 container.params.update({
     "db.connection_str": os.environ.get("DATABASE_URL")  # (1)!
     "cache_dir": gettempdir(),
@@ -14,20 +16,14 @@ container.params.update({
 })
 
 
+# Constructor injection is supported for regular classes as well as dataclasses.
 @container.register  # (2)!
 class DbService:
-    def __init__(
-            self,
-            # Inject a parameter by name
-            connection_str: str = wire(param="db.connection_str"),
-            # Or by interpolating multiple parameters into a string
-            cache_dir: str = wire(expr="${cache_dir}/${env}/db"),
-    ):
-        self.connection_str = connection_str
-        self.cache_dir = cache_dir
+   # Inject a parameter by name
+   connection_str: str = wire(param="db.connection_str"),
+   # Or by interpolating multiple parameters into a string
+   cache_dir: str = wire(expr="${cache_dir}/${env}/db"),
 
-
-# Constructor injection is also supported for dataclasses
 # resulting in a more compact syntax.
 @container.register
 @dataclass
