@@ -9,25 +9,25 @@
       
       
       
-        <link rel="prev" href="../services/">
+        <link rel="prev" href="../dependency_container/">
       
       
-        <link rel="next" href="../factory_functions/">
+        <link rel="next" href="../parameter_enum/">
       
       
-      <link rel="icon" href="../assets/images/favicon.png">
+      <link rel="icon" href="../../assets/images/favicon.png">
       <meta name="generator" content="mkdocs-1.5.2, mkdocs-material-9.2.8">
     
     
       
-        <title>Parameters - WireUp</title>
+        <title>ParameterBag - WireUp</title>
       
     
     
-      <link rel="stylesheet" href="../assets/stylesheets/main.046329b4.min.css">
+      <link rel="stylesheet" href="../../assets/stylesheets/main.046329b4.min.css">
       
         
-        <link rel="stylesheet" href="../assets/stylesheets/palette.85d0ee34.min.css">
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.85d0ee34.min.css">
       
       
 
@@ -46,11 +46,11 @@
       
     
     
-      <link rel="stylesheet" href="../assets/_mkdocstrings.css">
+      <link rel="stylesheet" href="../../assets/_mkdocstrings.css">
     
-      <link rel="stylesheet" href="../stylesheets/extra.css">
+      <link rel="stylesheet" href="../../stylesheets/extra.css">
     
-    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce((e,_)=>(e<<5)-e+_.charCodeAt(0),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce((e,_)=>(e<<5)-e+_.charCodeAt(0),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
     
       
 
@@ -79,7 +79,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#management" class="md-skip">
+        <a href="#wireup.ioc.parameter.ParameterBag" class="md-skip">
           Skip to content
         </a>
       
@@ -99,7 +99,7 @@
 
 <header class="md-header md-header--shadow" data-md-component="header">
   <nav class="md-header__inner md-grid" aria-label="Header">
-    <a href=".." title="WireUp" class="md-header__button md-logo" aria-label="WireUp" data-md-component="logo">
+    <a href="../.." title="WireUp" class="md-header__button md-logo" aria-label="WireUp" data-md-component="logo">
       
   
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54Z"/></svg>
@@ -119,7 +119,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Parameters
+              ParameterBag
             
           </span>
         </div>
@@ -229,7 +229,7 @@
 
 <nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
   <label class="md-nav__title" for="__drawer">
-    <a href=".." title="WireUp" class="md-nav__button md-logo" aria-label="WireUp" data-md-component="logo">
+    <a href="../.." title="WireUp" class="md-nav__button md-logo" aria-label="WireUp" data-md-component="logo">
       
   
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54Z"/></svg>
@@ -258,7 +258,7 @@
   
   
     <li class="md-nav__item">
-      <a href=".." class="md-nav__link">
+      <a href="../.." class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -277,7 +277,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../quickstart/" class="md-nav__link">
+      <a href="../../quickstart/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -296,7 +296,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../services/" class="md-nav__link">
+      <a href="../../services/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -313,27 +313,9 @@
       
   
   
-    
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  <span class="md-ellipsis">
-    Parameters
-  </span>
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../../parameters/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -342,65 +324,6 @@
   
 
       </a>
-      
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#management" class="md-nav__link">
-    Management
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#injection" class="md-nav__link">
-    Injection
-  </a>
-  
-    <nav class="md-nav" aria-label="Injection">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#by-name" class="md-nav__link">
-    By name
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#parameter-expressions" class="md-nav__link">
-    Parameter expressions
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#parameter-enums" class="md-nav__link">
-    Parameter enums
-  </a>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -447,7 +370,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../factory_functions/" class="md-nav__link">
+      <a href="../../factory_functions/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -467,7 +390,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../interfaces/" class="md-nav__link">
+      <a href="../../interfaces/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -487,7 +410,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../manual_configuration/" class="md-nav__link">
+      <a href="../../manual_configuration/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -507,7 +430,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../multiple_containers/" class="md-nav__link">
+      <a href="../../multiple_containers/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -570,7 +493,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../introduce_to_an_existing_project/" class="md-nav__link">
+      <a href="../../introduce_to_an_existing_project/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -590,7 +513,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../demo_app/" class="md-nav__link">
+      <a href="../../demo_app/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -615,19 +538,21 @@
       
   
   
+    
+  
   
     
     
     
       
     
-    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
       
         
         
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7" checked>
         
           <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="0">
             
@@ -640,7 +565,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="true">
           <label class="md-nav__title" for="__nav_7">
             <span class="md-nav__icon md-icon"></span>
             API Reference
@@ -653,7 +578,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../class/wireup/" class="md-nav__link">
+      <a href="../wireup/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -673,7 +598,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../class/dependency_container/" class="md-nav__link">
+      <a href="../dependency_container/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -691,9 +616,27 @@
                 
   
   
+    
   
-    <li class="md-nav__item">
-      <a href="../class/parameter_bag/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  <span class="md-ellipsis">
+    ParameterBag
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         
   
   <span class="md-ellipsis">
@@ -702,6 +645,79 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#wireup.ioc.parameter.ParameterBag" class="md-nav__link">
+    ParameterBag
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#wireup.ioc.parameter.ParameterBag-functions" class="md-nav__link">
+    Functions
+  </a>
+  
+    <nav class="md-nav" aria-label="Functions">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#wireup.ioc.parameter.ParameterBag.__init__" class="md-nav__link">
+    __init__()
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#wireup.ioc.parameter.ParameterBag.get" class="md-nav__link">
+    get()
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#wireup.ioc.parameter.ParameterBag.get_all" class="md-nav__link">
+    get_all()
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#wireup.ioc.parameter.ParameterBag.put" class="md-nav__link">
+    put()
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#wireup.ioc.parameter.ParameterBag.update" class="md-nav__link">
+    update()
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -713,7 +729,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../class/parameter_enum/" class="md-nav__link">
+      <a href="../parameter_enum/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -733,7 +749,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../class/dependency_initialization_context/" class="md-nav__link">
+      <a href="../dependency_initialization_context/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -779,43 +795,57 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#management" class="md-nav__link">
-    Management
+  <a href="#wireup.ioc.parameter.ParameterBag" class="md-nav__link">
+    ParameterBag
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#injection" class="md-nav__link">
-    Injection
+  <a href="#wireup.ioc.parameter.ParameterBag-functions" class="md-nav__link">
+    Functions
   </a>
   
-    <nav class="md-nav" aria-label="Injection">
+    <nav class="md-nav" aria-label="Functions">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#by-name" class="md-nav__link">
-    By name
+  <a href="#wireup.ioc.parameter.ParameterBag.__init__" class="md-nav__link">
+    __init__()
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#parameter-expressions" class="md-nav__link">
-    Parameter expressions
+  <a href="#wireup.ioc.parameter.ParameterBag.get" class="md-nav__link">
+    get()
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#wireup.ioc.parameter.ParameterBag.get_all" class="md-nav__link">
+    get_all()
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#wireup.ioc.parameter.ParameterBag.put" class="md-nav__link">
+    put()
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#wireup.ioc.parameter.ParameterBag.update" class="md-nav__link">
+    update()
   </a>
   
 </li>
         
       </ul>
     </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#parameter-enums" class="md-nav__link">
-    Parameter enums
-  </a>
   
 </li>
       
@@ -837,53 +867,298 @@
   
 
 
-  <h1>Parameters</h1>
+  <h1>ParameterBag</h1>
 
-<p>In addition to service objects, the container also holds configuration, called parameters.</p>
-<p>Parameters are stored as a flat key-value store. They are able to retrieved at a later time by 
-services when being constructed. They serve as configuration for services. 
-Think of a database url or environment name.</p>
-<h2 id="management">Management</h2>
-<p>Parameters are put in the container using its <code>params</code> property and are referenced by their name.
-It is possible to add items by calling the <code>.put(name, value)</code> method, or in bulk or by calling <code>.update(dict)</code> 
-using a dictionary of name-value pairs.</p>
-<p>To retrieve a parameter by name directly from the container you can call <code>container.params.get(name)</code>.</p>
-<div class="admonition note">
-<p class="admonition-title">Note</p>
-<p>Although the value of the parameters can be anything, they cannot depend on anything else.
-As such, autowiring services or other parameters on them is not possible.</p>
+<div class="doc doc-object doc-class">
+
+
+
+<a id="wireup.ioc.parameter.ParameterBag"></a>
+  <div class="doc doc-contents first">
+
+  
+      <p>Parameter flat key-value store for use with a container.</p>
+<p>Allows storing and retrieving of parameters in the bag. Templated strings can be used to interpolate a string
+referencing parameters.</p>
+
+
+  
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+<h2 id="wireup.ioc.parameter.ParameterBag-functions">Functions</h2>
+
+
+<div class="doc doc-object doc-function">
+
+
+
+
+<h3 id="wireup.ioc.parameter.ParameterBag.__init__" class="doc doc-heading">
+          <code class="highlight language-python"><span class="fm">__init__</span><span class="p">()</span></code>
+
+</h3>
+
+
+  <div class="doc doc-contents ">
+  
+      <p>Initialize an empty ParameterBag.</p>
+<p>ParameterBag holds a flat key-value store of parameter values.
+__bag: A dictionary to store parameter values.
+__cache: A cache for interpolated values.
+__param_cache: A dictionary to keep track of which cache entries involve each parameter.</p>
+
+  </div>
+
 </div>
-<h2 id="injection">Injection</h2>
-<p>Contrary to services, it is not possible to autowire a parameter solely by its type. To enable autowiring you must
-use the <code>wire()</code> method as the parameters default value.</p>
-<h3 id="by-name">By name</h3>
-<p>To inject a parameter by name simply call <code>wire(param="param_name")</code>.</p>
-<div class="highlight"><pre><span></span><code><span class="nd">@container</span><span class="o">.</span><span class="n">autowire</span>
-<span class="k">def</span> <span class="nf">do_something_cool</span><span class="p">(</span><span class="n">cache_dir</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">wire</span><span class="p">(</span><span class="n">param</span><span class="o">=</span><span class="s2">&quot;cache_dir&quot;</span><span class="p">))</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-    <span class="o">...</span>
-</code></pre></div>
-<h3 id="parameter-expressions">Parameter expressions</h3>
-<p>It is possible to interpolate parameters using a special syntax. This will enable you to retrieve several parameters
-at once and concatenate their values together or simply format the value of a single parameter.</p>
-<div class="highlight"><pre><span></span><code><span class="nd">@container</span><span class="o">.</span><span class="n">autowire</span>
-<span class="k">def</span> <span class="nf">do_something_cool</span><span class="p">(</span><span class="n">logs_cache_dir</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">wire</span><span class="p">(</span><span class="n">expr</span><span class="o">=</span><span class="s2">&quot;$</span><span class="si">{cache_dir}</span><span class="s2">/$</span><span class="si">{env}</span><span class="s2">/logs&quot;</span><span class="p">))</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-    <span class="o">...</span>
-</code></pre></div>
-<h2 id="parameter-enums">Parameter enums</h2>
-<p>Parameter enums represent an alternative for those who do not want to rely on strings and want to have a typed
-way to refer to parameter names. You can achieve this by creating a new type inheriting from <code>ParameterEnum</code>.</p>
-<p><div class="highlight"><pre><span></span><code><span class="k">class</span> <span class="nc">AppParameters</span><span class="p">(</span><span class="n">ParameterEnum</span><span class="p">):</span>
-    <span class="n">cache_dir</span> <span class="o">=</span> <span class="s2">&quot;cache_dir&quot;</span>
-    <span class="c1"># ... other params follow</span>
-</code></pre></div>
-Using this we can use the enum member whenever we want to refer to a particular parameter. The main feature of
-the enum is a <code>wire()</code> method which is syntactic sugar for <code>wire(param=AppParameters.cache_dir.value)</code></p>
-<div class="highlight"><pre><span></span><code><span class="n">container</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="n">AppParameters</span><span class="o">.</span><span class="n">cache_dir</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="s2">&quot;/var/cache&quot;</span><span class="p">)</span>
 
-<span class="nd">@container</span><span class="o">.</span><span class="n">autowire</span>
-<span class="k">def</span> <span class="nf">do_something_cool</span><span class="p">(</span><span class="n">cache_dir</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">AppParameters</span><span class="o">.</span><span class="n">cache_dir</span><span class="o">.</span><span class="n">wire</span><span class="p">())</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-    <span class="o">...</span>
-</code></pre></div>
+
+<div class="doc doc-object doc-function">
+
+
+
+
+<h3 id="wireup.ioc.parameter.ParameterBag.get" class="doc doc-heading">
+          <code class="highlight language-python"><span class="n">get</span><span class="p">(</span><span class="n">param</span><span class="p">)</span></code>
+
+</h3>
+
+
+  <div class="doc doc-contents ">
+  
+      <p>Get the value of a parameter.</p>
+<p>If the parameter is templated, interpolate it first by replacing placeholders with parameter values.</p>
+
+
+
+  <p><strong>Parameters:</strong></p>
+  <table>
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Type</th>
+        <th>Description</th>
+        <th>Default</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+          <td><code>param</code></td>
+          <td>
+                <code><span title="wireup.ioc.container_util.ParameterReference">ParameterReference</span></code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>The parameter to retrieve.</p>
+            </div>
+          </td>
+          <td>
+              <em>required</em>
+          </td>
+        </tr>
+    </tbody>
+  </table>
+
+
+
+  <p><strong>Returns:</strong></p>
+  <table>
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+          <td>
+                <code><span title="typing.Any">Any</span></code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>The parameter's value.</p>
+            </div>
+          </td>
+        </tr>
+    </tbody>
+  </table>
+
+  </div>
+
+</div>
+
+
+<div class="doc doc-object doc-function">
+
+
+
+
+<h3 id="wireup.ioc.parameter.ParameterBag.get_all" class="doc doc-heading">
+          <code class="highlight language-python"><span class="n">get_all</span><span class="p">()</span></code>
+
+</h3>
+
+
+  <div class="doc doc-contents ">
+  
+      <p>Get all parameters stored in the bag.</p>
+
+
+
+  <p><strong>Returns:</strong></p>
+  <table>
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+          <td>
+                <code>dict[str, <span title="typing.Any">Any</span>]</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>A dictionary containing all parameter names and their values.</p>
+            </div>
+          </td>
+        </tr>
+    </tbody>
+  </table>
+
+  </div>
+
+</div>
+
+
+<div class="doc doc-object doc-function">
+
+
+
+
+<h3 id="wireup.ioc.parameter.ParameterBag.put" class="doc doc-heading">
+          <code class="highlight language-python"><span class="n">put</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">val</span><span class="p">)</span></code>
+
+</h3>
+
+
+  <div class="doc doc-contents ">
+  
+      <p>Put a parameter value into the bag. This overwrites any previous values.</p>
+
+
+
+  <p><strong>Parameters:</strong></p>
+  <table>
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Type</th>
+        <th>Description</th>
+        <th>Default</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+          <td><code>name</code></td>
+          <td>
+                <code>str</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>The name of the parameter.</p>
+            </div>
+          </td>
+          <td>
+              <em>required</em>
+          </td>
+        </tr>
+        <tr>
+          <td><code>val</code></td>
+          <td>
+                <code><span title="typing.Any">Any</span></code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>The value of the parameter.</p>
+            </div>
+          </td>
+          <td>
+              <em>required</em>
+          </td>
+        </tr>
+    </tbody>
+  </table>
+
+  </div>
+
+</div>
+
+
+<div class="doc doc-object doc-function">
+
+
+
+
+<h3 id="wireup.ioc.parameter.ParameterBag.update" class="doc doc-heading">
+          <code class="highlight language-python"><span class="n">update</span><span class="p">(</span><span class="n">new_params</span><span class="p">)</span></code>
+
+</h3>
+
+
+  <div class="doc doc-contents ">
+  
+      <p>Update the bag with new set of parameters.</p>
+<p>Parameters from new_params will overwrite any existing parameters set with the same name.</p>
+
+
+
+  <p><strong>Parameters:</strong></p>
+  <table>
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Type</th>
+        <th>Description</th>
+        <th>Default</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+          <td><code>new_params</code></td>
+          <td>
+                <code>dict[str, <span title="typing.Any">Any</span>]</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>A dictionary of parameter names and their updated values.</p>
+            </div>
+          </td>
+          <td>
+              <em>required</em>
+          </td>
+        </tr>
+    </tbody>
+  </table>
+
+  </div>
+
+</div>
+
+
+
+  </div>
+
+  </div>
+
+</div>
 
 
 
@@ -905,10 +1180,10 @@ the enum is a <code>wire()</code> method which is syntactic sugar for <code>wire
       <div class="md-dialog__inner md-typeset"></div>
     </div>
     
-    <script id="__config" type="application/json">{"base": "..", "features": ["search.highlight", "navigation.sections", "content.code.annotate", "navigation.instant"], "search": "../assets/javascripts/workers/search.dfff1995.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
+    <script id="__config" type="application/json">{"base": "../..", "features": ["search.highlight", "navigation.sections", "content.code.annotate", "navigation.instant"], "search": "../../assets/javascripts/workers/search.dfff1995.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
     
     
-      <script src="../assets/javascripts/bundle.dff1b7c8.min.js"></script>
+      <script src="../../assets/javascripts/bundle.dff1b7c8.min.js"></script>
       
     
   </body>

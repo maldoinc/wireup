@@ -9,10 +9,10 @@
       
       
       
-        <link rel="prev" href="../services/">
+        <link rel="prev" href="../quickstart/">
       
       
-        <link rel="next" href="../factory_functions/">
+        <link rel="next" href="../parameters/">
       
       
       <link rel="icon" href="../assets/images/favicon.png">
@@ -20,7 +20,7 @@
     
     
       
-        <title>Parameters - WireUp</title>
+        <title>Services - WireUp</title>
       
     
     
@@ -79,7 +79,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#management" class="md-skip">
+        <a href="#registration" class="md-skip">
           Skip to content
         </a>
       
@@ -119,7 +119,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Parameters
+              Services
             
           </span>
         </div>
@@ -294,25 +294,6 @@
       
   
   
-  
-    <li class="md-nav__item">
-      <a href="../services/" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    Services
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-    
-      
-      
-  
-  
     
   
   
@@ -326,7 +307,7 @@
           
   
   <span class="md-ellipsis">
-    Parameters
+    Services
   </span>
   
 
@@ -337,7 +318,7 @@
         
   
   <span class="md-ellipsis">
-    Parameters
+    Services
   </span>
   
 
@@ -357,8 +338,8 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#management" class="md-nav__link">
-    Management
+  <a href="#registration" class="md-nav__link">
+    Registration
   </a>
   
 </li>
@@ -368,39 +349,31 @@
     Injection
   </a>
   
-    <nav class="md-nav" aria-label="Injection">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#by-name" class="md-nav__link">
-    By name
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#parameter-expressions" class="md-nav__link">
-    Parameter expressions
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#parameter-enums" class="md-nav__link">
-    Parameter enums
-  </a>
-  
 </li>
       
     </ul>
   
 </nav>
       
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../parameters/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Parameters
+  </span>
+  
+
+      </a>
     </li>
   
 
@@ -779,8 +752,8 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#management" class="md-nav__link">
-    Management
+  <a href="#registration" class="md-nav__link">
+    Registration
   </a>
   
 </li>
@@ -788,33 +761,6 @@
         <li class="md-nav__item">
   <a href="#injection" class="md-nav__link">
     Injection
-  </a>
-  
-    <nav class="md-nav" aria-label="Injection">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#by-name" class="md-nav__link">
-    By name
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#parameter-expressions" class="md-nav__link">
-    Parameter expressions
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#parameter-enums" class="md-nav__link">
-    Parameter enums
   </a>
   
 </li>
@@ -837,53 +783,30 @@
   
 
 
-  <h1>Parameters</h1>
+  <h1>Services</h1>
 
-<p>In addition to service objects, the container also holds configuration, called parameters.</p>
-<p>Parameters are stored as a flat key-value store. They are able to retrieved at a later time by 
-services when being constructed. They serve as configuration for services. 
-Think of a database url or environment name.</p>
-<h2 id="management">Management</h2>
-<p>Parameters are put in the container using its <code>params</code> property and are referenced by their name.
-It is possible to add items by calling the <code>.put(name, value)</code> method, or in bulk or by calling <code>.update(dict)</code> 
-using a dictionary of name-value pairs.</p>
-<p>To retrieve a parameter by name directly from the container you can call <code>container.params.get(name)</code>.</p>
-<div class="admonition note">
-<p class="admonition-title">Note</p>
-<p>Although the value of the parameters can be anything, they cannot depend on anything else.
-As such, autowiring services or other parameters on them is not possible.</p>
-</div>
+<p>Services are classes known by the container that provide functionality.</p>
+<p>Contrary to static utility classes or methods they usually rely on other services or <a href="../parameters/">parameters</a> to
+provide a part of their functionality.</p>
+<p>Examples refer to the default container provided by the library in <code>wireup.container</code> but any other instance can be
+used in its place. The process is meant to be simple and the short <a href="../quickstart/">Quickstart</a> page shows by example and
+already contains all the key concepts you need to know about.</p>
+<h2 id="registration">Registration</h2>
+<p>Declaration and usage of services is designed to be as simple as possible. They may live anywhere in the application
+but must be registered with the container.</p>
+<p>To register a class as a service the following options are available.</p>
+<ul>
+<li>Decorate the class using the <code>container.register</code>.</li>
+<li>Call <code>container.register(YourService)</code> directly on the service.</li>
+<li>Use <code>container.register_all_in_module</code>.
+  (See: <a href="../manual_configuration/#using-wireup-without-registration-decorators">Manual Configuration</a>)</li>
+</ul>
 <h2 id="injection">Injection</h2>
-<p>Contrary to services, it is not possible to autowire a parameter solely by its type. To enable autowiring you must
-use the <code>wire()</code> method as the parameters default value.</p>
-<h3 id="by-name">By name</h3>
-<p>To inject a parameter by name simply call <code>wire(param="param_name")</code>.</p>
-<div class="highlight"><pre><span></span><code><span class="nd">@container</span><span class="o">.</span><span class="n">autowire</span>
-<span class="k">def</span> <span class="nf">do_something_cool</span><span class="p">(</span><span class="n">cache_dir</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">wire</span><span class="p">(</span><span class="n">param</span><span class="o">=</span><span class="s2">&quot;cache_dir&quot;</span><span class="p">))</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-    <span class="o">...</span>
-</code></pre></div>
-<h3 id="parameter-expressions">Parameter expressions</h3>
-<p>It is possible to interpolate parameters using a special syntax. This will enable you to retrieve several parameters
-at once and concatenate their values together or simply format the value of a single parameter.</p>
-<div class="highlight"><pre><span></span><code><span class="nd">@container</span><span class="o">.</span><span class="n">autowire</span>
-<span class="k">def</span> <span class="nf">do_something_cool</span><span class="p">(</span><span class="n">logs_cache_dir</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">wire</span><span class="p">(</span><span class="n">expr</span><span class="o">=</span><span class="s2">&quot;$</span><span class="si">{cache_dir}</span><span class="s2">/$</span><span class="si">{env}</span><span class="s2">/logs&quot;</span><span class="p">))</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-    <span class="o">...</span>
-</code></pre></div>
-<h2 id="parameter-enums">Parameter enums</h2>
-<p>Parameter enums represent an alternative for those who do not want to rely on strings and want to have a typed
-way to refer to parameter names. You can achieve this by creating a new type inheriting from <code>ParameterEnum</code>.</p>
-<p><div class="highlight"><pre><span></span><code><span class="k">class</span> <span class="nc">AppParameters</span><span class="p">(</span><span class="n">ParameterEnum</span><span class="p">):</span>
-    <span class="n">cache_dir</span> <span class="o">=</span> <span class="s2">&quot;cache_dir&quot;</span>
-    <span class="c1"># ... other params follow</span>
-</code></pre></div>
-Using this we can use the enum member whenever we want to refer to a particular parameter. The main feature of
-the enum is a <code>wire()</code> method which is syntactic sugar for <code>wire(param=AppParameters.cache_dir.value)</code></p>
-<div class="highlight"><pre><span></span><code><span class="n">container</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="n">AppParameters</span><span class="o">.</span><span class="n">cache_dir</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="s2">&quot;/var/cache&quot;</span><span class="p">)</span>
-
-<span class="nd">@container</span><span class="o">.</span><span class="n">autowire</span>
-<span class="k">def</span> <span class="nf">do_something_cool</span><span class="p">(</span><span class="n">cache_dir</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">AppParameters</span><span class="o">.</span><span class="n">cache_dir</span><span class="o">.</span><span class="n">wire</span><span class="p">())</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-    <span class="o">...</span>
-</code></pre></div>
+<p>The container will perform autowiring based on the type hints given. No manual configuration is needed to inject
+services.</p>
+<p>To perform autowiring the method to be autowired must be decorated with <code>@container.autowire</code>. Given the nature of
+Python decorators it is also possible to simply call it as a regular function which will return a callable with
+arguments the containers knows about already bound.</p>
 
 
 
