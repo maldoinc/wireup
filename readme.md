@@ -3,6 +3,8 @@
 Dependency injection library designed to provide a powerful and flexible way to manage and inject 
 dependencies making it easier to develop, test, and maintain Python codebases.
 
+Supports Python 3.8 and above.
+
 ---
 ## Quickstart guide
 
