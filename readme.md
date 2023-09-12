@@ -67,4 +67,4 @@ pip install wireup
 
 ## Documentation
 
-For more information [check out the documentation](https://maldoinc.github.io/wireup/)
+For more information [check out the documentation](https://maldoinc.github.io/wireup/0.2.0)
