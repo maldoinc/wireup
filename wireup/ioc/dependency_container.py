@@ -15,7 +15,7 @@ from .container_util import (
     ParameterWrapper,
     _ContainerObjectIdentifier,
 )
-from .util import find_classes_in_module
+from .util import find_classes_in_module, parameter_get_type_and_annotation
 
 if TYPE_CHECKING:
     from types import ModuleType
@@ -231,10 +231,10 @@ class DependencyContainer:
         return instance
 
     def __get_container_dependency_or_param(self, parameter: Parameter) -> Any:
-        default = parameter.default
+        annotated_parameter = parameter_get_type_and_annotation(parameter)
         # Dealing with parameter, return the value as we cannot proxy int str etc.
-        if isinstance(default, ParameterWrapper):
-            return self.params.get(default.param)
+        if isinstance(annotated_parameter.annotation, ParameterWrapper):
+            return self.params.get(annotated_parameter.annotation.param)
 
         return self.__initialize_container_proxy_object_from_parameter(parameter)
 
@@ -242,15 +242,20 @@ class DependencyContainer:
         if parameter.annotation is Parameter.empty:
             return None
 
-        default_val = parameter.default
-        annotated_type = parameter.annotation
+        annotated_parameter = parameter_get_type_and_annotation(parameter)
+        annotated_type = annotated_parameter.klass
 
         if self.__is_impl_known_from_factory(annotated_type):
+            # Objects generated from factories do not have qualifiers
             return self.__get_proxy_object(annotated_type, None)
 
-        qualifier_value = default_val.qualifier if isinstance(default_val, ContainerProxyQualifier) else None
+        qualifier_value = (
+            annotated_parameter.annotation.qualifier
+            if isinstance(annotated_parameter.annotation, ContainerProxyQualifier)
+            else None
+        )
 
-        if self.__is_interface_known(annotated_type):
+        if self.__is_interface_known(annotated_parameter.klass):
             concrete_class = self.__get_concrete_class_from_interface_and_qualifier(annotated_type, qualifier_value)
             return self.__get_proxy_object(concrete_class, qualifier_value)
 

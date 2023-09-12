@@ -28,7 +28,7 @@ To inject a parameter by name simply call `wire(param="param_name")`.
 
 ```python
 @container.autowire
-def do_something_cool(cache_dir: str = wire(param="cache_dir")) -> None:
+def do_something_cool(cache_dir: Annotated[str, Wire(param="cache_dir")]) -> None:
     ...
 ```
 
@@ -39,7 +39,7 @@ at once and concatenate their values together or simply format the value of a si
 
 ```python
 @container.autowire
-def do_something_cool(logs_cache_dir: str = wire(expr="${cache_dir}/${env}/logs")) -> None:
+def do_something_cool(logs_cache_dir: Annotated[str, Wire(expr="${cache_dir}/${env}/logs")]) -> None:
     ...
 ```
 

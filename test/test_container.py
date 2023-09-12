@@ -1,12 +1,13 @@
 import unittest
 from dataclasses import dataclass
+from typing_extensions import Annotated
 from unittest.mock import Mock, patch
 
 from test import services
-from test.fixtures import Counter, FooBase, FooBar, FooBaz
+from test.fixtures import Counter, FooBar, FooBase, FooBaz
 from test.services.random_service import RandomService
 from test.services.truly_random_service import TrulyRandomService
-from wireup import wire
+from wireup import Wire, wire
 from wireup.ioc.container_util import ParameterWrapper
 from wireup.ioc.dependency_container import ContainerProxy, DependencyContainer
 from wireup.ioc.parameter import ParameterBag, TemplatedString
@@ -208,6 +209,17 @@ class TestContainer(unittest.IsolatedAsyncioTestCase):
         self.container.register(FooBaz, qualifier="sub2")
         inner()
 
+    def test_two_qualifiers_are_injected_annotated(self):
+        @self.container.autowire
+        def inner(sub1: Annotated[FooBase, Wire(qualifier="sub1")], sub2: Annotated[FooBase, Wire(qualifier="sub2")]):
+            self.assertEqual(sub1.foo, "bar")
+            self.assertEqual(sub2.foo, "baz")
+
+        self.container.abstract(FooBase)
+        self.container.register(FooBar, qualifier="sub1")
+        self.container.register(FooBaz, qualifier="sub2")
+        inner()
+
     def test_interface_with_single_implementation_no_qualifier_gets_autowired(self):
         @self.container.autowire
         def inner(foo: FooBase):
@@ -385,6 +397,21 @@ class TestContainer(unittest.IsolatedAsyncioTestCase):
             self.assertEqual(name, "foo")
 
         self.container.params.put("name", "foo")
+        inner()
+
+    def test_wire_from_annotation(self):
+        @self.container.autowire
+        def inner(
+            name: Annotated[str, wire(param="name")],
+            env: Annotated[str, Wire(param="env")],
+            env_name: Annotated[str, Wire(expr="${env}-${name}")],
+        ):
+            self.assertEqual(name, "foo")
+            self.assertEqual(env, "test")
+            self.assertEqual(env_name, "test-foo")
+
+        self.container.params.put("name", "foo")
+        self.container.params.put("env", "test")
         inner()
 
     def test_injects_ctor(self):

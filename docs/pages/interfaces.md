@@ -47,9 +47,10 @@ While injecting an interface with multiple implementing dependencies, you need t
 which concrete class should be resolved.
 
 ```python
-def home(
-    engine: Engine = wire(qualifier="electric"),
-    combustion: Engine = wire(qualifier="combustion"),
+container.autowire
+def target(
+    engine: Annotated[Engine, Wire(qualifier="electric")],
+    combustion: Annotated[Engine, Wire(qualifier="combustion")],
 ):
     ...
 ```

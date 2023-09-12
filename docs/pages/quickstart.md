@@ -10,21 +10,20 @@ from wireup import container
 # Parameters serve as configuration for services. 
 # Think of a database url or environment name.
 container.params.update({
-    "db.connection_str": os.environ.get("DATABASE_URL")  # (1)!
+    "db.connection_str": os.environ.get("DATABASE_URL") # (1)!
     "cache_dir": gettempdir(),
     "env": os.environ.get("ENV", "dev")
 })
 
 
-# Constructor injection is supported for regular classes as well as dataclasses.
-@container.register  # (2)!
+# Constructor injection is supported for regular classes as well as dataclasses
+@container.register # (2)!
 class DbService:
    # Inject a parameter by name
-   connection_str: str = wire(param="db.connection_str"),
+   connection_str: Annotated[str, Wire(param="db.connection_str")],
    # Or by interpolating multiple parameters into a string
-   cache_dir: str = wire(expr="${cache_dir}/${env}/db"),
+   cache_dir: Annotated[str, Wire(expr="${cache_dir}/${env}/db")],
 
-# resulting in a more compact syntax.
 @container.register
 @dataclass
 class UserRepository:
@@ -41,17 +40,21 @@ class UserRepository:
 
 ```python
 @app.route("/greet/<str:name>")
-@container.autowire  # (2)!
+@container.autowire  # (1)!
 # Classes are automatically injected based on annotated type. 
 # Parameters will be located based on the hint given in their default value.
 # Unknown arguments will not be processed.
-def greet(name: str, user_repository: UserRepository, env: str = wire(param="env")):  # (1)!
+def greet(
+    name: str, 
+    user_repository: UserRepository,  
+    env: Annotated[str, Wire(param="env")]
+): 
     ...
 ```
 
-1. We know that this will be used in conjunction with many other libraries, so WireUp will not throw on unknown
+1. Decorate all methods where the library must perform injection. 
+   We know that this will be used in conjunction with many other libraries, so WireUp will not throw on unknown
    parameters in order to let other decorators to do their job.
-2. Decorate all methods where the library must perform injection.
 
 **Installation**
 

@@ -15,7 +15,7 @@ for services and a simple web view called "greet".
 **1. Register dependencies**
 
 ```python
-from wireup import container
+from wireup import container, Wire
 
 # Parameters serve as configuration for services. 
 # Think of a database url or environment name.
@@ -32,9 +32,9 @@ container.params.update({
 @container.register
 class DbService:
     # Inject a parameter by name
-    connection_str: str = wire(param="db.connection_str"),
+    connection_str: Annotated[str, Wire(param="db.connection_str")],
     # Or by interpolating multiple parameters into a string
-    cache_dir: str = wire(expr="${cache_dir}/${env}/db"),
+    cache_dir: Annotated[str, Wire(expr="${cache_dir}/${env}/db")],
 
 
 @container.register
@@ -51,7 +51,7 @@ class UserRepository:
 # Decorate all targets where the library must perform injection,such as views in a web app.
 # Classes are automatically injected based on annotated type. 
 # Parameters will be located based on the hint given in their default value.
-def greet(name: str, user_repository: UserRepository, env: str = wire(param="env")):  
+def greet(name: str, user_repository: UserRepository, env: Annotated[str, Wire(param="env")]):  
     ...
 ```
 

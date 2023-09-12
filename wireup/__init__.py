@@ -58,6 +58,10 @@ def wire(
         raise ValueError(msg) from e
 
 
+Wire = wire
+"""Alias of `wire`. Meant to be used with `Annotated`."""
+
+
 class ParameterEnum(Enum):
     """Enum with a `.wire` method allowing easy injection of members.
 
