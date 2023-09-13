@@ -42,7 +42,7 @@ class UserRepository:
 @app.route("/greet/<str:name>")
 @container.autowire  # (1)!
 # Classes are automatically injected based on annotated type. 
-# Parameters will be located based on the hint given in their default value.
+# Parameters will be located based on their annotation metadata.
 # Unknown arguments will not be processed.
 def greet(
     name: str, 

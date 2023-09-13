@@ -52,8 +52,12 @@ class UserRepository:
 @container.autowire
 # Decorate all targets where the library must perform injection,such as views in a web app.
 # Classes are automatically injected based on annotated type. 
-# Parameters will be located based on the hint given in their default value.
-def greet(name: str, user_repository: UserRepository, env: Annotated[str, Wire(param="env")]):  
+# Parameters will be located based on their annotation metadata.
+def greet(
+    name: str, 
+    user_repository: UserRepository,  
+    env: Annotated[str, Wire(param="env")]
+): 
     ...
 ```
 
