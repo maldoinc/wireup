@@ -14,6 +14,7 @@ from .container_util import (
     DependencyInitializationContext,
     ParameterWrapper,
     _ContainerObjectIdentifier,
+    _ContainerClassMetadata,
 )
 from .util import find_classes_in_module, parameter_get_type_and_annotation
 
@@ -53,6 +54,7 @@ class DependencyContainer:
         self.__initialized_objects: dict[_ContainerObjectIdentifier, object] = {}
         self.__initialized_proxies: dict[_ContainerObjectIdentifier, ContainerProxy] = {}
         self.__initialized_args: dict[tuple[Callable, __T], dict[str, Any]] = {}
+        self.__class_meta: dict[__T, _ContainerClassMetadata] = {}
 
         self.params: ParameterBag = parameter_bag
         self.initialization_context = DependencyInitializationContext()
@@ -84,6 +86,7 @@ class DependencyContainer:
         obj: type[__T] | Callable | None = None,
         *,
         qualifier: ContainerProxyQualifierValue = None,
+        singleton: bool = True,
     ) -> type[__T]:
         """Register a dependency in the container.
 
@@ -99,12 +102,12 @@ class DependencyContainer:
         if obj is None:
 
             def decorated(inner_class: type[__T]) -> type[__T]:
-                return self.__register_inner(inner_class, qualifier)
+                return self.__register_inner(inner_class, qualifier, singleton=singleton)
 
             return decorated
 
         if inspect.isclass(obj):
-            return self.__register_inner(obj, qualifier)
+            return self.__register_inner(obj, qualifier, singleton=singleton)
 
         self.__register_factory_inner(obj)
 
@@ -167,7 +170,9 @@ class DependencyContainer:
         for klass in find_classes_in_module(module, pattern):
             self.register(klass)
 
-    def __register_inner(self, klass: type[__T], qualifier: ContainerProxyQualifierValue) -> type[__T]:
+    def __register_inner(
+        self, klass: type[__T], qualifier: ContainerProxyQualifierValue, *, singleton: bool
+    ) -> type[__T]:
         if self.__is_dependency_known(klass, qualifier):
             msg = f"Cannot register type {klass} with qualifier '{qualifier}' as it already exists."
             raise ValueError(msg)
@@ -183,6 +188,7 @@ class DependencyContainer:
             self.__known_interfaces[klass.__base__][qualifier] = klass
 
         self.__known_impls[klass].add(qualifier)
+        self.__class_meta[klass] = _ContainerClassMetadata(singleton=singleton, init_signature=inspect.signature(klass))
 
         return klass
 
@@ -198,8 +204,12 @@ class DependencyContainer:
             name: self.params.get(wrapper.param) for name, wrapper in self.initialization_context.context[klass].items()
         }
 
+        signature_params = (
+            self.__class_meta[klass].init_signature.parameters if klass else inspect.signature(fn).parameters
+        )
+
         values_from_parameters = {}
-        for name, parameter in inspect.signature(fn).parameters.items():
+        for name, parameter in signature_params.items():
             annotated_parameter = parameter_get_type_and_annotation(parameter)
             # Dealing with parameter, return the value as we cannot proxy int str etc.
             # We don't want to check here for none because as long as it exists in the bag, the value is good.

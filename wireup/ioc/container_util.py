@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from collections import defaultdict
 from dataclasses import dataclass
+from inspect import Parameter, Signature
+from types import MappingProxyType
 from typing import Any, Callable, Optional, TypeVar, Union
 
 
@@ -113,3 +115,9 @@ class _ContainerObjectIdentifier:
 
     class_type: type[__T]
     qualifier: ContainerProxyQualifierValue
+
+
+@dataclass(frozen=True)
+class _ContainerClassMetadata:
+    singleton: bool
+    init_signature: Signature
