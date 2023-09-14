@@ -67,7 +67,7 @@ class ParameterEnum(Enum):
 
     Allows you to add application parameters as enum members and their names as values.
     When you need to inject a parameter instead of referencing it by name you can
-    simply set the enum as the default value.
+    annotate the parameter with the wire function call or set that as the default value.
 
     This will inject a parameter by name and won't work with expressions.
     """

@@ -28,12 +28,11 @@ container.register(FooBaz, qualifier="baz")
 
 ## Manually wiring parameters
 
-Given that parameters can't be resolved from type annotations alone, the `container.wire` method offers two shortcuts 
-for parameter injection: `wire(name="")` and `wire(expr="")`.
+Given that parameters can't be resolved from type annotations alone, they must be annotated.
 
-To achieve the same outcome without relying on default values, you can use the container's 
+To achieve the same outcome without relying on annotations, you can use the container's 
 initialization context. This allows you to manually provide data that the library would 
-otherwise gather from the decorators.
+otherwise gather from the decorators or annotations.
 
 ```python
 container.register_all_in_module(app.services, "*Service")

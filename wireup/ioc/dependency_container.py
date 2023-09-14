@@ -37,7 +37,8 @@ class DependencyContainer:
     which implement them will be injected instead.
 
     Use the `autowire` decorator on methods where dependency injection must be performed.
-    To enable parameter injection use default values for parameters in conjunction with the `wire` method.
+    Services will be injected automatically where possible. Parameters will have to be annotated as they cannot
+    be located from type alone.
 
     !!! note
         Fastapi users MUST use ` = .wire()` method without arguments when injecting dependencies.
@@ -117,10 +118,9 @@ class DependencyContainer:
         This decorator can be used on both async and blocking methods.
 
         * Classes will be automatically injected.
-        * Parameters need a value to be provided via `.wire(param=)` or `.wire(expr=)` using a default value.
+        * Parameters need to be annotated in order for container to be able to resolve them
         * When injecting an interface for which there are multiple implementations you need to supply a qualifier
-          via `.wire(qualifier=)` using a default value.
-
+          using annotations.
         """
         if asyncio.iscoroutinefunction(fn):
 

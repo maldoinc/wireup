@@ -20,7 +20,7 @@ To retrieve a parameter by name directly from the container you can call `contai
 ## Injection
 
 Contrary to services, it is not possible to autowire a parameter solely by its type. To enable autowiring you must
-use the `wire()` method as the parameters default value.
+annotate the function parameter with the parameter name or expression being injected.
 
 ### By name
 
