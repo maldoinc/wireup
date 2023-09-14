@@ -414,6 +414,16 @@ class TestContainer(unittest.IsolatedAsyncioTestCase):
         self.container.params.put("env", "test")
         inner()
 
+    def test_container_wires_none_values_from_parameter_bag(self):
+        self.container.params.put("foo", None)
+
+        @self.container.autowire
+        def inner(name: Annotated[str, Wire(param="foo")], name2: str = wire(param="foo")):
+            self.assertIsNone(name)
+            self.assertIsNone(name2)
+
+        inner()
+
     def test_injects_ctor(self):
         class Dummy:
             @self.container.autowire

@@ -200,7 +200,13 @@ class DependencyContainer:
 
         values_from_parameters = {}
         for name, parameter in inspect.signature(fn).parameters.items():
-            if obj := self.__get_container_dependency_or_param(parameter):
+            annotated_parameter = parameter_get_type_and_annotation(parameter)
+            # Dealing with parameter, return the value as we cannot proxy int str etc.
+            # We don't want to check here for none because as long as it exists in the bag, the value is good.
+            if isinstance(annotated_parameter.annotation, ParameterWrapper):
+                values_from_parameters[name] = self.params.get(annotated_parameter.annotation.param)
+
+            if obj := self.__initialize_container_proxy_object_from_parameter(parameter):
                 values_from_parameters[name] = obj
 
         args = {**params_from_context, **values_from_parameters}
@@ -229,14 +235,6 @@ class DependencyContainer:
         self.__initialized_objects[_ContainerObjectIdentifier(class_to_initialize, qualifier)] = instance
 
         return instance
-
-    def __get_container_dependency_or_param(self, parameter: Parameter) -> Any:
-        annotated_parameter = parameter_get_type_and_annotation(parameter)
-        # Dealing with parameter, return the value as we cannot proxy int str etc.
-        if isinstance(annotated_parameter.annotation, ParameterWrapper):
-            return self.params.get(annotated_parameter.annotation.param)
-
-        return self.__initialize_container_proxy_object_from_parameter(parameter)
 
     def __initialize_container_proxy_object_from_parameter(self, parameter: Parameter) -> Any:
         if parameter.annotation is Parameter.empty:
