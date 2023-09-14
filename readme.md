@@ -3,6 +3,8 @@
 ![GitHub](https://img.shields.io/github/license/maldoinc/wireup?style=for-the-badge)
 ![GitHub Workflow Status (with event)](https://img.shields.io/github/actions/workflow/status/maldoinc/wireup/run_all.yml?style=for-the-badge)
 ![PyPI - Python Version](https://img.shields.io/pypi/pyversions/wireup?style=for-the-badge)
+![PyPI - Version](https://img.shields.io/pypi/v/wireup?style=for-the-badge)
+
 
 Dependency injection library designed to provide a powerful and flexible way to manage and inject 
 dependencies making it easier to develop, test, and maintain Python codebases.
