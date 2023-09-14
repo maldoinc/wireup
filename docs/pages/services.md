@@ -27,3 +27,12 @@ services.
 To perform autowiring the method to be autowired must be decorated with `@container.autowire`. Given the nature of
 Python decorators it is also possible to simply call it as a regular function which will return a callable with
 arguments the containers knows about already bound.
+
+
+## Lifetime
+
+Services live in the container and their references are kept in it. As such, it should be avoided
+that they contain data about any particular request as injected parameters are cached on their first autowire call.
+
+The container should be configured once, at application startup and used throughout its execution.
+Even though you can modify the container or parameters at runtime it is generally advised not to.
