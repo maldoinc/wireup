@@ -89,6 +89,16 @@ class TestContainer(unittest.IsolatedAsyncioTestCase):
 
         self.assertIn("One of param, expr or qualifier must be set", str(context.exception))
 
+    @patch("importlib.import_module")
+    def test_injection_works_annotated(self, mock_import_module):
+        mock_import_module.return_value = Mock(Depends=Mock())
+
+        @self.container.autowire
+        def inner(rand: Annotated[RandomService, Wire()]):
+            self.assertEqual(rand.get_random(), 4)
+
+        inner()
+
     def test_register_known_class(self):
         class TestRegisterKnown:
             pass
