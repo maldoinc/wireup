@@ -106,20 +106,6 @@ class ContainerProxy:
         return getattr(self.__proxy_object, name)
 
 
-__T = TypeVar("__T")
-
-
-@dataclass(frozen=True, eq=True)
-class _ContainerObjectIdentifier:
-    """Identifies a dependency instance.
-
-    Used to store and retrieve instances from the in-memory cache.
-    """
-
-    class_type: type[__T]
-    qualifier: ContainerProxyQualifierValue
-
-
 class ContainerInjectionRequest:
     """Serves as hint for the container that it must always perform injection for this parameter.
 
