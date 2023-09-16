@@ -113,3 +113,7 @@ class _ContainerObjectIdentifier:
 
     class_type: type[__T]
     qualifier: ContainerProxyQualifierValue
+
+
+class ContainerInjectionRequest:
+    ...

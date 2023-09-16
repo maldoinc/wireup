@@ -5,9 +5,10 @@ from unittest.mock import Mock, patch
 
 from test import services
 from test.fixtures import Counter, FooBar, FooBase, FooBaz
+from test.services.db_service import DbService
 from test.services.random_service import RandomService
 from test.services.truly_random_service import TrulyRandomService
-from wireup import Wire, wire
+from wireup import Wire, wire, container
 from wireup.ioc.container_util import ParameterWrapper
 from wireup.ioc.dependency_container import ContainerProxy, DependencyContainer
 from wireup.ioc.parameter import ParameterBag, TemplatedString
@@ -82,12 +83,26 @@ class TestContainer(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(result, mock_import_module.return_value.Depends.return_value)
         mock_import_module.assert_called_once_with("fastapi")
 
-    @patch("importlib.import_module", side_effect=ModuleNotFoundError)
-    def test_inject_missing_fastapi(self, _):
-        with self.assertRaises(Exception) as context:
-            wire()
+    def test_inject_using_annotated_empty_wire(self):
+        @self.container.autowire
+        def inner(random: Annotated[RandomService, Wire()]):
+            self.assertEqual(random.get_random(), 4)
 
-        self.assertIn("One of param, expr or qualifier must be set", str(context.exception))
+        inner()
+
+    def test_inject_using_annotated_empty_wire_fails_to_inject_unknown(self):
+        @self.container.autowire
+        def inner(random: Annotated[unittest.TestCase, Wire()]):
+            ...
+
+        with self.assertRaises(ValueError) as context:
+            inner()
+
+        self.assertEqual(
+            f"Cannot wire unknown class {unittest.TestCase}. "
+            "Use @Container.{register,abstract} to enable autowiring",
+            str(context.exception)
+        )
 
     @patch("importlib.import_module")
     def test_injection_works_annotated(self, mock_import_module):

@@ -10,6 +10,7 @@ from wireup.ioc.container_util import (
     ContainerProxyQualifierValue,
     ParameterWrapper,
     TemplatedString,
+    ContainerInjectionRequest,
 )
 from wireup.ioc.dependency_container import DependencyContainer
 from wireup.ioc.parameter import ParameterBag
@@ -53,9 +54,8 @@ def wire(
         # Allow fastapi users to do .get() without any params
         # It is meant to be used as a default value in where Depends() is expected
         return importlib.import_module("fastapi").Depends(lambda: None)
-    except ModuleNotFoundError as e:
-        msg = "One of param, expr or qualifier must be set"
-        raise ValueError(msg) from e
+    except ModuleNotFoundError:
+        return ContainerInjectionRequest()
 
 
 Wire = wire
