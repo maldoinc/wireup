@@ -7,17 +7,18 @@ from collections import defaultdict
 from inspect import Parameter
 from typing import TYPE_CHECKING, Any, Callable, TypeVar
 
+from wireup import ContainerInjectionRequest
+
 from .container_util import (
     ContainerProxy,
     ContainerProxyQualifier,
     ContainerProxyQualifierValue,
     DependencyInitializationContext,
     ParameterWrapper,
-    _ContainerObjectIdentifier,
-    _ContainerClassMetadata, _ContainerTargetMeta,
+    _ContainerClassMetadata,
+    _ContainerTargetMeta,
 )
-from .util import find_classes_in_module, AnnotatedParameter
-from .. import ContainerInjectionRequest
+from .util import AnnotatedParameter, find_classes_in_module
 
 if TYPE_CHECKING:
     from types import ModuleType
@@ -54,8 +55,8 @@ class DependencyContainer:
         self.__known_impls: dict[type[__T], set[str]] = defaultdict(set)
         self.__factory_functions: dict[type[__T], Callable[..., __T]] = {}
 
-        self.__initialized_objects: dict[_ContainerObjectIdentifier, object] = {}
-        self.__initialized_proxies: dict[_ContainerObjectIdentifier, ContainerProxy] = {}
+        self.__initialized_objects: dict[tuple[__T, ContainerProxyQualifierValue], object] = {}
+        self.__initialized_proxies: dict[tuple[__T, ContainerProxyQualifierValue], ContainerProxy] = {}
         self.__class_meta: dict[__T, _ContainerClassMetadata] = {}
         self.__targets_meta: dict[__T, _ContainerTargetMeta] = {}
 
@@ -142,7 +143,7 @@ class DependencyContainer:
 
         return sync_inner
 
-    def __register_factory_inner(self, fn: Callable[[], __T], singleton: bool) -> None:
+    def __register_factory_inner(self, fn: Callable[[], __T], *, singleton: bool) -> None:
         return_type = inspect.signature(fn).return_annotation
 
         if return_type is Parameter.empty:
@@ -176,7 +177,11 @@ class DependencyContainer:
             self.register(klass)
 
     def __register_inner(
-        self, klass: type[__T], qualifier: ContainerProxyQualifierValue, *, singleton: bool
+        self,
+        klass: type[__T],
+        qualifier: ContainerProxyQualifierValue,
+        *,
+        singleton: bool,
     ) -> type[__T]:
         if self.__is_dependency_known(klass, qualifier):
             msg = f"Cannot register type {klass} with qualifier '{qualifier}' as it already exists."
@@ -193,11 +198,11 @@ class DependencyContainer:
             self.__known_interfaces[klass.__base__][qualifier] = klass
 
         self.__known_impls[klass].add(qualifier)
-        self.__register_impl_meta(klass, singleton)
+        self.__register_impl_meta(klass, singleton=singleton)
 
         return klass
 
-    def __register_impl_meta(self, klass, singleton):
+    def __register_impl_meta(self, klass: __T, *, singleton: bool) -> None:
         self.__class_meta[klass] = _ContainerClassMetadata(singleton=singleton, signature=inspect.signature(klass))
 
     def __autowire_inner(self, fn: Callable[..., Any], *args: Any, **kwargs: Any) -> Any:
@@ -205,7 +210,7 @@ class DependencyContainer:
 
         return fn(*args, **{**kwargs, **self.__callable_get_params_to_inject(fn)})
 
-    def __register_targets_meta(self, fn):
+    def __register_targets_meta(self, fn: Callable[..., Any]) -> None:
         if fn not in self.__targets_meta:
             self.__targets_meta[fn] = _ContainerTargetMeta(signature=inspect.signature(fn))
 
@@ -226,15 +231,13 @@ class DependencyContainer:
             if obj := self.__initialize_container_proxy_object_from_parameter(annotated_parameter):
                 values_from_parameters[name] = obj
 
-        args = {**params_from_context, **values_from_parameters}
-
-        return args
+        return {**params_from_context, **values_from_parameters}
 
     def __get(self, klass: type[__T], qualifier: ContainerProxyQualifierValue) -> __T:
         """Create the real instances of dependencies. Additional dependencies they may have will be lazily created."""
         is_singleton = self.__is_impl_singleton(klass)
 
-        object_type_id = _ContainerObjectIdentifier(klass, qualifier)
+        object_type_id = klass, qualifier
         if object_type_id in self.__initialized_objects and is_singleton:
             return self.__initialized_objects[object_type_id]
 
@@ -251,7 +254,7 @@ class DependencyContainer:
             instance = class_to_initialize(**self.__callable_get_params_to_inject(klass.__init__, class_to_initialize))
 
         if is_singleton:
-            self.__initialized_objects[_ContainerObjectIdentifier(class_to_initialize, qualifier)] = instance
+            self.__initialized_objects[class_to_initialize, qualifier] = instance
 
         return instance
 
@@ -295,7 +298,7 @@ class DependencyContainer:
         return None
 
     def __get_proxy_object(self, klass: type[__T], qualifier: ContainerProxyQualifierValue) -> ContainerProxy:
-        obj_id = _ContainerObjectIdentifier(klass, qualifier)
+        obj_id = klass, qualifier
 
         if obj_id in self.__initialized_proxies and self.__is_impl_singleton(klass):
             return self.__initialized_proxies[obj_id]
@@ -305,7 +308,7 @@ class DependencyContainer:
 
         return proxy
 
-    def __is_impl_singleton(self, klass):
+    def __is_impl_singleton(self, klass: __T) -> bool:
         meta = self.__class_meta.get(klass)
 
         return meta and meta.singleton

@@ -2,10 +2,12 @@ from __future__ import annotations
 
 from collections import defaultdict
 from dataclasses import dataclass
-from inspect import Signature
-from typing import Any, Callable, Optional, TypeVar, Union
+from typing import TYPE_CHECKING, Any, Callable, Optional, TypeVar, Union
 
-from wireup.ioc.util import parameter_get_type_and_annotation, AnnotatedParameter
+from wireup.ioc.util import AnnotatedParameter, parameter_get_type_and_annotation
+
+if TYPE_CHECKING:
+    from inspect import Signature
 
 
 @dataclass(frozen=True)
@@ -119,11 +121,14 @@ class _ContainerObjectIdentifier:
 
 
 class ContainerInjectionRequest:
-    ...
+    """Serves as hint for the container that it must always perform injection for this parameter.
+
+    Instead of skipping, this would force it to throw if dependency is unknown
+    """
 
 
 class _ContainerTargetMeta:
-    def __init__(self, signature: Signature):
+    def __init__(self, signature: Signature) -> None:
         self.signature: dict[str, AnnotatedParameter] = {}
 
         for name, parameter in signature.parameters.items():
@@ -134,6 +139,6 @@ class _ContainerTargetMeta:
 
 
 class _ContainerClassMetadata(_ContainerTargetMeta):
-    def __init__(self, signature: Signature, singleton: bool):
+    def __init__(self, signature: Signature, *, singleton: bool) -> None:
         super().__init__(signature)
         self.singleton = singleton

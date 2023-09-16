@@ -5,12 +5,12 @@ from enum import Enum
 from typing import Any, Callable
 
 from wireup.ioc.container_util import (
+    ContainerInjectionRequest,
     ContainerProxy,
     ContainerProxyQualifier,
     ContainerProxyQualifierValue,
     ParameterWrapper,
     TemplatedString,
-    ContainerInjectionRequest,
 )
 from wireup.ioc.dependency_container import DependencyContainer
 from wireup.ioc.parameter import ParameterBag
