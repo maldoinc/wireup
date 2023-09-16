@@ -117,6 +117,10 @@ class _ContainerObjectIdentifier:
     qualifier: ContainerProxyQualifierValue
 
 
+class ContainerInjectionRequest:
+    ...
+
+
 @dataclass(frozen=True)
 class _ContainerClassMetadata:
     singleton: bool

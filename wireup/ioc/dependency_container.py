@@ -17,6 +17,7 @@ from .container_util import (
     _ContainerClassMetadata,
 )
 from .util import find_classes_in_module, parameter_get_type_and_annotation
+from .. import ContainerInjectionRequest
 
 if TYPE_CHECKING:
     from types import ModuleType
@@ -42,7 +43,8 @@ class DependencyContainer:
     be located from type alone.
 
     !!! note
-        Fastapi users MUST use ` = .wire()` method without arguments when injecting dependencies.
+        Fastapi users MUST use type hint services with `Annotated[Type, Wire()]`
+        or set the default value to ` = .wire()` method without arguments when injecting dependencies.
     """
 
     def __init__(self, parameter_bag: ParameterBag) -> None:
@@ -270,6 +272,11 @@ class DependencyContainer:
         if self.__is_impl_known(annotated_type):
             self.__assert_qualifier_is_valid_if_impl_known(annotated_type, qualifier_value)
             return self.__get_proxy_object(annotated_type, qualifier_value)
+
+        # Normally the container won't throw if it encounters a type it doesn't know about
+        # But if it's explicitly marked as to be injected then we need to throw.
+        if isinstance(annotated_parameter.annotation, ContainerInjectionRequest):
+            self.__assert_dependency_exists(annotated_type, qualifier=None)
 
         # When injecting dependencies and a qualifier is used, throw if it's being used on an unknown type.
         # This prevents the default value from being used by the runtime.
