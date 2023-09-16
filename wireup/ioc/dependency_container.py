@@ -279,7 +279,12 @@ class DependencyContainer:
             return self.__get_proxy_object(concrete_class, qualifier_value)
 
         if self.__is_impl_known(annotated_type):
-            self.__assert_qualifier_is_valid_if_impl_known(annotated_type, qualifier_value)
+            if not self.__is_impl_with_qualifier_known(annotated_type, qualifier_value):
+                msg = (
+                    f"Cannot instantiate concrete class for {annotated_type} as qualifier '{qualifier_value}' is unknown. "
+                    f"Available qualifiers: {self.__known_impls[annotated_type]}"
+                )
+                raise ValueError(msg)
             return self.__get_proxy_object(annotated_type, qualifier_value)
 
         # Normally the container won't throw if it encounters a type it doesn't know about
@@ -361,16 +366,4 @@ class DependencyContainer:
         """Assert that there exists an impl with that qualifier or an interface with an impl and the same qualifier."""
         if not self.__is_dependency_known(klass, qualifier):
             msg = f"Cannot wire unknown class {klass}. Use @Container.{{register,abstract}} to enable autowiring"
-            raise ValueError(msg)
-
-    def __assert_qualifier_is_valid_if_impl_known(
-        self,
-        klass: type[__T],
-        qualifier_value: ContainerProxyQualifierValue,
-    ) -> None:
-        if not self.__is_impl_with_qualifier_known(klass, qualifier_value):
-            msg = (
-                f"Cannot instantiate concrete class for {klass} as qualifier '{qualifier_value}' is unknown. "
-                f"Available qualifiers: {self.__known_impls[klass]}"
-            )
             raise ValueError(msg)
