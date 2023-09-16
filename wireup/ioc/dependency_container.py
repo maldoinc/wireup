@@ -281,8 +281,8 @@ class DependencyContainer:
         if self.__is_impl_known(annotated_type):
             if not self.__is_impl_with_qualifier_known(annotated_type, qualifier_value):
                 msg = (
-                    f"Cannot instantiate concrete class for {annotated_type} as qualifier '{qualifier_value}' is unknown. "
-                    f"Available qualifiers: {self.__known_impls[annotated_type]}"
+                    f"Cannot instantiate concrete class for {annotated_type} as qualifier '{qualifier_value}'"
+                    f" is unknown. Available qualifiers: {self.__known_impls[annotated_type]}"
                 )
                 raise ValueError(msg)
             return self.__get_proxy_object(annotated_type, qualifier_value)
