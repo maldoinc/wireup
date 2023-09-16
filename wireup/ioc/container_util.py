@@ -2,9 +2,10 @@ from __future__ import annotations
 
 from collections import defaultdict
 from dataclasses import dataclass
-from inspect import Parameter, Signature
-from types import MappingProxyType
+from inspect import Signature
 from typing import Any, Callable, Optional, TypeVar, Union
+
+from wireup.ioc.util import parameter_get_type_and_annotation, AnnotatedParameter
 
 
 @dataclass(frozen=True)
@@ -121,7 +122,18 @@ class ContainerInjectionRequest:
     ...
 
 
-@dataclass(frozen=True)
-class _ContainerClassMetadata:
-    singleton: bool
-    init_signature: Signature
+class _ContainerTargetMeta:
+    def __init__(self, signature: Signature):
+        self.signature: dict[str, AnnotatedParameter] = {}
+
+        for name, parameter in signature.parameters.items():
+            annotated_param = parameter_get_type_and_annotation(parameter)
+
+            if annotated_param.annotation or annotated_param.klass:
+                self.signature[name] = annotated_param
+
+
+class _ContainerClassMetadata(_ContainerTargetMeta):
+    def __init__(self, signature: Signature, singleton: bool):
+        super().__init__(signature)
+        self.singleton = singleton

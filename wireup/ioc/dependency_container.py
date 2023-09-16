@@ -14,9 +14,9 @@ from .container_util import (
     DependencyInitializationContext,
     ParameterWrapper,
     _ContainerObjectIdentifier,
-    _ContainerClassMetadata,
+    _ContainerClassMetadata, _ContainerTargetMeta,
 )
-from .util import find_classes_in_module, parameter_get_type_and_annotation
+from .util import find_classes_in_module, AnnotatedParameter
 from .. import ContainerInjectionRequest
 
 if TYPE_CHECKING:
@@ -57,6 +57,7 @@ class DependencyContainer:
         self.__initialized_objects: dict[_ContainerObjectIdentifier, object] = {}
         self.__initialized_proxies: dict[_ContainerObjectIdentifier, ContainerProxy] = {}
         self.__class_meta: dict[__T, _ContainerClassMetadata] = {}
+        self.__targets_meta: dict[__T, _ContainerTargetMeta] = {}
 
         self.params: ParameterBag = parameter_bag
         self.initialization_context = DependencyInitializationContext()
@@ -157,6 +158,7 @@ class DependencyContainer:
             raise ValueError(msg)
 
         self.__register_impl_meta(return_type, singleton=singleton)
+        self.__register_targets_meta(fn)
         self.__factory_functions[return_type] = fn
 
     def register_all_in_module(self, module: ModuleType, pattern: str = "*") -> None:
@@ -196,37 +198,35 @@ class DependencyContainer:
         return klass
 
     def __register_impl_meta(self, klass, singleton):
-        self.__class_meta[klass] = _ContainerClassMetadata(singleton=singleton, init_signature=inspect.signature(klass))
+        self.__class_meta[klass] = _ContainerClassMetadata(singleton=singleton, signature=inspect.signature(klass))
 
     def __autowire_inner(self, fn: Callable[..., Any], *args: Any, **kwargs: Any) -> Any:
+        self.__register_targets_meta(fn)
+
         return fn(*args, **{**kwargs, **self.__callable_get_params_to_inject(fn)})
 
+    def __register_targets_meta(self, fn):
+        if fn not in self.__targets_meta:
+            self.__targets_meta[fn] = _ContainerTargetMeta(signature=inspect.signature(fn))
+
     def __callable_get_params_to_inject(self, fn: Callable[..., Any], klass: type[__T] | None = None) -> dict:
-        key = fn, klass
-        # if key in self.__initialized_args:
-        #     return self.__initialized_args[key]
+        meta = self.__class_meta[klass] if klass else self.__targets_meta[fn]
 
         params_from_context = {
             name: self.params.get(wrapper.param) for name, wrapper in self.initialization_context.context[klass].items()
         }
 
-        signature_params = (
-            self.__class_meta[klass].init_signature.parameters if klass else inspect.signature(fn).parameters
-        )
-
         values_from_parameters = {}
-        for name, parameter in signature_params.items():
-            annotated_parameter = parameter_get_type_and_annotation(parameter)
+        for name, annotated_parameter in meta.signature.items():
             # Dealing with parameter, return the value as we cannot proxy int str etc.
             # We don't want to check here for none because as long as it exists in the bag, the value is good.
             if isinstance(annotated_parameter.annotation, ParameterWrapper):
                 values_from_parameters[name] = self.params.get(annotated_parameter.annotation.param)
 
-            if obj := self.__initialize_container_proxy_object_from_parameter(parameter):
+            if obj := self.__initialize_container_proxy_object_from_parameter(annotated_parameter):
                 values_from_parameters[name] = obj
 
         args = {**params_from_context, **values_from_parameters}
-        self.__initialized_args[key] = args
 
         return args
 
@@ -255,11 +255,10 @@ class DependencyContainer:
 
         return instance
 
-    def __initialize_container_proxy_object_from_parameter(self, parameter: Parameter) -> Any:
-        if parameter.annotation is Parameter.empty:
+    def __initialize_container_proxy_object_from_parameter(self, annotated_parameter: AnnotatedParameter) -> Any:
+        if annotated_parameter.klass is None:
             return None
 
-        annotated_parameter = parameter_get_type_and_annotation(parameter)
         annotated_type = annotated_parameter.klass
 
         if self.__is_impl_known_from_factory(annotated_type):
