@@ -27,10 +27,51 @@ When the container needs to inject a dependency it checks known factories to see
 
 
 !!! info
-    The return type of the function tells the container what type of dependency it can create.
+    The return type of the function is mandatory to annotate as tells the container what 
+    type of dependency it can create.
 
 !!! warning
     Factories can only depend on objects known by the container!
+
+## Examples
+
+Assume in the context of a web application a class `User` exists and represents a user of the system.
+
+```python
+# Instead of doing the following over and over again
+def get_user_logs(auth_service: AuthService):
+    current_user = auth_service.get_current_user()
+    ...
+
+
+
+# You can create a factory and inject the authenticated user directly.
+# You may want to create a new type to make a disctinction on the type of user this is.
+AuthenticatedUser = User
+
+@container.register(singleton=False)
+def get_current_user(auth_service: AuthService) -> AuthenticatedUser:
+    return auth_service.get_current_user()
+
+# Now it is possible to inject the authenticated user directly wherever it is necessary.
+def get_user_logs(user: AuthenticatedUser):
+    ...
+```
+
+Assume a base class `Notifier` with implementations that define how the notification is sent (IMAP, POP, WebHooks, etc.)
+Given a user it is possible to instantiate the correct type of notifier based on user preferences.
+
+
+```python
+@container.register(singleton=False)
+def get_user_notifier(user: AuthenticatedUser) -> Notifier:
+    notifier_type = ...
+
+    return container.get(notifier_type)
+```
+
+When injecting `Notifier` the correct type will be created based on the authenticated user's preferences.
+
 
 
 ## Links

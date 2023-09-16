@@ -19,6 +19,16 @@ To register a class as a service the following options are available.
 * Use `container.register_all_in_module`.
   (See: [Manual Configuration](manual_configuration.md#using-wireup-without-registration-decorators))
 
+### Singleton or not
+
+Services, by default will be registered as singletons. If your service or [Factory function](factory_functions.md)
+needs to generate a fresh instance every time it is injected it needs to be registered with the `singleton` parameter
+set to false.
+
+!!! tip
+    Use `container.register(singleton=False)` when the service relies on state that may change during execution.
+    Such as an `AuthService` which relies on data from the current request.
+
 ## Injection
 
 The container will perform autowiring based on the type hints given. No manual configuration is needed to inject
@@ -31,8 +41,15 @@ arguments the containers knows about already bound.
 
 ## Lifetime
 
-Services live in the container and their references are kept in it. As such, it should be avoided
-that they contain data about any particular request as injected parameters are cached on their first autowire call.
+Services live in the container and their references are kept in it. By default, services will be instantiated
+only once and all subsequent requests to them will return the same instance.
+
+To override this behavior you must register the service or factory function with by setting the `singleton` parameter
+to false when registering as service
+
+```python
+container.register(singleton=False)
+```
 
 The container should be configured once, at application startup and used throughout its execution.
 Even though you can modify the container or parameters at runtime it is generally advised not to.
