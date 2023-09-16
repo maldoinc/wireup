@@ -101,7 +101,7 @@ class TestContainer(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(
             f"Cannot wire unknown class {unittest.TestCase}. "
             "Use @Container.{register,abstract} to enable autowiring",
-            str(context.exception)
+            str(context.exception),
         )
 
     @patch("importlib.import_module")
@@ -448,6 +448,15 @@ class TestContainer(unittest.IsolatedAsyncioTestCase):
             self.assertIsNone(name2)
 
         inner()
+
+    def test_container_register_non_singleton(self):
+        self.container.register(Counter, singleton=False)
+        c1 = self.container.get(Counter)
+        c2 = self.container.get(Counter)
+
+        c1.inc()
+        self.assertEqual(c1.count, 1)
+        self.assertEqual(c2.count, 0)
 
     def test_injects_ctor(self):
         class Dummy:

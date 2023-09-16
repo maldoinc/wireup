@@ -47,6 +47,24 @@ class TestContainerStaticFactory(TestCase):
 
         inner()
 
+    def test_injects_using_factory_returns_unique_instances(self):
+        self.container.params.put("start", 5)
+
+        @self.container.register(singleton=False)
+        def create_thing(start=wire(param="start")) -> Counter:
+            return Counter(count=start)
+
+        @self.container.autowire
+        def inner(c1: Counter, c2: Counter):
+            c1.inc()
+
+            self.assertEqual(c1.count, 6)
+            self.assertNotEqual(c1.count, c2.count)
+            self.assertEqual(c2.count, 5)
+
+        inner()
+        inner()
+
     def test_injects_on_instance_methods(self):
         this = self
 
