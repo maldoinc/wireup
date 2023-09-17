@@ -237,9 +237,8 @@ class DependencyContainer:
         """Create the real instances of dependencies. Additional dependencies they may have will be lazily created."""
         is_singleton = self.__is_impl_singleton(klass)
 
-        object_type_id = klass, qualifier
-        if object_type_id in self.__initialized_objects and is_singleton:
-            return self.__initialized_objects[object_type_id]
+        if is_singleton and (obj := self.__initialized_objects.get((klass, qualifier))):
+            return obj
 
         self.__assert_dependency_exists(klass, qualifier)
         class_to_initialize = klass
@@ -305,8 +304,8 @@ class DependencyContainer:
     def __get_proxy_object(self, klass: type[__T], qualifier: ContainerProxyQualifierValue) -> ContainerProxy:
         obj_id = klass, qualifier
 
-        if obj_id in self.__initialized_proxies and self.__is_impl_singleton(klass):
-            return self.__initialized_proxies[obj_id]
+        if self.__is_impl_singleton(klass) and (obj := self.__initialized_proxies.get(obj_id)):
+            return obj
 
         proxy = ContainerProxy(lambda: self.__get(klass, qualifier))
         self.__initialized_proxies[obj_id] = proxy
