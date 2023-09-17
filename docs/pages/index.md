@@ -43,17 +43,18 @@ manage and inject dependencies making it easier to develop, test, and maintain P
     </div>
     <div class="card">
         <div class="card-title">
-            <img src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@14.1.2/assets/72x72/31-20e3.png" /> 
-            Singletons
-        </div>
-        Dependencies are initialized only once and all references to it will reuse the same instance.
-    </div>
-    <div class="card">
-        <div class="card-title">
             <img src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@14.1.2/assets/72x72/1f3ed.png" />
             Factory pattern
         </div>
         Defer instantiation to specialized factories for full control over object creation when necessary.
+    </div>
+    <div class="card">
+        <div class="card-title">
+            <img src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@14.1.2/assets/72x72/31-20e3.png" /> 
+            Singletons/Instance dependencies
+        </div>
+        Declare dependencies as singletons or instances which tells the container whether to reuse
+        existing instances or to inject a fresh copy.
     </div>
     <div class="card">
         <div class="card-title">
