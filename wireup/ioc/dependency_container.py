@@ -7,9 +7,8 @@ from collections import defaultdict
 from inspect import Parameter
 from typing import TYPE_CHECKING, Any, Callable, TypeVar
 
-from wireup import ContainerInjectionRequest
-
 from .container_util import (
+    ContainerInjectionRequest,
     ContainerProxy,
     ContainerProxyQualifier,
     ContainerProxyQualifierValue,
