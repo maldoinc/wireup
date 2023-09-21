@@ -3,8 +3,6 @@ from __future__ import annotations
 import asyncio
 import functools
 import inspect
-from collections import defaultdict
-from inspect import Parameter
 from typing import TYPE_CHECKING, Any, Callable, TypeVar
 
 from .container_util import (
@@ -14,9 +12,8 @@ from .container_util import (
     ContainerProxyQualifierValue,
     DependencyInitializationContext,
     ParameterWrapper,
-    _ContainerClassMetadata,
-    _ContainerTargetMeta,
 )
+from .service_registry import ServiceRegistry
 from .util import AnnotatedParameter, find_classes_in_module
 
 if TYPE_CHECKING:
@@ -49,15 +46,10 @@ class DependencyContainer:
 
     def __init__(self, parameter_bag: ParameterBag) -> None:
         """:param parameter_bag: ParameterBag instance holding parameter information."""
-        self.__initialized_args = {}
-        self.__known_interfaces: dict[type[__T], dict[str, type[__T]]] = {}
-        self.__known_impls: dict[type[__T], set[str]] = defaultdict(set)
-        self.__factory_functions: dict[type[__T], Callable[..., __T]] = {}
+        self.__service_registry: ServiceRegistry = ServiceRegistry()
 
         self.__initialized_objects: dict[tuple[__T, ContainerProxyQualifierValue], object] = {}
         self.__initialized_proxies: dict[tuple[__T, ContainerProxyQualifierValue], ContainerProxy] = {}
-        self.__class_meta: dict[__T, _ContainerClassMetadata] = {}
-        self.__targets_meta: dict[__T, _ContainerTargetMeta] = {}
 
         self.params: ParameterBag = parameter_bag
         self.initialization_context = DependencyInitializationContext()
@@ -80,7 +72,7 @@ class DependencyContainer:
 
         This type cannot be initialized directly and one of the components implementing this will be injected instead.
         """
-        self.__known_interfaces[klass] = defaultdict()
+        self.__service_registry.register_abstract(klass)
 
         return klass
 
@@ -110,9 +102,9 @@ class DependencyContainer:
             return decorated
 
         if inspect.isclass(obj):
-            return self.__register_inner(obj, qualifier, singleton=singleton)
-
-        self.__register_factory_inner(obj, singleton=singleton)
+            self.__service_registry.register_service(obj, qualifier, singleton=singleton)
+        else:
+            self.__service_registry.register_factory(obj, singleton=singleton)
 
         return obj
 
@@ -142,25 +134,6 @@ class DependencyContainer:
 
         return sync_inner
 
-    def __register_factory_inner(self, fn: Callable[[], __T], *, singleton: bool) -> None:
-        return_type = inspect.signature(fn).return_annotation
-
-        if return_type is Parameter.empty:
-            msg = "Factory functions must specify a return type denoting the type of dependency it can create."
-            raise ValueError(msg)
-
-        if self.__is_impl_known_from_factory(return_type):
-            msg = f"A function is already registered as a factory for dependency type {return_type}."
-            raise ValueError(msg)
-
-        if self.__is_impl_known(return_type):
-            msg = f"Cannot register factory function as type {return_type} is already known by the container."
-            raise ValueError(msg)
-
-        self.__register_impl_meta(return_type, singleton=singleton)
-        self.__register_targets_meta(fn)
-        self.__factory_functions[return_type] = fn
-
     def register_all_in_module(self, module: ModuleType, pattern: str = "*") -> None:
         """Register all modules inside a given module.
 
@@ -175,46 +148,13 @@ class DependencyContainer:
         for klass in find_classes_in_module(module, pattern):
             self.register(klass)
 
-    def __register_inner(
-        self,
-        klass: type[__T],
-        qualifier: ContainerProxyQualifierValue,
-        *,
-        singleton: bool,
-    ) -> type[__T]:
-        if self.__is_dependency_known(klass, qualifier):
-            msg = f"Cannot register type {klass} with qualifier '{qualifier}' as it already exists."
-            raise ValueError(msg)
-
-        if klass.__base__ in self.__known_interfaces:
-            if qualifier in self.__known_interfaces[klass.__base__]:
-                msg = (
-                    f"Cannot register implementation class {klass} for {klass.__base__} "
-                    f"with qualifier '{qualifier}' as it already exists"
-                )
-                raise ValueError(msg)
-
-            self.__known_interfaces[klass.__base__][qualifier] = klass
-
-        self.__known_impls[klass].add(qualifier)
-        self.__register_impl_meta(klass, singleton=singleton)
-
-        return klass
-
-    def __register_impl_meta(self, klass: __T, *, singleton: bool) -> None:
-        self.__class_meta[klass] = _ContainerClassMetadata(singleton=singleton, signature=inspect.signature(klass))
-
     def __autowire_inner(self, fn: Callable[..., Any], *args: Any, **kwargs: Any) -> Any:
-        self.__register_targets_meta(fn)
+        self.__service_registry.register_targets_meta(fn)
 
         return fn(*args, **{**kwargs, **self.__callable_get_params_to_inject(fn)})
 
-    def __register_targets_meta(self, fn: Callable[..., Any]) -> None:
-        if fn not in self.__targets_meta:
-            self.__targets_meta[fn] = _ContainerTargetMeta(signature=inspect.signature(fn))
-
     def __callable_get_params_to_inject(self, fn: Callable[..., Any], klass: type[__T] | None = None) -> dict:
-        meta = self.__class_meta[klass] if klass else self.__targets_meta[fn]
+        meta = self.__service_registry.class_meta[klass] if klass else self.__service_registry.targets_meta[fn]
 
         params_from_context = {
             name: self.params.get(wrapper.param) for name, wrapper in self.initialization_context.context[klass].items()
@@ -234,19 +174,20 @@ class DependencyContainer:
 
     def __get(self, klass: type[__T], qualifier: ContainerProxyQualifierValue) -> __T:
         """Create the real instances of dependencies. Additional dependencies they may have will be lazily created."""
-        is_singleton = self.__is_impl_singleton(klass)
+        is_singleton = self.__service_registry.is_impl_singleton(klass)
 
         if is_singleton and (obj := self.__initialized_objects.get((klass, qualifier))):
             return obj
 
         self.__assert_dependency_exists(klass, qualifier)
         class_to_initialize = klass
-        if klass in self.__known_interfaces:  # noqa: SIM102
-            if concrete_class := self.__get_concrete_class_from_interface_and_qualifier(klass, qualifier):
-                class_to_initialize = concrete_class
+        if self.__service_registry.is_interface_known(klass) and (
+            concrete_class := self.__get_concrete_class_from_interface_and_qualifier(klass, qualifier)
+        ):
+            class_to_initialize = concrete_class
 
-        if self.__is_impl_known_from_factory(class_to_initialize):
-            fn = self.__factory_functions[class_to_initialize]
+        if self.__service_registry.is_impl_known_from_factory(class_to_initialize):
+            fn = self.__service_registry.factory_functions[class_to_initialize]
             instance = fn(**self.__callable_get_params_to_inject(fn))
         else:
             instance = class_to_initialize(**self.__callable_get_params_to_inject(klass.__init__, class_to_initialize))
@@ -262,7 +203,7 @@ class DependencyContainer:
 
         annotated_type = annotated_parameter.klass
 
-        if self.__is_impl_known_from_factory(annotated_type):
+        if self.__service_registry.is_impl_known_from_factory(annotated_type):
             # Objects generated from factories do not have qualifiers
             return self.__get_proxy_object(annotated_type, None)
 
@@ -272,15 +213,15 @@ class DependencyContainer:
             else None
         )
 
-        if self.__is_interface_known(annotated_parameter.klass):
+        if self.__service_registry.is_interface_known(annotated_parameter.klass):
             concrete_class = self.__get_concrete_class_from_interface_and_qualifier(annotated_type, qualifier_value)
             return self.__get_proxy_object(concrete_class, qualifier_value)
 
-        if self.__is_impl_known(annotated_type):
-            if not self.__is_impl_with_qualifier_known(annotated_type, qualifier_value):
+        if self.__service_registry.is_impl_known(annotated_type):
+            if not self.__service_registry.is_impl_with_qualifier_known(annotated_type, qualifier_value):
                 msg = (
                     f"Cannot instantiate concrete class for {annotated_type} as qualifier '{qualifier_value}'"
-                    f" is unknown. Available qualifiers: {self.__known_impls[annotated_type]}"
+                    f" is unknown. Available qualifiers: {self.__service_registry.known_impls[annotated_type]}"
                 )
                 raise ValueError(msg)
             return self.__get_proxy_object(annotated_type, qualifier_value)
@@ -303,7 +244,7 @@ class DependencyContainer:
     def __get_proxy_object(self, klass: type[__T], qualifier: ContainerProxyQualifierValue) -> ContainerProxy:
         obj_id = klass, qualifier
 
-        if self.__is_impl_singleton(klass) and (obj := self.__initialized_proxies.get(obj_id)):
+        if self.__service_registry.is_impl_singleton(klass) and (obj := self.__initialized_proxies.get(obj_id)):
             return obj
 
         proxy = ContainerProxy(lambda: self.__get(klass, qualifier))
@@ -311,17 +252,12 @@ class DependencyContainer:
 
         return proxy
 
-    def __is_impl_singleton(self, klass: __T) -> bool:
-        meta = self.__class_meta.get(klass)
-
-        return meta and meta.singleton
-
     def __get_concrete_class_from_interface_and_qualifier(
         self,
         klass: type[__T],
         qualifier: ContainerProxyQualifierValue,
     ) -> type[__T]:
-        concrete_classes = self.__known_interfaces.get(klass, {})
+        concrete_classes = self.__service_registry.known_interfaces.get(klass, {})
 
         if qualifier in concrete_classes:
             return concrete_classes[qualifier]
@@ -334,34 +270,8 @@ class DependencyContainer:
         )
         raise ValueError(msg)
 
-    def __is_interface_known_with_valid_qualifier(
-        self,
-        klass: type[__T],
-        qualifier: ContainerProxyQualifierValue,
-    ) -> bool:
-        return klass in self.__known_interfaces and qualifier in self.__known_interfaces[klass]
-
-    def __is_impl_known(self, klass: type[__T]) -> bool:
-        return klass in self.__known_impls
-
-    def __is_interface_known(self, klass: type[__T]) -> bool:
-        return klass in self.__known_interfaces
-
-    def __is_impl_known_from_factory(self, klass: type[__T]) -> bool:
-        return klass in self.__factory_functions
-
-    def __is_impl_with_qualifier_known(self, klass: type[__T], qualifier_value: ContainerProxyQualifierValue) -> bool:
-        return klass in self.__known_impls and qualifier_value in self.__known_impls[klass]
-
-    def __is_dependency_known(self, klass: type[__T], qualifier: ContainerProxyQualifierValue) -> bool:
-        is_known_impl = self.__is_impl_with_qualifier_known(klass, qualifier)
-        is_known_intf = self.__is_interface_known_with_valid_qualifier(klass, qualifier)
-        is_known_from_factory = self.__is_impl_known_from_factory(klass)
-
-        return is_known_impl or is_known_intf or is_known_from_factory
-
     def __assert_dependency_exists(self, klass: type[__T], qualifier: ContainerProxyQualifierValue) -> None:
         """Assert that there exists an impl with that qualifier or an interface with an impl and the same qualifier."""
-        if not self.__is_dependency_known(klass, qualifier):
+        if not self.__service_registry.is_type_with_qualifier_known(klass, qualifier):
             msg = f"Cannot wire unknown class {klass}. Use @Container.{{register,abstract}} to enable autowiring"
             raise ValueError(msg)
