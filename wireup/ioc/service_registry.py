@@ -20,8 +20,8 @@ class _ServiceRegistry:
         self.known_impls: dict[type[__T], set[str]] = defaultdict(set)
         self.factory_functions: dict[type[__T], Callable[..., __T]] = {}
 
-        self.class_meta: dict[__T, _ContainerClassMetadata] = {}
-        self.targets_meta: dict[__T, _ContainerTargetMeta] = {}
+        self.impl_metadata: dict[__T, _ContainerClassMetadata] = {}
+        self.injection_target_metadata: dict[__T, _ContainerTargetMeta] = {}
 
     def register_service(
         self,
@@ -70,11 +70,11 @@ class _ServiceRegistry:
         self.factory_functions[return_type] = fn
 
     def register_targets_meta(self, fn: Callable[..., Any]) -> None:
-        if fn not in self.targets_meta:
-            self.targets_meta[fn] = _ContainerTargetMeta(signature=inspect.signature(fn))
+        if fn not in self.injection_target_metadata:
+            self.injection_target_metadata[fn] = _ContainerTargetMeta(signature=inspect.signature(fn))
 
     def __register_impl_meta(self, klass: __T, *, singleton: bool) -> None:
-        self.class_meta[klass] = _ContainerClassMetadata(singleton=singleton, signature=inspect.signature(klass))
+        self.impl_metadata[klass] = _ContainerClassMetadata(singleton=singleton, signature=inspect.signature(klass))
 
     def is_impl_known(self, klass: type[__T]) -> bool:
         return klass in self.known_impls
@@ -100,7 +100,7 @@ class _ServiceRegistry:
         return klass in self.factory_functions
 
     def is_impl_singleton(self, klass: __T) -> bool:
-        meta = self.class_meta.get(klass)
+        meta = self.impl_metadata.get(klass)
 
         return meta and meta.singleton
 

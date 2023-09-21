@@ -150,7 +150,11 @@ class DependencyContainer:
         return fn(*args, **{**kwargs, **self.__callable_get_params_to_inject(fn)})
 
     def __callable_get_params_to_inject(self, fn: Callable[..., Any], klass: type[__T] | None = None) -> dict:
-        meta = self.__service_registry.class_meta[klass] if klass else self.__service_registry.targets_meta[fn]
+        meta = (
+            self.__service_registry.impl_metadata[klass]
+            if klass
+            else self.__service_registry.injection_target_metadata[fn]
+        )
 
         params_from_context = {
             name: self.params.get(wrapper.param) for name, wrapper in self.initialization_context.context[klass].items()
