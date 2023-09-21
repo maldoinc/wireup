@@ -2,6 +2,7 @@
 
 ![GitHub](https://img.shields.io/github/license/maldoinc/wireup?style=for-the-badge)
 ![GitHub Workflow Status (with event)](https://img.shields.io/github/actions/workflow/status/maldoinc/wireup/run_all.yml?style=for-the-badge)
+![Code Climate maintainability](https://img.shields.io/codeclimate/maintainability/maldoinc/wireup?style=for-the-badge&label=Code+Climate)
 ![PyPI - Python Version](https://img.shields.io/pypi/pyversions/wireup?style=for-the-badge)
 ![PyPI - Version](https://img.shields.io/pypi/v/wireup?style=for-the-badge)
 
