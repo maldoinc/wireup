@@ -13,11 +13,12 @@ Use when your application only needs one container.
 
 
 __all__ = [
-    "wire",
-    "Wire",
     "DependencyContainer",
     "ParameterBag",
     "ParameterEnum",
     "ParameterReference",
     "ServiceLifetime",
+    "Wire",
+    "container",
+    "wire",
 ]
