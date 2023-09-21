@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from wireup.annotation import ParameterEnum, Wire, wire
-from wireup.ioc.container_util import ParameterReference
+from wireup.ioc.container_util import ParameterReference, ServiceLifetime
 from wireup.ioc.dependency_container import DependencyContainer
 from wireup.ioc.parameter import ParameterBag
 
@@ -19,4 +19,5 @@ __all__ = [
     "ParameterBag",
     "ParameterEnum",
     "ParameterReference",
+    "ServiceLifetime",
 ]

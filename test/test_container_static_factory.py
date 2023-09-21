@@ -3,7 +3,7 @@ from unittest import TestCase
 
 from test.fixtures import Counter, FooBar
 from test.services.random_service import RandomService
-from wireup import DependencyContainer, ParameterBag, wire
+from wireup import DependencyContainer, ParameterBag, wire, ServiceLifetime
 
 
 class ThingToBeCreated:
@@ -50,7 +50,7 @@ class TestContainerStaticFactory(TestCase):
     def test_injects_using_factory_returns_unique_instances(self):
         self.container.params.put("start", 5)
 
-        @self.container.register(singleton=False)
+        @self.container.register(lifetime=ServiceLifetime.TRANSIENT)
         def create_thing(start=wire(param="start")) -> Counter:
             return Counter(count=start)
 

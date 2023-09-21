@@ -5,10 +5,9 @@ from unittest.mock import Mock, patch
 
 from test import services
 from test.fixtures import Counter, FooBar, FooBase, FooBaz
-from test.services.db_service import DbService
 from test.services.random_service import RandomService
 from test.services.truly_random_service import TrulyRandomService
-from wireup import Wire, wire, container
+from wireup import Wire, wire, ServiceLifetime
 from wireup.ioc.container_util import ParameterWrapper
 from wireup.ioc.dependency_container import ContainerProxy, DependencyContainer
 from wireup.ioc.parameter import ParameterBag, TemplatedString
@@ -449,8 +448,8 @@ class TestContainer(unittest.IsolatedAsyncioTestCase):
 
         inner()
 
-    def test_container_register_non_singleton(self):
-        self.container.register(Counter, singleton=False)
+    def test_container_register_transient(self):
+        self.container.register(Counter, lifetime=ServiceLifetime.TRANSIENT)
         c1 = self.container.get(Counter)
         c2 = self.container.get(Counter)
 

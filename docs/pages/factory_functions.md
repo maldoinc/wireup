@@ -49,7 +49,7 @@ def get_user_logs(auth_service: AuthService):
 # You may want to create a new type to make a disctinction on the type of user this is.
 AuthenticatedUser = User
 
-@container.register(singleton=False)
+@container.register(lifetime=ServiceLifetime.TRANSIENT)
 def get_current_user(auth_service: AuthService) -> AuthenticatedUser:
     return auth_service.get_current_user()
 
@@ -63,7 +63,7 @@ Given a user it is possible to instantiate the correct type of notifier based on
 
 
 ```python
-@container.register(singleton=False)
+@container.register(lifetime=ServiceLifetime.TRANSIENT)
 def get_user_notifier(user: AuthenticatedUser) -> Notifier:
     notifier_type = ...
 

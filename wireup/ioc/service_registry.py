@@ -2,16 +2,35 @@ from __future__ import annotations
 
 import inspect
 from collections import defaultdict
-from inspect import Parameter
-from typing import Any, Callable, TypeVar
+from inspect import Parameter, Signature
+from typing import TYPE_CHECKING, Any, Callable, TypeVar
 
-from wireup.ioc.container_util import (
-    ContainerProxyQualifierValue,
-    _ContainerClassMetadata,
-    _ContainerTargetMeta,
-)
+from wireup.ioc.container_util import ServiceLifetime
+from wireup.ioc.util import AnnotatedParameter, parameter_get_type_and_annotation
+
+if TYPE_CHECKING:
+    from wireup.ioc.container_util import (
+        ContainerProxyQualifierValue,
+    )
 
 __T = TypeVar("__T")
+
+
+class _ContainerTargetMeta:
+    def __init__(self, signature: Signature) -> None:
+        self.signature: dict[str, AnnotatedParameter] = {}
+
+        for name, parameter in signature.parameters.items():
+            annotated_param = parameter_get_type_and_annotation(parameter)
+
+            if annotated_param.annotation or annotated_param.klass:
+                self.signature[name] = annotated_param
+
+
+class _ContainerClassMetadata(_ContainerTargetMeta):
+    def __init__(self, signature: Signature, lifetime: ServiceLifetime) -> None:
+        super().__init__(signature)
+        self.lifetime = lifetime
 
 
 class _ServiceRegistry:
@@ -27,8 +46,7 @@ class _ServiceRegistry:
         self,
         klass: type[__T],
         qualifier: ContainerProxyQualifierValue,
-        *,
-        singleton: bool,
+        lifetime: ServiceLifetime,
     ) -> None:
         if self.is_type_with_qualifier_known(klass, qualifier):
             msg = f"Cannot register type {klass} with qualifier '{qualifier}' as it already exists."
@@ -45,12 +63,12 @@ class _ServiceRegistry:
             self.known_interfaces[klass.__base__][qualifier] = klass
 
         self.known_impls[klass].add(qualifier)
-        self.__register_impl_meta(klass, singleton=singleton)
+        self.__register_impl_meta(klass, lifetime)
 
     def register_abstract(self, klass: type[__T]) -> None:
         self.known_interfaces[klass] = defaultdict()
 
-    def register_factory(self, fn: Callable[[], __T], *, singleton: bool) -> None:
+    def register_factory(self, fn: Callable[[], __T], lifetime: ServiceLifetime) -> None:
         return_type = inspect.signature(fn).return_annotation
 
         if return_type is Parameter.empty:
@@ -65,7 +83,7 @@ class _ServiceRegistry:
             msg = f"Cannot register factory function as type {return_type} is already known by the container."
             raise ValueError(msg)
 
-        self.__register_impl_meta(return_type, singleton=singleton)
+        self.__register_impl_meta(return_type, lifetime=lifetime)
         self.register_targets_meta(fn)
         self.factory_functions[return_type] = fn
 
@@ -73,8 +91,8 @@ class _ServiceRegistry:
         if fn not in self.injection_target_metadata:
             self.injection_target_metadata[fn] = _ContainerTargetMeta(signature=inspect.signature(fn))
 
-    def __register_impl_meta(self, klass: __T, *, singleton: bool) -> None:
-        self.impl_metadata[klass] = _ContainerClassMetadata(singleton=singleton, signature=inspect.signature(klass))
+    def __register_impl_meta(self, klass: __T, lifetime: ServiceLifetime) -> None:
+        self.impl_metadata[klass] = _ContainerClassMetadata(signature=inspect.signature(klass), lifetime=lifetime)
 
     def is_impl_known(self, klass: type[__T]) -> bool:
         return klass in self.known_impls
@@ -102,7 +120,7 @@ class _ServiceRegistry:
     def is_impl_singleton(self, klass: __T) -> bool:
         meta = self.impl_metadata.get(klass)
 
-        return meta and meta.singleton
+        return meta and meta.lifetime == ServiceLifetime.SINGLETON
 
     def is_interface_known(self, klass: type[__T]) -> bool:
         return klass in self.known_interfaces

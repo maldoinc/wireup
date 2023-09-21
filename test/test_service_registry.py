@@ -1,6 +1,7 @@
 import unittest
 
 from test.services.random_service import RandomService
+from wireup import ServiceLifetime
 from wireup.ioc.service_registry import _ServiceRegistry
 
 
@@ -9,7 +10,7 @@ class TestServiceRegistry(unittest.TestCase):
         self.registry = _ServiceRegistry()
 
     def test_register_service(self):
-        self.registry.register_service(MyService, qualifier="default", singleton=True)
+        self.registry.register_service(MyService, qualifier="default", lifetime=ServiceLifetime.SINGLETON)
 
         # Check if the service is registered correctly
         self.assertTrue(self.registry.is_impl_known(MyService))
@@ -19,7 +20,7 @@ class TestServiceRegistry(unittest.TestCase):
 
         # Test registering a duplicate service
         with self.assertRaises(ValueError):
-            self.registry.register_service(MyService, qualifier="default", singleton=True)
+            self.registry.register_service(MyService, qualifier="default", lifetime=ServiceLifetime.SINGLETON)
 
     def test_register_abstract(self):
         self.registry.register_abstract(MyInterface)
@@ -28,7 +29,7 @@ class TestServiceRegistry(unittest.TestCase):
         self.assertTrue(self.registry.is_interface_known(MyInterface))
 
     def test_register_factory(self):
-        self.registry.register_factory(my_factory, singleton=True)
+        self.registry.register_factory(my_factory, lifetime=ServiceLifetime.SINGLETON)
 
         # Check if the factory function is registered correctly
         self.assertTrue(self.registry.is_impl_known_from_factory(RandomService))
@@ -38,14 +39,14 @@ class TestServiceRegistry(unittest.TestCase):
             pass
 
         with self.assertRaises(ValueError):
-            self.registry.register_factory(invalid_factory, singleton=True)
+            self.registry.register_factory(invalid_factory, lifetime=ServiceLifetime.SINGLETON)
 
         # Test registering a duplicate factory function
         with self.assertRaises(ValueError):
-            self.registry.register_factory(my_factory, singleton=True)
+            self.registry.register_factory(my_factory, lifetime=ServiceLifetime.SINGLETON)
 
     def test_register_targets_meta(self):
-        self.registry.register_factory(my_factory, singleton=True)
+        self.registry.register_factory(my_factory, lifetime=ServiceLifetime.SINGLETON)
 
         # Check if the target metadata is registered correctly
         self.assertTrue(my_factory in self.registry.injection_target_metadata)
@@ -53,31 +54,31 @@ class TestServiceRegistry(unittest.TestCase):
     def test_is_impl_known(self):
         self.assertFalse(self.registry.is_impl_known(MyService))
 
-        self.registry.register_service(MyService, qualifier="default", singleton=True)
+        self.registry.register_service(MyService, qualifier="default", lifetime=ServiceLifetime.SINGLETON)
         self.assertTrue(self.registry.is_impl_known(MyService))
 
     def test_is_impl_with_qualifier_known(self):
         self.assertFalse(self.registry.is_impl_with_qualifier_known(MyService, "default"))
 
-        self.registry.register_service(MyService, qualifier="default", singleton=True)
+        self.registry.register_service(MyService, qualifier="default", lifetime=ServiceLifetime.SINGLETON)
         self.assertTrue(self.registry.is_impl_with_qualifier_known(MyService, "default"))
 
     def test_is_type_with_qualifier_known(self):
         self.assertFalse(self.registry.is_type_with_qualifier_known(MyService, "default"))
 
-        self.registry.register_service(MyService, qualifier="default", singleton=True)
+        self.registry.register_service(MyService, qualifier="default", lifetime=ServiceLifetime.SINGLETON)
         self.assertTrue(self.registry.is_type_with_qualifier_known(MyService, "default"))
 
     def test_is_impl_known_from_factory(self):
         self.assertFalse(self.registry.is_impl_known_from_factory(str))
 
-        self.registry.register_factory(my_factory, singleton=True)
+        self.registry.register_factory(my_factory, lifetime=ServiceLifetime.SINGLETON)
         self.assertTrue(self.registry.is_impl_known_from_factory(RandomService))
 
     def test_is_impl_singleton(self):
         self.assertFalse(self.registry.is_impl_singleton(MyService))
 
-        self.registry.register_service(MyService, qualifier="default", singleton=True)
+        self.registry.register_service(MyService, qualifier="default", lifetime=ServiceLifetime.SINGLETON)
         self.assertTrue(self.registry.is_impl_singleton(MyService))
 
     def test_is_interface_known(self):

@@ -5,6 +5,8 @@ import functools
 import inspect
 from typing import TYPE_CHECKING, Any, Callable, TypeVar
 
+from wireup import ServiceLifetime
+
 from .container_util import (
     ContainerInjectionRequest,
     ContainerProxy,
@@ -77,7 +79,7 @@ class DependencyContainer:
         obj: type[__T] | Callable | None = None,
         *,
         qualifier: ContainerProxyQualifierValue = None,
-        singleton: bool = True,
+        lifetime: ServiceLifetime = ServiceLifetime.SINGLETON,
     ) -> type[__T]:
         """Register a dependency in the container.
 
@@ -93,14 +95,14 @@ class DependencyContainer:
         if obj is None:
 
             def decorated(inner_class: type[__T]) -> type[__T]:
-                return self.register(inner_class, qualifier=qualifier, singleton=singleton)
+                return self.register(inner_class, qualifier=qualifier, lifetime=lifetime)
 
             return decorated
 
         if inspect.isclass(obj):
-            self.__service_registry.register_service(obj, qualifier, singleton=singleton)
+            self.__service_registry.register_service(obj, qualifier, lifetime)
         else:
-            self.__service_registry.register_factory(obj, singleton=singleton)
+            self.__service_registry.register_factory(obj, lifetime)
 
         return obj
 

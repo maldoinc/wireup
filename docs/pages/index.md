@@ -51,10 +51,10 @@ manage and inject dependencies making it easier to develop, test, and maintain P
     <div class="card">
         <div class="card-title">
             <img src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@14.1.2/assets/72x72/31-20e3.png" /> 
-            Singletons/Instance dependencies
+            Singletons/Transient dependencies
         </div>
-        Declare dependencies as singletons or instances which tells the container whether to reuse
-        existing instances or to inject a fresh copy.
+        Declare dependencies as transient or singletons which tells the container whether 
+        to inject a fresh copy or reuse existing instances.
     </div>
     <div class="card">
         <div class="card-title">

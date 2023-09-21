@@ -2,12 +2,8 @@ from __future__ import annotations
 
 from collections import defaultdict
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, Callable, Optional, Union
-
-from wireup.ioc.util import AnnotatedParameter, parameter_get_type_and_annotation
-
-if TYPE_CHECKING:
-    from inspect import Signature
+from enum import Enum, auto
+from typing import Any, Callable, Optional, Union
 
 
 @dataclass(frozen=True)
@@ -113,18 +109,11 @@ class ContainerInjectionRequest:
     """
 
 
-class _ContainerTargetMeta:
-    def __init__(self, signature: Signature) -> None:
-        self.signature: dict[str, AnnotatedParameter] = {}
+class ServiceLifetime(Enum):
+    """Determines the lifetime of a service."""
 
-        for name, parameter in signature.parameters.items():
-            annotated_param = parameter_get_type_and_annotation(parameter)
+    SINGLETON = auto()
+    """Singleton services are initialized once and reused throughout the lifetime of the container."""
 
-            if annotated_param.annotation or annotated_param.klass:
-                self.signature[name] = annotated_param
-
-
-class _ContainerClassMetadata(_ContainerTargetMeta):
-    def __init__(self, signature: Signature, *, singleton: bool) -> None:
-        super().__init__(signature)
-        self.singleton = singleton
+    TRANSIENT = auto()
+    """Transient services will have a fresh instance initialized on every injection."""
