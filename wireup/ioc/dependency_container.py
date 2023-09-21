@@ -38,10 +38,6 @@ class DependencyContainer:
     Use the `autowire` decorator on methods where dependency injection must be performed.
     Services will be injected automatically where possible. Parameters will have to be annotated as they cannot
     be located from type alone.
-
-    !!! note
-        Fastapi users MUST use type hint services with `Annotated[Type, Wire()]`
-        or set the default value to ` = .wire()` method without arguments when injecting dependencies.
     """
 
     def __init__(self, parameter_bag: ParameterBag) -> None:
