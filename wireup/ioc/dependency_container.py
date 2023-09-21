@@ -13,7 +13,7 @@ from .container_util import (
     DependencyInitializationContext,
     ParameterWrapper,
 )
-from .service_registry import ServiceRegistry
+from .service_registry import _ServiceRegistry
 from .util import AnnotatedParameter, find_classes_in_module
 
 if TYPE_CHECKING:
@@ -42,7 +42,7 @@ class DependencyContainer:
 
     def __init__(self, parameter_bag: ParameterBag) -> None:
         """:param parameter_bag: ParameterBag instance holding parameter information."""
-        self.__service_registry: ServiceRegistry = ServiceRegistry()
+        self.__service_registry: _ServiceRegistry = _ServiceRegistry()
 
         self.__initialized_objects: dict[tuple[__T, ContainerProxyQualifierValue], object] = {}
         self.__initialized_proxies: dict[tuple[__T, ContainerProxyQualifierValue], ContainerProxy] = {}

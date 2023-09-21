@@ -1,12 +1,12 @@
 import unittest
 
 from test.services.random_service import RandomService
-from wireup.ioc.service_registry import ServiceRegistry
+from wireup.ioc.service_registry import _ServiceRegistry
 
 
 class TestServiceRegistry(unittest.TestCase):
     def setUp(self):
-        self.registry = ServiceRegistry()
+        self.registry = _ServiceRegistry()
 
     def test_register_service(self):
         self.registry.register_service(MyService, qualifier="default", singleton=True)

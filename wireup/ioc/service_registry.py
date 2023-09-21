@@ -14,7 +14,7 @@ from wireup.ioc.container_util import (
 __T = TypeVar("__T")
 
 
-class ServiceRegistry:
+class _ServiceRegistry:
     def __init__(self) -> None:
         self.known_interfaces: dict[type[__T], dict[str, type[__T]]] = {}
         self.known_impls: dict[type[__T], set[str]] = defaultdict(set)
@@ -47,7 +47,7 @@ class ServiceRegistry:
         self.known_impls[klass].add(qualifier)
         self.__register_impl_meta(klass, singleton=singleton)
 
-    def register_abstract(self, klass: type[__T]):
+    def register_abstract(self, klass: type[__T]) -> None:
         self.known_interfaces[klass] = defaultdict()
 
     def register_factory(self, fn: Callable[[], __T], *, singleton: bool) -> None:
