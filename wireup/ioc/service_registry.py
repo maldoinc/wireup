@@ -3,7 +3,7 @@ from __future__ import annotations
 import inspect
 from collections import defaultdict
 from inspect import Parameter, Signature
-from typing import TYPE_CHECKING, Any, Callable, TypeVar
+from typing import TYPE_CHECKING, Any, Callable, Generic, TypeVar
 
 from wireup.ioc.container_util import ServiceLifetime
 from wireup.ioc.util import AnnotatedParameter, parameter_get_type_and_annotation
@@ -16,31 +16,31 @@ if TYPE_CHECKING:
 __T = TypeVar("__T")
 
 
-class _ContainerTargetMeta:
+class _ContainerTargetMeta(Generic[__T]):
     def __init__(self, signature: Signature) -> None:
-        self.signature: dict[str, AnnotatedParameter] = {}
+        self.signature: dict[str, AnnotatedParameter[__T]] = {}
 
         for name, parameter in signature.parameters.items():
-            annotated_param = parameter_get_type_and_annotation(parameter)
+            annotated_param: AnnotatedParameter[__T] = parameter_get_type_and_annotation(parameter)
 
             if annotated_param.annotation or annotated_param.klass:
                 self.signature[name] = annotated_param
 
 
-class _ContainerClassMetadata(_ContainerTargetMeta):
+class _ContainerClassMetadata(_ContainerTargetMeta[__T]):
     def __init__(self, signature: Signature, lifetime: ServiceLifetime) -> None:
         super().__init__(signature)
         self.lifetime = lifetime
 
 
-class _ServiceRegistry:
+class _ServiceRegistry(Generic[__T]):
     def __init__(self) -> None:
-        self.known_interfaces: dict[type[__T], dict[str, type[__T]]] = {}
-        self.known_impls: dict[type[__T], set[str]] = defaultdict(set)
+        self.known_interfaces: dict[type[__T], dict[ContainerProxyQualifierValue, type[__T]]] = {}
+        self.known_impls: dict[type[__T], set[ContainerProxyQualifierValue]] = defaultdict(set)
         self.factory_functions: dict[type[__T], Callable[..., __T]] = {}
 
-        self.impl_metadata: dict[__T, _ContainerClassMetadata] = {}
-        self.injection_target_metadata: dict[__T, _ContainerTargetMeta] = {}
+        self.impl_metadata: dict[type[__T], _ContainerClassMetadata[__T]] = {}
+        self.injection_target_metadata: dict[Callable[..., Any], _ContainerTargetMeta[__T]] = {}
 
     def register_service(
         self,
@@ -68,7 +68,7 @@ class _ServiceRegistry:
     def register_abstract(self, klass: type[__T]) -> None:
         self.known_interfaces[klass] = defaultdict()
 
-    def register_factory(self, fn: Callable[[], __T], lifetime: ServiceLifetime) -> None:
+    def register_factory(self, fn: Callable[..., __T], lifetime: ServiceLifetime) -> None:
         return_type = inspect.signature(fn).return_annotation
 
         if return_type is Parameter.empty:
@@ -91,7 +91,7 @@ class _ServiceRegistry:
         if fn not in self.injection_target_metadata:
             self.injection_target_metadata[fn] = _ContainerTargetMeta(signature=inspect.signature(fn))
 
-    def __register_impl_meta(self, klass: __T, lifetime: ServiceLifetime) -> None:
+    def __register_impl_meta(self, klass: type[__T], lifetime: ServiceLifetime) -> None:
         self.impl_metadata[klass] = _ContainerClassMetadata(signature=inspect.signature(klass), lifetime=lifetime)
 
     def is_impl_known(self, klass: type[__T]) -> bool:
@@ -117,10 +117,10 @@ class _ServiceRegistry:
     def is_impl_known_from_factory(self, klass: type[__T]) -> bool:
         return klass in self.factory_functions
 
-    def is_impl_singleton(self, klass: __T) -> bool:
+    def is_impl_singleton(self, klass: type[__T]) -> bool:
         meta = self.impl_metadata.get(klass)
 
-        return meta and meta.lifetime == ServiceLifetime.SINGLETON
+        return meta is not None and meta.lifetime == ServiceLifetime.SINGLETON
 
     def is_interface_known(self, klass: type[__T]) -> bool:
         return klass in self.known_interfaces

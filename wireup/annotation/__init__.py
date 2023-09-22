@@ -2,11 +2,10 @@ from __future__ import annotations
 
 import importlib
 from enum import Enum
-from typing import Any, Callable
+from typing import Any
 
 from wireup.ioc.container_util import (
     ContainerInjectionRequest,
-    ContainerProxy,
     ContainerProxyQualifier,
     ContainerProxyQualifierValue,
     ParameterWrapper,
@@ -19,7 +18,7 @@ def wire(
     param: str | None = None,
     expr: str | None = None,
     qualifier: ContainerProxyQualifierValue = None,
-) -> Callable[..., Any] | ParameterWrapper | ContainerProxy | Any:
+) -> Any:
     """Inject resources from the container to autowired method arguments.
 
     Arguments are exclusive and only one of them must be used at any time.

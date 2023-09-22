@@ -3,7 +3,9 @@ from __future__ import annotations
 from collections import defaultdict
 from dataclasses import dataclass
 from enum import Enum, auto
-from typing import Any, Callable, Optional, Union
+from typing import Any, Callable, Generic, Optional, TypeVar, Union
+
+__T = TypeVar("__T")
 
 
 @dataclass(frozen=True)
@@ -41,7 +43,7 @@ class ContainerProxyQualifier:
     qualifier: ContainerProxyQualifierValue
 
 
-class DependencyInitializationContext:
+class DependencyInitializationContext(Generic[__T]):
     """Contains information about initializing a particular dependency.
 
     Use in cases where you want to avoid using `.wire` calls for parameter injection.
@@ -51,7 +53,7 @@ class DependencyInitializationContext:
         """Initialize an empty context."""
         self.context: dict[type, dict[str, ParameterWrapper]] = defaultdict(dict)
 
-    def add_param(self, klass: type, argument_name: str, parameter_ref: ParameterReference) -> None:
+    def add_param(self, klass: type[__T], argument_name: str, parameter_ref: ParameterReference) -> None:
         """Add a parameter to the context.
 
         :param klass: The class type which this parameter belongs to
@@ -60,7 +62,7 @@ class DependencyInitializationContext:
         """
         self.context[klass][argument_name] = ParameterWrapper(parameter_ref)
 
-    def update(self, klass: type, params: dict[str, ParameterReference]) -> None:
+    def update(self, klass: type[__T], params: dict[str, ParameterReference]) -> None:
         """Merge the context information for a particular type.
 
         Updates the context with the values from the new dictionary. Parameters from the argument will overwrite
@@ -74,20 +76,20 @@ class DependencyInitializationContext:
         self.context[klass].update({k: ParameterWrapper(v) for k, v in params.items()})
 
 
-class ContainerProxy:
+class ContainerProxy(Generic[__T]):
     """A proxy object used by the container to achieve lazy loading.
 
     Contains a reference to the final initialized object and proxies all requests to the instance.
     """
 
-    def __init__(self, instance_supplier: Callable) -> None:
+    def __init__(self, instance_supplier: Callable[[], __T]) -> None:
         """Initialize a ContainerProxy.
 
         :param instance_supplier: A callable which takes no arguments and returns the object. Will be called to
         retrieve the actual instance when the objects' properties are first being accessed.
         """
         self.__supplier = instance_supplier
-        self.__proxy_object = None
+        self.__proxy_object: __T | None = None
 
     def __getattr__(self, name: Any) -> Any:
         """Intercept object property access and forwards them to the proxied object.

@@ -4,15 +4,15 @@ import fnmatch
 import pkgutil
 from dataclasses import dataclass
 from inspect import Parameter
-from typing import TYPE_CHECKING, Any, Generator, TypeVar
+from typing import TYPE_CHECKING, Any, Generator, Generic, TypeVar
 
 if TYPE_CHECKING:
     from types import ModuleType
 
-T = TypeVar("T")
+__T = TypeVar("__T")
 
 
-def find_classes_in_module(module: ModuleType, pattern: str = "*") -> Generator[type[T], None, None]:
+def find_classes_in_module(module: ModuleType, pattern: str = "*") -> Generator[type[__T], None, None]:
     """Return a list of object types found in a given module that matches the pattern in the argument.
 
     :param module: The module under which to recursively look for types.
@@ -29,21 +29,25 @@ def find_classes_in_module(module: ModuleType, pattern: str = "*") -> Generator[
 
 
 @dataclass
-class AnnotatedParameter:
+class AnnotatedParameter(Generic[__T]):
     """Represents a function parameter with a single optional annotation."""
 
-    klass: type[T] | None
+    klass: type[__T] | None
     annotation: Any | None
 
 
-def parameter_get_type_and_annotation(parameter: Parameter) -> AnnotatedParameter:
+def parameter_get_type_and_annotation(parameter: Parameter) -> AnnotatedParameter[__T]:
     """Get the annotation injection type from a signature's Parameter.
 
     Returns either the first annotation for an Annotated type or the default value.
     """
-    annotated_type = None if parameter.annotation is Parameter.empty else parameter.annotation
+    if hasattr(parameter.annotation, "__metadata__") and hasattr(parameter.annotation, "__args__"):
+        return AnnotatedParameter(
+            klass=parameter.annotation.__args__[0],
+            annotation=parameter.annotation.__metadata__[0],
+        )
 
-    if hasattr(annotated_type, "__metadata__") and hasattr(annotated_type, "__args__"):
-        return AnnotatedParameter(klass=annotated_type.__args__[0], annotation=annotated_type.__metadata__[0])
-
-    return AnnotatedParameter(annotated_type, None if parameter.default is Parameter.empty else parameter.default)
+    return AnnotatedParameter(
+        None if parameter.annotation is Parameter.empty else parameter.annotation,
+        None if parameter.default is Parameter.empty else parameter.default,
+    )

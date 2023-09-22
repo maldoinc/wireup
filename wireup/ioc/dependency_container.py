@@ -2,8 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import functools
-import inspect
-from typing import TYPE_CHECKING, Any, Callable, TypeVar
+from typing import TYPE_CHECKING, Any, Callable, Generic, Type, TypeVar, Union
 
 from wireup import ServiceLifetime
 
@@ -24,9 +23,10 @@ if TYPE_CHECKING:
     from .parameter import ParameterBag
 
 __T = TypeVar("__T")
+_InjectableTarget = Union[Type[__T], Callable[..., __T]]
 
 
-class DependencyContainer:
+class DependencyContainer(Generic[__T]):
     """Dependency Injection and Service Locator container registry.
 
     This contains all the necessary information to initialize registered classes.
@@ -44,13 +44,13 @@ class DependencyContainer:
 
     def __init__(self, parameter_bag: ParameterBag) -> None:
         """:param parameter_bag: ParameterBag instance holding parameter information."""
-        self.__service_registry: _ServiceRegistry = _ServiceRegistry()
+        self.__service_registry: _ServiceRegistry[__T] = _ServiceRegistry()
 
-        self.__initialized_objects: dict[tuple[__T, ContainerProxyQualifierValue], object] = {}
-        self.__initialized_proxies: dict[tuple[__T, ContainerProxyQualifierValue], ContainerProxy] = {}
+        self.__initialized_objects: dict[tuple[type[__T], ContainerProxyQualifierValue], __T] = {}
+        self.__initialized_proxies: dict[tuple[type[__T], ContainerProxyQualifierValue], ContainerProxy[__T]] = {}
 
         self.params: ParameterBag = parameter_bag
-        self.initialization_context = DependencyInitializationContext()
+        self.initialization_context: DependencyInitializationContext[__T] = DependencyInitializationContext()
 
     def get(self, klass: type[__T], qualifier: ContainerProxyQualifierValue = None) -> __T:
         """Get an instance of the requested type.
@@ -63,7 +63,11 @@ class DependencyContainer:
         """
         self.__assert_dependency_exists(klass, qualifier)
 
-        return self.__get_proxy_object(klass, qualifier)
+        # We need to lie a bit to the type checker here. Container does not inject the real object
+        # but rather a proxy which will instantiate that type during first use.
+        # In turn that object may get injected other proxy objects.
+        # This enables lazy loading.
+        return self.__get_proxy_object(klass, qualifier)  # type: ignore[return-value]
 
     def abstract(self, klass: type[__T]) -> type[__T]:
         """Register a type as an interface.
@@ -76,11 +80,11 @@ class DependencyContainer:
 
     def register(
         self,
-        obj: type[__T] | Callable | None = None,
+        obj: _InjectableTarget[__T] | None = None,
         *,
         qualifier: ContainerProxyQualifierValue = None,
         lifetime: ServiceLifetime = ServiceLifetime.SINGLETON,
-    ) -> type[__T]:
+    ) -> _InjectableTarget[__T] | Callable[[_InjectableTarget[__T]], _InjectableTarget[__T]]:
         """Register a dependency in the container.
 
         Use `@register` without parameters on a class or with a single parameter `@register(qualifier=name)`
@@ -94,19 +98,29 @@ class DependencyContainer:
         # Allow register to be used either with or without arguments
         if obj is None:
 
-            def decorated(inner_class: type[__T]) -> type[__T]:
-                return self.register(inner_class, qualifier=qualifier, lifetime=lifetime)
+            def decorated(decorated_obj: _InjectableTarget[__T]) -> _InjectableTarget[__T]:
+                self.__register_object(decorated_obj, qualifier, lifetime)
+
+                return decorated_obj
 
             return decorated
 
-        if inspect.isclass(obj):
+        self.__register_object(obj, qualifier, lifetime)
+
+        return obj
+
+    def __register_object(
+        self,
+        obj: _InjectableTarget[__T],
+        qualifier: ContainerProxyQualifierValue,
+        lifetime: ServiceLifetime,
+    ) -> None:
+        if isinstance(obj, type):
             self.__service_registry.register_service(obj, qualifier, lifetime)
         else:
             self.__service_registry.register_factory(obj, lifetime)
 
-        return obj
-
-    def autowire(self, fn: Callable) -> Callable:
+    def autowire(self, fn: Callable[..., Any]) -> Callable[..., Any]:
         """Automatically inject resources from the container to the decorated methods.
 
         Any arguments which the container does not know about will be ignored
@@ -143,6 +157,7 @@ class DependencyContainer:
         :param module: The package name to recursively search for classes.
         :param pattern: A pattern that will be fed to fnmatch to determine if a class will be registered or not.
         """
+        klass: type[__T]
         for klass in find_classes_in_module(module, pattern):
             self.register(klass)
 
@@ -151,16 +166,21 @@ class DependencyContainer:
 
         return fn(*args, **{**kwargs, **self.__callable_get_params_to_inject(fn)})
 
-    def __callable_get_params_to_inject(self, fn: Callable[..., Any], klass: type[__T] | None = None) -> dict:
+    def __callable_get_params_to_inject(self, fn: Callable[..., Any], klass: type[__T] | None = None) -> dict[str, Any]:
         meta = (
             self.__service_registry.impl_metadata[klass]
             if klass
             else self.__service_registry.injection_target_metadata[fn]
         )
 
-        params_from_context = {
-            name: self.params.get(wrapper.param) for name, wrapper in self.initialization_context.context[klass].items()
-        }
+        params_from_context = (
+            {
+                name: self.params.get(wrapper.param)
+                for name, wrapper in self.initialization_context.context[klass].items()
+            }
+            if klass
+            else {}
+        )
 
         values_from_parameters = {}
         for name, annotated_parameter in meta.signature.items():
@@ -192,14 +212,15 @@ class DependencyContainer:
             fn = self.__service_registry.factory_functions[class_to_initialize]
             instance = fn(**self.__callable_get_params_to_inject(fn))
         else:
-            instance = class_to_initialize(**self.__callable_get_params_to_inject(klass.__init__, class_to_initialize))
+            args = self.__callable_get_params_to_inject(klass.__init__, class_to_initialize)
+            instance = class_to_initialize(**args)
 
         if is_singleton:
             self.__initialized_objects[class_to_initialize, qualifier] = instance
 
         return instance
 
-    def __initialize_container_proxy_object_from_parameter(self, annotated_parameter: AnnotatedParameter) -> Any:
+    def __initialize_container_proxy_object_from_parameter(self, annotated_parameter: AnnotatedParameter[__T]) -> Any:
         if annotated_parameter.klass is None:
             return None
 
@@ -243,7 +264,7 @@ class DependencyContainer:
 
         return None
 
-    def __get_proxy_object(self, klass: type[__T], qualifier: ContainerProxyQualifierValue) -> ContainerProxy:
+    def __get_proxy_object(self, klass: type[__T], qualifier: ContainerProxyQualifierValue) -> ContainerProxy[__T]:
         obj_id = klass, qualifier
 
         if self.__service_registry.is_impl_singleton(klass) and (obj := self.__initialized_proxies.get(obj_id)):

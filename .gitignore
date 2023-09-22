@@ -4,3 +4,4 @@
 dist
 docs/site
 __pycache__
+.mypy_cache

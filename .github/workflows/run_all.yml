@@ -26,6 +26,9 @@ jobs:
       - name: Lint
         run: |
           .venv/bin/poetry run ruff --format=github wireup
+      - name: Check typing
+        run: |
+          .venv/bin/poetry run mypy wireup --strict
       - name: Check formatting
         run: |
           .venv/bin/poetry run black --check .

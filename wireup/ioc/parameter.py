@@ -80,7 +80,7 @@ class ParameterBag:
         if val in self.__cache:
             return self.__cache[val]
 
-        def replace_param(match: Match) -> str:
+        def replace_param(match: Match[str]) -> str:
             param_name = match.group(1)
             param_value = str(self.__get_value_from_name(param_name))
 
