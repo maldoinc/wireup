@@ -19,19 +19,12 @@ jobs:
       - name: Create venv
         run: python -m venv .venv
       - name: Install dependencies
-        run: |
-          .venv/bin/python -m pip install --upgrade pip
-          .venv/bin/pip install poetry
-          .venv/bin/poetry install --no-root
+        run: make install
       - name: Lint
-        run: |
-          .venv/bin/poetry run ruff --format=github wireup
+        run: make check-ruff
       - name: Check typing
-        run: |
-          .venv/bin/poetry run mypy wireup --strict
+        run: make check-mypy
       - name: Check formatting
-        run: |
-          .venv/bin/poetry run black --check .
+        run: make check-fmt
       - name: Run tests
-        run: |
-          .venv/bin/python -m unittest discover -s test/
+        run: make test
