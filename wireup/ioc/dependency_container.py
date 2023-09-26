@@ -188,8 +188,7 @@ class DependencyContainer(Generic[__T]):
             # We don't want to check here for none because as long as it exists in the bag, the value is good.
             if isinstance(annotated_parameter.annotation, ParameterWrapper):
                 values_from_parameters[name] = self.params.get(annotated_parameter.annotation.param)
-
-            if obj := self.__initialize_container_proxy_object_from_parameter(annotated_parameter):
+            elif obj := self.__initialize_container_proxy_object_from_parameter(annotated_parameter):
                 values_from_parameters[name] = obj
 
         return {**params_from_context, **values_from_parameters}
