@@ -28,7 +28,7 @@ def find_classes_in_module(module: ModuleType, pattern: str = "*") -> Generator[
                 yield obj
 
 
-@dataclass
+@dataclass(frozen=True, eq=True)
 class AnnotatedParameter(Generic[__T]):
     """Represents a function parameter with a single optional annotation."""
 

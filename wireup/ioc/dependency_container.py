@@ -67,7 +67,7 @@ class DependencyContainer(Generic[__T]):
         # but rather a proxy which will instantiate that type during first use.
         # In turn that object may get injected other proxy objects.
         # This enables lazy loading.
-        return self.__get_proxy_object(klass, qualifier)  # type: ignore[return-value]
+        return self.__get_injected_object(klass, qualifier)  # type: ignore[return-value]
 
     def abstract(self, klass: type[__T]) -> type[__T]:
         """Register a type as an interface.
@@ -195,13 +195,9 @@ class DependencyContainer(Generic[__T]):
 
     def __get(self, klass: type[__T], qualifier: ContainerProxyQualifierValue) -> __T:
         """Create the real instances of dependencies. Additional dependencies they may have will be lazily created."""
-        is_singleton = self.__service_registry.is_impl_singleton(klass)
-
-        if is_singleton and (obj := self.__initialized_objects.get((klass, qualifier))):
-            return obj
-
         self.__assert_dependency_exists(klass, qualifier)
         class_to_initialize = klass
+
         if self.__service_registry.is_interface_known(klass) and (
             concrete_class := self.__get_concrete_class_from_interface_and_qualifier(klass, qualifier)
         ):
@@ -214,7 +210,7 @@ class DependencyContainer(Generic[__T]):
             args = self.__callable_get_params_to_inject(klass.__init__, class_to_initialize)
             instance = class_to_initialize(**args)
 
-        if is_singleton:
+        if self.__service_registry.is_impl_singleton(klass):
             self.__initialized_objects[class_to_initialize, qualifier] = instance
 
         return instance
@@ -227,7 +223,7 @@ class DependencyContainer(Generic[__T]):
 
         if self.__service_registry.is_impl_known_from_factory(annotated_type):
             # Objects generated from factories do not have qualifiers
-            return self.__get_proxy_object(annotated_type, None)
+            return self.__get_injected_object(annotated_type, None)
 
         qualifier_value = (
             annotated_parameter.annotation.qualifier
@@ -237,7 +233,7 @@ class DependencyContainer(Generic[__T]):
 
         if self.__service_registry.is_interface_known(annotated_parameter.klass):
             concrete_class = self.__get_concrete_class_from_interface_and_qualifier(annotated_type, qualifier_value)
-            return self.__get_proxy_object(concrete_class, qualifier_value)
+            return self.__get_injected_object(concrete_class, qualifier_value)
 
         if self.__service_registry.is_impl_known(annotated_type):
             if not self.__service_registry.is_impl_with_qualifier_known(annotated_type, qualifier_value):
@@ -246,7 +242,7 @@ class DependencyContainer(Generic[__T]):
                     f" is unknown. Available qualifiers: {self.__service_registry.known_impls[annotated_type]}"
                 )
                 raise ValueError(msg)
-            return self.__get_proxy_object(annotated_type, qualifier_value)
+            return self.__get_injected_object(annotated_type, qualifier_value)
 
         # Normally the container won't throw if it encounters a type it doesn't know about
         # But if it's explicitly marked as to be injected then we need to throw.
@@ -263,11 +259,20 @@ class DependencyContainer(Generic[__T]):
 
         return None
 
-    def __get_proxy_object(self, klass: type[__T], qualifier: ContainerProxyQualifierValue) -> ContainerProxy[__T]:
+    def __get_injected_object(
+        self,
+        klass: type[__T],
+        qualifier: ContainerProxyQualifierValue,
+    ) -> ContainerProxy[__T] | __T:
+        """Return a container proxy or an instance of the requested singleton class if one has been initialized."""
         obj_id = klass, qualifier
 
-        if self.__service_registry.is_impl_singleton(klass) and (obj := self.__initialized_proxies.get(obj_id)):
-            return obj
+        # If there's an existing instance return that directly without having to proxy it
+        if instance := self.__initialized_objects.get(obj_id):
+            return instance
+
+        if self.__service_registry.is_impl_singleton(klass) and (proxy := self.__initialized_proxies.get(obj_id)):
+            return proxy
 
         proxy = ContainerProxy(lambda: self.__get(klass, qualifier))
         self.__initialized_proxies[obj_id] = proxy
