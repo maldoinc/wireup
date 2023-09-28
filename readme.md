@@ -23,12 +23,9 @@ for services and a simple web view called "greet".
 from wireup import container, Wire
 
 # Parameters serve as configuration for services. 
+# Populate this with your existing configuration
 # Think of a database url or environment name.
-container.params.update({
-    "db.connection_str": os.environ.get("DATABASE_URL") 
-    "cache_dir": gettempdir(),
-    "env": os.environ.get("ENV", "dev")
-})
+container.params.update(...)
 
 
 # Register a class as a dependency in the container.
