@@ -43,39 +43,6 @@ class ContainerProxyQualifier:
     qualifier: ContainerProxyQualifierValue
 
 
-class DependencyInitializationContext(Generic[__T]):
-    """Contains information about initializing a particular dependency.
-
-    Use in cases where you want to avoid using `.wire` calls for parameter injection.
-    """
-
-    def __init__(self) -> None:
-        """Initialize an empty context."""
-        self.context: dict[type, dict[str, ParameterWrapper]] = defaultdict(dict)
-
-    def add_param(self, klass: type[__T], argument_name: str, parameter_ref: ParameterReference) -> None:
-        """Add a parameter to the context.
-
-        :param klass: The class type which this parameter belongs to
-        :param argument_name: The name of the parameter in the klass initializer.
-        :param parameter_ref: A reference to a parameter in the bag.
-        """
-        self.context[klass][argument_name] = ParameterWrapper(parameter_ref)
-
-    def update(self, klass: type[__T], params: dict[str, ParameterReference]) -> None:
-        """Merge the context information for a particular type.
-
-        Updates the context with the values from the new dictionary. Parameters from the argument will overwrite
-        any existing ones with the same name. Behaves the same as the standard dict.update. Parameter values
-        will be wrapped in ParameterWrapper.
-
-        :param klass: The class type to be updated
-        :param params: A dictionary of parameter references. Keys map to the parameter name and values
-        contain references to parameters in the bag.
-        """
-        self.context[klass].update({k: ParameterWrapper(v) for k, v in params.items()})
-
-
 class ContainerProxy(Generic[__T]):
     """A proxy object used by the container to achieve lazy loading.
 

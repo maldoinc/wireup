@@ -11,7 +11,6 @@ from .container_util import (
     ContainerProxy,
     ContainerProxyQualifier,
     ContainerProxyQualifierValue,
-    DependencyInitializationContext,
     ParameterWrapper,
 )
 from .service_registry import _ServiceRegistry
@@ -20,6 +19,7 @@ from .util import AnnotatedParameter, find_classes_in_module
 if TYPE_CHECKING:
     from types import ModuleType
 
+    from .initialization_context import InitializationContext
     from .parameter import ParameterBag
 
 __T = TypeVar("__T")
@@ -50,7 +50,6 @@ class DependencyContainer(Generic[__T]):
         self.__initialized_proxies: dict[tuple[type[__T], ContainerProxyQualifierValue], ContainerProxy[__T]] = {}
 
         self.params: ParameterBag = parameter_bag
-        self.initialization_context: DependencyInitializationContext[__T] = DependencyInitializationContext()
 
     def get(self, klass: type[__T], qualifier: ContainerProxyQualifierValue = None) -> __T:
         """Get an instance of the requested type.
@@ -109,6 +108,10 @@ class DependencyContainer(Generic[__T]):
 
         return obj
 
+    @property
+    def context(self) -> InitializationContext:
+        return self.__service_registry.context
+
     def __register_object(
         self,
         obj: _InjectableTarget[__T],
@@ -162,28 +165,13 @@ class DependencyContainer(Generic[__T]):
             self.register(klass)
 
     def __autowire_inner(self, fn: Callable[..., Any], *args: Any, **kwargs: Any) -> Any:
-        self.__service_registry.register_targets_meta(fn)
+        self.__service_registry.register_context(fn)
 
         return fn(*args, **{**kwargs, **self.__callable_get_params_to_inject(fn)})
 
-    def __callable_get_params_to_inject(self, fn: Callable[..., Any], klass: type[__T] | None = None) -> dict[str, Any]:
-        meta = (
-            self.__service_registry.impl_metadata[klass]
-            if klass
-            else self.__service_registry.injection_target_metadata[fn]
-        )
-
-        params_from_context = (
-            {
-                name: self.params.get(wrapper.param)
-                for name, wrapper in self.initialization_context.context[klass].items()
-            }
-            if klass
-            else {}
-        )
-
+    def __callable_get_params_to_inject(self, fn: Callable[..., Any]) -> dict[str, Any]:
         values_from_parameters = {}
-        for name, annotated_parameter in meta.signature.items():
+        for name, annotated_parameter in self.__service_registry.context.get(fn).items():
             # Dealing with parameter, return the value as we cannot proxy int str etc.
             # We don't want to check here for none because as long as it exists in the bag, the value is good.
             if isinstance(annotated_parameter.annotation, ParameterWrapper):
@@ -191,7 +179,7 @@ class DependencyContainer(Generic[__T]):
             elif obj := self.__initialize_container_proxy_object_from_parameter(annotated_parameter):
                 values_from_parameters[name] = obj
 
-        return {**params_from_context, **values_from_parameters}
+        return values_from_parameters
 
     def __get(self, klass: type[__T], qualifier: ContainerProxyQualifierValue) -> __T:
         """Create the real instances of dependencies. Additional dependencies they may have will be lazily created."""
@@ -207,7 +195,7 @@ class DependencyContainer(Generic[__T]):
             fn = self.__service_registry.factory_functions[class_to_initialize]
             instance = fn(**self.__callable_get_params_to_inject(fn))
         else:
-            args = self.__callable_get_params_to_inject(klass.__init__, class_to_initialize)
+            args = self.__callable_get_params_to_inject(class_to_initialize)
             instance = class_to_initialize(**args)
 
         if self.__service_registry.is_impl_singleton(klass):

@@ -174,10 +174,11 @@ class TestContainer(unittest.IsolatedAsyncioTestCase):
             env: str
             mambo_number: int
 
-        self.container.initialization_context.add_param(NoHints, "interpolated", TemplatedString("${first}-${second}"))
-        self.container.initialization_context.update(NoHints, {"mambo_number": "mambo_number", "env": "env"})
-
         self.container.register(NoHints)
+
+        self.container.context.put_param(NoHints, "interpolated", TemplatedString("${first}-${second}"))
+        self.container.context.update_params(NoHints, {"mambo_number": "mambo_number", "env": "env"})
+
         self.container.params.update({"first": "foo", "second": "bar", "env": "test", "mambo_number": 5})
         obj = self.container.get(NoHints)
 

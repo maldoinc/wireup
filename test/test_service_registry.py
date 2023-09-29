@@ -45,12 +45,6 @@ class TestServiceRegistry(unittest.TestCase):
         with self.assertRaises(ValueError):
             self.registry.register_factory(my_factory, lifetime=ServiceLifetime.SINGLETON)
 
-    def test_register_targets_meta(self):
-        self.registry.register_factory(my_factory, lifetime=ServiceLifetime.SINGLETON)
-
-        # Check if the target metadata is registered correctly
-        self.assertTrue(my_factory in self.registry.injection_target_metadata)
-
     def test_is_impl_known(self):
         self.assertFalse(self.registry.is_impl_known(MyService))
 
