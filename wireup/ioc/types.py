@@ -76,3 +76,7 @@ class AnnotatedParameter(Generic[__T]):
 
     klass: type[__T] | None = None
     annotation: Any | None = None
+
+    # When creating the annotation, calculate this value once
+    # So we can avoid doing the same repeated isinstance checks when autowiring
+    qualifier_value: ContainerProxyQualifierValue = None

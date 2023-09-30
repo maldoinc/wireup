@@ -11,7 +11,6 @@ from .types import (
     AnyCallable,
     AutowireTarget,
     ContainerInjectionRequest,
-    ContainerProxyQualifier,
     ContainerProxyQualifierValue,
     ParameterWrapper,
     ServiceLifetime,
@@ -218,11 +217,7 @@ class DependencyContainer(Generic[__T]):
             # Objects generated from factories do not have qualifiers
             return self.__get_injected_object(annotated_type, None)
 
-        qualifier_value = (
-            annotated_parameter.annotation.qualifier
-            if isinstance(annotated_parameter.annotation, ContainerProxyQualifier)
-            else None
-        )
+        qualifier_value = annotated_parameter.qualifier_value
 
         if self.__service_registry.is_interface_known(annotated_type):
             concrete_class = self.__get_concrete_class_from_interface_and_qualifier(annotated_type, qualifier_value)
