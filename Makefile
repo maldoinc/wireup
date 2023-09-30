@@ -1,4 +1,4 @@
-.PHONY: install format lint check-fmt check-ruff check-mypy test
+.PHONY: install format lint check-fmt check-ruff check-mypy test profile
 
 ifdef GITHUB_ACTIONS
 RUFF_ARGS := --format=github
@@ -25,3 +25,6 @@ check-mypy:
 
 test:
 	.venv/bin/python -m unittest discover -s test/
+
+profile ./profile_tests $(num_runs):
+	./.venv/bin/python ./profile_tests.py $(num_runs)
