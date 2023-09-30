@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from unittest import TestCase
 
-from test.fixtures import Counter, FooBar
+from test.fixtures import Counter, FooBar, FooBase
 from test.services.random_service import RandomService
 from wireup import DependencyContainer, ParameterBag, wire, ServiceLifetime
 
@@ -135,5 +135,18 @@ class TestContainerStaticFactory(TestCase):
         @self.container.register
         def foo_factory(foo_gen: FooGenerator) -> FooBar:
             return foo_gen.get_foo()
+
+        inner()
+
+    def test_factory_abstract_type(self):
+        self.container.register(FooBar)
+
+        @self.container.autowire
+        def inner(foo: FooBase):
+            self.assertEqual(foo.foo, "bar")
+
+        @self.container.register
+        def foo_factory() -> FooBase:
+            return FooBar()
 
         inner()
