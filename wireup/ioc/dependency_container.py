@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING, Any, Callable, Generic, TypeVar
 from wireup import ServiceLifetime
 
 from .container_util import (
+    AnyCallable,
     AutowireTarget,
     ContainerInjectionRequest,
     ContainerProxy,
@@ -124,7 +125,7 @@ class DependencyContainer(Generic[__T]):
         else:
             self.__service_registry.register_factory(obj, lifetime)
 
-    def autowire(self, fn: Callable[..., Any]) -> Callable[..., Any]:
+    def autowire(self, fn: AnyCallable) -> AnyCallable:
         """Automatically inject resources from the container to the decorated methods.
 
         Any arguments which the container does not know about will be ignored
@@ -165,12 +166,12 @@ class DependencyContainer(Generic[__T]):
         for klass in find_classes_in_module(module, pattern):
             self.register(klass)
 
-    def __autowire_inner(self, fn: Callable[..., Any], *args: Any, **kwargs: Any) -> Any:
+    def __autowire_inner(self, fn: AnyCallable, *args: Any, **kwargs: Any) -> Any:
         self.__service_registry.target_init_context(fn)
 
         return fn(*args, **{**kwargs, **self.__callable_get_params_to_inject(fn)})
 
-    def __callable_get_params_to_inject(self, fn: Callable[..., Any]) -> dict[str, Any]:
+    def __callable_get_params_to_inject(self, fn: AnyCallable) -> dict[str, Any]:
         values_from_parameters = {}
         params = self.__service_registry.context.get(fn)
 
