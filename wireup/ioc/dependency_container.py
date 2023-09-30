@@ -188,12 +188,13 @@ class DependencyContainer(Generic[__T]):
     def __get(self, klass: type[__T], qualifier: ContainerProxyQualifierValue) -> __T:
         """Create the real instances of dependencies. Additional dependencies they may have will be lazily created."""
         self.__assert_dependency_exists(klass, qualifier)
-        class_to_initialize = klass
 
         if self.__service_registry.is_interface_known(klass) and (
             concrete_class := self.__get_concrete_class_from_interface_and_qualifier(klass, qualifier)
         ):
             class_to_initialize = concrete_class
+        else:
+            class_to_initialize = klass
 
         if self.__service_registry.is_impl_known_from_factory(class_to_initialize):
             fn = self.__service_registry.factory_functions[class_to_initialize]
