@@ -2,9 +2,10 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from enum import Enum, auto
-from typing import Any, Callable, Generic, Optional, TypeVar, Union
+from typing import Any, Callable, Generic, Optional, Type, TypeVar, Union
 
 __T = TypeVar("__T")
+AutowireTarget = Union[Callable[..., Any], Type[__T]]
 
 
 class InjectableType:

@@ -2,11 +2,12 @@ from __future__ import annotations
 
 import asyncio
 import functools
-from typing import TYPE_CHECKING, Any, Callable, Generic, Type, TypeVar, Union
+from typing import TYPE_CHECKING, Any, Callable, Generic, TypeVar
 
 from wireup import ServiceLifetime
 
 from .container_util import (
+    AutowireTarget,
     ContainerInjectionRequest,
     ContainerProxy,
     ContainerProxyQualifier,
@@ -23,7 +24,6 @@ if TYPE_CHECKING:
     from .parameter import ParameterBag
 
 __T = TypeVar("__T")
-_InjectableTarget = Union[Type[__T], Callable[..., __T]]
 
 
 class DependencyContainer(Generic[__T]):
@@ -79,11 +79,11 @@ class DependencyContainer(Generic[__T]):
 
     def register(
         self,
-        obj: _InjectableTarget[__T] | None = None,
+        obj: AutowireTarget[__T] | None = None,
         *,
         qualifier: ContainerProxyQualifierValue = None,
         lifetime: ServiceLifetime = ServiceLifetime.SINGLETON,
-    ) -> _InjectableTarget[__T] | Callable[[_InjectableTarget[__T]], _InjectableTarget[__T]]:
+    ) -> AutowireTarget[__T] | Callable[[AutowireTarget[__T]], AutowireTarget[__T]]:
         """Register a dependency in the container.
 
         Use `@register` without parameters on a class or with a single parameter `@register(qualifier=name)`
@@ -97,7 +97,7 @@ class DependencyContainer(Generic[__T]):
         # Allow register to be used either with or without arguments
         if obj is None:
 
-            def decorated(decorated_obj: _InjectableTarget[__T]) -> _InjectableTarget[__T]:
+            def decorated(decorated_obj: AutowireTarget[__T]) -> AutowireTarget[__T]:
                 self.__register_object(decorated_obj, qualifier, lifetime)
 
                 return decorated_obj
@@ -115,7 +115,7 @@ class DependencyContainer(Generic[__T]):
 
     def __register_object(
         self,
-        obj: _InjectableTarget[__T],
+        obj: AutowireTarget[__T],
         qualifier: ContainerProxyQualifierValue,
         lifetime: ServiceLifetime,
     ) -> None:
@@ -166,7 +166,7 @@ class DependencyContainer(Generic[__T]):
             self.register(klass)
 
     def __autowire_inner(self, fn: Callable[..., Any], *args: Any, **kwargs: Any) -> Any:
-        self.__service_registry.register_context(fn)
+        self.__service_registry.target_init_context(fn)
 
         return fn(*args, **{**kwargs, **self.__callable_get_params_to_inject(fn)})
 

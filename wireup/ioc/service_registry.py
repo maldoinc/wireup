@@ -5,8 +5,8 @@ from collections import defaultdict
 from inspect import Parameter
 from typing import TYPE_CHECKING, Callable, Generic, TypeVar
 
-from wireup.ioc.container_util import InjectableType, ServiceLifetime
-from wireup.ioc.initialization_context import AutowireTarget, InitializationContext
+from wireup.ioc.container_util import AutowireTarget, InjectableType, ServiceLifetime
+from wireup.ioc.initialization_context import InitializationContext
 from wireup.ioc.util import AnnotatedParameter, is_type_autowireable, parameter_get_type_and_annotation
 
 if TYPE_CHECKING:
@@ -46,7 +46,7 @@ class _ServiceRegistry(Generic[__T]):
             self.known_interfaces[klass.__base__][qualifier] = klass
 
         self.known_impls[klass].add(qualifier)
-        self.register_context(klass, lifetime)
+        self.target_init_context(klass, lifetime)
 
     def register_abstract(self, klass: type[__T]) -> None:
         self.known_interfaces[klass] = defaultdict()
@@ -66,14 +66,15 @@ class _ServiceRegistry(Generic[__T]):
             msg = f"Cannot register factory function as type {return_type} is already known by the container."
             raise ValueError(msg)
 
-        self.register_context(fn, lifetime=lifetime)
+        self.target_init_context(fn, lifetime=lifetime)
         self.factory_functions[return_type] = fn
 
         # The target and its lifetime just needs to be known. No need to check its dependencies
         # as the factory will be the one to create it.
         self.context.init(return_type, lifetime)
 
-    def register_context(self, target: AutowireTarget[__T], lifetime: ServiceLifetime | None = None) -> None:
+    def target_init_context(self, target: AutowireTarget[__T], lifetime: ServiceLifetime | None = None) -> None:
+        """Init and collect all the necessary dependencies to initialize the specified target."""
         if not self.context.init(target, lifetime):
             return
 

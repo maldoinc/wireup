@@ -89,7 +89,7 @@ class TestServiceRegistry(unittest.TestCase):
         def target(_a, _b, _c, _d: RandomService, _e: str, _f: Annotated[str, Wire(param="name")]):
             ...
 
-        self.registry.register_context(target)
+        self.registry.target_init_context(target)
         self.assertEqual(
             self.registry.context.get(target),
             {

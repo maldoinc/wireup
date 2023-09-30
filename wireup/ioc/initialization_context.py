@@ -1,15 +1,14 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Callable, Generic, Type, TypeVar, Union
+from typing import TYPE_CHECKING, Generic, TypeVar
 
-from wireup.ioc.container_util import ParameterWrapper, ServiceLifetime
+from wireup.ioc.container_util import AutowireTarget, ParameterWrapper, ServiceLifetime
 from wireup.ioc.util import AnnotatedParameter
 
 if TYPE_CHECKING:
     from wireup import ParameterReference
 
 __T = TypeVar("__T")
-AutowireTarget = Union[Callable[..., Any], Type[__T]]
 
 
 class InitializationContext(Generic[__T]):
