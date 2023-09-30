@@ -3,11 +3,11 @@ from __future__ import annotations
 import inspect
 from collections import defaultdict
 from inspect import Parameter
-from typing import TYPE_CHECKING, Any, Callable, Generic, TypeVar
+from typing import TYPE_CHECKING, Callable, Generic, TypeVar
 
-from wireup.ioc.container_util import ServiceLifetime, ParameterWrapper, InjectableType
+from wireup.ioc.container_util import InjectableType, ServiceLifetime
 from wireup.ioc.initialization_context import AutowireTarget, InitializationContext
-from wireup.ioc.util import AnnotatedParameter, parameter_get_type_and_annotation, is_type_autowireable
+from wireup.ioc.util import AnnotatedParameter, is_type_autowireable, parameter_get_type_and_annotation
 
 if TYPE_CHECKING:
     from wireup.ioc.container_util import (
@@ -72,11 +72,6 @@ class _ServiceRegistry(Generic[__T]):
         # The target and its lifetime just needs to be known. No need to check its dependencies
         # as the factory will be the one to create it.
         self.context.init(return_type, lifetime)
-
-    def register_targets_meta(self, fn: Callable[..., Any]) -> None:
-        signature = inspect.signature(fn)
-
-        self.register_context(fn, signature)
 
     def register_context(self, target: AutowireTarget, lifetime: ServiceLifetime | None = None) -> None:
         if not self.context.init(target, lifetime):

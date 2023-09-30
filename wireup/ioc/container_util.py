@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from collections import defaultdict
 from dataclasses import dataclass
 from enum import Enum, auto
 from typing import Any, Callable, Generic, Optional, TypeVar, Union
@@ -9,7 +8,7 @@ __T = TypeVar("__T")
 
 
 class InjectableType:
-    ...
+    """Base type for anything that should be injected using annotation hints."""
 
 
 @dataclass(frozen=True)

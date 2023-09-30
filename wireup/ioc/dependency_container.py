@@ -110,6 +110,7 @@ class DependencyContainer(Generic[__T]):
 
     @property
     def context(self) -> InitializationContext:
+        """The initialization context for registered targets. A map between an injection target and its dependencies."""
         return self.__service_registry.context
 
     def __register_object(

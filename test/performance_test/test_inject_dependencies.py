@@ -1,7 +1,6 @@
 import timeit
 import unittest
 from dataclasses import dataclass
-from typing import Optional
 
 from typing_extensions import Annotated
 
@@ -52,24 +51,14 @@ class UnitTestInject(unittest.TestCase):
             return a.a() + b.b() + c.c()
 
         @self.container.autowire
-        def autowired(
-            a: A,
-            b: B,
-            c: C,
-            param: Annotated[str, Wire(param="start")],
-            e: int = 0,
-            f: float = 0,
-            g: float = 0,
-            h: Optional[unittest.TestCase] = None,
-            i: unittest.TestCase = None,
-        ):
+        def autowired(a: A, b: B, c: C):
             return a.a() + b.b() + c.c()
 
-        execution_time_native_py = timeit.timeit(native, number=iterations)
-        execution_time_injected = timeit.timeit(autowired, number=iterations)
-        penalty = execution_time_injected - execution_time_native_py
+        execution_time_baseline = timeit.timeit(native, number=iterations)
+        execution_time_wireup = timeit.timeit(autowired, number=iterations)
+        penalty = execution_time_wireup - execution_time_baseline
 
-        print(f"{execution_time_native_py=}s")
-        print(f"{execution_time_injected=}s")
-        print(f"{execution_time_injected / execution_time_native_py = }x")
+        print(f"{execution_time_baseline=}s")
+        print(f"{execution_time_wireup=}s")
+        print(f"{execution_time_wireup / execution_time_baseline = }x")
         print(f"{penalty=}s")
