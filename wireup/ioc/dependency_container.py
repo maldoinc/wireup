@@ -180,7 +180,9 @@ class DependencyContainer(Generic[__T]):
             # We don't want to check here for none because as long as it exists in the bag, the value is good.
             if isinstance(annotated_parameter.annotation, ParameterWrapper):
                 values_from_parameters[name] = self.params.get(annotated_parameter.annotation.param)
-            elif obj := self.__initialize_container_proxy_object_from_parameter(annotated_parameter):
+            elif annotated_parameter.klass and (
+                obj := self.__initialize_container_proxy_object_from_parameter(annotated_parameter)
+            ):
                 values_from_parameters[name] = obj
 
         return values_from_parameters
@@ -209,10 +211,8 @@ class DependencyContainer(Generic[__T]):
         return instance
 
     def __initialize_container_proxy_object_from_parameter(self, annotated_parameter: AnnotatedParameter[__T]) -> Any:
-        if annotated_parameter.klass is None:
-            return None
-
-        annotated_type = annotated_parameter.klass
+        # Disable type checker here as the only caller ensures that klass is not none to avoid the call entirely.
+        annotated_type: type[__T] = annotated_parameter.klass  # type: ignore[assignment]
 
         if self.__service_registry.is_impl_known_from_factory(annotated_type):
             # Objects generated from factories do not have qualifiers
@@ -224,7 +224,7 @@ class DependencyContainer(Generic[__T]):
             else None
         )
 
-        if self.__service_registry.is_interface_known(annotated_parameter.klass):
+        if self.__service_registry.is_interface_known(annotated_type):
             concrete_class = self.__get_concrete_class_from_interface_and_qualifier(annotated_type, qualifier_value)
             return self.__get_injected_object(concrete_class, qualifier_value)
 
