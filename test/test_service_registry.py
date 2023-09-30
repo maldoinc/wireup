@@ -1,8 +1,12 @@
 import unittest
 
+from typing_extensions import Annotated
+
 from test.services.random_service import RandomService
-from wireup import ServiceLifetime
+from wireup import ServiceLifetime, Wire
+from wireup.ioc.container_util import ParameterWrapper
 from wireup.ioc.service_registry import _ServiceRegistry
+from wireup.ioc.util import AnnotatedParameter
 
 
 class TestServiceRegistry(unittest.TestCase):
@@ -80,6 +84,19 @@ class TestServiceRegistry(unittest.TestCase):
 
         self.registry.register_abstract(MyInterface)
         self.assertTrue(self.registry.is_interface_known(MyInterface))
+
+    def test_register_only_injectable_params(self):
+        def target(_a, _b, _c, _d: RandomService, _e: str, _f: Annotated[str, Wire(param="name")]):
+            ...
+
+        self.registry.register_context(target)
+        self.assertEqual(
+            self.registry.context.get(target),
+            {
+                "_d": AnnotatedParameter(klass=RandomService),
+                "_f": AnnotatedParameter(klass=str, annotation=ParameterWrapper("name")),
+            },
+        )
 
 
 class MyService:

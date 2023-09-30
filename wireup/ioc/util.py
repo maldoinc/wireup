@@ -33,8 +33,8 @@ def find_classes_in_module(module: ModuleType, pattern: str = "*") -> Generator[
 class AnnotatedParameter(Generic[__T]):
     """Represents a function parameter with a single optional annotation."""
 
-    klass: type[__T] | None
-    annotation: Any | None
+    klass: type[__T] | None = None
+    annotation: Any | None = None
 
 
 def parameter_get_type_and_annotation(parameter: Parameter) -> AnnotatedParameter[__T]:
