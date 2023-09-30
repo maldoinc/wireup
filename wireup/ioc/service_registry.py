@@ -73,9 +73,9 @@ class _ServiceRegistry(Generic[__T]):
         # as the factory will be the one to create it.
         self.context.init(return_type, lifetime)
 
-    def register_context(self, target: AutowireTarget, lifetime: ServiceLifetime | None = None) -> None:
+    def register_context(self, target: AutowireTarget[__T], lifetime: ServiceLifetime | None = None) -> None:
         if not self.context.init(target, lifetime):
-            return False
+            return
 
         for name, parameter in inspect.signature(target).parameters.items():
             annotated_param: AnnotatedParameter[__T] = parameter_get_type_and_annotation(parameter)
@@ -88,8 +88,6 @@ class _ServiceRegistry(Generic[__T]):
             # This is the case for services which are only typed and do not require an annotation.
             if isinstance(annotated_param.annotation, InjectableType) or is_type_autowireable(annotated_param.klass):
                 self.context.put(target, name, annotated_param)
-
-        return None
 
     def is_impl_known(self, klass: type[__T]) -> bool:
         return klass in self.known_impls

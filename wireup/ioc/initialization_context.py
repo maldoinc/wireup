@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Callable, Generic, TypeVar, Union
+from typing import TYPE_CHECKING, Any, Callable, Generic, Type, TypeVar, Union
 
 from wireup.ioc.container_util import ParameterWrapper, ServiceLifetime
 from wireup.ioc.util import AnnotatedParameter
@@ -9,7 +9,7 @@ if TYPE_CHECKING:
     from wireup import ParameterReference
 
 __T = TypeVar("__T")
-AutowireTarget = Union[Callable[..., Any], __T]
+AutowireTarget = Union[Callable[..., Any], Type[__T]]
 
 
 class InitializationContext(Generic[__T]):
@@ -20,10 +20,10 @@ class InitializationContext(Generic[__T]):
 
     def __init__(self) -> None:
         """Create a new InitializationContext."""
-        self.__context: dict[AutowireTarget, dict[str, AnnotatedParameter]] = {}
-        self.lifetime: dict[__T, ServiceLifetime] = {}
+        self.__context: dict[AutowireTarget[__T], dict[str, AnnotatedParameter[__T]]] = {}
+        self.lifetime: dict[type[__T], ServiceLifetime] = {}
 
-    def init(self, target: AutowireTarget, lifetime: ServiceLifetime | None) -> bool:
+    def init(self, target: AutowireTarget[__T], lifetime: ServiceLifetime | None = None) -> bool:
         """Initialize the context for a particular target.
 
         Returns true on first call. If the target is already registered it returns False.
@@ -33,26 +33,26 @@ class InitializationContext(Generic[__T]):
 
         self.__context[target] = {}
 
-        if isinstance(target, type):
+        if isinstance(target, type) and lifetime is not None:
             self.lifetime[target] = lifetime
 
         return True
 
-    def get(self, target: AutowireTarget) -> dict[str, AnnotatedParameter]:
+    def get(self, target: AutowireTarget[__T]) -> dict[str, AnnotatedParameter[__T]]:
         """Get the mapping of dependencies to a particular target.
 
         Raises KeyError if the target does not exist.
         """
         return self.__context[target]
 
-    def put(self, target: AutowireTarget, parameter_name: str, value: AnnotatedParameter) -> None:
+    def put(self, target: AutowireTarget[__T], parameter_name: str, value: AnnotatedParameter[__T]) -> None:
         """Update the mapping of dependencies for a particular target.
 
         Registers a new dependency for the parameter in parameter_name.
         """
         self.__context[target][parameter_name] = value
 
-    def put_param(self, target: AutowireTarget, argument_name: str, parameter_ref: ParameterReference) -> None:
+    def put_param(self, target: AutowireTarget[__T], argument_name: str, parameter_ref: ParameterReference) -> None:
         """Add a parameter to the context.
 
         :param target: The class type which this parameter belongs to
