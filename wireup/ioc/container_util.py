@@ -7,6 +7,11 @@ from typing import Any, Callable, Generic, Optional, Type, TypeVar, Union
 __T = TypeVar("__T")
 AnyCallable = Callable[..., Any]
 AutowireTarget = Union[AnyCallable, Type[__T]]
+"""Represents types that can be targets for autowiring.
+
+This is any method where autowire decorator is used or any class which is registered in the container
+where autowiring happens automatically.
+"""
 
 
 class InjectableType:
