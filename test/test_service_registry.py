@@ -4,9 +4,8 @@ from typing_extensions import Annotated
 
 from test.services.random_service import RandomService
 from wireup import ServiceLifetime, Wire
-from wireup.ioc.container_util import ParameterWrapper
+from wireup.ioc.types import ParameterWrapper, AnnotatedParameter
 from wireup.ioc.service_registry import _ServiceRegistry
-from wireup.ioc.util import AnnotatedParameter
 
 
 class TestServiceRegistry(unittest.TestCase):

@@ -5,12 +5,12 @@ from collections import defaultdict
 from inspect import Parameter
 from typing import TYPE_CHECKING, Callable, Generic, TypeVar
 
-from wireup.ioc.container_util import AutowireTarget, InjectableType, ServiceLifetime
 from wireup.ioc.initialization_context import InitializationContext
-from wireup.ioc.util import AnnotatedParameter, is_type_autowireable, parameter_get_type_and_annotation
+from wireup.ioc.types import AnnotatedParameter, AutowireTarget, InjectableType, ServiceLifetime
+from wireup.ioc.util import is_type_autowireable, parameter_get_type_and_annotation
 
 if TYPE_CHECKING:
-    from wireup.ioc.container_util import (
+    from wireup.ioc.types import (
         ContainerProxyQualifierValue,
     )
 

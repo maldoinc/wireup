@@ -1,2 +1,2 @@
-::: wireup.ioc.container_util.DependencyInitializationContext
+::: wireup.ioc.types.DependencyInitializationContext
 

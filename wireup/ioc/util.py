@@ -3,9 +3,10 @@ from __future__ import annotations
 import fnmatch
 import pkgutil
 import typing
-from dataclasses import dataclass
 from inspect import Parameter
-from typing import TYPE_CHECKING, Any, Generator, Generic, TypeVar
+from typing import TYPE_CHECKING, Any, Generator, TypeVar
+
+from wireup.ioc.types import AnnotatedParameter
 
 if TYPE_CHECKING:
     from types import ModuleType
@@ -27,14 +28,6 @@ def find_classes_in_module(module: ModuleType, pattern: str = "*") -> Generator[
 
             if isinstance(obj, type) and obj.__module__ == mod.__name__ and fnmatch.fnmatch(obj.__name__, pattern):
                 yield obj
-
-
-@dataclass(frozen=True, eq=True)
-class AnnotatedParameter(Generic[__T]):
-    """Represents a function parameter with a single optional annotation."""
-
-    klass: type[__T] | None = None
-    annotation: Any | None = None
 
 
 def parameter_get_type_and_annotation(parameter: Parameter) -> AnnotatedParameter[__T]:

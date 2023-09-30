@@ -4,19 +4,19 @@ import asyncio
 import functools
 from typing import TYPE_CHECKING, Any, Callable, Generic, TypeVar
 
-from wireup import ServiceLifetime
-
-from .container_util import (
+from .proxy import ContainerProxy
+from .service_registry import _ServiceRegistry
+from .types import (
+    AnnotatedParameter,
     AnyCallable,
     AutowireTarget,
     ContainerInjectionRequest,
-    ContainerProxy,
     ContainerProxyQualifier,
     ContainerProxyQualifierValue,
     ParameterWrapper,
+    ServiceLifetime,
 )
-from .service_registry import _ServiceRegistry
-from .util import AnnotatedParameter, find_classes_in_module
+from .util import find_classes_in_module
 
 if TYPE_CHECKING:
     from types import ModuleType

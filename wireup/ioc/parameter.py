@@ -5,7 +5,7 @@ from collections import defaultdict
 from re import Match
 from typing import Any
 
-from .container_util import ParameterReference, TemplatedString
+from .types import ParameterReference, TemplatedString
 
 
 class ParameterBag:

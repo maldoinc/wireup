@@ -2,8 +2,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Generic, TypeVar
 
-from wireup.ioc.container_util import AutowireTarget, ParameterWrapper, ServiceLifetime
-from wireup.ioc.util import AnnotatedParameter
+from wireup.ioc.types import AnnotatedParameter, AutowireTarget, ParameterWrapper, ServiceLifetime
 
 if TYPE_CHECKING:
     from wireup import ParameterReference

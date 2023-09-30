@@ -4,7 +4,7 @@ import importlib
 from enum import Enum
 from typing import Any
 
-from wireup.ioc.container_util import (
+from wireup.ioc.types import (
     ContainerInjectionRequest,
     ContainerProxyQualifier,
     ContainerProxyQualifierValue,

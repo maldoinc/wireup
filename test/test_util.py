@@ -11,8 +11,8 @@ from test.services.truly_random_service import TrulyRandomService
 from wireup.ioc.util import (
     find_classes_in_module,
     parameter_get_type_and_annotation,
-    AnnotatedParameter,
 )
+from wireup.ioc.types import AnnotatedParameter
 
 
 class TestUtilityFunctions(unittest.TestCase):

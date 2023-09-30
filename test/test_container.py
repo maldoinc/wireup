@@ -8,7 +8,7 @@ from test.fixtures import Counter, FooBar, FooBase, FooBaz
 from test.services.random_service import RandomService
 from test.services.truly_random_service import TrulyRandomService
 from wireup import Wire, wire, ServiceLifetime
-from wireup.ioc.container_util import ParameterWrapper
+from wireup.ioc.types import ParameterWrapper
 from wireup.ioc.dependency_container import ContainerProxy, DependencyContainer
 from wireup.ioc.parameter import ParameterBag, TemplatedString
 from wireup.ioc.util import find_classes_in_module
