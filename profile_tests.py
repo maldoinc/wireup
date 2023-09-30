@@ -17,6 +17,3 @@ for i in range(num_runs):
     combined_stats.add(current_run)
 
 combined_stats.dump_stats("profile_run.pstats")
-
-# Optional: You can also save the combined profile to a file if needed
-# combined_stats.dump_stats('combined_profile.pstats')

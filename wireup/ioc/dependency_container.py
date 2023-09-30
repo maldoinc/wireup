@@ -140,13 +140,17 @@ class DependencyContainer(Generic[__T]):
 
             @functools.wraps(fn)
             async def async_inner(*args: Any, **kwargs: Any) -> Any:
-                return await self.__autowire_inner(fn, *args, **kwargs)
+                self.__service_registry.target_init_context(fn)
+
+                return await fn(*args, **{**kwargs, **self.__callable_get_params_to_inject(fn)})
 
             return async_inner
 
         @functools.wraps(fn)
         def sync_inner(*args: Any, **kwargs: Any) -> Any:
-            return self.__autowire_inner(fn, *args, **kwargs)
+            self.__service_registry.target_init_context(fn)
+
+            return fn(*args, **{**kwargs, **self.__callable_get_params_to_inject(fn)})
 
         return sync_inner
 
@@ -164,11 +168,6 @@ class DependencyContainer(Generic[__T]):
         klass: type[__T]
         for klass in find_classes_in_module(module, pattern):
             self.register(klass)
-
-    def __autowire_inner(self, fn: AnyCallable, *args: Any, **kwargs: Any) -> Any:
-        self.__service_registry.target_init_context(fn)
-
-        return fn(*args, **{**kwargs, **self.__callable_get_params_to_inject(fn)})
 
     def __callable_get_params_to_inject(self, fn: AnyCallable) -> dict[str, Any]:
         values_from_parameters = {}
