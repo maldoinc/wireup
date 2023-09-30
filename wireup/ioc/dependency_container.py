@@ -171,7 +171,9 @@ class DependencyContainer(Generic[__T]):
 
     def __callable_get_params_to_inject(self, fn: Callable[..., Any]) -> dict[str, Any]:
         values_from_parameters = {}
-        for name, annotated_parameter in self.__service_registry.context.get(fn).items():
+        params = self.__service_registry.context.get(fn)
+
+        for name, annotated_parameter in params.items():
             # Dealing with parameter, return the value as we cannot proxy int str etc.
             # We don't want to check here for none because as long as it exists in the bag, the value is good.
             if isinstance(annotated_parameter.annotation, ParameterWrapper):

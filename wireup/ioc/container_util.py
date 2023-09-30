@@ -8,6 +8,10 @@ from typing import Any, Callable, Generic, Optional, TypeVar, Union
 __T = TypeVar("__T")
 
 
+class InjectableType:
+    ...
+
+
 @dataclass(frozen=True)
 class TemplatedString:
     """Wrapper for strings which contain values that must be interpolated by the parameter bag.
@@ -23,7 +27,7 @@ ParameterReference = Union[str, TemplatedString]
 
 
 @dataclass(frozen=True)
-class ParameterWrapper:
+class ParameterWrapper(InjectableType):
     """Wrapper for parameter values. This indicates to the container registry that this argument is a parameter."""
 
     param: ParameterReference
@@ -33,7 +37,7 @@ ContainerProxyQualifierValue = Optional[str]
 
 
 @dataclass(frozen=True)
-class ContainerProxyQualifier:
+class ContainerProxyQualifier(InjectableType):
     """Hint the container registry which dependency to load when there are multiple ones registered with the same type.
 
     Use in case of interfaces where there are multiple dependencies that inherit it, but the type of the parameter
@@ -71,7 +75,7 @@ class ContainerProxy(Generic[__T]):
         return getattr(self.__proxy_object, name)
 
 
-class ContainerInjectionRequest:
+class ContainerInjectionRequest(InjectableType):
     """Serves as hint for the container that it must always perform injection for this parameter.
 
     Instead of skipping, this would force it to throw if dependency is unknown

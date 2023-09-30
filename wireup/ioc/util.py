@@ -2,9 +2,12 @@ from __future__ import annotations
 
 import fnmatch
 import pkgutil
+import typing
 from dataclasses import dataclass
 from inspect import Parameter
 from typing import TYPE_CHECKING, Any, Generator, Generic, TypeVar
+
+from wireup.ioc.container_util import InjectableType
 
 if TYPE_CHECKING:
     from types import ModuleType
@@ -51,3 +54,11 @@ def parameter_get_type_and_annotation(parameter: Parameter) -> AnnotatedParamete
         None if parameter.annotation is Parameter.empty else parameter.annotation,
         None if parameter.default is Parameter.empty else parameter.default,
     )
+
+
+def is_type_autowireable(obj_type) -> bool:
+    """Determine if the given type is can be autowired without additional annotations."""
+    if obj_type in {int, float, str, bool, complex, bytes, bytearray, memoryview}:
+        return False
+
+    return not (hasattr(obj_type, "__origin__") and obj_type.__origin__ == typing.Union)

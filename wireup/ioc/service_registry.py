@@ -5,9 +5,9 @@ from collections import defaultdict
 from inspect import Parameter
 from typing import TYPE_CHECKING, Any, Callable, Generic, TypeVar
 
-from wireup.ioc.container_util import ServiceLifetime
+from wireup.ioc.container_util import ServiceLifetime, ParameterWrapper, InjectableType
 from wireup.ioc.initialization_context import AutowireTarget, InitializationContext
-from wireup.ioc.util import AnnotatedParameter, parameter_get_type_and_annotation
+from wireup.ioc.util import AnnotatedParameter, parameter_get_type_and_annotation, is_type_autowireable
 
 if TYPE_CHECKING:
     from wireup.ioc.container_util import (
@@ -66,8 +66,12 @@ class _ServiceRegistry(Generic[__T]):
             msg = f"Cannot register factory function as type {return_type} is already known by the container."
             raise ValueError(msg)
 
-        self.register_context(return_type, lifetime=lifetime)
+        self.register_context(fn, lifetime=lifetime)
         self.factory_functions[return_type] = fn
+
+        # The target and its lifetime just needs to be known. No need to check its dependencies
+        # as the factory will be the one to create it.
+        self.context.init(return_type, lifetime)
 
     def register_targets_meta(self, fn: Callable[..., Any]) -> None:
         signature = inspect.signature(fn)
@@ -81,8 +85,15 @@ class _ServiceRegistry(Generic[__T]):
         for name, parameter in inspect.signature(target).parameters.items():
             annotated_param: AnnotatedParameter[__T] = parameter_get_type_and_annotation(parameter)
 
-            if annotated_param.annotation or annotated_param.klass:
+            if not (annotated_param.klass or annotated_param.annotation):
+                continue
+
+            # Add to the context only if it's something we can inject
+            # or if it is a class that's not one of the builtins: int str dict etc.
+            # This is the case for services which are only typed and do not require an annotation.
+            if isinstance(annotated_param.annotation, InjectableType) or is_type_autowireable(annotated_param.klass):
                 self.context.put(target, name, annotated_param)
+
         return None
 
     def is_impl_known(self, klass: type[__T]) -> bool:
