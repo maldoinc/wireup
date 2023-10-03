@@ -8,7 +8,6 @@ used in its place. The process is meant to be simple and the short [Quickstart](
 already contains all the key concepts you need to know about.
 
 ## Registration
-
 Declaration and usage of services is designed to be as simple as possible. They may live anywhere in the application
 but must be registered with the container.
 
@@ -20,24 +19,32 @@ To register a class as a service the following options are available.
   (See: [Manual Configuration](manual_configuration.md#using-wireup-without-registration-decorators))
 
 ### Singleton or Transient
-
 Services, by default will be registered as singletons. If your service or [Factory function](factory_functions.md)
 needs to generate a fresh instance every time it is injected it needs to be registered with the `lifetime` parameter
 set to `TRANSIENT`.
 
 !!! tip
     Use `container.register(lifetime=ServiceLifetime.TRANSIENT)` when the service relies on state that may change during execution.
-    Such as an `AuthService` which relies on data from the current request.
+    Such as an `AuthService` which relies on data from the current request in the context of a web application.
 
 ## Injection
-
 The container will perform autowiring based on the type hints given. No manual configuration is needed to inject
 services.
 
+### Autowiring
 To perform autowiring the method to be autowired must be decorated with `@container.autowire`. Given the nature of
 Python decorators it is also possible to simply call it as a regular function which will return a callable with
 arguments the containers knows about already bound.
 
+### Explicit injection annotation
+By default, the container will ignore any types it doesn't know about when autowiring. If you want to be explicit
+about what dependencies are to be injected and have it raise if they are unknown, you can annotate the type.
+
+```python
+@container.autowire
+def target(random_service: Annotated[RandomService, Wire()]):
+    ...
+```
 
 ## Lifetime
 

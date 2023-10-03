@@ -19,7 +19,7 @@ nav:
       - DependencyContainer: class/dependency_container.md
       - ParameterBag: class/parameter_bag.md
       - ParameterEnum: class/parameter_enum.md
-      - DependencyInitializationContext: class/dependency_initialization_context.md
+      - InitializationContext: class/initialization_context.md
 repo_url: https://github.com/maldoinc/wireup
 repo_name: maldoinc/wireup
 theme:
