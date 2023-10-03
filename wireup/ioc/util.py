@@ -6,7 +6,7 @@ import typing
 from inspect import Parameter
 from typing import TYPE_CHECKING, Any, Generator, TypeVar
 
-from wireup.ioc.types import AnnotatedParameter, ContainerProxyQualifier
+from wireup.ioc.types import AnnotatedParameter
 
 if TYPE_CHECKING:
     from types import ModuleType
@@ -42,9 +42,7 @@ def parameter_get_type_and_annotation(parameter: Parameter) -> AnnotatedParamete
         klass = None if parameter.annotation is Parameter.empty else parameter.annotation
         annotation = None if parameter.default is Parameter.empty else parameter.default
 
-    qualifier_value = annotation.qualifier if isinstance(annotation, ContainerProxyQualifier) else None
-
-    return AnnotatedParameter(klass=klass, annotation=annotation, qualifier_value=qualifier_value)
+    return AnnotatedParameter(klass=klass, annotation=annotation)
 
 
 def is_type_autowireable(obj_type: Any) -> bool:

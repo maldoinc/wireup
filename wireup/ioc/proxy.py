@@ -11,6 +11,8 @@ class ContainerProxy(Generic[__T]):
     Contains a reference to the final initialized object and proxies all requests to the instance.
     """
 
+    __slots__ = ("__supplier", "__proxy_object")
+
     def __init__(self, instance_supplier: Callable[[], __T]) -> None:
         """Initialize a ContainerProxy.
 

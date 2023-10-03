@@ -16,6 +16,8 @@ class ParameterBag:
 
     """
 
+    __slots__ = ("__bag", "__cache", "__param_cache")
+
     def __init__(self) -> None:
         """Initialize an empty ParameterBag.
 

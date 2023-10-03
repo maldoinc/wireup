@@ -18,6 +18,8 @@ __T = TypeVar("__T")
 
 
 class _ServiceRegistry(Generic[__T]):
+    __slots__ = ("known_interfaces", "known_impls", "factory_functions", "context")
+
     def __init__(self) -> None:
         self.known_interfaces: dict[type[__T], dict[ContainerProxyQualifierValue, type[__T]]] = {}
         self.known_impls: dict[type[__T], set[ContainerProxyQualifierValue]] = defaultdict(set)

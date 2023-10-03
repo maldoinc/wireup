@@ -16,6 +16,8 @@ class InitializationContext(Generic[__T]):
     Container uses this to determine what to inject for each target.
     """
 
+    __slots__ = ("__context", "lifetime")
+
     def __init__(self) -> None:
         """Create a new InitializationContext."""
         self.__context: dict[AutowireTarget[__T], dict[str, AnnotatedParameter[__T]]] = {}

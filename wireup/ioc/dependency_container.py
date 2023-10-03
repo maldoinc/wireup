@@ -42,6 +42,8 @@ class DependencyContainer(Generic[__T]):
     be located from type alone.
     """
 
+    __slots__ = ("__service_registry", "__initialized_objects", "__initialized_proxies", "params")
+
     def __init__(self, parameter_bag: ParameterBag) -> None:
         """:param parameter_bag: ParameterBag instance holding parameter information."""
         self.__service_registry: _ServiceRegistry[__T] = _ServiceRegistry()

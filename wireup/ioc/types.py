@@ -26,6 +26,8 @@ class TemplatedString:
     Strings in .wire(expr="") calls are automatically wrapped.
     """
 
+    __slots__ = ("value",)
+
     value: str
 
 
@@ -36,6 +38,7 @@ ParameterReference = Union[str, TemplatedString]
 class ParameterWrapper(InjectableType):
     """Wrapper for parameter values. This indicates to the container registry that this argument is a parameter."""
 
+    __slots__ = ("param",)
     param: ParameterReference
 
 
@@ -49,6 +52,8 @@ class ContainerProxyQualifier(InjectableType):
     Use in case of interfaces where there are multiple dependencies that inherit it, but the type of the parameter
     is that of the base class acting as an interface.
     """
+
+    __slots__ = ("qualifier",)
 
     qualifier: ContainerProxyQualifierValue
 
@@ -70,13 +75,38 @@ class ServiceLifetime(Enum):
     """Transient services will have a fresh instance initialized on every injection."""
 
 
-@dataclass(frozen=True, eq=True)
 class AnnotatedParameter(Generic[__T]):
-    """Represents a function parameter with a single optional annotation."""
+    """Represent an annotated dependency parameter."""
 
-    klass: type[__T] | None = None
-    annotation: Any | None = None
+    __slots__ = ("klass", "annotation", "qualifier_value")
 
-    # When creating the annotation, calculate this value once
-    # So we can avoid doing the same repeated isinstance checks when autowiring
-    qualifier_value: ContainerProxyQualifierValue = None
+    def __init__(
+        self,
+        klass: type[__T] | None = None,
+        annotation: Any | None = None,
+    ) -> None:
+        """Create a new AnnotatedParameter.
+
+        If the annotation is a ContainerProxyQualifier, `qualifier_value` will be set to its value.
+
+        :param klass: The type of the dependency
+        :param annotation: Any annotation passed along. Such as Wire(param=...) calls
+        """
+        self.klass = klass
+        self.annotation = annotation
+        self.qualifier_value = (
+            self.annotation.qualifier if isinstance(self.annotation, ContainerProxyQualifier) else None
+        )
+
+    def __eq__(self, other: object) -> bool:
+        """Check if two things are equal."""
+        return (
+            isinstance(other, AnnotatedParameter)
+            and self.klass == other.klass
+            and self.annotation == other.annotation
+            and self.qualifier_value == other.qualifier_value
+        )
+
+    def __hash__(self) -> int:
+        """Hash things."""
+        return hash((self.klass, self.annotation, self.qualifier_value))
