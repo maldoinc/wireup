@@ -473,5 +473,13 @@ class TestContainer(unittest.IsolatedAsyncioTestCase):
         dummy = Dummy()
         self.assertEqual(dummy.do_thing(), "Running in test with a result of 4")
 
-    def test_get_returns_same_container_proxy(self):
+    def test_get_returns_same_container_proxy_not_instantiated(self):
         self.assertEqual(self.container.get(RandomService), self.container.get(RandomService))
+
+    def test_get_returns_real_instance(self):
+        first = self.container.get(RandomService)
+        first.get_random()  # Trigger object initialization
+
+        second = self.container.get(RandomService)
+        self.assertIsInstance(first, ContainerProxy)
+        self.assertIsInstance(second, RandomService)

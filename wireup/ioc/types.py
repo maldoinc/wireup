@@ -78,7 +78,7 @@ class ServiceLifetime(Enum):
 class AnnotatedParameter(Generic[__T]):
     """Represent an annotated dependency parameter."""
 
-    __slots__ = ("klass", "annotation", "qualifier_value")
+    __slots__ = ("klass", "annotation", "qualifier_value", "is_parameter")
 
     def __init__(
         self,
@@ -97,6 +97,7 @@ class AnnotatedParameter(Generic[__T]):
         self.qualifier_value = (
             self.annotation.qualifier if isinstance(self.annotation, ContainerProxyQualifier) else None
         )
+        self.is_parameter = isinstance(self.annotation, ParameterWrapper)
 
     def __eq__(self, other: object) -> bool:
         """Check if two things are equal."""
@@ -105,8 +106,9 @@ class AnnotatedParameter(Generic[__T]):
             and self.klass == other.klass
             and self.annotation == other.annotation
             and self.qualifier_value == other.qualifier_value
+            and self.is_parameter == other.is_parameter
         )
 
     def __hash__(self) -> int:
         """Hash things."""
-        return hash((self.klass, self.annotation, self.qualifier_value))
+        return hash((self.klass, self.annotation, self.qualifier_value, self.is_parameter))

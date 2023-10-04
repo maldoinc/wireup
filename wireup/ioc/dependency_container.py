@@ -4,6 +4,9 @@ import asyncio
 import functools
 from typing import TYPE_CHECKING, Any, Callable, Generic, TypeVar
 
+import graphlib2
+from graphlib2 import TopologicalSorter
+
 from .proxy import ContainerProxy
 from .service_registry import _ServiceRegistry
 from .types import (
@@ -170,6 +173,16 @@ class DependencyContainer(Generic[__T]):
         klass: type[__T]
         for klass in find_classes_in_module(module, pattern):
             self.register(klass)
+
+    def compile(self):
+        topological_sorter: TopologicalSorter[type[__T]] = graphlib2.TopologicalSorter(
+            self.__service_registry.get_dependency_graph()
+        )
+
+        for klass in topological_sorter.static_order():
+            for qualifier in self.__service_registry.known_impls[klass]:
+                instance = klass(**self.__callable_get_params_to_inject(klass))
+                self.__initialized_objects[klass, qualifier] = instance
 
     def __callable_get_params_to_inject(self, fn: AnyCallable) -> dict[str, Any]:
         values_from_parameters = {}

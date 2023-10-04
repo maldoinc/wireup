@@ -32,16 +32,22 @@ class C:
         return self.a.a() * self.b.b()
 
 
+@dataclass(frozen=True)
+class B1:
+    b: B
+
+
 class UnitTestInject(unittest.TestCase):
     def setUp(self):
         self.container = DependencyContainer(ParameterBag())
         self.container.params.put("start", 4)
-        self.container.register(A)
-        self.container.register(B)
         self.container.register(C)
+        self.container.register(B)
+        self.container.register(A)
+        self.container.register(B1)
 
     def test_inject_dependencies(self):
-        iterations = 10000
+        iterations = 100000
 
         def native():
             a = A(4)

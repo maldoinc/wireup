@@ -92,6 +92,39 @@ class _ServiceRegistry(Generic[__T]):
             if isinstance(annotated_param.annotation, InjectableType) or is_type_autowireable(annotated_param.klass):
                 self.context.put(target, name, annotated_param)
 
+    def get_dependency_graph(self) -> dict[type[__T], set[type[__T]]]:
+        """Return a dependency graph for the current set of registered services.
+
+        This is based on the context's but with the following changes
+        * Transient services are removed
+        * Objects depending on interfaces will instead depend on all implementations of that interface.
+        * Factories are replaced with the thing they produce.
+        """
+
+        def is_transient(class_type: type[__T]) -> bool:
+            return self.context.lifetime.get(class_type) == ServiceLifetime.TRANSIENT
+
+        factory_to_type = {v: k for k, v in self.factory_functions.items()}
+        res: dict[type[__T], set[type[__T]]] = {}
+        for klass, dependencies in self.context.dependency_graph.items():
+            if klass in factory_to_type:
+                klass = factory_to_type[klass]
+
+            if is_transient(klass):
+                continue
+
+            res[klass] = set()
+
+            for dependency in dependencies:
+                if self.is_interface_known(dependency):
+                    for impl in self.known_interfaces.get(dependency, {}).values():
+                        if not is_transient(impl):
+                            res[klass].add(impl)
+                elif not is_transient(dependency):
+                    res[klass].add(dependency)
+
+        return res
+
     def is_impl_known(self, klass: type[__T]) -> bool:
         return klass in self.known_impls
 
