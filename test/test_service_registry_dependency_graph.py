@@ -5,7 +5,6 @@ from wireup.ioc.service_registry import _ServiceRegistry
 
 
 class TestServiceRegistry(unittest.TestCase):
-
     def setUp(self):
         self.registry = _ServiceRegistry()
 
@@ -49,11 +48,9 @@ class TestServiceRegistry(unittest.TestCase):
         self.registry.register_service(ServiceWithDependencies, qualifier=None, lifetime=ServiceLifetime.SINGLETON)
 
         graph = self.registry.get_dependency_graph()
-        self.assertEqual(graph, {
-            DependencyA: set(),
-            DependencyB: set(),
-            ServiceWithDependencies: {DependencyA, DependencyB}
-        })
+        self.assertEqual(
+            graph, {DependencyA: set(), DependencyB: set(), ServiceWithDependencies: {DependencyA, DependencyB}}
+        )
 
     def test_dependency_graph_with_interface(self):
         class MyInterface:
@@ -75,11 +72,10 @@ class TestServiceRegistry(unittest.TestCase):
         self.registry.register_service(ServiceWithInterface, qualifier=None, lifetime=ServiceLifetime.SINGLETON)
 
         graph = self.registry.get_dependency_graph()
-        self.assertEqual(graph, {
-            ImplementationA: set(),
-            ImplementationB: set(),
-            ServiceWithInterface: {ImplementationA, ImplementationB}
-        })
+        self.assertEqual(
+            graph,
+            {ImplementationA: set(), ImplementationB: set(), ServiceWithInterface: {ImplementationA, ImplementationB}},
+        )
 
     def test_dependency_graph_with_transient_interfaces(self):
         class MyInterface:
@@ -101,9 +97,7 @@ class TestServiceRegistry(unittest.TestCase):
         self.registry.register_service(ServiceWithInterface, qualifier=None, lifetime=ServiceLifetime.SINGLETON)
 
         graph = self.registry.get_dependency_graph()
-        self.assertEqual(graph, {
-            ServiceWithInterface: set()
-        })
+        self.assertEqual(graph, {ServiceWithInterface: set()})
 
     def test_dependency_graph_with_factory(self):
         class MyService:
@@ -116,4 +110,3 @@ class TestServiceRegistry(unittest.TestCase):
 
         graph = self.registry.get_dependency_graph()
         self.assertEqual(graph, {MyService: set()})
-

@@ -4,7 +4,6 @@ import asyncio
 import functools
 from typing import TYPE_CHECKING, Any, Callable, Generic, TypeVar
 
-import graphlib2
 from graphlib2 import TopologicalSorter
 
 from .proxy import ContainerProxy
@@ -174,12 +173,15 @@ class DependencyContainer(Generic[__T]):
         for klass in find_classes_in_module(module, pattern):
             self.register(klass)
 
-    def compile(self):
-        topological_sorter: TopologicalSorter[type[__T]] = graphlib2.TopologicalSorter(
-            self.__service_registry.get_dependency_graph()
-        )
+    def optimize(self) -> None:
+        """Initialize all singleton dependencies registered in the container.
 
-        for klass in topological_sorter.static_order():
+        This should be executed once all services are registered with the container. Targets of autowire will not
+        be affected.
+        """
+        sorter = TopologicalSorter(self.__service_registry.get_dependency_graph())  # type: ignore[type-var]
+
+        for klass in sorter.static_order():
             for qualifier in self.__service_registry.known_impls[klass]:
                 instance = klass(**self.__callable_get_params_to_inject(klass))
                 self.__initialized_objects[klass, qualifier] = instance

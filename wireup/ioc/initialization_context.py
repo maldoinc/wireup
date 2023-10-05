@@ -53,7 +53,7 @@ class InitializationContext(Generic[__T]):
         Registers a new dependency for the parameter in parameter_name.
         """
         self.__context[target][parameter_name] = value
-        if not value.is_parameter:
+        if value.klass and not value.is_parameter:
             self.dependency_graph[target].add(value.klass)
 
     def put_param(self, target: AutowireTarget[__T], argument_name: str, parameter_ref: ParameterReference) -> None:

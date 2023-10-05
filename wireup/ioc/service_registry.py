@@ -106,22 +106,27 @@ class _ServiceRegistry(Generic[__T]):
 
         factory_to_type = {v: k for k, v in self.factory_functions.items()}
         res: dict[type[__T], set[type[__T]]] = {}
-        for klass, dependencies in self.context.dependency_graph.items():
-            if klass in factory_to_type:
-                klass = factory_to_type[klass]
+        for target, dependencies in self.context.dependency_graph.items():
+            if not isinstance(target, type):
+                continue
+
+            klass = factory_to_type.get(target, target)
 
             if is_transient(klass):
                 continue
 
             res[klass] = set()
+            current_deps: list[type[__T]] = []
 
             for dependency in dependencies:
                 if self.is_interface_known(dependency):
-                    for impl in self.known_interfaces.get(dependency, {}).values():
-                        if not is_transient(impl):
-                            res[klass].add(impl)
-                elif not is_transient(dependency):
-                    res[klass].add(dependency)
+                    current_deps.extend(self.known_interfaces.get(dependency, {}).values())
+                else:
+                    current_deps.append(dependency)
+
+            for dep in current_deps:
+                if not is_transient(dep):
+                    res[klass].add(dep)
 
         return res
 
