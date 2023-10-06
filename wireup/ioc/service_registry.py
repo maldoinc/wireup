@@ -100,10 +100,6 @@ class _ServiceRegistry(Generic[__T]):
         * Objects depending on interfaces will instead depend on all implementations of that interface.
         * Factories are replaced with the thing they produce.
         """
-
-        def is_transient(class_type: type[__T]) -> bool:
-            return self.context.lifetime.get(class_type) == ServiceLifetime.TRANSIENT
-
         factory_to_type = {v: k for k, v in self.factory_functions.items()}
         res: dict[type[__T], set[type[__T]]] = {}
         for target, dependencies in self.context.dependency_graph.items():
@@ -112,7 +108,7 @@ class _ServiceRegistry(Generic[__T]):
 
             klass = factory_to_type.get(target, target)
 
-            if is_transient(klass):
+            if not self.is_impl_singleton(klass):
                 continue
 
             res[klass] = set()
@@ -125,7 +121,7 @@ class _ServiceRegistry(Generic[__T]):
                     current_deps.append(dependency)
 
             for dep in current_deps:
-                if not is_transient(dep):
+                if self.is_impl_singleton(dep):
                     res[klass].add(dep)
 
         return res
