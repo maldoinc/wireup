@@ -1,4 +1,4 @@
-.PHONY: install format lint check-fmt check-ruff check-mypy test profile
+.PHONY: install lint check-fmt check-ruff check-mypy test profile fix
 
 ifdef GITHUB_ACTIONS
 RUFF_ARGS := --format=github
@@ -8,9 +8,6 @@ install:
 	.venv/bin/python -m pip install --upgrade pip
 	.venv/bin/pip install poetry
 	.venv/bin/poetry install --no-root
-
-format:
-	.venv/bin/black .
 
 lint: check-fmt check-ruff check-mypy
 
@@ -28,3 +25,7 @@ test:
 
 profile ./profile_tests $(num_runs):
 	./.venv/bin/python ./profile_tests.py $(num_runs)
+
+fix:
+	./.venv/bin/ruff wireup --fix
+	.venv/bin/black .
