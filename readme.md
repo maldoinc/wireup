@@ -74,3 +74,7 @@ pip install wireup
 ## Documentation
 
 For more information [check out the documentation](https://maldoinc.github.io/wireup)
+
+## Demo application
+
+A demo flask application is available at [maldoinc/wireup-demo](https://github.com/maldoinc/wireup-demo)
