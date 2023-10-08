@@ -60,7 +60,6 @@ class InitializationContext(Generic[__T]):
         :param parameter_ref: A reference to a parameter in the bag.
         """
         self.context[target][argument_name] = AnnotatedParameter(
-            klass=None,
             annotation=ParameterWrapper(parameter_ref),
         )
 
@@ -76,5 +75,5 @@ class InitializationContext(Generic[__T]):
         contain references to parameters in the bag.
         """
         self.context[klass].update(
-            {k: AnnotatedParameter(klass=None, annotation=ParameterWrapper(v)) for k, v in params.items()},
+            {k: AnnotatedParameter(annotation=ParameterWrapper(v)) for k, v in params.items()},
         )
