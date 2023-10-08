@@ -16,12 +16,13 @@ class InitializationContext(Generic[__T]):
     Container uses this to determine what to inject for each target.
     """
 
-    __slots__ = ("__context", "lifetime")
+    __slots__ = ("__context", "lifetime", "dependency_graph")
 
     def __init__(self) -> None:
         """Create a new InitializationContext."""
         self.__context: dict[AutowireTarget[__T], dict[str, AnnotatedParameter[__T]]] = {}
         self.lifetime: dict[type[__T], ServiceLifetime] = {}
+        self.dependency_graph: dict[AutowireTarget[__T], set[type[__T]]] = {}
 
     def init(self, target: AutowireTarget[__T], lifetime: ServiceLifetime | None = None) -> bool:
         """Initialize the context for a particular target.
@@ -32,6 +33,7 @@ class InitializationContext(Generic[__T]):
             return False
 
         self.__context[target] = {}
+        self.dependency_graph[target] = set()
 
         if isinstance(target, type) and lifetime is not None:
             self.lifetime[target] = lifetime
@@ -51,6 +53,8 @@ class InitializationContext(Generic[__T]):
         Registers a new dependency for the parameter in parameter_name.
         """
         self.__context[target][parameter_name] = value
+        if value.klass and not value.is_parameter:
+            self.dependency_graph[target].add(value.klass)
 
     def put_param(self, target: AutowireTarget[__T], argument_name: str, parameter_ref: ParameterReference) -> None:
         """Add a parameter to the context.

@@ -92,6 +92,40 @@ class _ServiceRegistry(Generic[__T]):
             if isinstance(annotated_param.annotation, InjectableType) or is_type_autowireable(annotated_param.klass):
                 self.context.put(target, name, annotated_param)
 
+    def get_dependency_graph(self) -> dict[type[__T], set[type[__T]]]:
+        """Return a dependency graph for the current set of registered services.
+
+        This is based on the context's but with the following changes
+        * Transient services are removed
+        * Objects depending on interfaces will instead depend on all implementations of that interface.
+        * Factories are replaced with the thing they produce.
+        """
+        factory_to_type = {v: k for k, v in self.factory_functions.items()}
+        res: dict[type[__T], set[type[__T]]] = {}
+        for target, dependencies in self.context.dependency_graph.items():
+            if not isinstance(target, type):
+                continue
+
+            klass = factory_to_type.get(target, target)
+
+            if not self.is_impl_singleton(klass):
+                continue
+
+            res[klass] = set()
+            current_deps: list[type[__T]] = []
+
+            for dependency in dependencies:
+                if self.is_interface_known(dependency):
+                    current_deps.extend(self.known_interfaces.get(dependency, {}).values())
+                else:
+                    current_deps.append(dependency)
+
+            for dep in current_deps:
+                if self.is_impl_singleton(dep):
+                    res[klass].add(dep)
+
+        return res
+
     def is_impl_known(self, klass: type[__T]) -> bool:
         return klass in self.known_impls
 

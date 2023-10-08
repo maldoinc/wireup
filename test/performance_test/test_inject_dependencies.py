@@ -36,12 +36,19 @@ class UnitTestInject(unittest.TestCase):
     def setUp(self):
         self.container = DependencyContainer(ParameterBag())
         self.container.params.put("start", 4)
-        self.container.register(A)
-        self.container.register(B)
         self.container.register(C)
+        self.container.register(B)
+        self.container.register(A)
+
+        self.container_optimized = DependencyContainer(ParameterBag())
+        self.container_optimized.params.put("start", 4)
+        self.container_optimized.register(C)
+        self.container_optimized.register(B)
+        self.container_optimized.register(A)
+        self.container_optimized.warmup()
 
     def test_inject_dependencies(self):
-        iterations = 10000
+        iterations = 100000
 
         def native():
             a = A(4)
@@ -50,15 +57,16 @@ class UnitTestInject(unittest.TestCase):
 
             return a.a() + b.b() + c.c()
 
-        @self.container.autowire
         def autowired(a: A, b: B, c: C):
-            return a.a() + b.b() + c.c()
+            return c.c() + b.b() + a.a()
 
-        execution_time_baseline = timeit.timeit(native, number=iterations)
-        execution_time_wireup = timeit.timeit(autowired, number=iterations)
-        penalty = execution_time_wireup - execution_time_baseline
+        time_baseline = timeit.timeit(native, number=iterations)
+        time_wireup_regular = timeit.timeit(self.container.autowire(autowired), number=iterations)
+        time_wireup_compiled = timeit.timeit(self.container_optimized.autowire(autowired), number=iterations)
 
-        print(f"{execution_time_baseline=}s")
-        print(f"{execution_time_wireup=}s")
-        print(f"{execution_time_wireup / execution_time_baseline = }x")
-        print(f"{penalty=}s")
+        print(f"{time_baseline=}s")
+        print(f"{time_wireup_regular=}s")
+        print(f"{time_wireup_compiled=}s")
+        print(f"{time_wireup_regular / time_baseline = }x")
+        print(f"{time_wireup_compiled / time_baseline = }x")
+        print(f"{time_wireup_compiled / time_wireup_regular = }x")

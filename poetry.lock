@@ -198,6 +198,40 @@ python-dateutil = ">=2.8.1"
 dev = ["flake8", "markdown", "twine", "wheel"]
 
 [[package]]
+name = "graphlib2"
+version = "0.4.7"
+description = "Rust port of the Python stdlib graphlib modules"
+optional = false
+python-versions = ">=3.7"
+files = [
+    {file = "graphlib2-0.4.7-cp37-abi3-macosx_10_7_x86_64.whl", hash = "sha256:483710733215783cdc76452ccde1247af8f697685c9c1dfd9bb9ff4f52d990ee"},
+    {file = "graphlib2-0.4.7-cp37-abi3-macosx_10_9_x86_64.macosx_11_0_arm64.macosx_10_9_universal2.whl", hash = "sha256:3619c7d3c5aca95e6cbbfc283aa6bf42ffa5b59d7f39c8d0ad615bce65dc406f"},
+    {file = "graphlib2-0.4.7-cp37-abi3-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:5b19f1b91d0f22ca3d1cfb2965478db98cf5916a5c6cea5fdc7caf4bf1bfbc33"},
+    {file = "graphlib2-0.4.7-cp37-abi3-manylinux_2_17_armv7l.manylinux2014_armv7l.whl", hash = "sha256:624020f6808ee21ffbb2e455f8dd4196bbb37032a35aa3327f0f5b65fb6a35d1"},
+    {file = "graphlib2-0.4.7-cp37-abi3-manylinux_2_17_ppc64.manylinux2014_ppc64.whl", hash = "sha256:6efc6a197a619a97f1b105aea14b202101241c1db9014bd100ad19cf29288cbf"},
+    {file = "graphlib2-0.4.7-cp37-abi3-manylinux_2_17_ppc64le.manylinux2014_ppc64le.whl", hash = "sha256:d7cc38b68775cb2cdfc487bbaca2f7991da0d76d42a68f412c2ca61461e6e026"},
+    {file = "graphlib2-0.4.7-cp37-abi3-manylinux_2_17_s390x.manylinux2014_s390x.whl", hash = "sha256:b06bed98d42f4e10adfe2a8332efdca06b5bac6e7c86dd1d22a4dea4de9b275a"},
+    {file = "graphlib2-0.4.7-cp37-abi3-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:3c9ec3a5645bdf020d8bd9196b2665e26090d60e523fd498df29628f2c5fbecc"},
+    {file = "graphlib2-0.4.7-cp37-abi3-manylinux_2_5_i686.manylinux1_i686.whl", hash = "sha256:824df87f767471febfd785a05a2cc77c0c973e0112a548df827763ca0aa8c126"},
+    {file = "graphlib2-0.4.7-cp37-abi3-musllinux_1_2_aarch64.whl", hash = "sha256:2de5e32ca5c0b06d442d2be4b378cc0bc335c5fcbc14a7d531a621eb8294d019"},
+    {file = "graphlib2-0.4.7-cp37-abi3-musllinux_1_2_armv7l.whl", hash = "sha256:13a23fcf07c7bef8a5ad0e04ab826d3a2a2bcb493197005300c68b4ea7b8f581"},
+    {file = "graphlib2-0.4.7-cp37-abi3-musllinux_1_2_i686.whl", hash = "sha256:15a8a6daa28c1fb5c518d387879f3bbe313264fbbc2fab5635b718bc71a24913"},
+    {file = "graphlib2-0.4.7-cp37-abi3-musllinux_1_2_x86_64.whl", hash = "sha256:0cb6c4449834077972c3cea4602f86513b4b75fcf2d40b12e4fe4bf1aa5c8da2"},
+    {file = "graphlib2-0.4.7-cp37-abi3-win32.whl", hash = "sha256:31b40cea537845d80b69403ae306d7c6a68716b76f5171f68daed1804aadefec"},
+    {file = "graphlib2-0.4.7-cp37-abi3-win_amd64.whl", hash = "sha256:d40935a9da81a046ebcaa0216ad593ef504ae8a5425a59bdbd254c0462adedc8"},
+    {file = "graphlib2-0.4.7-pp37-pypy37_pp73-macosx_10_7_x86_64.whl", hash = "sha256:9cef08a50632e75a9e11355e68fa1f8c9371d0734642855f8b5c4ead1b058e6f"},
+    {file = "graphlib2-0.4.7-pp37-pypy37_pp73-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:aeecb604d70317c20ca6bc3556f7f5c40146ad1f0ded837e978b2fe6edf3e567"},
+    {file = "graphlib2-0.4.7-pp37-pypy37_pp73-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:cb4ae9df7ed895c6557619049c9f73e1c2e6d1fbed568010fd5d4af94e2f0692"},
+    {file = "graphlib2-0.4.7-pp38-pypy38_pp73-macosx_10_7_x86_64.whl", hash = "sha256:3ee3a99fc39df948fef340b01254709cc603263f8b176f72ed26f1eea44070a4"},
+    {file = "graphlib2-0.4.7-pp38-pypy38_pp73-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:5873480df8991273bd1585122df232acd0f946c401c254bd9f0d661c72589dcf"},
+    {file = "graphlib2-0.4.7-pp38-pypy38_pp73-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:297c817229501255cd3a744c62c8f91e5139ee79bc550488f5bc765ffa33f7c5"},
+    {file = "graphlib2-0.4.7-pp39-pypy39_pp73-macosx_10_7_x86_64.whl", hash = "sha256:853ef22df8e9f695706e0b8556cda9342d4d617f7d7bd02803e824bcc0c30b20"},
+    {file = "graphlib2-0.4.7-pp39-pypy39_pp73-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:ee62ff1042fde980adf668e30393eca79aee8f1fa1274ab3b98d69091c70c5e8"},
+    {file = "graphlib2-0.4.7-pp39-pypy39_pp73-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:b16e21e70938132d4160c2591fed59f79b5f8b702e4860c8933111b5fedb55c2"},
+    {file = "graphlib2-0.4.7.tar.gz", hash = "sha256:a951c18cb4c2c2834eec898b4c75d3f930d6f08beb37496f0e0ce56eb3f571f5"},
+]
+
+[[package]]
 name = "griffe"
 version = "0.36.2"
 description = "Signatures for entire Python programs. Extract the structure, the frame, the skeleton of your project, to generate API documentation or find breaking changes in your API."
@@ -1008,4 +1042,4 @@ testing = ["big-O", "jaraco.functools", "jaraco.itertools", "more-itertools", "p
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.8"
-content-hash = "4d33cb458540c3d6b2d1228a371fa4ec0c3c597e8d13b7bfdbc4f43e0b8eb15e"
+content-hash = "093f4755112595e4519022adb5a11872d039c2f58a7d9b0515a91d393c1b20ca"
