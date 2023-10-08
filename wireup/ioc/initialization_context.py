@@ -1,10 +1,13 @@
 from __future__ import annotations
 
+from types import MappingProxyType
 from typing import TYPE_CHECKING, Generic, TypeVar
 
 from wireup.ioc.types import AnnotatedParameter, AutowireTarget, ParameterWrapper, ServiceLifetime
 
 if TYPE_CHECKING:
+    from collections.abc import Mapping
+
     from wireup import ParameterReference
 
 __T = TypeVar("__T")
@@ -16,25 +19,38 @@ class InitializationContext(Generic[__T]):
     Container uses this to determine what to inject for each target.
     """
 
-    __slots__ = ("context", "lifetime")
+    __slots__ = ("__context", "__context_view", "__lifetime", "__lifetime_view")
 
     def __init__(self) -> None:
         """Create a new InitializationContext."""
-        self.context: dict[AutowireTarget[__T], dict[str, AnnotatedParameter[__T]]] = {}
-        self.lifetime: dict[type[__T], ServiceLifetime] = {}
+        self.__context: dict[AutowireTarget[__T], dict[str, AnnotatedParameter[__T]]] = {}
+        self.__context_view = MappingProxyType(self.__context)
+
+        self.__lifetime: dict[type[__T], ServiceLifetime] = {}
+        self.__lifetime_view = MappingProxyType(self.__lifetime)
+
+    @property
+    def lifetime(self) -> Mapping[type[__T], ServiceLifetime]:
+        """Return a read-only view of service lifetime mapping."""
+        return self.__lifetime_view
+
+    @property
+    def context(self) -> MappingProxyType[AutowireTarget[__T], dict[str, AnnotatedParameter[__T]]]:
+        """Return a read-only view of the context definitions."""
+        return self.__context_view
 
     def init(self, target: AutowireTarget[__T], lifetime: ServiceLifetime | None = None) -> bool:
         """Initialize the context for a particular target.
 
         Returns true on first call. If the target is already registered it returns False.
         """
-        if target in self.context:
+        if target in self.__context:
             return False
 
-        self.context[target] = {}
+        self.__context[target] = {}
 
         if isinstance(target, type) and lifetime is not None:
-            self.lifetime[target] = lifetime
+            self.__lifetime[target] = lifetime
 
         return True
 
@@ -43,14 +59,14 @@ class InitializationContext(Generic[__T]):
 
         Raises KeyError if the target does not exist.
         """
-        return self.context[target]
+        return self.__context[target]
 
     def put(self, target: AutowireTarget[__T], parameter_name: str, value: AnnotatedParameter[__T]) -> None:
         """Update the mapping of dependencies for a particular target.
 
         Registers a new dependency for the parameter in parameter_name.
         """
-        self.context[target][parameter_name] = value
+        self.__context[target][parameter_name] = value
 
     def put_param(self, target: AutowireTarget[__T], argument_name: str, parameter_ref: ParameterReference) -> None:
         """Add a parameter to the context.
@@ -59,7 +75,7 @@ class InitializationContext(Generic[__T]):
         :param argument_name: The name of the parameter in the klass initializer.
         :param parameter_ref: A reference to a parameter in the bag.
         """
-        self.context[target][argument_name] = AnnotatedParameter(
+        self.__context[target][argument_name] = AnnotatedParameter(
             annotation=ParameterWrapper(parameter_ref),
         )
 
@@ -74,6 +90,6 @@ class InitializationContext(Generic[__T]):
         :param params: A dictionary of parameter references. Keys map to the parameter name and values
         contain references to parameters in the bag.
         """
-        self.context[klass].update(
+        self.__context[klass].update(
             {k: AnnotatedParameter(annotation=ParameterWrapper(v)) for k, v in params.items()},
         )
