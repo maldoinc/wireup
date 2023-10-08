@@ -35,7 +35,7 @@ class InitializationContext(Generic[__T]):
         return self.__lifetime_view
 
     @property
-    def context(self) -> MappingProxyType[AutowireTarget[__T], dict[str, AnnotatedParameter[__T]]]:
+    def context(self) -> Mapping[AutowireTarget[__T], dict[str, AnnotatedParameter[__T]]]:
         """Return a read-only view of the context definitions."""
         return self.__context_view
 
