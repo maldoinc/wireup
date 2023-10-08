@@ -102,7 +102,7 @@ class _ServiceRegistry(Generic[__T]):
         """
         factory_to_type = {v: k for k, v in self.factory_functions.items()}
         res: dict[type[__T], set[type[__T]]] = {}
-        for target, dependencies in self.context.dependency_graph.items():
+        for target, dependencies in self.context.context.items():
             if not isinstance(target, type):
                 continue
 
@@ -114,7 +114,12 @@ class _ServiceRegistry(Generic[__T]):
             res[klass] = set()
             current_deps: list[type[__T]] = []
 
-            for dependency in dependencies:
+            for annotated_param in dependencies.values():
+                if annotated_param.is_parameter or not annotated_param.klass:
+                    continue
+
+                dependency = annotated_param.klass
+
                 if self.is_interface_known(dependency):
                     current_deps.extend(self.known_interfaces.get(dependency, {}).values())
                 else:

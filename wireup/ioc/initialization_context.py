@@ -16,24 +16,22 @@ class InitializationContext(Generic[__T]):
     Container uses this to determine what to inject for each target.
     """
 
-    __slots__ = ("__context", "lifetime", "dependency_graph")
+    __slots__ = ("context", "lifetime")
 
     def __init__(self) -> None:
         """Create a new InitializationContext."""
-        self.__context: dict[AutowireTarget[__T], dict[str, AnnotatedParameter[__T]]] = {}
+        self.context: dict[AutowireTarget[__T], dict[str, AnnotatedParameter[__T]]] = {}
         self.lifetime: dict[type[__T], ServiceLifetime] = {}
-        self.dependency_graph: dict[AutowireTarget[__T], set[type[__T]]] = {}
 
     def init(self, target: AutowireTarget[__T], lifetime: ServiceLifetime | None = None) -> bool:
         """Initialize the context for a particular target.
 
         Returns true on first call. If the target is already registered it returns False.
         """
-        if target in self.__context:
+        if target in self.context:
             return False
 
-        self.__context[target] = {}
-        self.dependency_graph[target] = set()
+        self.context[target] = {}
 
         if isinstance(target, type) and lifetime is not None:
             self.lifetime[target] = lifetime
@@ -45,16 +43,14 @@ class InitializationContext(Generic[__T]):
 
         Raises KeyError if the target does not exist.
         """
-        return self.__context[target]
+        return self.context[target]
 
     def put(self, target: AutowireTarget[__T], parameter_name: str, value: AnnotatedParameter[__T]) -> None:
         """Update the mapping of dependencies for a particular target.
 
         Registers a new dependency for the parameter in parameter_name.
         """
-        self.__context[target][parameter_name] = value
-        if value.klass and not value.is_parameter:
-            self.dependency_graph[target].add(value.klass)
+        self.context[target][parameter_name] = value
 
     def put_param(self, target: AutowireTarget[__T], argument_name: str, parameter_ref: ParameterReference) -> None:
         """Add a parameter to the context.
@@ -63,7 +59,7 @@ class InitializationContext(Generic[__T]):
         :param argument_name: The name of the parameter in the klass initializer.
         :param parameter_ref: A reference to a parameter in the bag.
         """
-        self.__context[target][argument_name] = AnnotatedParameter(
+        self.context[target][argument_name] = AnnotatedParameter(
             klass=None,
             annotation=ParameterWrapper(parameter_ref),
         )
@@ -79,6 +75,6 @@ class InitializationContext(Generic[__T]):
         :param params: A dictionary of parameter references. Keys map to the parameter name and values
         contain references to parameters in the bag.
         """
-        self.__context[klass].update(
+        self.context[klass].update(
             {k: AnnotatedParameter(klass=None, annotation=ParameterWrapper(v)) for k, v in params.items()},
         )
