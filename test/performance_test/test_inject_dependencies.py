@@ -45,7 +45,7 @@ class UnitTestInject(unittest.TestCase):
         self.container_optimized.register(C)
         self.container_optimized.register(B)
         self.container_optimized.register(A)
-        self.container_optimized.optimize()
+        self.container_optimized.warmup()
 
     def test_inject_dependencies(self):
         iterations = 100000

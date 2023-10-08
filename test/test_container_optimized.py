@@ -22,7 +22,7 @@ class TestContainerCompiled(unittest.TestCase):
         self.container.params.put("start", 10)
 
     def test_compiled_does_not_return_proxies(self):
-        self.container.optimize()
+        self.container.warmup()
 
         service = self.container.get(SomeService)
         self.assertIsInstance(service, SomeService)
@@ -32,7 +32,7 @@ class TestContainerCompiled(unittest.TestCase):
     def test_compiled_works_with_interfaces(self):
         self.container.abstract(FooBase)
         self.container.register(FooBar)
-        self.container.optimize()
+        self.container.warmup()
 
         @self.container.autowire
         def target(foo: FooBase):
@@ -44,7 +44,7 @@ class TestContainerCompiled(unittest.TestCase):
         self.container.abstract(FooBase)
         self.container.register(FooBar, qualifier="bar")
         self.container.register(FooBaz, qualifier="baz")
-        self.container.optimize()
+        self.container.warmup()
 
         @self.container.autowire
         def target(bar: Annotated[FooBase, Wire(qualifier="bar")], baz: Annotated[FooBase, Wire(qualifier="baz")]):
@@ -67,7 +67,7 @@ class TestContainerCompiled(unittest.TestCase):
         self.container.abstract(FooBase)
         self.container.register(FooBar, qualifier="bar")
         self.container.register(FooBaz, qualifier="baz")
-        self.container.optimize()
+        self.container.warmup()
 
         @self.container.autowire
         def target(thing2: Thing2):
@@ -94,6 +94,6 @@ class TestContainerCompiled(unittest.TestCase):
                 nonlocal transient_called
                 transient_called = True
 
-        self.container.optimize()
+        self.container.warmup()
         self.assertTrue(base_called)
         self.assertFalse(transient_called)

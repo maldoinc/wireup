@@ -173,7 +173,7 @@ class DependencyContainer(Generic[__T]):
         for klass in find_classes_in_module(module, pattern):
             self.register(klass)
 
-    def optimize(self) -> None:
+    def warmup(self) -> None:
         """Initialize all singleton dependencies registered in the container.
 
         This should be executed once all services are registered with the container. Targets of autowire will not
