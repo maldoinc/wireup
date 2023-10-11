@@ -291,7 +291,10 @@ class DependencyContainer(Generic[__T]):
         if instance := self.__initialized_objects.get(obj_id):
             return instance
 
-        if self.__service_registry.is_impl_singleton(klass) and (proxy := self.__initialized_proxies.get(obj_id)):
+        if not self.__service_registry.is_impl_singleton(klass):
+            return ContainerProxy(lambda: self.__get(klass, qualifier))
+
+        if proxy := self.__initialized_proxies.get(obj_id):
             return proxy
 
         proxy = ContainerProxy(lambda: self.__get(klass, qualifier))
