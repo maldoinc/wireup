@@ -20,6 +20,7 @@ from .types import (
 from .util import find_classes_in_module
 
 if TYPE_CHECKING:
+    from collections.abc import Mapping
     from types import ModuleType
 
     from .initialization_context import InitializationContext
@@ -44,7 +45,14 @@ class DependencyContainer(Generic[__T]):
     be located from type alone.
     """
 
-    __slots__ = ("__service_registry", "__initialized_objects", "__initialized_proxies", "params")
+    __slots__ = (
+        "__service_registry",
+        "__initialized_objects",
+        "__initialized_proxies",
+        "params",
+        "__cached_parameters",
+        "__transient_deps",
+    )
 
     def __init__(self, parameter_bag: ParameterBag) -> None:
         """:param parameter_bag: ParameterBag instance holding parameter information."""
@@ -52,6 +60,9 @@ class DependencyContainer(Generic[__T]):
 
         self.__initialized_objects: dict[tuple[type[__T], ContainerProxyQualifierValue], __T] = {}
         self.__initialized_proxies: dict[tuple[type[__T], ContainerProxyQualifierValue], ContainerProxy[__T]] = {}
+
+        self.__cached_parameters: dict[AnyCallable, Mapping[str, Any]] = {}
+        self.__transient_deps: dict[AnyCallable, Mapping[str, Any]] = {}
 
         self.params: ParameterBag = parameter_bag
 
@@ -191,9 +202,14 @@ class DependencyContainer(Generic[__T]):
         params = self.__service_registry.context.get(fn)
 
         for name, annotated_parameter in params.items():
+            # Check if there's already an instantiated object with this id which can be directly injected
+            obj_id = annotated_parameter.klass, annotated_parameter.qualifier_value
+
+            if obj := self.__initialized_objects.get(obj_id):  # type: ignore[arg-type]
+                values_from_parameters[name] = obj
             # Dealing with parameter, return the value as we cannot proxy int str etc.
             # We don't want to check here for none because as long as it exists in the bag, the value is good.
-            if isinstance(annotated_parameter.annotation, ParameterWrapper):
+            elif isinstance(annotated_parameter.annotation, ParameterWrapper):
                 values_from_parameters[name] = self.params.get(annotated_parameter.annotation.param)
             elif annotated_parameter.klass and (
                 obj := self.__initialize_container_proxy_object_from_parameter(annotated_parameter)
