@@ -48,7 +48,7 @@ def parameter_get_type_and_annotation(parameter: Parameter) -> AnnotatedParamete
 
 def is_type_autowireable(obj_type: Any) -> bool:
     """Determine if the given type is can be autowired without additional annotations."""
-    if obj_type in {int, float, str, bool, complex, bytes, bytearray, memoryview}:
+    if obj_type is None or obj_type in {int, float, str, bool, complex, bytes, bytearray, memoryview}:
         return False
 
     return not (hasattr(obj_type, "__origin__") and obj_type.__origin__ == typing.Union)
