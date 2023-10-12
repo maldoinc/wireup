@@ -1,3 +1,4 @@
+import datetime
 import unittest
 from dataclasses import dataclass
 from typing_extensions import Annotated
@@ -483,3 +484,12 @@ class TestContainer(unittest.IsolatedAsyncioTestCase):
         second = self.container.get(RandomService)
         self.assertIsInstance(first, ContainerProxy)
         self.assertIsInstance(second, RandomService)
+
+    def test_shrinks_context_on_autowire(self):
+        def target(a: RandomService, _b: unittest.TestCase = None, _c: datetime.datetime = None):
+            self.assertEqual(a.get_random(), 4)
+
+        autowired = self.container.autowire(target)
+        self.assertEqual(self.container.context.get(target).keys(), {"a", "_b", "_c"})
+        autowired()
+        self.assertEqual(self.container.context.get(target).keys(), {"a"})

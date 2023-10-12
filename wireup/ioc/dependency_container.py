@@ -151,20 +151,18 @@ class DependencyContainer(Generic[__T]):
         * When injecting an interface for which there are multiple implementations you need to supply a qualifier
           using annotations.
         """
+        self.__service_registry.target_init_context(fn)
+
         if asyncio.iscoroutinefunction(fn):
 
             @functools.wraps(fn)
             async def async_inner(*args: Any, **kwargs: Any) -> Any:
-                self.__service_registry.target_init_context(fn)
-
                 return await fn(*args, **{**kwargs, **self.__callable_get_params_to_inject(fn)})
 
             return async_inner
 
         @functools.wraps(fn)
         def sync_inner(*args: Any, **kwargs: Any) -> Any:
-            self.__service_registry.target_init_context(fn)
-
             return fn(*args, **{**kwargs, **self.__callable_get_params_to_inject(fn)})
 
         return sync_inner
@@ -200,6 +198,7 @@ class DependencyContainer(Generic[__T]):
     def __callable_get_params_to_inject(self, fn: AnyCallable) -> dict[str, Any]:
         values_from_parameters = {}
         params = self.__service_registry.context.get(fn)
+        names_to_remove: set[str] = set()
 
         for name, annotated_parameter in params.items():
             # Check if there's already an instantiated object with this id which can be directly injected
@@ -215,6 +214,13 @@ class DependencyContainer(Generic[__T]):
                 obj := self.__initialize_container_proxy_object_from_parameter(annotated_parameter)
             ):
                 values_from_parameters[name] = obj
+            else:
+                names_to_remove.add(name)
+
+        # If autowiring the container is assumed to be final, so unnecessary entries can be removed
+        # from the context in order to speed up the autowiring process.
+        if names_to_remove:
+            self.context.delete(fn, names_to_remove)
 
         return values_from_parameters
 

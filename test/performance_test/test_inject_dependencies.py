@@ -57,7 +57,15 @@ class UnitTestInject(unittest.TestCase):
 
             return a.a() + b.b() + c.c()
 
-        def autowired(a: A, b: B, c: C):
+        def autowired(
+            a: A,
+            b: B,
+            c: C,
+            _d: unittest.TestCase = None,
+            _e: unittest.TestCase = None,
+            _f: unittest.TestCase = None,
+            _g: unittest.TestCase = None,
+        ):
             return c.c() + b.b() + a.a()
 
         time_baseline = timeit.timeit(native, number=iterations)
