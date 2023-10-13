@@ -216,7 +216,7 @@ class DependencyContainer(Generic[__T]):
             else:
                 names_to_remove.add(name)
 
-        # If autowiring the container is assumed to be final, so unnecessary entries can be removed
+        # If autowiring, the container is assumed to be final, so unnecessary entries can be removed
         # from the context in order to speed up the autowiring process.
         if names_to_remove:
             self.context.delete(fn, names_to_remove)
