@@ -70,7 +70,7 @@ The context's `put` method will register a new dependency for a particular servi
     Make sure to call `context.init` on the class to initialize the registration before calling `put`.
 
 ```python
-self.context.init(MyService)
+self.context.init_target(MyService)
 self.context.put(MyService, "foo", AnnotatedParameter(klass=DbService))
 ```
 

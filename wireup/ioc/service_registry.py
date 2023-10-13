@@ -73,11 +73,11 @@ class _ServiceRegistry(Generic[__T]):
 
         # The target and its lifetime just needs to be known. No need to check its dependencies
         # as the factory will be the one to create it.
-        self.context.init(return_type, lifetime)
+        self.context.init_target(return_type, lifetime)
 
     def target_init_context(self, target: AutowireTarget[__T], lifetime: ServiceLifetime | None = None) -> None:
         """Init and collect all the necessary dependencies to initialize the specified target."""
-        if not self.context.init(target, lifetime):
+        if not self.context.init_target(target, lifetime):
             return
 
         for name, parameter in inspect.signature(target).parameters.items():

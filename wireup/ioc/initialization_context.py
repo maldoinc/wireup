@@ -39,7 +39,7 @@ class InitializationContext(Generic[__T]):
         """Return a read-only view of the dependency definitions."""
         return self.__dependencies_view
 
-    def init(self, target: AutowireTarget[__T], lifetime: ServiceLifetime | None = None) -> bool:
+    def init_target(self, target: AutowireTarget[__T], lifetime: ServiceLifetime | None = None) -> bool:
         """Initialize the context for a particular target.
 
         Returns true on first call. If the target is already registered it returns False.
