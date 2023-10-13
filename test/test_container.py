@@ -491,6 +491,6 @@ class TestContainer(unittest.IsolatedAsyncioTestCase):
             self.assertEqual(a.get_random(), 4)
 
         autowired = self.container.autowire(target)
-        self.assertEqual(self.container.context.dependencies.get(target).keys(), {"a", "_b", "_c"})
+        self.assertEqual(self.container.context.dependencies[target].keys(), {"a", "_b", "_c"})
         autowired()
-        self.assertEqual(self.container.context.dependencies.get(target).keys(), {"a"})
+        self.assertEqual(self.container.context.dependencies[target].keys(), {"a"})

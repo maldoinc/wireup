@@ -90,7 +90,7 @@ class TestServiceRegistry(unittest.TestCase):
 
         self.registry.target_init_context(target)
         self.assertEqual(
-            self.registry.context.dependencies.get(target),
+            self.registry.context.dependencies[target],
             {
                 "_d": AnnotatedParameter(klass=RandomService),
                 "_f": AnnotatedParameter(klass=str, annotation=ParameterWrapper("name")),

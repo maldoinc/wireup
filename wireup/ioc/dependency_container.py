@@ -195,7 +195,7 @@ class DependencyContainer(Generic[__T]):
 
     def __callable_get_params_to_inject(self, fn: AnyCallable) -> dict[str, Any]:
         values_from_parameters = {}
-        params = self.__service_registry.context.dependencies.get(fn)
+        params = self.__service_registry.context.dependencies[fn]
         names_to_remove: set[str] = set()
 
         for name, annotated_parameter in params.items():
