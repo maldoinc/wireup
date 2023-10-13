@@ -50,20 +50,13 @@ class DependencyContainer(Generic[__T]):
         "__initialized_objects",
         "__initialized_proxies",
         "__params",
-        "__cached_parameters",
-        "__transient_deps",
     )
 
     def __init__(self, parameter_bag: ParameterBag) -> None:
         """:param parameter_bag: ParameterBag instance holding parameter information."""
         self.__service_registry: _ServiceRegistry[__T] = _ServiceRegistry()
-
         self.__initialized_objects: dict[tuple[type[__T], ContainerProxyQualifierValue], __T] = {}
         self.__initialized_proxies: dict[tuple[type[__T], ContainerProxyQualifierValue], ContainerProxy[__T]] = {}
-
-        self.__cached_parameters: dict[AnyCallable, Mapping[str, Any]] = {}
-        self.__transient_deps: dict[AnyCallable, Mapping[str, Any]] = {}
-
         self.__params: ParameterBag = parameter_bag
 
     def get(self, klass: type[__T], qualifier: ContainerProxyQualifierValue = None) -> __T:
