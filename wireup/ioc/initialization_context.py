@@ -72,6 +72,6 @@ class InitializationContext(Generic[__T]):
             annotation=ParameterWrapper(parameter_ref),
         )
 
-    def delete(self, target: AutowireTarget[__T], names_to_remove: set[str]) -> None:
+    def remove_dependencies(self, target: AutowireTarget[__T], names_to_remove: set[str]) -> None:
         """Remove dependencies with names in `names_to_remove` from the given target."""
         self.__dependencies[target] = {k: v for k, v in self.__dependencies[target].items() if k not in names_to_remove}

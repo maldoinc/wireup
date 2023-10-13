@@ -218,7 +218,7 @@ class DependencyContainer(Generic[__T]):
         # If autowiring, the container is assumed to be final, so unnecessary entries can be removed
         # from the context in order to speed up the autowiring process.
         if names_to_remove:
-            self.context.delete(fn, names_to_remove)
+            self.context.remove_dependencies(fn, names_to_remove)
 
         return values_from_parameters
 
