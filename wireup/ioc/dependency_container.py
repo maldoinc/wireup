@@ -20,7 +20,6 @@ from .types import (
 from .util import find_classes_in_module
 
 if TYPE_CHECKING:
-    from collections.abc import Mapping
     from types import ModuleType
 
     from .initialization_context import InitializationContext
