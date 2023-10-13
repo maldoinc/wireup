@@ -17,4 +17,6 @@ class InitializationContextTest(unittest.TestCase):
         self.context.init(InitializationContextTest)
         self.context.put(InitializationContextTest, "foo", AnnotatedParameter(klass=DbService))
 
-        self.assertEqual(self.context.get(InitializationContextTest), {"foo": AnnotatedParameter(klass=DbService)})
+        self.assertEqual(
+            self.context.dependencies.get(InitializationContextTest), {"foo": AnnotatedParameter(klass=DbService)}
+        )

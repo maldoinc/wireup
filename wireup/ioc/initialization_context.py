@@ -54,13 +54,6 @@ class InitializationContext(Generic[__T]):
 
         return True
 
-    def get(self, target: AutowireTarget[__T]) -> dict[str, AnnotatedParameter[__T]]:
-        """Get the mapping of dependencies to a particular target.
-
-        Raises KeyError if the target does not exist.
-        """
-        return self.__dependencies[target]
-
     def put(self, target: AutowireTarget[__T], parameter_name: str, value: AnnotatedParameter[__T]) -> None:
         """Update the mapping of dependencies for a particular target.
 
