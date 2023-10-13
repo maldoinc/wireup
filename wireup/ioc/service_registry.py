@@ -102,7 +102,7 @@ class _ServiceRegistry(Generic[__T]):
         """
         factory_to_type = {v: k for k, v in self.factory_functions.items()}
         res: dict[type[__T], set[type[__T]]] = {}
-        for target, dependencies in self.context.context.items():
+        for target, dependencies in self.context.dependencies.items():
             if not isinstance(target, type):
                 continue
 
