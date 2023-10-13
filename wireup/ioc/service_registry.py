@@ -90,7 +90,7 @@ class _ServiceRegistry(Generic[__T]):
             # or if it is a class that's not one of the builtins: int str dict etc.
             # This is the case for services which are only typed and do not require an annotation.
             if isinstance(annotated_param.annotation, InjectableType) or is_type_autowireable(annotated_param.klass):
-                self.context.put(target, name, annotated_param)
+                self.context.add_dependency(target, name, annotated_param)
 
     def get_dependency_graph(self) -> dict[type[__T], set[type[__T]]]:
         """Return a dependency graph for the current set of registered services.

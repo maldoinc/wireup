@@ -38,25 +38,17 @@ otherwise gather from the decorators or annotations.
 container.register_all_in_module(app.services, "*Service")
 
 # Register parameters individually using add_param
-container.context.put_param(
+container.context.add_dependency(
     klass=DbService,
     argument_name="connection_str",
-    parameter_ref="connection_str",
+    value=AnnotatedParameter(annotation=ParameterWrapper("connection_str")),
 )
 container.context.put_param(
     klass=DbService,
     argument_name="connection_str",
-    parameter_ref=TemplatedString("${cache_dir}/${auth_user}/db"),
-)
-
-# Alternatively, you can update the context in bulk using a dictionary.
-# When using interpolated strings, make sure you wrap the string with TemplatedString.
-container.context.update(
-    DbService,
-    {
-        "connection_str": "connection_str",
-        "cache_dir": TemplatedString("${cache_dir}/${USER}/db"),
-    },
+    value=AnnotatedParameter(
+        annotation=ParameterWrapper(TemplatedString("${cache_dir}/${auth_user}/db"))
+    ),
 )
 ```
 Configuration can also be stored in JSON or YAML documents that can be read and used to update the container accordingly.
@@ -71,7 +63,7 @@ The context's `put` method will register a new dependency for a particular servi
 
 ```python
 self.context.init_target(MyService)
-self.context.put(MyService, "foo", AnnotatedParameter(klass=DbService))
+self.context.add_dependency(MyService, "foo", AnnotatedParameter(klass=DbService))
 ```
 
 

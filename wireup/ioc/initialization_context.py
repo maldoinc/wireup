@@ -3,12 +3,11 @@ from __future__ import annotations
 from types import MappingProxyType
 from typing import TYPE_CHECKING, Generic, TypeVar
 
-from wireup.ioc.types import AnnotatedParameter, AutowireTarget, ParameterWrapper, ServiceLifetime
-
 if TYPE_CHECKING:
     from collections.abc import Mapping
 
-    from wireup import ParameterReference
+    from wireup.ioc.types import AnnotatedParameter, AutowireTarget, ServiceLifetime
+
 
 __T = TypeVar("__T")
 
@@ -31,12 +30,12 @@ class InitializationContext(Generic[__T]):
 
     @property
     def lifetime(self) -> Mapping[type[__T], ServiceLifetime]:
-        """Return a read-only view of service lifetime mapping."""
+        """Read-only view of service lifetime mapping."""
         return self.__lifetime_view
 
     @property
     def dependencies(self) -> Mapping[AutowireTarget[__T], dict[str, AnnotatedParameter[__T]]]:
-        """Return a read-only view of the dependency definitions."""
+        """Read-only view of the dependency definitions."""
         return self.__dependencies_view
 
     def init_target(self, target: AutowireTarget[__T], lifetime: ServiceLifetime | None = None) -> bool:
@@ -54,24 +53,17 @@ class InitializationContext(Generic[__T]):
 
         return True
 
-    def put(self, target: AutowireTarget[__T], parameter_name: str, value: AnnotatedParameter[__T]) -> None:
+    def add_dependency(self, target: AutowireTarget[__T], parameter_name: str, value: AnnotatedParameter[__T]) -> None:
         """Update the mapping of dependencies for a particular target.
 
         Registers a new dependency for the parameter in parameter_name.
+        Target must have been already initialized prior to calling this.
         """
         self.__dependencies[target][parameter_name] = value
 
-    def put_param(self, target: AutowireTarget[__T], argument_name: str, parameter_ref: ParameterReference) -> None:
-        """Add a parameter to the context.
-
-        :param target: The class type which this parameter belongs to
-        :param argument_name: The name of the parameter in the klass initializer.
-        :param parameter_ref: A reference to a parameter in the bag.
-        """
-        self.__dependencies[target][argument_name] = AnnotatedParameter(
-            annotation=ParameterWrapper(parameter_ref),
-        )
-
     def remove_dependencies(self, target: AutowireTarget[__T], names_to_remove: set[str]) -> None:
-        """Remove dependencies with names in `names_to_remove` from the given target."""
+        """Remove dependencies with names in `names_to_remove` from the given target.
+
+        Target must have been already initialized prior to calling this.
+        """
         self.__dependencies[target] = {k: v for k, v in self.__dependencies[target].items() if k not in names_to_remove}

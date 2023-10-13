@@ -9,7 +9,7 @@ from test.fixtures import Counter, FooBar, FooBase, FooBaz
 from test.services.random_service import RandomService
 from test.services.truly_random_service import TrulyRandomService
 from wireup import Wire, wire, ServiceLifetime
-from wireup.ioc.types import ParameterWrapper
+from wireup.ioc.types import ParameterWrapper, AnnotatedParameter
 from wireup.ioc.dependency_container import ContainerProxy, DependencyContainer
 from wireup.ioc.parameter import ParameterBag, TemplatedString
 from wireup.ioc.util import find_classes_in_module
@@ -177,9 +177,15 @@ class TestContainer(unittest.IsolatedAsyncioTestCase):
 
         self.container.register(NoHints)
 
-        self.container.context.put_param(NoHints, "interpolated", TemplatedString("${first}-${second}"))
-        self.container.context.put_param(NoHints, "mambo_number", "mambo_number")
-        self.container.context.put_param(NoHints, "env", "env")
+        self.container.context.add_dependency(
+            NoHints,
+            "interpolated",
+            AnnotatedParameter(annotation=ParameterWrapper(TemplatedString("${first}-${second}"))),
+        )
+        self.container.context.add_dependency(
+            NoHints, "mambo_number", AnnotatedParameter(annotation=ParameterWrapper("mambo_number"))
+        )
+        self.container.context.add_dependency(NoHints, "env", AnnotatedParameter(annotation=ParameterWrapper("env")))
 
         self.container.params.update({"first": "foo", "second": "bar", "env": "test", "mambo_number": 5})
         obj = self.container.get(NoHints)

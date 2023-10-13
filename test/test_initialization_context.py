@@ -15,7 +15,7 @@ class InitializationContextTest(unittest.TestCase):
 
     def test_put_get(self):
         self.context.init_target(InitializationContextTest)
-        self.context.put(InitializationContextTest, "foo", AnnotatedParameter(klass=DbService))
+        self.context.add_dependency(InitializationContextTest, "foo", AnnotatedParameter(klass=DbService))
 
         self.assertEqual(
             self.context.dependencies[InitializationContextTest], {"foo": AnnotatedParameter(klass=DbService)}
