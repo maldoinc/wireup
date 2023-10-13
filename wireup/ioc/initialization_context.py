@@ -72,21 +72,6 @@ class InitializationContext(Generic[__T]):
             annotation=ParameterWrapper(parameter_ref),
         )
 
-    def update_params(self, klass: type[__T], params: dict[str, ParameterReference]) -> None:
-        """Merge the context information for a particular type.
-
-        Updates the context with the values from the new dictionary. Parameters from the argument will overwrite
-        any existing ones with the same name. Behaves the same as the standard dict.update. Parameter values
-        will be wrapped in ParameterWrapper.
-
-        :param klass: The class type to be updated
-        :param params: A dictionary of parameter references. Keys map to the parameter name and values
-        contain references to parameters in the bag.
-        """
-        self.__dependencies[klass].update(
-            {k: AnnotatedParameter(annotation=ParameterWrapper(v)) for k, v in params.items()},
-        )
-
     def delete(self, target: AutowireTarget[__T], names_to_remove: set[str]) -> None:
         """Remove dependencies with names in `names_to_remove` from the given target."""
         self.__dependencies[target] = {k: v for k, v in self.__dependencies[target].items() if k not in names_to_remove}
