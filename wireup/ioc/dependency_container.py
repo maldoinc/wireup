@@ -49,7 +49,7 @@ class DependencyContainer(Generic[__T]):
         "__service_registry",
         "__initialized_objects",
         "__initialized_proxies",
-        "params",
+        "__params",
         "__cached_parameters",
         "__transient_deps",
     )
@@ -64,7 +64,7 @@ class DependencyContainer(Generic[__T]):
         self.__cached_parameters: dict[AnyCallable, Mapping[str, Any]] = {}
         self.__transient_deps: dict[AnyCallable, Mapping[str, Any]] = {}
 
-        self.params: ParameterBag = parameter_bag
+        self.__params: ParameterBag = parameter_bag
 
     def get(self, klass: type[__T], qualifier: ContainerProxyQualifierValue = None) -> __T:
         """Get an instance of the requested type.
@@ -127,6 +127,11 @@ class DependencyContainer(Generic[__T]):
     def context(self) -> InitializationContext[__T]:
         """The initialization context for registered targets. A map between an injection target and its dependencies."""
         return self.__service_registry.context
+
+    @property
+    def params(self) -> ParameterBag:
+        """Parameter bag associated with this container."""
+        return self.__params
 
     def __register_object(
         self,
