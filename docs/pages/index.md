@@ -16,9 +16,27 @@ manage and inject dependencies making it easier to develop, test, and maintain P
     <div class="card">
         <div class="card-title">
             <img src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@14.1.2/assets/72x72/2699.png" /> 
-            Configuration Management
+            Configuration is also a dependency!
         </div>
-        Manage and inject application configuration values supporting parameter interpolation and referencing.
+        Inject configuration instead of retrieving it manually.
+        Avoid having a hard dependency on the object that stores the configuration.
+    </div>
+    <div class="card">
+        <div class="card-title">
+            <img src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@14.1.2/assets/72x72/231b.png" /> 
+            Short and long-lived processes
+        </div>
+        Suitable for use in long-running as well as short-lived processes.
+        Preload services for performance or lazily inject to instantiate only what you use.
+    </div>
+
+    <div class="card">
+        <div class="card-title">
+            <img src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@14.1.2/assets/72x72/1f4dc.png" /> 
+            Interfaces / Abstract classes
+        </div>
+        Define abstract types and have the container automatically inject the implementation.
+        Say goodbye to mocks in your tests!
     </div>
     <div class="card">
         <div class="card-title">
@@ -26,20 +44,6 @@ manage and inject dependencies making it easier to develop, test, and maintain P
             Multiple Containers
         </div>
         Use the provided container or instantiate and use multiple ones depending on your project's needs.
-    </div>
-    <div class="card">
-        <div class="card-title">
-            <img src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@14.1.2/assets/72x72/1f4dc.png" /> 
-            Interfaces / Abstract classes
-        </div>
-        Define abstract types and have the container automatically inject the implementation.
-    </div>
-    <div class="card">
-        <div class="card-title">
-            <img src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@14.1.2/assets/72x72/231b.png" /> 
-            Lazy loading
-        </div>
-        Dependencies injected by the library are lazily loaded and will be only initialized on first use.
     </div>
     <div class="card">
         <div class="card-title">

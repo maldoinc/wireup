@@ -47,7 +47,7 @@ def get_user_logs(auth_service: AuthService):
 
 # You can create a factory and inject the authenticated user directly.
 # You may want to create a new type to make a disctinction on the type of user this is.
-AuthenticatedUser = User
+AuthenticatedUser = NewType("AuthenticatedUser", User)
 
 @container.register(lifetime=ServiceLifetime.TRANSIENT)
 def get_current_user(auth_service: AuthService) -> AuthenticatedUser:

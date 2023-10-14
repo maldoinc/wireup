@@ -4,12 +4,12 @@ with additional metadata.
 
 ## When do you need to provide annotations.
 
-Not needed when injecting:
+Optional when injecting:
 
 * Services
 * Injecting an interface which has only one implementing service
 
-Annotations required when injecting:
+Required when injecting:
 
 * Parameters
 * Parameter expressions
@@ -29,7 +29,7 @@ backport this using `typing_extensions` for Python 3.8.
 @container.autowire
 def target(
     env: Annotated[str, Wire(param="env_name")],
-    logs_cache_dir: Annotated[str, Wire(expr="${cache_dir}/logs")]
+    logs_cache_dir: Annotated[str, Wire(expr="${cache_dir}/logs")],
 ):
     ...
 ```
@@ -45,5 +45,16 @@ def target(
     env: str = wire(param="env_name"), 
     logs_cache_dir: str = wire(expr="${cache_dir}/logs")
 ):
+    ...
+```
+
+### Explicit injection annotation
+ Even though annotating services is optional, you CAN still annotate them to be explicit about what will 
+ be injected. This also has the benefit of making the container throw when such as service
+ does not exist instead of silently skipping this parameter.
+
+```python
+@container.autowire
+def target(random_service: Annotated[RandomService, Wire()]):
     ...
 ```

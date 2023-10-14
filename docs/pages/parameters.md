@@ -13,7 +13,8 @@ using a dictionary of name-value pairs.
 To retrieve a parameter by name directly from the container you can call `container.params.get(name)`.
 
 !!! note
-    Although the value of the parameters can be anything, they cannot depend on anything else.
+    Although the value of the parameters can be anything; including classes, 
+    they cannot depend on anything else. 
     As such, autowiring services or other parameters on them is not possible.
 
 
@@ -24,11 +25,11 @@ annotate the function parameter with the parameter name or expression being inje
 
 ### By name
 
-To inject a parameter by name simply call `wire(param="param_name")`.
+To inject a parameter by name simply call `Wire(param="param_name")`.
 
 ```python
 @container.autowire
-def do_something_cool(cache_dir: Annotated[str, Wire(param="cache_dir")]) -> None:
+def target(cache_dir: Annotated[str, Wire(param="cache_dir")]) -> None:
     ...
 ```
 
@@ -39,7 +40,7 @@ at once and concatenate their values together or simply format the value of a si
 
 ```python
 @container.autowire
-def do_something_cool(logs_cache_dir: Annotated[str, Wire(expr="${cache_dir}/${env}/logs")]) -> None:
+def target(logs_cache_dir: Annotated[str, Wire(expr="${cache_dir}/${env}/logs")]) -> None:
     ...
 ```
 
@@ -60,7 +61,7 @@ the enum is a `wire()` method which is syntactic sugar for `wire(param=AppParame
 container.params.put(AppParameters.cache_dir.value, "/var/cache")
 
 @container.autowire
-def do_something_cool(cache_dir: str = AppParameters.cache_dir.wire()) -> None:
+def do_something_cool(cache_dir: Annotated[str, AppParameters.cache_dir.wire()]) -> None:
     ...
 ```
 
