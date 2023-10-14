@@ -8,7 +8,7 @@ if TYPE_CHECKING:
     from types import ModuleType
 
 
-def initialize_container(dependency_container: DependencyContainer[Any], service_modules: list[ModuleType]) -> None:
+def warmup_container(dependency_container: DependencyContainer[Any], service_modules: list[ModuleType]) -> None:
     """Import all modules provided in `service_modules` and initializes all registered singleton services.
 
     !!! note

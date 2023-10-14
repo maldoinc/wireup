@@ -5,7 +5,7 @@ and serves requests.
 To performa a warmup of the container, use `initialize_container` from the `wireup` module.
 
 ```python
-wireup.initialize_container(container, [services])
+wireup.warmup_container(container, [services])
 ```
 
 Pass the container and a list of top-level modules housing all service objects with container registrations.
