@@ -59,7 +59,7 @@ Configuration can also be stored in JSON or YAML documents that can be read and 
 The context's `put` method will register a new dependency for a particular service type.
 
 !!! tip
-    Make sure to call `context.init` on the class to initialize the registration before calling `put`.
+    Make sure to call `context.init_target` on the class to initialize the registration before calling `put`.
 
 ```python
 self.context.init_target(MyService)
