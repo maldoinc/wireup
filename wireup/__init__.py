@@ -24,8 +24,8 @@ __all__ = [
     "ServiceLifetime",
     "Wire",
     "container",
-    "wire",
     "import_all_in_module",
     "register_all_in_module",
     "warmup_container",
+    "wire",
 ]
