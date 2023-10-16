@@ -1,7 +1,6 @@
 # :thread: WireUp
 
-Dependency injection library designed to provide a powerful and flexible way to
-manage and inject dependencies making it easier to develop, test, and maintain Python codebases.
+Dependency injection library with a focus on great developer experience, type safety and ease of use.
 
 ## Key features
 
@@ -11,15 +10,14 @@ manage and inject dependencies making it easier to develop, test, and maintain P
             <img src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@14.1.2/assets/72x72/27a1.png" /> 
             Dependency Injection
         </div>
-        Effortlessly inject dependencies into your views, classes or functions using a clean and intuitive syntax.
+        Inject services and configuration using a clean and intuitive syntax.
     </div>
     <div class="card">
         <div class="card-title">
             <img src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@14.1.2/assets/72x72/2699.png" /> 
-            Configuration is also a dependency!
+            Zero-Configuration
         </div>
-        Inject configuration instead of retrieving it manually.
-        Avoid having a hard dependency on the object that stores the configuration.
+        Automatically inject dependencies based on their types without additional configuration.
     </div>
     <div class="card">
         <div class="card-title">
@@ -29,7 +27,6 @@ manage and inject dependencies making it easier to develop, test, and maintain P
         Suitable for use in long-running as well as short-lived processes.
         Preload services for performance or lazily inject to instantiate only what you use.
     </div>
-
     <div class="card">
         <div class="card-title">
             <img src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@14.1.2/assets/72x72/1f4dc.png" /> 
