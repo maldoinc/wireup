@@ -7,8 +7,7 @@
 ![PyPI - Version](https://img.shields.io/pypi/v/wireup?style=for-the-badge)
 
 
-Dependency injection library designed to provide a powerful and flexible way to manage and inject 
-dependencies making it easier to develop, test, and maintain Python codebases.
+Fully featured dependency injection library with a focus on developer experience, type safety and ease of use.
 
 ---
 ## Quickstart guide
