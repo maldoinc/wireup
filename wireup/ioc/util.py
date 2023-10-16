@@ -1,15 +1,10 @@
 from __future__ import annotations
 
-import importlib
-import pkgutil
 import typing
 from inspect import Parameter
-from typing import TYPE_CHECKING, Any, TypeVar
+from typing import Any, TypeVar
 
 from wireup.ioc.types import AnnotatedParameter
-
-if TYPE_CHECKING:
-    from types import ModuleType
 
 __T = TypeVar("__T")
 
@@ -35,9 +30,3 @@ def is_type_autowireable(obj_type: Any) -> bool:
         return False
 
     return not (hasattr(obj_type, "__origin__") and obj_type.__origin__ == typing.Union)
-
-
-def import_all_in_module(module: ModuleType) -> None:
-    """Recursively load all modules and submodules within a given module."""
-    for _, module_name, _ in pkgutil.walk_packages(module.__path__):
-        importlib.import_module(f"{module.__name__}.{module_name}")

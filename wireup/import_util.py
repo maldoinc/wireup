@@ -1,17 +1,24 @@
 from __future__ import annotations
 
 import fnmatch
+import importlib
 import pkgutil
 from typing import TYPE_CHECKING, Any, TypeVar
-
-from wireup import DependencyContainer, import_all_in_module
 
 if TYPE_CHECKING:
     from collections.abc import Generator
     from types import ModuleType
 
+    from wireup import DependencyContainer
+
 
 __T = TypeVar("__T")
+
+
+def _import_all_in_module(module: ModuleType) -> None:
+    """Recursively load all modules and submodules within a given module."""
+    for _, module_name, _ in pkgutil.walk_packages(module.__path__):
+        importlib.import_module(f"{module.__name__}.{module_name}")
 
 
 def warmup_container(dependency_container: DependencyContainer[Any], service_modules: list[ModuleType]) -> None:
@@ -21,7 +28,7 @@ def warmup_container(dependency_container: DependencyContainer[Any], service_mod
         For long-lived processes this should be executed once at startup.
     """
     for module in service_modules:
-        import_all_in_module(module)
+        _import_all_in_module(module)
 
     dependency_container.warmup()
 
@@ -54,6 +61,6 @@ def register_all_in_module(container: DependencyContainer[Any], module: ModuleTy
     :param module: The package name to recursively search for classes.
     :param pattern: A pattern that will be fed to fnmatch to determine if a class will be registered or not.
     """
-    klass: type[__T]
+    klass: type[Any]
     for klass in _find_classes_in_module(module, pattern):
         container.register(klass)
