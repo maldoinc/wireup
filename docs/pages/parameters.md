@@ -4,6 +4,12 @@ Parameters are stored as a flat key-value store. They are able to retrieved at a
 services when being constructed. They serve as configuration for services. 
 Think of a database url or environment name.
 
+!!! warning
+    **Parameters represent application configuration**. 
+    They are not intended for the developers to pass values around or to be used as a global session object.
+
+    Store only app configuration such as environment name, database url, mailer url etc.
+
 ## Management
 
 Parameters are put in the container using its `params` property and are referenced by their name.
