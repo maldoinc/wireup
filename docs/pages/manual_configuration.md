@@ -5,14 +5,14 @@ configuration is also possible.
 ## Using wireup without registration decorators
 
 In addition to using `@container.register` to register each dependency, automatic registration is also possible by
-using the `container.regiter_all_in_module(module, pattern = "*")` method.
+using the `wireup.register_all_in_module(module, pattern = "*")` method.
 
 Module represents the top level module containing all your dependencies, optionally a `fnmatch` pattern can be specified
 to only register classes that match the pattern. This is the equivalent of using `@container.register`
 on each.
 
 ```python
-container.register_all_in_module(app.service, "*Service")
+wireup.register_all_in_module(app.service, "*Service")
 ```
 
 ## Interfaces
@@ -35,7 +35,7 @@ initialization context. This allows you to manually provide data that the librar
 otherwise gather from the decorators or annotations.
 
 ```python
-container.register_all_in_module(app.services, "*Service")
+wireup.register_all_in_module(app.services, "*Service")
 
 # Register parameters individually using add_param
 container.context.add_dependency(

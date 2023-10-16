@@ -7,7 +7,7 @@ from wireup.ioc.dependency_container import DependencyContainer
 from wireup.ioc.parameter import ParameterBag
 from wireup.ioc.types import ParameterReference, ServiceLifetime
 from wireup.ioc.util import import_all_in_module
-from wireup.util import warmup_container
+from wireup.util import register_all_in_module, warmup_container
 
 container: DependencyContainer[Any] = DependencyContainer(ParameterBag())
 """Singleton DI container instance.
@@ -26,5 +26,6 @@ __all__ = [
     "container",
     "wire",
     "import_all_in_module",
+    "register_all_in_module",
     "warmup_container",
 ]

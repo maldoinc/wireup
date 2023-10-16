@@ -8,17 +8,16 @@ from test import services
 from test.fixtures import Counter, FooBar, FooBase, FooBaz
 from test.services.random_service import RandomService
 from test.services.truly_random_service import TrulyRandomService
-from wireup import Wire, wire, ServiceLifetime
+from wireup import Wire, wire, ServiceLifetime, register_all_in_module
 from wireup.ioc.types import ParameterWrapper, AnnotatedParameter
 from wireup.ioc.dependency_container import ContainerProxy, DependencyContainer
 from wireup.ioc.parameter import ParameterBag, TemplatedString
-from wireup.ioc.util import find_classes_in_module
 
 
 class TestContainer(unittest.IsolatedAsyncioTestCase):
     def setUp(self) -> None:
         self.container = DependencyContainer(ParameterBag())
-        self.container.register_all_in_module(services)
+        register_all_in_module(self.container, services)
 
     def test_works_simple_get_instance(self):
         rand = self.container.get(RandomService)
@@ -150,11 +149,6 @@ class TestContainer(unittest.IsolatedAsyncioTestCase):
         autowired_fn = self.container.autowire(test_function)
         self.assertTrue(callable(autowired_fn))
         self.assertEqual(await autowired_fn(), 4)
-
-    def test_register_all_in_module(self):
-        # These classes are registered in setup
-        for c in find_classes_in_module(services):
-            self.assertIsInstance(self.container.get(c), ContainerProxy)
 
     def test_get_unknown_class(self):
         class TestGetUnknown:

@@ -17,11 +17,8 @@ from .types import (
     ParameterWrapper,
     ServiceLifetime,
 )
-from .util import find_classes_in_module
 
 if TYPE_CHECKING:
-    from types import ModuleType
-
     from .initialization_context import InitializationContext
     from .parameter import ParameterBag
 
@@ -163,21 +160,6 @@ class DependencyContainer(Generic[__T]):
             return fn(*args, **{**kwargs, **self.__callable_get_params_to_inject(fn)})
 
         return sync_inner
-
-    def register_all_in_module(self, module: ModuleType, pattern: str = "*") -> None:
-        """Register all modules inside a given module.
-
-        Useful when your components reside in one place, and you'd like to avoid having to `@register` each of them.
-        Alternatively this can be used if you want to use the library without having to rely on decorators.
-
-        See Also: `self.initialization_context` to wire parameters without having to use a default value.
-
-        :param module: The package name to recursively search for classes.
-        :param pattern: A pattern that will be fed to fnmatch to determine if a class will be registered or not.
-        """
-        klass: type[__T]
-        for klass in find_classes_in_module(module, pattern):
-            self.register(klass)
 
     def warmup(self) -> None:
         """Initialize all singleton dependencies registered in the container.

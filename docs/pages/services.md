@@ -13,7 +13,7 @@ To register a class as a service the following options are available.
 
 * Decorate the class using the `container.register`.
 * Call `container.register(YourService)` directly on the service.
-* Use `container.register_all_in_module`.
+* Use `wireup.register_all_in_module`.
   (See: [Manual Configuration](manual_configuration.md#using-wireup-without-registration-decorators))
 
 ### Lifetime
