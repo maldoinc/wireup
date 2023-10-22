@@ -5,6 +5,8 @@ from collections import defaultdict
 from re import Match
 from typing import Any
 
+from wireup.errors import UnknownParameterError
+
 from .types import ParameterReference, TemplatedString
 
 
@@ -73,8 +75,7 @@ class ParameterBag:
 
     def __get_value_from_name(self, name: str) -> Any:
         if name not in self.__bag:
-            msg = f"Unknown parameter {name} requested"
-            raise ValueError(msg)
+            raise UnknownParameterError(name)
 
         return self.__bag[name]
 

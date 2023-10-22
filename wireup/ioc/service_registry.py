@@ -5,6 +5,12 @@ from collections import defaultdict
 from inspect import Parameter
 from typing import TYPE_CHECKING, Callable, Generic, TypeVar
 
+from wireup.errors import (
+    DuplicateQualifierForInterfaceError,
+    DuplicateServiceRegistrationError,
+    FactoryDuplicateServiceRegistrationError,
+    FactoryReturnTypeIsEmptyError,
+)
 from wireup.ioc.initialization_context import InitializationContext
 from wireup.ioc.types import AnnotatedParameter, AutowireTarget, InjectableType, ServiceLifetime
 from wireup.ioc.util import is_type_autowireable, parameter_get_type_and_annotation
@@ -34,16 +40,11 @@ class _ServiceRegistry(Generic[__T]):
         lifetime: ServiceLifetime,
     ) -> None:
         if self.is_type_with_qualifier_known(klass, qualifier):
-            msg = f"Cannot register type {klass} with qualifier '{qualifier}' as it already exists."
-            raise ValueError(msg)
+            raise DuplicateServiceRegistrationError(klass, qualifier)
 
         if self.is_interface_known(klass.__base__):
             if qualifier in self.known_interfaces[klass.__base__]:
-                msg = (
-                    f"Cannot register implementation class {klass} for {klass.__base__} "
-                    f"with qualifier '{qualifier}' as it already exists"
-                )
-                raise ValueError(msg)
+                raise DuplicateQualifierForInterfaceError(klass, qualifier)
 
             self.known_interfaces[klass.__base__][qualifier] = klass
 
@@ -57,16 +58,13 @@ class _ServiceRegistry(Generic[__T]):
         return_type = inspect.signature(fn).return_annotation
 
         if return_type is Parameter.empty:
-            msg = "Factory functions must specify a return type denoting the type of dependency it can create."
-            raise ValueError(msg)
+            raise FactoryReturnTypeIsEmptyError
 
         if self.is_impl_known_from_factory(return_type):
-            msg = f"A function is already registered as a factory for dependency type {return_type}."
-            raise ValueError(msg)
+            raise FactoryDuplicateServiceRegistrationError(return_type)
 
         if self.is_impl_known(return_type):
-            msg = f"Cannot register factory function as type {return_type} is already known by the container."
-            raise ValueError(msg)
+            raise DuplicateServiceRegistrationError(return_type, qualifier=None)
 
         self.target_init_context(fn, lifetime=lifetime)
         self.factory_functions[return_type] = fn

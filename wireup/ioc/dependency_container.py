@@ -6,6 +6,12 @@ from typing import TYPE_CHECKING, Any, Callable, Generic, TypeVar
 
 from graphlib2 import TopologicalSorter
 
+from wireup.errors import (
+    UnknownQualifiedServiceRequestedError,
+    UnknownServiceRequestedError,
+    UsageOfQualifierOnUnknownObjectError,
+)
+
 from .proxy import ContainerProxy
 from .service_registry import _ServiceRegistry
 from .types import (
@@ -243,11 +249,11 @@ class DependencyContainer(Generic[__T]):
 
         if self.__service_registry.is_impl_known(annotated_type):
             if not self.__service_registry.is_impl_with_qualifier_known(annotated_type, qualifier_value):
-                msg = (
-                    f"Cannot instantiate concrete class for {annotated_type} as qualifier '{qualifier_value}'"
-                    f" is unknown. Available qualifiers: {self.__service_registry.known_impls[annotated_type]}"
+                raise UnknownQualifiedServiceRequestedError(
+                    annotated_type,
+                    qualifier_value,
+                    self.__service_registry.known_impls[annotated_type],
                 )
-                raise ValueError(msg)
             return self.__get_injected_object(annotated_type, qualifier_value)
 
         # Normally the container won't throw if it encounters a type it doesn't know about
@@ -260,8 +266,7 @@ class DependencyContainer(Generic[__T]):
         # We don't actually want that to happen as the value is used only for hinting the container
         # and all values should be supplied.
         if qualifier_value:
-            msg = f"Cannot use qualifier {qualifier_value} on a type that is not managed by the container."
-            raise ValueError(msg)
+            raise UsageOfQualifierOnUnknownObjectError(qualifier_value)
 
         return None
 
@@ -300,14 +305,9 @@ class DependencyContainer(Generic[__T]):
 
         # We have to raise here otherwise if we have a default hinting the qualifier for an unknown type
         # which will result in the value of the parameter being ContainerProxyQualifier.
-        msg = (
-            f"Cannot instantiate concrete class for {klass} as qualifier '{qualifier}' is unknown. "
-            f"Available qualifiers: {set(concrete_classes.keys())}"
-        )
-        raise ValueError(msg)
+        raise UnknownQualifiedServiceRequestedError(klass, qualifier, set(concrete_classes.keys()))
 
     def __assert_dependency_exists(self, klass: type[__T], qualifier: ContainerProxyQualifierValue) -> None:
         """Assert that there exists an impl with that qualifier or an interface with an impl and the same qualifier."""
         if not self.__service_registry.is_type_with_qualifier_known(klass, qualifier):
-            msg = f"Cannot wire unknown class {klass}. Use @Container.{{register,abstract}} to enable autowiring"
-            raise ValueError(msg)
+            raise UnknownServiceRequestedError(klass)

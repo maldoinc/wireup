@@ -4,6 +4,11 @@ from typing_extensions import Annotated
 
 from test.services.random_service import RandomService
 from wireup import ServiceLifetime, Wire
+from wireup.errors import (
+    DuplicateServiceRegistrationError,
+    FactoryReturnTypeIsEmptyError,
+    FactoryDuplicateServiceRegistrationError,
+)
 from wireup.ioc.types import ParameterWrapper, AnnotatedParameter
 from wireup.ioc.service_registry import _ServiceRegistry
 
@@ -22,7 +27,7 @@ class TestServiceRegistry(unittest.TestCase):
         self.assertTrue(self.registry.is_impl_singleton(MyService))
 
         # Test registering a duplicate service
-        with self.assertRaises(ValueError):
+        with self.assertRaises(DuplicateServiceRegistrationError):
             self.registry.register_service(MyService, qualifier="default", lifetime=ServiceLifetime.SINGLETON)
 
     def test_register_abstract(self):
@@ -41,11 +46,11 @@ class TestServiceRegistry(unittest.TestCase):
         def invalid_factory():
             pass
 
-        with self.assertRaises(ValueError):
+        with self.assertRaises(FactoryReturnTypeIsEmptyError):
             self.registry.register_factory(invalid_factory, lifetime=ServiceLifetime.SINGLETON)
 
         # Test registering a duplicate factory function
-        with self.assertRaises(ValueError):
+        with self.assertRaises(FactoryDuplicateServiceRegistrationError):
             self.registry.register_factory(my_factory, lifetime=ServiceLifetime.SINGLETON)
 
     def test_is_impl_known(self):

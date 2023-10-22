@@ -46,6 +46,7 @@ ignore = [
     "D104", # Same as above, disable missing docstring in public package,
     "D203", # Ignore "one blank line before class". Using "no blank lines before class rule".
     "D213", # Disable "Summary must go into next line"
+    "D107", # Disable required docs for __init. Can be redundant if class also has them.
 ]
 
 [build-system]

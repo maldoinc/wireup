@@ -9,6 +9,13 @@ from test.fixtures import Counter, FooBar, FooBase, FooBaz
 from test.services.random_service import RandomService
 from test.services.truly_random_service import TrulyRandomService
 from wireup import Wire, wire, ServiceLifetime, register_all_in_module
+from wireup.errors import (
+    DuplicateServiceRegistrationError,
+    UnknownQualifiedServiceRequestedError,
+    UsageOfQualifierOnUnknownObjectError,
+    UnknownServiceRequestedError,
+    DuplicateQualifierForInterfaceError,
+)
 from wireup.ioc.types import ParameterWrapper, AnnotatedParameter
 from wireup.ioc.dependency_container import ContainerProxy, DependencyContainer
 from wireup.ioc.parameter import ParameterBag, TemplatedString
@@ -31,7 +38,7 @@ class TestContainer(unittest.IsolatedAsyncioTestCase):
         class UnknownDep:
             ...
 
-        self.assertRaises(ValueError, lambda: self.container.get(UnknownDep))
+        self.assertRaises(UnknownServiceRequestedError, lambda: self.container.get(UnknownDep))
 
     def test_container_returns_singletons(self):
         self.container.register(Counter)
@@ -94,7 +101,7 @@ class TestContainer(unittest.IsolatedAsyncioTestCase):
         def inner(random: Annotated[unittest.TestCase, Wire()]):
             ...
 
-        with self.assertRaises(ValueError) as context:
+        with self.assertRaises(UnknownServiceRequestedError) as context:
             inner()
 
         self.assertEqual(
@@ -118,13 +125,11 @@ class TestContainer(unittest.IsolatedAsyncioTestCase):
             pass
 
         self.container.register(TestRegisterKnown)
-        with self.assertRaises(ValueError) as context:
+        with self.assertRaises(DuplicateServiceRegistrationError) as context:
             self.container.register(TestRegisterKnown)
 
         self.assertIn(
-            "Cannot register type "
-            "<class 'test_container.TestContainer.test_register_known_class.<locals>.TestRegisterKnown'> "
-            "with qualifier 'None' as it already exists.",
+            f"Cannot register type {TestRegisterKnown} " "with qualifier 'None' as it already exists.",
             str(context.exception),
         )
 
@@ -154,7 +159,7 @@ class TestContainer(unittest.IsolatedAsyncioTestCase):
         class TestGetUnknown:
             pass
 
-        with self.assertRaises(ValueError) as context:
+        with self.assertRaises(UnknownServiceRequestedError) as context:
             self.container.get(TestGetUnknown)
 
         self.assertEqual(
@@ -216,7 +221,7 @@ class TestContainer(unittest.IsolatedAsyncioTestCase):
         self.container.register(Counter, qualifier="foo_qualified")
         self.container.register(Counter, qualifier="foo_qualified2")
 
-        with self.assertRaises(ValueError) as context:
+        with self.assertRaises(UnknownServiceRequestedError) as context:
             self.container.get(Counter)
 
         self.assertEqual(
@@ -267,11 +272,11 @@ class TestContainer(unittest.IsolatedAsyncioTestCase):
         self.container.abstract(FooBase)
         self.container.register(FooBar, qualifier="foo")
 
-        with self.assertRaises(ValueError) as context:
+        with self.assertRaises(DuplicateServiceRegistrationError) as context:
             self.container.register(FooBar, qualifier="foo")
 
         self.assertIn(
-            "Cannot register type " "<class 'test.fixtures.FooBar'> with qualifier 'foo' as it already exists.",
+            f"Cannot register type {FooBar} with qualifier 'foo' as it already exists.",
             str(context.exception),
         )
 
@@ -279,7 +284,7 @@ class TestContainer(unittest.IsolatedAsyncioTestCase):
         self.container.abstract(FooBase)
         self.container.register(FooBar, qualifier="foo")
 
-        with self.assertRaises(ValueError) as context:
+        with self.assertRaises(DuplicateQualifierForInterfaceError) as context:
             self.container.register(FooBaz, qualifier="foo")
 
         self.assertIn(
@@ -295,7 +300,7 @@ class TestContainer(unittest.IsolatedAsyncioTestCase):
             ...
 
         self.container.abstract(FooBase)
-        with self.assertRaises(ValueError) as context:
+        with self.assertRaises(UnknownQualifiedServiceRequestedError) as context:
             inner()
 
         self.assertIn(
@@ -344,7 +349,7 @@ class TestContainer(unittest.IsolatedAsyncioTestCase):
         def inner(foo: RegisterWithQualifierClass):
             ...
 
-        with self.assertRaises(Exception) as context:
+        with self.assertRaises(UnknownQualifiedServiceRequestedError) as context:
             inner()
 
         self.assertIn(
@@ -372,7 +377,7 @@ class TestContainer(unittest.IsolatedAsyncioTestCase):
         def inner(foo: str = wire(qualifier=__name__)):
             ...
 
-        with self.assertRaises(ValueError) as context:
+        with self.assertRaises(UsageOfQualifierOnUnknownObjectError) as context:
             inner()
 
         self.assertEqual(

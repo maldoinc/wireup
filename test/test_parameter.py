@@ -1,5 +1,6 @@
 import unittest
 
+from wireup.errors import UnknownParameterError
 from wireup.ioc.types import ParameterWrapper
 from wireup.ioc.parameter import ParameterBag, TemplatedString
 
@@ -21,7 +22,7 @@ class TestParameterBag(unittest.TestCase):
         self.assertEqual(self.bag.get(TemplatedString("${param1}")), "42")
 
     def test_get_unknown_parameter(self):
-        with self.assertRaises(ValueError):
+        with self.assertRaises(UnknownParameterError):
             self.bag.get("unknown_param")
 
     def test_update_assert_merges(self):
@@ -35,7 +36,7 @@ class TestParameterBag(unittest.TestCase):
     def test_interpolate_unknown_parameter(self):
         templated_str = TemplatedString("Test ${unknown_param}")
 
-        with self.assertRaises(ValueError):
+        with self.assertRaises(UnknownParameterError):
             self.bag.get(templated_str)
 
     def test_all(self):
@@ -51,16 +52,16 @@ class TestParameterBag(unittest.TestCase):
         self.assertEqual(self.bag._ParameterBag__cache, {"${foo}-${foo}": "bar-bar"})  # noqa: SLF001
 
     def test_get_parameter_unknown(self):
-        with self.assertRaises(ValueError) as context:
+        with self.assertRaises(UnknownParameterError) as context:
             self.bag.get("name")
 
-        self.assertEqual("Unknown parameter name requested", str(context.exception))
+        self.assertEqual("Unknown parameter requested: name", str(context.exception))
 
     def test_get_parameter_interpolation_unknown(self):
-        with self.assertRaises(ValueError) as context:
+        with self.assertRaises(UnknownParameterError) as context:
             self.bag.get(TemplatedString("name/${dummy}"))
 
-        self.assertEqual("Unknown parameter dummy requested", str(context.exception))
+        self.assertEqual("Unknown parameter requested: dummy", str(context.exception))
 
     def test_get_interpolated_result_is_cached(self):
         self.bag.put("name", "Bob")

@@ -4,6 +4,11 @@ from unittest import TestCase
 from test.fixtures import Counter, FooBar, FooBase
 from test.services.random_service import RandomService
 from wireup import DependencyContainer, ParameterBag, wire, ServiceLifetime
+from wireup.errors import (
+    FactoryReturnTypeIsEmptyError,
+    FactoryDuplicateServiceRegistrationError,
+    DuplicateServiceRegistrationError,
+)
 
 
 class ThingToBeCreated:
@@ -83,19 +88,19 @@ class TestContainerStaticFactory(TestCase):
     def test_register_known_container_type(self):
         self.container.register(RandomService)
 
-        with self.assertRaises(ValueError) as context:
+        with self.assertRaises(DuplicateServiceRegistrationError) as context:
 
             @self.container.register
             def create_random_service() -> RandomService:
                 return RandomService()
 
         self.assertEqual(
-            f"Cannot register factory function as type {RandomService} is already known by the container.",
+            f"Cannot register type {RandomService} with qualifier 'None' as it already exists.",
             str(context.exception),
         )
 
     def test_register_factory_known_type_from_other_factory(self):
-        with self.assertRaises(ValueError) as context:
+        with self.assertRaises(FactoryDuplicateServiceRegistrationError) as context:
 
             @self.container.register
             def create_random_service() -> RandomService:
@@ -111,7 +116,7 @@ class TestContainerStaticFactory(TestCase):
         )
 
     def test_register_factory_no_return_type(self):
-        with self.assertRaises(ValueError) as context:
+        with self.assertRaises(FactoryReturnTypeIsEmptyError) as context:
 
             @self.container.register
             def create_random_service():
