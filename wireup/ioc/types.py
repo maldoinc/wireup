@@ -42,7 +42,7 @@ class ParameterWrapper(InjectableType):
     param: ParameterReference
 
 
-ContainerProxyQualifierValue = Optional[str]
+ContainerProxyQualifierValue = Optional[Any]
 
 
 @dataclass(frozen=True)

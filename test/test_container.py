@@ -211,8 +211,8 @@ class TestContainer(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(db.connection_str, "sqlite://memory")
 
     def test_locates_service_with_qualifier(self):
-        self.container.register(Counter, qualifier="foo_qualified")
-        resolved = self.container.get(Counter, qualifier="foo_qualified")
+        self.container.register(Counter, qualifier=999)
+        resolved = self.container.get(Counter, qualifier=999)
         self.assertEqual(resolved.count, 0)
         resolved.inc()
         self.assertEqual(resolved.count, 1)
