@@ -253,7 +253,7 @@ class DependencyContainer:
         # Normally the container won't throw if it encounters a type it doesn't know about
         # But if it's explicitly marked as to be injected then we need to throw.
         if isinstance(annotated_parameter.annotation, ContainerInjectionRequest):
-            self.__assert_dependency_exists(annotated_type, qualifier=None)
+            raise UnknownServiceRequestedError(annotated_type)
 
         # When injecting dependencies and a qualifier is used, throw if it's being used on an unknown type.
         # This prevents the default value from being used by the runtime.
