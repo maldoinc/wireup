@@ -57,7 +57,7 @@ class ContainerProxyQualifier(InjectableType):
     qualifier: ContainerProxyQualifierValue
 
 
-class ContainerInjectionRequest(InjectableType):
+class EmptyContainerInjectionRequest(InjectableType):
     """Serves as hint for the container that it must always perform injection for this parameter.
 
     Instead of skipping, this would force it to throw if dependency is unknown

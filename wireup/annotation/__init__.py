@@ -5,7 +5,7 @@ from enum import Enum
 from typing import Any
 
 from wireup.ioc.types import (
-    ContainerInjectionRequest,
+    EmptyContainerInjectionRequest,
     ContainerProxyQualifier,
     ContainerProxyQualifierValue,
     ParameterWrapper,
@@ -46,7 +46,7 @@ def wire(
         # It is meant to be used as a default value in where Depends() is expected
         return importlib.import_module("fastapi").Depends(lambda: None)
     except ModuleNotFoundError:
-        return ContainerInjectionRequest()
+        return EmptyContainerInjectionRequest()
 
 
 class ParameterEnum(Enum):

@@ -18,7 +18,7 @@ from .types import (
     AnnotatedParameter,
     AnyCallable,
     AutowireTarget,
-    ContainerInjectionRequest,
+    EmptyContainerInjectionRequest,
     ContainerProxyQualifierValue,
     ParameterWrapper,
     ServiceLifetime,
@@ -252,7 +252,7 @@ class DependencyContainer:
 
         # Normally the container won't throw if it encounters a type it doesn't know about
         # But if it's explicitly marked as to be injected then we need to throw.
-        if isinstance(annotated_parameter.annotation, ContainerInjectionRequest):
+        if isinstance(annotated_parameter.annotation, EmptyContainerInjectionRequest):
             raise UnknownServiceRequestedError(annotated_type)
 
         # When injecting dependencies and a qualifier is used, throw if it's being used on an unknown type.
