@@ -3,7 +3,7 @@ from __future__ import annotations
 import inspect
 from collections import defaultdict
 from inspect import Parameter
-from typing import TYPE_CHECKING, Callable, Generic, TypeVar
+from typing import TYPE_CHECKING, Any, Callable
 
 from wireup.errors import (
     DuplicateQualifierForInterfaceError,
@@ -12,7 +12,7 @@ from wireup.errors import (
     FactoryReturnTypeIsEmptyError,
 )
 from wireup.ioc.initialization_context import InitializationContext
-from wireup.ioc.types import AnnotatedParameter, AutowireTarget, InjectableType, ServiceLifetime
+from wireup.ioc.types import AutowireTarget, InjectableType, ServiceLifetime
 from wireup.ioc.util import is_type_autowireable, parameter_get_type_and_annotation
 
 if TYPE_CHECKING:
@@ -20,22 +20,20 @@ if TYPE_CHECKING:
         ContainerProxyQualifierValue,
     )
 
-__T = TypeVar("__T")
 
-
-class _ServiceRegistry(Generic[__T]):
+class _ServiceRegistry:
     __slots__ = ("known_interfaces", "known_impls", "factory_functions", "context")
 
     def __init__(self) -> None:
-        self.known_interfaces: dict[type[__T], dict[ContainerProxyQualifierValue, type[__T]]] = {}
-        self.known_impls: dict[type[__T], set[ContainerProxyQualifierValue]] = defaultdict(set)
-        self.factory_functions: dict[type[__T], Callable[..., __T]] = {}
+        self.known_interfaces: dict[type, dict[ContainerProxyQualifierValue, type]] = {}
+        self.known_impls: dict[type, set[ContainerProxyQualifierValue]] = defaultdict(set)
+        self.factory_functions: dict[type, Callable[..., Any]] = {}
 
-        self.context: InitializationContext[__T] = InitializationContext()
+        self.context = InitializationContext()
 
     def register_service(
         self,
-        klass: type[__T],
+        klass: type,
         qualifier: ContainerProxyQualifierValue,
         lifetime: ServiceLifetime,
     ) -> None:
@@ -51,10 +49,10 @@ class _ServiceRegistry(Generic[__T]):
         self.known_impls[klass].add(qualifier)
         self.target_init_context(klass, lifetime)
 
-    def register_abstract(self, klass: type[__T]) -> None:
+    def register_abstract(self, klass: type) -> None:
         self.known_interfaces[klass] = defaultdict()
 
-    def register_factory(self, fn: Callable[..., __T], lifetime: ServiceLifetime) -> None:
+    def register_factory(self, fn: Callable[..., Any], lifetime: ServiceLifetime) -> None:
         return_type = inspect.signature(fn).return_annotation
 
         if return_type is Parameter.empty:
@@ -73,13 +71,13 @@ class _ServiceRegistry(Generic[__T]):
         # as the factory will be the one to create it.
         self.context.init_target(return_type, lifetime)
 
-    def target_init_context(self, target: AutowireTarget[__T], lifetime: ServiceLifetime | None = None) -> None:
+    def target_init_context(self, target: AutowireTarget, lifetime: ServiceLifetime | None = None) -> None:
         """Init and collect all the necessary dependencies to initialize the specified target."""
         if not self.context.init_target(target, lifetime):
             return
 
         for name, parameter in inspect.signature(target).parameters.items():
-            annotated_param: AnnotatedParameter[__T] = parameter_get_type_and_annotation(parameter)
+            annotated_param = parameter_get_type_and_annotation(parameter)
 
             if not (annotated_param.klass or annotated_param.annotation):
                 continue
@@ -90,7 +88,7 @@ class _ServiceRegistry(Generic[__T]):
             if isinstance(annotated_param.annotation, InjectableType) or is_type_autowireable(annotated_param.klass):
                 self.context.add_dependency(target, name, annotated_param)
 
-    def get_dependency_graph(self) -> dict[type[__T], set[type[__T]]]:
+    def get_dependency_graph(self) -> dict[type, set[type]]:
         """Return a dependency graph for the current set of registered services.
 
         This is based on the context's but with the following changes
@@ -99,7 +97,7 @@ class _ServiceRegistry(Generic[__T]):
         * Factories are replaced with the thing they produce.
         """
         factory_to_type = {v: k for k, v in self.factory_functions.items()}
-        res: dict[type[__T], set[type[__T]]] = {}
+        res: dict[type, set[type]] = {}
         for target, dependencies in self.context.dependencies.items():
             if not isinstance(target, type):
                 continue
@@ -110,7 +108,7 @@ class _ServiceRegistry(Generic[__T]):
                 continue
 
             res[klass] = set()
-            current_deps: list[type[__T]] = []
+            current_deps: list[type] = []
 
             for annotated_param in dependencies.values():
                 if annotated_param.is_parameter or not annotated_param.klass:
@@ -129,13 +127,13 @@ class _ServiceRegistry(Generic[__T]):
 
         return res
 
-    def is_impl_known(self, klass: type[__T]) -> bool:
+    def is_impl_known(self, klass: type) -> bool:
         return klass in self.known_impls
 
-    def is_impl_with_qualifier_known(self, klass: type[__T], qualifier_value: ContainerProxyQualifierValue) -> bool:
+    def is_impl_with_qualifier_known(self, klass: type, qualifier_value: ContainerProxyQualifierValue) -> bool:
         return klass in self.known_impls and qualifier_value in self.known_impls[klass]
 
-    def is_type_with_qualifier_known(self, klass: type[__T], qualifier: ContainerProxyQualifierValue) -> bool:
+    def is_type_with_qualifier_known(self, klass: type, qualifier: ContainerProxyQualifierValue) -> bool:
         is_known_impl = self.is_impl_with_qualifier_known(klass, qualifier)
         is_known_intf = self.__is_interface_with_qualifier_known(klass, qualifier)
         is_known_from_factory = self.is_impl_known_from_factory(klass)
@@ -144,16 +142,16 @@ class _ServiceRegistry(Generic[__T]):
 
     def __is_interface_with_qualifier_known(
         self,
-        klass: type[__T],
+        klass: type,
         qualifier: ContainerProxyQualifierValue,
     ) -> bool:
         return klass in self.known_interfaces and qualifier in self.known_interfaces[klass]
 
-    def is_impl_known_from_factory(self, klass: type[__T]) -> bool:
+    def is_impl_known_from_factory(self, klass: type) -> bool:
         return klass in self.factory_functions
 
-    def is_impl_singleton(self, klass: type[__T]) -> bool:
+    def is_impl_singleton(self, klass: type) -> bool:
         return self.context.lifetime.get(klass) == ServiceLifetime.SINGLETON
 
-    def is_interface_known(self, klass: type[__T]) -> bool:
+    def is_interface_known(self, klass: type) -> bool:
         return klass in self.known_interfaces

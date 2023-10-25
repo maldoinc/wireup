@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import functools
-from typing import TYPE_CHECKING, Any, Callable, Generic, TypeVar
+from typing import TYPE_CHECKING, Any, Callable
 
 from graphlib2 import TopologicalSorter
 
@@ -28,10 +28,8 @@ if TYPE_CHECKING:
     from .initialization_context import InitializationContext
     from .parameter import ParameterBag
 
-__T = TypeVar("__T")
 
-
-class DependencyContainer(Generic[__T]):
+class DependencyContainer:
     """Dependency Injection and Service Locator container registry.
 
     This contains all the necessary information to initialize registered classes.
@@ -56,12 +54,12 @@ class DependencyContainer(Generic[__T]):
 
     def __init__(self, parameter_bag: ParameterBag) -> None:
         """:param parameter_bag: ParameterBag instance holding parameter information."""
-        self.__service_registry: _ServiceRegistry[__T] = _ServiceRegistry()
-        self.__initialized_objects: dict[tuple[type[__T], ContainerProxyQualifierValue], __T] = {}
-        self.__initialized_proxies: dict[tuple[type[__T], ContainerProxyQualifierValue], ContainerProxy[__T]] = {}
+        self.__service_registry: _ServiceRegistry = _ServiceRegistry()
+        self.__initialized_objects: dict[tuple[type, ContainerProxyQualifierValue], Any] = {}
+        self.__initialized_proxies: dict[tuple[type, ContainerProxyQualifierValue], ContainerProxy[Any]] = {}
         self.__params: ParameterBag = parameter_bag
 
-    def get(self, klass: type[__T], qualifier: ContainerProxyQualifierValue = None) -> __T:
+    def get(self, klass: type, qualifier: ContainerProxyQualifierValue = None) -> Any:
         """Get an instance of the requested type.
 
         Use this to locate services by their type but strongly prefer using injection instead.
@@ -72,13 +70,9 @@ class DependencyContainer(Generic[__T]):
         """
         self.__assert_dependency_exists(klass, qualifier)
 
-        # We need to lie a bit to the type checker here. Container does not inject the real object
-        # but rather a proxy which will instantiate that type during first use.
-        # In turn that object may get injected other proxy objects.
-        # This enables lazy loading.
-        return self.__get_injected_object(klass, qualifier)  # type: ignore[return-value]
+        return self.__get_injected_object(klass, qualifier)
 
-    def abstract(self, klass: type[__T]) -> type[__T]:
+    def abstract(self, klass: type) -> type:
         """Register a type as an interface.
 
         This type cannot be initialized directly and one of the components implementing this will be injected instead.
@@ -89,11 +83,11 @@ class DependencyContainer(Generic[__T]):
 
     def register(
         self,
-        obj: AutowireTarget[__T] | None = None,
+        obj: AutowireTarget | None = None,
         *,
         qualifier: ContainerProxyQualifierValue = None,
         lifetime: ServiceLifetime = ServiceLifetime.SINGLETON,
-    ) -> AutowireTarget[__T] | Callable[[AutowireTarget[__T]], AutowireTarget[__T]]:
+    ) -> AutowireTarget | Callable[[AutowireTarget], AutowireTarget]:
         """Register a dependency in the container.
 
         Use `@register` without parameters on a class or with a single parameter `@register(qualifier=name)`
@@ -107,7 +101,7 @@ class DependencyContainer(Generic[__T]):
         # Allow register to be used either with or without arguments
         if obj is None:
 
-            def decorated(decorated_obj: AutowireTarget[__T]) -> AutowireTarget[__T]:
+            def decorated(decorated_obj: AutowireTarget) -> AutowireTarget:
                 self.__register_object(decorated_obj, qualifier, lifetime)
 
                 return decorated_obj
@@ -119,7 +113,7 @@ class DependencyContainer(Generic[__T]):
         return obj
 
     @property
-    def context(self) -> InitializationContext[__T]:
+    def context(self) -> InitializationContext:
         """The initialization context for registered targets. A map between an injection target and its dependencies."""
         return self.__service_registry.context
 
@@ -130,7 +124,7 @@ class DependencyContainer(Generic[__T]):
 
     def __register_object(
         self,
-        obj: AutowireTarget[__T],
+        obj: AutowireTarget,
         qualifier: ContainerProxyQualifierValue,
         lifetime: ServiceLifetime,
     ) -> None:
@@ -173,7 +167,7 @@ class DependencyContainer(Generic[__T]):
         This should be executed once all services are registered with the container. Targets of autowire will not
         be affected.
         """
-        sorter = TopologicalSorter(self.__service_registry.get_dependency_graph())  # type: ignore[type-var]
+        sorter = TopologicalSorter(self.__service_registry.get_dependency_graph())
 
         for klass in sorter.static_order():
             for qualifier in self.__service_registry.known_impls[klass]:
@@ -210,7 +204,7 @@ class DependencyContainer(Generic[__T]):
 
         return values_from_parameters
 
-    def __get(self, klass: type[__T], qualifier: ContainerProxyQualifierValue) -> __T:
+    def __get(self, klass: type, qualifier: ContainerProxyQualifierValue) -> Any:
         """Create the real instances of dependencies. Additional dependencies they may have will be lazily created."""
         self.__assert_dependency_exists(klass, qualifier)
 
@@ -233,9 +227,9 @@ class DependencyContainer(Generic[__T]):
 
         return instance
 
-    def __initialize_container_proxy_object_from_parameter(self, annotated_parameter: AnnotatedParameter[__T]) -> Any:
+    def __initialize_container_proxy_object_from_parameter(self, annotated_parameter: AnnotatedParameter) -> Any:
         # Disable type checker here as the only caller ensures that klass is not none to avoid the call entirely.
-        annotated_type: type[__T] = annotated_parameter.klass  # type: ignore[assignment]
+        annotated_type: type = annotated_parameter.klass  # type: ignore[assignment]
 
         if self.__service_registry.is_impl_known_from_factory(annotated_type):
             # Objects generated from factories do not have qualifiers
@@ -272,9 +266,9 @@ class DependencyContainer(Generic[__T]):
 
     def __get_injected_object(
         self,
-        klass: type[__T],
+        klass: type,
         qualifier: ContainerProxyQualifierValue,
-    ) -> ContainerProxy[__T] | __T:
+    ) -> ContainerProxy[Any] | Any:
         """Return a container proxy or an instance of the requested singleton class if one has been initialized."""
         obj_id = klass, qualifier
 
@@ -295,9 +289,9 @@ class DependencyContainer(Generic[__T]):
 
     def __get_concrete_class_from_interface_and_qualifier(
         self,
-        klass: type[__T],
+        klass: type,
         qualifier: ContainerProxyQualifierValue,
-    ) -> type[__T]:
+    ) -> type:
         concrete_classes = self.__service_registry.known_interfaces.get(klass, {})
 
         if qualifier in concrete_classes:
@@ -307,7 +301,7 @@ class DependencyContainer(Generic[__T]):
         # which will result in the value of the parameter being ContainerProxyQualifier.
         raise UnknownQualifiedServiceRequestedError(klass, qualifier, set(concrete_classes.keys()))
 
-    def __assert_dependency_exists(self, klass: type[__T], qualifier: ContainerProxyQualifierValue) -> None:
+    def __assert_dependency_exists(self, klass: type, qualifier: ContainerProxyQualifierValue) -> None:
         """Assert that there exists an impl with that qualifier or an interface with an impl and the same qualifier."""
         if not self.__service_registry.is_type_with_qualifier_known(klass, qualifier):
             raise UnknownServiceRequestedError(klass)

@@ -2,14 +2,12 @@ from __future__ import annotations
 
 import typing
 from inspect import Parameter
-from typing import Any, TypeVar
+from typing import Any
 
 from wireup.ioc.types import AnnotatedParameter
 
-__T = TypeVar("__T")
 
-
-def parameter_get_type_and_annotation(parameter: Parameter) -> AnnotatedParameter[__T]:
+def parameter_get_type_and_annotation(parameter: Parameter) -> AnnotatedParameter:
     """Get the annotation injection type from a signature's Parameter.
 
     Returns either the first annotation for an Annotated type or the default value.

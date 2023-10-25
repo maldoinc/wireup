@@ -2,11 +2,10 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from enum import Enum, auto
-from typing import Any, Callable, Generic, Optional, Type, TypeVar, Union
+from typing import Any, Callable, Optional, Union
 
-__T = TypeVar("__T")
 AnyCallable = Callable[..., Any]
-AutowireTarget = Union[AnyCallable, Type[__T]]
+AutowireTarget = Union[AnyCallable, type]
 """Represents types that can be targets for autowiring.
 
 This is any method where autowire decorator is used or any class which is registered in the container
@@ -75,14 +74,14 @@ class ServiceLifetime(Enum):
     """Transient services will have a fresh instance initialized on every injection."""
 
 
-class AnnotatedParameter(Generic[__T]):
+class AnnotatedParameter:
     """Represent an annotated dependency parameter."""
 
     __slots__ = ("klass", "annotation", "qualifier_value", "is_parameter")
 
     def __init__(
         self,
-        klass: type[__T] | None = None,
+        klass: type | None = None,
         annotation: Any | None = None,
     ) -> None:
         """Create a new AnnotatedParameter.

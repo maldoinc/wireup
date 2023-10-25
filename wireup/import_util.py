@@ -21,7 +21,7 @@ def _import_all_in_module(module: ModuleType) -> None:
         importlib.import_module(f"{module.__name__}.{module_name}")
 
 
-def warmup_container(dependency_container: DependencyContainer[Any], service_modules: list[ModuleType]) -> None:
+def warmup_container(dependency_container: DependencyContainer, service_modules: list[ModuleType]) -> None:
     """Import all modules provided in `service_modules` and initializes all registered singleton services.
 
     !!! note
@@ -49,7 +49,7 @@ def _find_classes_in_module(module: ModuleType, pattern: str = "*") -> Generator
                 yield obj
 
 
-def register_all_in_module(container: DependencyContainer[Any], module: ModuleType, pattern: str = "*") -> None:
+def register_all_in_module(container: DependencyContainer, module: ModuleType, pattern: str = "*") -> None:
     """Register all modules inside a given module.
 
     Useful when your components reside in one place, and you'd like to avoid having to `@register` each of them.
