@@ -6,10 +6,43 @@ authors = ["Aldo Mateli <aldo.mateli@gmail.com>"]
 license = "MIT"
 readme = "readme.md"
 homepage = "https://github.com/maldoinc/wireup"
+requires-python = ">=3.7"
 packages = [
     { include = "wireup" }
 ]
+keywords = [
+    "flask",
+    "django",
+    "injector",
+    "dependency injection",
+    "dependency injection container",
+    "dependency injector"
+]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Environment :: Console",
+    "Environment :: Web Environment",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Framework :: Django",
+    "Framework :: Flask",
+    "Framework :: FastAPI",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3 :: Only",
+    "Typing :: Typed",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+]
 
+[project.urls]
+Repository = "https://github.com/maldoinc/wireup"
+Documentation = "https://maldoinc.github.io/wireup/"
+Changelog = "https://github.com/maldoinc/wireup/releases"
 
 [tool.poetry.dependencies]
 python = "^3.8"
