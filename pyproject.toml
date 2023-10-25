@@ -6,7 +6,6 @@ authors = ["Aldo Mateli <aldo.mateli@gmail.com>"]
 license = "MIT"
 readme = "readme.md"
 homepage = "https://github.com/maldoinc/wireup"
-requires-python = ">=3.7"
 packages = [
     { include = "wireup" }
 ]
