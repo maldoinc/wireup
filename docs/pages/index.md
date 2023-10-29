@@ -1,6 +1,6 @@
 # :thread: WireUp
 
-Fully featured dependency injection library with a focus on developer experience, type safety and ease of use.
+Dependency injection container with a focus on developer experience, type safety and ease of use.
 
 ## Key features
 

@@ -7,7 +7,7 @@
 [![PyPI - Version](https://img.shields.io/pypi/v/wireup?style=for-the-badge)](https://pypi.org/project/wireup/)
 
 
-Fully featured dependency injection library with a focus on developer experience, type safety and ease of use.
+Dependency injection container with a focus on developer experience, type safety and ease of use.
 
 ---
 ## Quickstart guide
