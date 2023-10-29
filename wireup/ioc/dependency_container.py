@@ -18,8 +18,8 @@ from .types import (
     AnnotatedParameter,
     AnyCallable,
     AutowireTarget,
-    EmptyContainerInjectionRequest,
     ContainerProxyQualifierValue,
+    EmptyContainerInjectionRequest,
     ParameterWrapper,
     ServiceLifetime,
 )

@@ -5,9 +5,9 @@ from enum import Enum
 from typing import Any
 
 from wireup.ioc.types import (
-    EmptyContainerInjectionRequest,
     ContainerProxyQualifier,
     ContainerProxyQualifierValue,
+    EmptyContainerInjectionRequest,
     ParameterWrapper,
     TemplatedString,
 )
