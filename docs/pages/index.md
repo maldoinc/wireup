@@ -15,7 +15,7 @@ Fully featured dependency injection library with a focus on developer experience
     <div class="card">
         <div class="card-title">
             <img src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@14.1.2/assets/72x72/2699.png" /> 
-            Zero-Configuration
+            Auto-configuration
         </div>
         Automatically inject dependencies based on their types without additional configuration.
     </div>
