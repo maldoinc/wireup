@@ -51,7 +51,7 @@ markdown_extensions:
   - pymdownx.superfences
   - def_list
   - pymdownx.emoji:
-        emoji_index: !!python/name:materialx.emoji.twemoji
+        emoji_index: !!python/name:material.extensions.emoji.twemoji
 plugins:
   - mike
   - search
