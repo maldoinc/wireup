@@ -1,13 +1,9 @@
-Services refer to standalone classes that performs specific tasks or functions. 
-Contrary to static utility classes or methods services handle dynamic and stateful operations.
-
-Examples refer to the default container provided by the library in `wireup.container` but any other instance can be
-used in its place. The process is meant to be simple and the short [Quickstart](quickstart.md) page shows by example and
-already contains all the key concepts you need to know about.
+Use service objects to implement functionality in your application. Services can depend on configuration
+or other services.
 
 ## Registration
-Declaration and usage of services is designed to be as simple as possible. They may live anywhere in the application
-but must be registered with the container.
+Wireup does not enforce a structure, services may live anywhere in the application but must be registered 
+with the container.
 
 To register a class as a service the following options are available.
 
@@ -22,12 +18,16 @@ needs to generate a fresh instance every time it is injected it needs to be regi
 set to `TRANSIENT`.
 
 ## Injection
-The container will perform autowiring based on the type hints given. No manual configuration is needed to inject
-services.
+The container will perform autowiring based on the type hints given. Most of the time no manual configuration 
+is needed to inject services. 
+
+!!! tip
+    Refer to the documentation regarding [Annotations](annotations.md) for the exact details on when you need
+    to explicitly annotate your dependencies.
 
 ### Autowiring
 To perform autowiring the method to be autowired must be decorated with `@container.autowire`. Given the nature of
-Python decorators it is also possible to simply call it as a regular function which will return a callable with
-arguments the containers knows about already bound.
+Python decorators it is also possible to simply call it as a regular function which will return a callable where
+the container will perform dependency injection when called.
 
 

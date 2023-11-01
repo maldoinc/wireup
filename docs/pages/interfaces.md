@@ -20,12 +20,12 @@ class Engine(abc.ABC):
 @container.register
 class CombustionEngine(Engine):
     @override
-    def go_brr(self) -> EngineType:
+    def get_type(self) -> EngineType:
         return EngineType.COMBUSTION
 
 
 @container.autowire
-def do_engine_things(engine: Engine):
+def target(engine: Engine):
     engine_type = engine.get_type() # Returns EngineType.COMBUSTION
     ...
 ```
@@ -38,14 +38,16 @@ associated with a qualifier.
 ```python
 @container.register(qualifier="electric")
 class ElectricEngine(Engine):
-    def do_thing(self):
+    @override
+    def get_type(self):
         return EngineType.ELECTRIC
 
 
 @container.register(qualifier="combustion")
 class CombustionEngine(Engine):
-    def do_thing(self):
-        return "I'm a Combustion Engine"
+    @override
+    def get_type(self) -> EngineType:
+        return EngineType.COMBUSTION
 ```
 
 When injecting an interface with multiple implementing dependencies, you need to specify a qualifier to indicate 
