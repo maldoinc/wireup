@@ -25,6 +25,7 @@ repo_url: https://github.com/maldoinc/wireup
 repo_name: maldoinc/wireup
 theme:
   name: material
+  custom_dir: overrides
   features:
     - search.highlight
     - navigation.sections
