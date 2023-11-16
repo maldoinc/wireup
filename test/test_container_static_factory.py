@@ -1,13 +1,12 @@
-from dataclasses import dataclass
-from unittest import TestCase
-
 from test.fixtures import Counter, FooBar, FooBase
 from test.services.random_service import RandomService
-from wireup import DependencyContainer, ParameterBag, wire, ServiceLifetime
+from unittest import TestCase
+
+from wireup import DependencyContainer, ParameterBag, ServiceLifetime, wire
 from wireup.errors import (
-    FactoryReturnTypeIsEmptyError,
-    FactoryDuplicateServiceRegistrationError,
     DuplicateServiceRegistrationError,
+    FactoryDuplicateServiceRegistrationError,
+    FactoryReturnTypeIsEmptyError,
 )
 
 

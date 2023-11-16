@@ -1,19 +1,12 @@
 import inspect
 import unittest
-from typing import Union, Dict, List, Tuple
+from typing import Dict, List, Tuple, Union
 
 from typing_extensions import Annotated
-
-from test import services
-from test.services.baz_service import BazService
-from test.services.db_service import DbService
-from test.services.foo_service import FooService
-from test.services.random_service import RandomService
-from test.services.truly_random_service import TrulyRandomService
 from wireup.ioc.types import AnnotatedParameter
 from wireup.ioc.util import (
-    parameter_get_type_and_annotation,
     is_type_autowireable,
+    parameter_get_type_and_annotation,
 )
 
 

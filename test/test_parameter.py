@@ -1,8 +1,8 @@
 import unittest
 
 from wireup.errors import UnknownParameterError
-from wireup.ioc.types import ParameterWrapper
 from wireup.ioc.parameter import ParameterBag, TemplatedString
+from wireup.ioc.types import ParameterWrapper
 
 
 class TestParameterBag(unittest.TestCase):

@@ -1,6 +1,6 @@
 from unittest import TestCase
 
-from wireup import ParameterEnum, ParameterBag, DependencyContainer
+from wireup import DependencyContainer, ParameterBag, ParameterEnum
 from wireup.ioc.types import ParameterWrapper
 
 

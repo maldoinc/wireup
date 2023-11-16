@@ -1,16 +1,15 @@
 import unittest
+from test.services.random_service import RandomService
 
 from typing_extensions import Annotated
-
-from test.services.random_service import RandomService
 from wireup import ServiceLifetime, Wire
 from wireup.errors import (
     DuplicateServiceRegistrationError,
-    FactoryReturnTypeIsEmptyError,
     FactoryDuplicateServiceRegistrationError,
+    FactoryReturnTypeIsEmptyError,
 )
-from wireup.ioc.types import ParameterWrapper, AnnotatedParameter
 from wireup.ioc.service_registry import _ServiceRegistry
+from wireup.ioc.types import AnnotatedParameter, ParameterWrapper
 
 
 class TestServiceRegistry(unittest.TestCase):

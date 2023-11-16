@@ -1,24 +1,24 @@
 import datetime
 import unittest
 from dataclasses import dataclass
-from typing_extensions import Annotated
-from unittest.mock import Mock, patch
-
 from test import services
 from test.fixtures import Counter, FooBar, FooBase, FooBaz
 from test.services.random_service import RandomService
 from test.services.truly_random_service import TrulyRandomService
-from wireup import Wire, wire, ServiceLifetime, register_all_in_module
+from unittest.mock import Mock, patch
+
+from typing_extensions import Annotated
+from wireup import ServiceLifetime, Wire, register_all_in_module, wire
 from wireup.errors import (
+    DuplicateQualifierForInterfaceError,
     DuplicateServiceRegistrationError,
     UnknownQualifiedServiceRequestedError,
-    UsageOfQualifierOnUnknownObjectError,
     UnknownServiceRequestedError,
-    DuplicateQualifierForInterfaceError,
+    UsageOfQualifierOnUnknownObjectError,
 )
-from wireup.ioc.types import ParameterWrapper, AnnotatedParameter
 from wireup.ioc.dependency_container import ContainerProxy, DependencyContainer
 from wireup.ioc.parameter import ParameterBag, TemplatedString
+from wireup.ioc.types import AnnotatedParameter, ParameterWrapper
 
 
 class TestContainer(unittest.IsolatedAsyncioTestCase):

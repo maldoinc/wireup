@@ -1,6 +1,6 @@
 import unittest
-
 from test.services.db_service import DbService
+
 from wireup.ioc.initialization_context import InitializationContext
 from wireup.ioc.types import AnnotatedParameter
 

@@ -3,8 +3,7 @@ import unittest
 from dataclasses import dataclass
 
 from typing_extensions import Annotated
-
-from wireup import ParameterBag, DependencyContainer, Wire
+from wireup import DependencyContainer, ParameterBag, Wire
 
 
 @dataclass(frozen=True)
