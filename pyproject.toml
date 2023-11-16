@@ -48,8 +48,7 @@ python = "^3.8"
 graphlib2 = "^0.4.7"
 
 [tool.poetry.group.dev.dependencies]
-black = "^23.7.0"
-ruff = "^0.0.284"
+ruff = "0.1.*"
 setuptools = "^68.0.0"
 mkdocs = "^1.5.2"
 mkdocs-material = "^9.2.8"
@@ -58,9 +57,6 @@ mkdocs-open-in-new-tab = "^1.0.2"
 mike = "^1.1.2"
 typing-extensions = "^4.7.1"
 mypy = "^1.5.1"
-
-[tool.black]
-line-length = 120
 
 [tool.ruff]
 target-version = "py38"
@@ -79,6 +75,10 @@ ignore = [
     "D203", # Ignore "one blank line before class". Using "no blank lines before class rule".
     "D213", # Disable "Summary must go into next line"
     "D107", # Disable required docs for __init. Can be redundant if class also has them.
+
+    # Disable as they may cause conflicts with ruff formatter
+    "COM812",
+    "ISC001"
 ]
 
 [build-system]
