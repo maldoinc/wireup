@@ -13,12 +13,10 @@ if TYPE_CHECKING:
 
 def _is_view_using_container(dependency_container: DependencyContainer, view: Callable[..., Any]) -> bool:
     if hasattr(view, "__annotations__"):
-        container_deps = dependency_container.context.dependencies
-
         for dep in set(view.__annotations__.values()):
             is_requesting_injection = hasattr(dep, "__metadata__") and isinstance(dep.__metadata__[0], InjectableType)
 
-            if is_requesting_injection or dep in container_deps:
+            if is_requesting_injection or dependency_container.is_type_known(dep):
                 return True
 
     return False

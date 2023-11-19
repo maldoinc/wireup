@@ -301,6 +301,10 @@ class DependencyContainer:
         # which will result in the value of the parameter being ContainerProxyQualifier.
         raise UnknownQualifiedServiceRequestedError(klass, qualifier, set(concrete_classes.keys()))
 
+    def is_type_known(self, klass: type) -> bool:
+        """Given a class type return True if's registered in the container as a service or interface."""
+        return self.__service_registry.is_impl_known(klass) or self.__service_registry.is_interface_known(klass)
+
     def __assert_dependency_exists(self, klass: type, qualifier: ContainerProxyQualifierValue) -> None:
         """Assert that there exists an impl with that qualifier or an interface with an impl and the same qualifier."""
         if not self.__service_registry.is_type_with_qualifier_known(klass, qualifier):

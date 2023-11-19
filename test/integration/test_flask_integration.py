@@ -1,4 +1,6 @@
 import unittest
+
+from test.fixtures import FooBase, FooBar
 from test.services.random_service import RandomService
 
 from flask import Flask
@@ -59,3 +61,16 @@ class TestFlaskIntegration(unittest.TestCase):
 
         self.assertEqual(False, self.container.params.get("flask.DEBUG"))
         self.assertEqual(True, self.container.params.get("flask.TESTING"))
+
+    def test_autowires_view_with_interface(self):
+        @self.app.get("/intf")
+        def target(foo: FooBase):
+            return foo.foo
+
+        self.container.abstract(FooBase)
+        self.container.register(FooBar)
+        wireup_init_flask_integration(self.app, dependency_container=self.container, service_modules=[])
+
+        res = self.client.get("/intf")
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual(res.text, "bar")
