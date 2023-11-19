@@ -57,6 +57,7 @@ mkdocs-open-in-new-tab = "^1.0.2"
 mike = "^1.1.2"
 typing-extensions = "^4.7.1"
 mypy = "^1.5.1"
+flask = "^3.0.0"
 
 [tool.ruff]
 target-version = "py38"

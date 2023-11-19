@@ -9,6 +9,13 @@
 
 Dependency injection container with a focus on developer experience, type safety and ease of use.
 
+> [!TIP]
+>    Simplify usage in Flask applications by using the new 
+[Flask integration](https://maldoinc.github.io/wireup/latest/flask_integration/)!
+>
+>    * Automatically inject dependencies without having to manually call autowire.
+>    * Expose flask application configuration in the container.
+
 ---
 ## Quickstart guide
 

@@ -12,6 +12,7 @@ nav:
       - Manual configuration: manual_configuration.md
       - Multiple containers: multiple_containers.md
   - Misc:
+    - Flask Integration: flask_integration.md
     - Introduce to an existing project: introduce_to_an_existing_project.md
     - Demo application: demo_app.md
     - Versioning: versioning.md
@@ -21,6 +22,7 @@ nav:
       - ParameterBag: class/parameter_bag.md
       - ParameterEnum: class/parameter_enum.md
       - InitializationContext: class/initialization_context.md
+      - flask_integration: class/flask_integration.md
 repo_url: https://github.com/maldoinc/wireup
 repo_name: maldoinc/wireup
 theme:

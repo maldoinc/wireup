@@ -2,6 +2,12 @@
 
 Dependency injection container with a focus on developer experience, type safety and ease of use.
 
+!!! note "New: Dependency injection for Flask"
+    Simplify usage in Flask applications by using the new [Flask integration](flask_integration.md)!
+
+    * Automatically inject dependencies on views without having to manually call autowire.
+    * Expose flask application configuration in the container.
+
 ## Key features
 
 <div class="card-container">
