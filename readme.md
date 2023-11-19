@@ -1,23 +1,33 @@
-# WireUp
+<div align="center">
+<h1>Wireup</h1>
+<p>Dependency Injection Container with a focus on developer experience, type safety and ease of use.</p>
 
-[![GitHub](https://img.shields.io/github/license/maldoinc/wireup?style=for-the-badge)](https://github.com/maldoinc/wireup)
-[![GitHub Workflow Status (with event)](https://img.shields.io/github/actions/workflow/status/maldoinc/wireup/run_all.yml?style=for-the-badge)](https://github.com/maldoinc/wireup)
-[![Code Climate maintainability](https://img.shields.io/codeclimate/maintainability/maldoinc/wireup?style=for-the-badge&label=Code+Climate)](https://codeclimate.com/github/maldoinc/wireup)
-[![PyPI - Python Version](https://img.shields.io/pypi/pyversions/wireup?style=for-the-badge)](https://pypi.org/project/wireup/)
-[![PyPI - Version](https://img.shields.io/pypi/v/wireup?style=for-the-badge)](https://pypi.org/project/wireup/)
-
-
-Dependency injection container with a focus on developer experience, type safety and ease of use.
+[![GitHub](https://img.shields.io/github/license/maldoinc/wireup)](https://github.com/maldoinc/wireup)
+[![GitHub Workflow Status (with event)](https://img.shields.io/github/actions/workflow/status/maldoinc/wireup/run_all.yml)](https://github.com/maldoinc/wireup)
+[![Code Climate maintainability](https://img.shields.io/codeclimate/maintainability/maldoinc/wireup?label=Code+Climate)](https://codeclimate.com/github/maldoinc/wireup)
+[![PyPI - Python Version](https://img.shields.io/pypi/pyversions/wireup)](https://pypi.org/project/wireup/)
+[![PyPI - Version](https://img.shields.io/pypi/v/wireup)](https://pypi.org/project/wireup/)
+</div>
 
 > [!TIP]
->    Simplify usage in Flask applications by using the new 
+>    Simplify Dependency injection for Flask using the new
 [Flask integration](https://maldoinc.github.io/wireup/latest/flask_integration/)!
 >
 >    * Automatically inject dependencies without having to manually call autowire.
 >    * Expose flask application configuration in the container.
 
 ---
-## Quickstart guide
+
+## ⚡ Key Features
+* Inject Services and Configuration
+* Interfaces / Abstract classes
+* Multiple Containers 
+* Static factories
+* Singleton/Transient dependencies
+* Framework Agnostic
+* Flask Integration provided
+
+## 📋 Quickstart
 
 Example showing a Database service, a repository and a web view which uses the repository to fetch all posts 
 from a fictional blog db.
@@ -57,15 +67,11 @@ class PostRepository:
 @app.get("/posts")
 @container.autowire 
 # Decorate all targets where the library must perform injection, such as views in an Api.
-# Services are automatically injected based on annotated type. 
+# Services are automatically injected based on annotated type.
+# Optional for views when using flask integration.
 def get_posts(post_repository: PostRepository):
     return post_repository.find_all()
 ```
-
-**3. Ready**
-
-That was it. No, really!
-
 
 **Installation**
 
@@ -77,10 +83,10 @@ poetry add wireup
 pip install wireup
 ```
 
-## Documentation
+## 📑 Documentation
 
 For more information [check out the documentation](https://maldoinc.github.io/wireup)
 
-## Demo application
+## 🎮 Demo application
 
 A demo flask application is available at [maldoinc/wireup-demo](https://github.com/maldoinc/wireup-demo)
