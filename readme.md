@@ -37,7 +37,7 @@ from a fictional blog db.
 ```python
 from wireup import container
 
-# Parameters serve as configuration for services. 
+# Optionally wire parameters, they serve as configuration for services. 
 # Think of a database url or environment name.
 container.params.update(existing_dict_config)
 
