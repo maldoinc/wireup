@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import functools
-from typing import TYPE_CHECKING, Any, Callable
+from typing import TYPE_CHECKING, Any, Callable, TypeVar
 
 from graphlib2 import TopologicalSorter
 
@@ -27,6 +27,9 @@ from .types import (
 if TYPE_CHECKING:
     from .initialization_context import InitializationContext
     from .parameter import ParameterBag
+
+
+__T = TypeVar("__T")
 
 
 class DependencyContainer:
@@ -59,7 +62,7 @@ class DependencyContainer:
         self.__initialized_proxies: dict[tuple[type, ContainerProxyQualifierValue], ContainerProxy[Any]] = {}
         self.__params: ParameterBag = parameter_bag
 
-    def get(self, klass: type, qualifier: ContainerProxyQualifierValue = None) -> Any:
+    def get(self, klass: type[__T], qualifier: ContainerProxyQualifierValue = None) -> __T:
         """Get an instance of the requested type.
 
         Use this to locate services by their type but strongly prefer using injection instead.
@@ -70,9 +73,11 @@ class DependencyContainer:
         """
         self.__assert_dependency_exists(klass, qualifier)
 
-        return self.__get_injected_object(klass, qualifier)
+        # We lie a bit to the type checker here for better IDE support.
+        # This can return either T or ContainerProxy[T] which behaves exactly the same but will fail instance checks.
+        return self.__get_injected_object(klass, qualifier)  # type: ignore[return-value]
 
-    def abstract(self, klass: type) -> type:
+    def abstract(self, klass: type[__T]) -> type[__T]:
         """Register a type as an interface.
 
         This type cannot be initialized directly and one of the components implementing this will be injected instead.
