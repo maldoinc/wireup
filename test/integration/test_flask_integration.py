@@ -1,6 +1,5 @@
 import unittest
-
-from test.fixtures import FooBase, FooBar
+from test.fixtures import FooBar, FooBase
 from test.services.random_service import RandomService
 
 from flask import Flask

@@ -19,8 +19,8 @@ class ContainerProxy(Generic[__T]):
         :param instance_supplier: A callable which takes no arguments and returns the object. Will be called to
         retrieve the actual instance when the objects' properties are first being accessed.
         """
-        self.__supplier = instance_supplier
-        self.__proxy_object: __T | None = None
+        super().__setattr__("_ContainerProxy__supplier", instance_supplier)
+        super().__setattr__("_ContainerProxy__proxy_object", None)
 
     def __getattr__(self, name: Any) -> Any:
         """Intercept object property access and forwards them to the proxied object.
@@ -29,7 +29,19 @@ class ContainerProxy(Generic[__T]):
 
         :param name: Attribute name being accessed
         """
-        if not self.__proxy_object:
-            self.__proxy_object = self.__supplier()
+        proxy = getattr(self, "_ContainerProxy__proxy_object")  # noqa: B009
 
-        return getattr(self.__proxy_object, name)
+        if proxy is None:
+            proxy = getattr(self, "_ContainerProxy__supplier")()  # noqa: B009
+            super().__setattr__("_ContainerProxy__proxy_object", proxy)
+        return getattr(proxy, name)
+
+    def __setattr__(self, name: str, value: Any | None) -> None:
+        """Intercept and pass attr writes to the proxied object."""
+        proxy = getattr(self, "_ContainerProxy__proxy_object")  # noqa: B009
+
+        if proxy is None:
+            proxy = getattr(self, "_ContainerProxy__supplier")()  # noqa: B009
+            super().__setattr__("_ContainerProxy__proxy_object", proxy)
+
+        setattr(self.__proxy_object, name, value)
