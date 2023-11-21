@@ -2,7 +2,7 @@ from test.fixtures import Counter, FooBar, FooBase
 from test.services.random_service import RandomService
 from unittest import TestCase
 
-from wireup import DependencyContainer, ParameterBag, ServiceLifetime, wire
+from wireup import DependencyContainer, ParameterBag, ServiceLifetime, warmup_container, wire
 from wireup.errors import (
     DuplicateServiceRegistrationError,
     FactoryDuplicateServiceRegistrationError,
@@ -153,4 +153,30 @@ class TestContainerStaticFactory(TestCase):
         def foo_factory() -> FooBase:
             return FooBar()
 
+        inner()
+
+    def test_factory_does_warmup_wires_real_object(self):
+        @self.container.autowire
+        def inner(foo: FooBar):
+            self.assertIsInstance(foo, FooBar)
+            self.assertEqual(foo.foo, "bar")
+
+        @self.container.register
+        def foo_factory() -> FooBar:
+            return FooBar()
+
+        warmup_container(self.container, service_modules=[])
+        inner()
+
+    def test_factory_does_warmup_wires_real_object_from_factory(self):
+        @self.container.autowire
+        def inner(foo: FooBase):
+            self.assertIsInstance(foo, FooBase)
+            self.assertEqual(foo.foo, "bar")
+
+        @self.container.register
+        def foo_factory() -> FooBase:
+            return FooBar()
+
+        warmup_container(self.container, service_modules=[])
         inner()

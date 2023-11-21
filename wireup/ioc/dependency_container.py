@@ -172,8 +172,7 @@ class DependencyContainer:
         for klass in sorter.static_order():
             for qualifier in self.__service_registry.known_impls[klass]:
                 if (klass, qualifier) not in self.__initialized_objects:
-                    instance = klass(**self.__callable_get_params_to_inject(klass))
-                    self.__initialized_objects[klass, qualifier] = instance
+                    self.__initialized_objects[klass, qualifier] = self.__get(klass, qualifier)
 
     def __callable_get_params_to_inject(self, fn: AnyCallable) -> dict[str, Any]:
         values_from_parameters = {}

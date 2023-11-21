@@ -66,6 +66,7 @@ class _ServiceRegistry:
 
         self.target_init_context(fn, lifetime=lifetime)
         self.factory_functions[return_type] = fn
+        self.known_impls[return_type].add(None)
 
         # The target and its lifetime just needs to be known. No need to check its dependencies
         # as the factory will be the one to create it.
