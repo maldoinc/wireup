@@ -3,8 +3,8 @@ import unittest
 from dataclasses import dataclass
 from test import services
 from test.fixtures import Counter, FooBar, FooBase, FooBaz
-from test.services.random_service import RandomService
-from test.services.truly_random_service import TrulyRandomService
+from test.services.no_annotations.random.random_service import RandomService
+from test.services.no_annotations.random.truly_random_service import TrulyRandomService
 from unittest.mock import Mock, patch
 
 from typing_extensions import Annotated

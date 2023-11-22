@@ -1,6 +1,6 @@
 import unittest
 from test.fixtures import FooBar, FooBase
-from test.services.random_service import RandomService
+from test.services.no_annotations.random.random_service import RandomService
 
 from flask import Flask
 from typing_extensions import Annotated

@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from test.services.db_service import DbService
+from test.services.no_annotations.db_service import DbService
 
 
 @dataclass

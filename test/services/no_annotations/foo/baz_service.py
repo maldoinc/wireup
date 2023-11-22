@@ -1,5 +1,5 @@
-from test.services.db_service import DbService
-from test.services.foo_service import FooService
+from test.services.no_annotations.db_service import DbService
+from test.services.no_annotations.foo.foo_service import FooService
 
 
 class BazService:

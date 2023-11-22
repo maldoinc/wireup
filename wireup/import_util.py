@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import fnmatch
-import importlib
 import pkgutil
 from typing import TYPE_CHECKING, Any, TypeVar
 
@@ -15,12 +14,6 @@ if TYPE_CHECKING:
 __T = TypeVar("__T")
 
 
-def _import_all_in_module(module: ModuleType) -> None:
-    """Recursively load all modules and submodules within a given module."""
-    for _, module_name, _ in pkgutil.walk_packages(module.__path__):
-        importlib.import_module(f"{module.__name__}.{module_name}")
-
-
 def warmup_container(dependency_container: DependencyContainer, service_modules: list[ModuleType]) -> None:
     """Import all modules provided in `service_modules` and initializes all registered singleton services.
 
@@ -28,7 +21,8 @@ def warmup_container(dependency_container: DependencyContainer, service_modules:
         For long-lived processes this should be executed once at startup.
     """
     for module in service_modules:
-        _import_all_in_module(module)
+        for _ in _find_classes_in_module(module):
+            pass
 
     dependency_container.warmup()
 
@@ -55,7 +49,7 @@ def register_all_in_module(container: DependencyContainer, module: ModuleType, p
     Useful when your components reside in one place, and you'd like to avoid having to `@register` each of them.
     Alternatively this can be used if you want to use the library without having to rely on decorators.
 
-    See Also: `self.initialization_context` to wire parameters without having to use a default value.
+    See Also: `DependencyContainer.context` to manually wire dependencies without having to use annotations.
 
     :param container: Dependency container to register services in.
     :param module: The package name to recursively search for classes.

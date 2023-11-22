@@ -1,5 +1,5 @@
 from test.fixtures import Counter, FooBar, FooBase
-from test.services.random_service import RandomService
+from test.services.no_annotations.random.random_service import RandomService
 from unittest import TestCase
 
 from wireup import DependencyContainer, ParameterBag, ServiceLifetime, warmup_container, wire
