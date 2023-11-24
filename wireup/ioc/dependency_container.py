@@ -180,7 +180,7 @@ class DependencyContainer:
                     self.__initialized_objects[klass, qualifier] = self.__get(klass, qualifier)
 
     def __callable_get_params_to_inject(self, fn: AnyCallable) -> dict[str, Any]:
-        values_from_parameters = {}
+        values_from_parameters: dict[str, Any] = {}
         params = self.__service_registry.context.dependencies[fn]
         names_to_remove: set[str] = set()
 
