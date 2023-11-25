@@ -86,3 +86,10 @@ class UsageOfQualifierOnUnknownObjectError(WireupError):
 
     def __init__(self, qualifier_value: ContainerProxyQualifierValue) -> None:
         super().__init__(f"Cannot use qualifier {qualifier_value} on a type that is not managed by the container.")
+
+
+class InvalidRegistrationTypeError(WireupError):
+    """Raised when attempting to call @container.register with an invalid argument."""
+
+    def __init__(self, attempted: Any) -> None:
+        super().__init__(f"Cannot register {attempted} with the container. Allowed types are callables and types")

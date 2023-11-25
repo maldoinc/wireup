@@ -2,11 +2,12 @@ from __future__ import annotations
 
 import asyncio
 import functools
-from typing import TYPE_CHECKING, Any, Callable, TypeVar
+from typing import TYPE_CHECKING, Any, Callable, TypeVar, overload
 
 from graphlib2 import TopologicalSorter
 
 from wireup.errors import (
+    InvalidRegistrationTypeError,
     UnknownQualifiedServiceRequestedError,
     UnknownServiceRequestedError,
     UsageOfQualifierOnUnknownObjectError,
@@ -17,7 +18,6 @@ from .service_registry import _ServiceRegistry
 from .types import (
     AnnotatedParameter,
     AnyCallable,
-    AutowireTarget,
     ContainerProxyQualifierValue,
     EmptyContainerInjectionRequest,
     ParameterWrapper,
@@ -86,36 +86,57 @@ class DependencyContainer:
 
         return klass
 
+    @overload
     def register(
         self,
-        obj: AutowireTarget | None = None,
+        obj: None = None,
         *,
-        qualifier: ContainerProxyQualifierValue = None,
+        qualifier: ContainerProxyQualifierValue | None = None,
         lifetime: ServiceLifetime = ServiceLifetime.SINGLETON,
-    ) -> AutowireTarget | Callable[[AutowireTarget], AutowireTarget]:
-        """Register a dependency in the container.
+    ) -> Callable[[__T], __T]:
+        pass
 
-        Use `@register` without parameters on a class or with a single parameter `@register(qualifier=name)`
-        to register this with a given name when there are multiple implementations of the interface this implements.
+    @overload
+    def register(
+        self,
+        obj: __T,
+        *,
+        qualifier: ContainerProxyQualifierValue | None = None,
+        lifetime: ServiceLifetime = ServiceLifetime.SINGLETON,
+    ) -> __T:
+        pass
 
-        Use `@register` on a function to register that function as a factory method which produces an object
-        that matches its return type.
+    def register(
+        self,
+        obj: __T | None = None,
+        *,
+        qualifier: ContainerProxyQualifierValue | None = None,
+        lifetime: ServiceLifetime = ServiceLifetime.SINGLETON,
+    ) -> __T | Callable[[__T], __T]:
+        """Register a dependency in the container. Dependency must be either a class or a factory function.
 
-        The container stores all necessary metadata for this class and the underlying class remains unmodified.
+        * Use as a decorator without parameters @container.register on a factory function or class to register it.
+        * Use as a decorator with parameters to specify qualifier and lifetime, @container.register(qualifier=...).
+        * Call it directly with @container.register(some_class_or_factory, qualifier=..., lifetime=...).
         """
         # Allow register to be used either with or without arguments
         if obj is None:
 
-            def decorated(decorated_obj: AutowireTarget) -> AutowireTarget:
-                self.__register_object(decorated_obj, qualifier, lifetime)
-
+            def decorated(decorated_obj: __T) -> __T:
+                self.register(decorated_obj, qualifier=qualifier, lifetime=lifetime)
                 return decorated_obj
 
             return decorated
 
-        self.__register_object(obj, qualifier, lifetime)
+        if isinstance(obj, type):
+            self.__service_registry.register_service(obj, qualifier, lifetime)
+            return obj
 
-        return obj
+        if callable(obj):
+            self.__service_registry.register_factory(obj, lifetime)
+            return obj
+
+        raise InvalidRegistrationTypeError(obj)
 
     @property
     def context(self) -> InitializationContext:
@@ -126,17 +147,6 @@ class DependencyContainer:
     def params(self) -> ParameterBag:
         """Parameter bag associated with this container."""
         return self.__params
-
-    def __register_object(
-        self,
-        obj: AutowireTarget,
-        qualifier: ContainerProxyQualifierValue,
-        lifetime: ServiceLifetime,
-    ) -> None:
-        if isinstance(obj, type):
-            self.__service_registry.register_service(obj, qualifier, lifetime)
-        else:
-            self.__service_registry.register_factory(obj, lifetime)
 
     def autowire(self, fn: AnyCallable) -> AnyCallable:
         """Automatically inject resources from the container to the decorated methods.

@@ -12,6 +12,7 @@ from wireup import ServiceLifetime, Wire, register_all_in_module, wire
 from wireup.errors import (
     DuplicateQualifierForInterfaceError,
     DuplicateServiceRegistrationError,
+    InvalidRegistrationTypeError,
     UnknownQualifiedServiceRequestedError,
     UnknownServiceRequestedError,
     UsageOfQualifierOnUnknownObjectError,
@@ -499,3 +500,12 @@ class TestContainer(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(self.container.context.dependencies[target].keys(), {"a", "_b", "_c"})
         autowired()
         self.assertEqual(self.container.context.dependencies[target].keys(), {"a"})
+
+    def test_raises_when_injecting_invalid_types(self):
+        with self.assertRaises(InvalidRegistrationTypeError) as err:
+            self.container.register(services)
+
+        self.assertEqual(
+            str(err.exception),
+            f"Cannot register {services} with the container. " f"Allowed types are callables and types",
+        )
