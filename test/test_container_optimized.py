@@ -74,6 +74,49 @@ class TestContainerCompiled(unittest.TestCase):
 
         target()
 
+    def test_compiled_injecting_interface_injects_real_instantiated_impl_object(self):
+        @self.container.register
+        @dataclass
+        class Thing:
+            foo: FooBase
+
+        @self.container.register
+        @dataclass
+        class Thing2:
+            thing: Thing
+
+        self.container.abstract(FooBase)
+        self.container.register(FooBar)
+        self.container.warmup()
+
+        @self.container.autowire
+        def target(thing2: Thing2):
+            self.assertIsInstance(thing2, Thing2)
+            self.assertIsInstance(thing2.thing, Thing)
+            self.assertIsInstance(thing2.thing.foo, FooBar)
+
+            self.assertEqual(thing2.thing.foo.foo, "bar")
+
+        target()
+
+    def test_compiled_injecting_interface_injects_real_instantiated_impl_object_directly(self):
+        self.container.abstract(FooBase)
+        self.container.register(FooBar, qualifier=FooBar)
+        self.container.warmup()
+
+        @self.container.autowire
+        def target(foo: Annotated[FooBase, Wire(qualifier=FooBar)]):
+            self.assertEqual(foo.foo, "bar")
+
+        target()
+
+    def test_compiled_injecting_interface_locates_real_instantiated_impl_object_directly(self):
+        self.container.abstract(FooBase)
+        self.container.register(FooBar)
+        self.container.warmup()
+
+        self.assertIsInstance(self.container.get(FooBase), FooBar)
+
     def test_compiled_works_with_interfaces_and_qualifiers_uses_transient_deps(self):
         base_called = False
         transient_called = False

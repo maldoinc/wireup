@@ -72,6 +72,8 @@ class DependencyContainer:
         :return: An instance of the requested object. Always returns an existing instance when one is available.
         """
         self.__assert_dependency_exists(klass, qualifier)
+        if self.__service_registry.is_interface_known(klass):
+            klass = self.__get_concrete_class_from_interface_and_qualifier(klass, qualifier)
 
         # We lie a bit to the type checker here for better IDE support.
         # This can return either T or ContainerProxy[T] which behaves exactly the same but will fail instance checks.
