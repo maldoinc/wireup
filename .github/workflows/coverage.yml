@@ -1,0 +1,38 @@
+name: Test Coverage
+
+on: [push, pull_request]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.8
+
+      - name: Create venv
+        run: python -m venv .venv
+
+      - name: Install dependencies
+        run: make install
+
+      - name: Run tests
+        run: .venv/bin/coverage run -m unittest discover -s test
+
+      - name: Generate coverage report
+        run: |
+          .venv/bin/coverage xml
+
+      - name: Upload coverage to CodeClimate
+        env:
+          CC_TEST_REPORTER_ID: ${{ secrets.CC_TOKEN }}
+        run: |
+          curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-latest-linux-amd64 > ./cc-test-reporter
+          chmod +x ./cc-test-reporter
+          ./cc-test-reporter format-coverage -t coverage.py coverage.xml
+          ./cc-test-reporter upload-coverage
