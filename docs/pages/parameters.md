@@ -44,6 +44,8 @@ def target(cache_dir: Annotated[str, Wire(param="cache_dir")]) -> None:
 It is possible to interpolate parameters using a special syntax. This will enable you to retrieve several parameters
 at once and concatenate their values together or simply format the value of a single parameter.
 
+**Note:** As the result is a string, any non-string parameters will be converted using `str()`.
+
 ```python
 @container.autowire
 def target(logs_cache_dir: Annotated[str, Wire(expr="${cache_dir}/${env}/logs")]) -> None:

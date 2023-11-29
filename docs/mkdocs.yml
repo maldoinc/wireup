@@ -2,10 +2,11 @@ site_name: WireUp
 nav:
   - Home: index.md
   - Quickstart: quickstart.md
-  - Annotations: annotations.md
-  - Services: services.md
-  - Parameters: parameters.md
-  - Optimizing the container: optimizing_container.md
+  - Basics:
+    - Services: services.md
+    - Parameters: parameters.md
+    - Annotations: annotations.md
+    - Optimizing the container: optimizing_container.md
   - Advanced Topics:
       - Factory functions: factory_functions.md
       - Working with Interfaces: interfaces.md
