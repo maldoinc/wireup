@@ -3,7 +3,7 @@ import unittest
 from typing import Dict, List, Tuple, Union
 
 from typing_extensions import Annotated
-from wireup.ioc.types import AnnotatedParameter
+from wireup.ioc.types import AnnotatedParameter, ContainerProxyQualifier
 from wireup.ioc.util import (
     is_type_autowireable,
     parameter_get_type_and_annotation,
@@ -47,6 +47,12 @@ class TestUtilityFunctions(unittest.TestCase):
         self.assertTrue(is_type_autowireable(object))
         self.assertFalse(is_type_autowireable(None))
         self.assertFalse(is_type_autowireable(Union[str, int, None]))
+
+    def test_annotated_parameter_hash_equality(self):
+        self.assertEqual(
+            hash(AnnotatedParameter(AnnotatedParameter, ContainerProxyQualifier("wow"))),
+            hash(AnnotatedParameter(AnnotatedParameter, ContainerProxyQualifier("wow"))),
+        )
 
 
 class MyCustomClass:
