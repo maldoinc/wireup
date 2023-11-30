@@ -2,9 +2,13 @@ from __future__ import annotations
 
 import asyncio
 import functools
+import sys
 from typing import TYPE_CHECKING, Any, Callable, TypeVar, overload
 
-from graphlib2 import TopologicalSorter
+if sys.version_info[:2] > (3, 8):
+    from graphlib import TopologicalSorter
+else:
+    from graphlib2 import TopologicalSorter
 
 from wireup.errors import (
     InvalidRegistrationTypeError,
