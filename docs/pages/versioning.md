@@ -14,5 +14,5 @@ backward-compatible bug fixes.
 
 
 !!! tip
-    When using a pre-release version, pin the constraint to `^0.x` so that you don't accidentally upgrade to a version
+    When using a pre-release version, pin the constraint to `0.x.*` so that you don't accidentally upgrade to a version
     with breaking changes, but are still able to get bug-fix releases.
