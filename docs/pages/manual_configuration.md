@@ -1,5 +1,5 @@
-WireUp provides convenient decorators and functions for you to use and perform dependency injection.
-If using decorators or functions such as `wire` not appropriate for your application then manual container
+Wireup provides convenient decorators and functions for you to use and perform dependency injection.
+If using decorators or functions such as `wire`/`Wire` not appropriate for your application then manual container
 configuration is also possible.
 
 ## Using wireup without registration decorators
@@ -14,6 +14,10 @@ on each.
 ```python
 wireup.register_all_in_module(app.service, "*Service")
 ```
+
+!!! tip
+    Register services either using `register_all_in_module` or by calling `container.register` on each.
+    Doing so will automatically discover all non-parameter dependencies.
 
 ## Interfaces
 
@@ -34,6 +38,7 @@ To achieve the same outcome without relying on annotations, you can use the cont
 initialization context. This allows you to manually provide data that the library would 
 otherwise gather from the decorators or annotations.
 
+
 ```python
 wireup.register_all_in_module(app.services, "*Service")
 
@@ -52,18 +57,3 @@ container.context.put_param(
 )
 ```
 Configuration can also be stored in JSON or YAML documents that can be read and used to update the container accordingly.
-
-
-## Manually wiring services
-
-The context's `put` method will register a new dependency for a particular service type.
-
-!!! tip
-    Make sure to call `context.init_target` on the class to initialize the registration before calling `put`.
-
-```python
-self.context.init_target(MyService)
-self.context.add_dependency(MyService, "foo", AnnotatedParameter(klass=DbService))
-```
-
-

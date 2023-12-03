@@ -27,7 +27,7 @@ Here, it is possible inject `DbConnectionService` and call `.conn` to get the co
 
 ## Using Factory functions
 
-To handle this more elegantly, WireUp lets you register functions as factories. 
+To handle this more elegantly, Wireup lets you register functions as factories. 
 You can do this by using the `@container.register` decorator or by calling `container.register(fn)` directly.
 
 

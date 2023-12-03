@@ -1,20 +1,21 @@
-WireUp relies on various kind of type annotations or hints to be able to autowire dependencies.
+Wireup relies on various kind of type annotations or hints to be able to autowire dependencies.
 When it is not possible to automatically locate a given dependency the argument must be annotated
 with additional metadata.
 
+!!! note
+    Although using annotations is recommended, they are entirely optional.
+    For more info see: [Manual Configuration](manual_configuration.md).
+
 ## When do you need to provide annotations.
 
-Optional when injecting:
-
-* Services
-* Injecting an interface which has only one implementing service
-
-Required when injecting:
-
-* Parameters
-* Parameter expressions
-* Injecting an interface which has multiple implementing services.
-
+| Injecting                               | Annotations required     | What is required     |
+|-----------------------------------------|--------------------------|----------------------|
+| Services                                | No                       |                      |
+| Interface with only one implementation  | No                       |                      |
+| Interface with multiple implementations | Yes                      | Qualifier            |
+| Parameters                              | Yes                      | Parameter name       |
+| Parameter expressions                   | Yes                      | Parameter expression |
+ 
 ## Annotation types
 
 Wireup supports two types of annotations. Using Python's `Annotated` or by using default values.

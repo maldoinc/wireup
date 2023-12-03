@@ -11,7 +11,7 @@ When decorating with `@register` or `@autowire`, the container doesn't know yet 
 so when it performs autowiring it injects proxy objects. These act and behave the same way as the real ones but there
 is a tiny performance penalty when interacting with them.
 
-During warmup, the container will assume the current dependency set is the final one and will create only real instances
+After warmup, the container will assume the current dependency set is the final one and will create only real instances
 for singleton dependencies that way during autowiring there will be no more proxies.
 
 ## Recommendations
