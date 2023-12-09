@@ -111,3 +111,10 @@ class AnnotatedParameter:
     def __hash__(self) -> int:
         """Hash things."""
         return hash((self.klass, self.annotation, self.qualifier_value, self.is_parameter))
+
+
+@dataclass(frozen=True, eq=True)
+class ServiceOverride:
+    target: type
+    qualifier: ContainerProxyQualifierValue
+    new: Any

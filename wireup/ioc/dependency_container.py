@@ -3,6 +3,7 @@ from __future__ import annotations
 import asyncio
 import functools
 import sys
+from contextlib import contextmanager
 from typing import TYPE_CHECKING, Any, Callable, TypeVar, overload
 
 if sys.version_info[:2] > (3, 8):
@@ -25,7 +26,7 @@ from .types import (
     ContainerProxyQualifierValue,
     EmptyContainerInjectionRequest,
     ParameterWrapper,
-    ServiceLifetime,
+    ServiceLifetime, ServiceOverride,
 )
 
 if TYPE_CHECKING:
@@ -56,6 +57,7 @@ class DependencyContainer:
         "__service_registry",
         "__initialized_objects",
         "__initialized_proxies",
+        "__active_overrides",
         "__params",
     )
 
@@ -64,6 +66,7 @@ class DependencyContainer:
         self.__service_registry: _ServiceRegistry = _ServiceRegistry()
         self.__initialized_objects: dict[tuple[type, ContainerProxyQualifierValue], Any] = {}
         self.__initialized_proxies: dict[tuple[type, ContainerProxyQualifierValue], ContainerProxy[Any]] = {}
+        self.__active_overrides: dict[tuple[type, ContainerProxyQualifierValue]] = {}
         self.__params: ParameterBag = parameter_bag
 
     def get(self, klass: type[__T], qualifier: ContainerProxyQualifierValue = None) -> __T:
@@ -329,3 +332,22 @@ class DependencyContainer:
         """Assert that there exists an impl with that qualifier or an interface with an impl and the same qualifier."""
         if not self.__service_registry.is_type_with_qualifier_known(klass, qualifier):
             raise UnknownServiceRequestedError(klass)
+
+    @contextmanager
+    def override(self, target: type, new: Any, qualifier: ContainerProxyQualifierValue = None) -> None:
+        try:
+            self.__active_overrides[target, qualifier] = new
+            yield
+        finally:
+            del self.__active_overrides[target, qualifier]
+
+    @contextmanager
+    def override_many(self, overrides: list[ServiceOverride]):
+        try:
+            for override in overrides:
+                self.__active_overrides[(override.target, override.qualifier)] = override.new
+            yield
+        finally:
+            for override in overrides:
+                del self.__active_overrides[(override.target, override.qualifier)]
+
