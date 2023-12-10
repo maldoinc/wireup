@@ -26,7 +26,8 @@ from .types import (
     ContainerProxyQualifierValue,
     EmptyContainerInjectionRequest,
     ParameterWrapper,
-    ServiceLifetime, ServiceOverride,
+    ServiceLifetime,
+    ServiceOverride,
 )
 
 if TYPE_CHECKING:
@@ -35,6 +36,7 @@ if TYPE_CHECKING:
 
 
 __T = TypeVar("__T")
+__ObjectIdentifier = tuple[type, ContainerProxyQualifierValue]
 
 
 class DependencyContainer:
@@ -57,6 +59,7 @@ class DependencyContainer:
         "__service_registry",
         "__initialized_objects",
         "__initialized_proxies",
+        "__buildable_types",
         "__active_overrides",
         "__params",
     )
@@ -64,9 +67,10 @@ class DependencyContainer:
     def __init__(self, parameter_bag: ParameterBag) -> None:
         """:param parameter_bag: ParameterBag instance holding parameter information."""
         self.__service_registry: _ServiceRegistry = _ServiceRegistry()
-        self.__initialized_objects: dict[tuple[type, ContainerProxyQualifierValue], Any] = {}
-        self.__initialized_proxies: dict[tuple[type, ContainerProxyQualifierValue], ContainerProxy[Any]] = {}
-        self.__active_overrides: dict[tuple[type, ContainerProxyQualifierValue]] = {}
+        self.__initialized_objects: dict[__ObjectIdentifier, Any] = {}
+        self.__active_overrides: dict[__ObjectIdentifier, Any] = {}
+        self.__initialized_proxies: dict[__ObjectIdentifier, ContainerProxy[Any]] = {}
+        self.__buildable_types: set[type] = set()
         self.__params: ParameterBag = parameter_bag
 
     def get(self, klass: type[__T], qualifier: ContainerProxyQualifierValue = None) -> __T:
@@ -80,11 +84,11 @@ class DependencyContainer:
         """
         self.__assert_dependency_exists(klass, qualifier)
         if self.__service_registry.is_interface_known(klass):
-            klass = self.__get_concrete_class_from_interface_and_qualifier(klass, qualifier)
+            klass = self.__resolve_impl(klass, qualifier)
 
         # We lie a bit to the type checker here for better IDE support.
         # This can return either T or ContainerProxy[T] which behaves exactly the same but will fail instance checks.
-        return self.__get_injected_object(klass, qualifier)  # type: ignore[return-value]
+        return self.__get_instance_or_proxy(klass, qualifier)  # type: ignore[return-value]
 
     def abstract(self, klass: type[__T]) -> type[__T]:
         """Register a type as an interface.
@@ -196,7 +200,7 @@ class DependencyContainer:
         for klass in sorter.static_order():
             for qualifier in self.__service_registry.known_impls[klass]:
                 if (klass, qualifier) not in self.__initialized_objects:
-                    self.__get(klass, qualifier)
+                    self.__create_instance(klass, qualifier)
 
     def __callable_get_params_to_inject(self, fn: AnyCallable) -> dict[str, Any]:
         values_from_parameters: dict[str, Any] = {}
@@ -227,27 +231,24 @@ class DependencyContainer:
 
         return values_from_parameters
 
-    def __get(self, klass: type, qualifier: ContainerProxyQualifierValue) -> Any:
+    def __create_instance(self, klass: type, qualifier: ContainerProxyQualifierValue) -> Any:
         """Create the real instances of dependencies. Additional dependencies they may have will be lazily created."""
         self.__assert_dependency_exists(klass, qualifier)
 
-        if self.__service_registry.is_interface_known(klass) and (
-            concrete_class := self.__get_concrete_class_from_interface_and_qualifier(klass, qualifier)
-        ):
-            class_to_initialize = concrete_class
-        else:
-            class_to_initialize = klass
+        if self.__service_registry.is_interface_known(klass):
+            klass = self.__resolve_impl(klass, qualifier)
 
-        if self.__service_registry.is_impl_known_from_factory(class_to_initialize):
-            fn = self.__service_registry.factory_functions[class_to_initialize]
+        if self.__service_registry.is_impl_known_from_factory(klass):
+            fn = self.__service_registry.factory_functions[klass]
             instance = fn(**self.__callable_get_params_to_inject(fn))
         else:
-            args = self.__callable_get_params_to_inject(class_to_initialize)
-            instance = class_to_initialize(**args)
+            args = self.__callable_get_params_to_inject(klass)
+            instance = klass(**args)
 
         if self.__service_registry.is_impl_singleton(klass):
-            self.__initialized_objects[class_to_initialize, qualifier] = instance
+            self.__initialized_objects[klass, qualifier] = instance
 
+        self.__buildable_types.add(klass)
         return instance
 
     def __initialize_container_proxy_object_from_parameter(self, annotated_parameter: AnnotatedParameter) -> Any:
@@ -256,13 +257,13 @@ class DependencyContainer:
 
         if self.__service_registry.is_impl_known_from_factory(annotated_type):
             # Objects generated from factories do not have qualifiers
-            return self.__get_injected_object(annotated_type, None)
+            return self.__get_instance_or_proxy(annotated_type, None)
 
         qualifier_value = annotated_parameter.qualifier_value
 
         if self.__service_registry.is_interface_known(annotated_type):
-            concrete_class = self.__get_concrete_class_from_interface_and_qualifier(annotated_type, qualifier_value)
-            return self.__get_injected_object(concrete_class, qualifier_value)
+            concrete_class = self.__resolve_impl(annotated_type, qualifier_value)
+            return self.__get_instance_or_proxy(concrete_class, qualifier_value)
 
         if self.__service_registry.is_impl_known(annotated_type):
             if not self.__service_registry.is_impl_with_qualifier_known(annotated_type, qualifier_value):
@@ -271,7 +272,7 @@ class DependencyContainer:
                     qualifier_value,
                     self.__service_registry.known_impls[annotated_type],
                 )
-            return self.__get_injected_object(annotated_type, qualifier_value)
+            return self.__get_instance_or_proxy(annotated_type, qualifier_value)
 
         # Normally the container won't throw if it encounters a type it doesn't know about
         # But if it's explicitly marked as to be injected then we need to throw.
@@ -287,10 +288,8 @@ class DependencyContainer:
 
         return None
 
-    def __get_injected_object(
-        self,
-        klass: type,
-        qualifier: ContainerProxyQualifierValue,
+    def __get_instance_or_proxy(
+        self, klass: type, qualifier: ContainerProxyQualifierValue
     ) -> ContainerProxy[Any] | Any:
         """Return a container proxy or an instance of the requested singleton class if one has been initialized."""
         obj_id = klass, qualifier
@@ -299,30 +298,30 @@ class DependencyContainer:
         if instance := self.__initialized_objects.get(obj_id):
             return instance
 
+        # If we can already build this object then let's skip the proxies
+        if klass in self.__buildable_types:
+            return self.__create_instance(klass, qualifier)
+
         if not self.__service_registry.is_impl_singleton(klass):
-            return ContainerProxy(lambda: self.__get(klass, qualifier))
+            return ContainerProxy(lambda: self.__create_instance(klass, qualifier))
 
         if proxy := self.__initialized_proxies.get(obj_id):
             return proxy
 
-        proxy = ContainerProxy(lambda: self.__get(klass, qualifier))
+        proxy = ContainerProxy(lambda: self.__create_instance(klass, qualifier))
         self.__initialized_proxies[obj_id] = proxy
 
         return proxy
 
-    def __get_concrete_class_from_interface_and_qualifier(
-        self,
-        klass: type,
-        qualifier: ContainerProxyQualifierValue,
-    ) -> type:
-        concrete_classes = self.__service_registry.known_interfaces.get(klass, {})
+    def __resolve_impl(self, klass: type, qualifier: ContainerProxyQualifierValue) -> type:
+        impls = self.__service_registry.known_interfaces.get(klass, {})
 
-        if qualifier in concrete_classes:
-            return concrete_classes[qualifier]
+        if qualifier in impls:
+            return impls[qualifier]
 
         # We have to raise here otherwise if we have a default hinting the qualifier for an unknown type
         # which will result in the value of the parameter being ContainerProxyQualifier.
-        raise UnknownQualifiedServiceRequestedError(klass, qualifier, set(concrete_classes.keys()))
+        raise UnknownQualifiedServiceRequestedError(klass, qualifier, set(impls.keys()))
 
     def is_type_known(self, klass: type) -> bool:
         """Given a class type return True if's registered in the container as a service or interface."""
@@ -342,7 +341,7 @@ class DependencyContainer:
             del self.__active_overrides[target, qualifier]
 
     @contextmanager
-    def override_many(self, overrides: list[ServiceOverride]):
+    def override_many(self, overrides: list[ServiceOverride]) -> None:
         try:
             for override in overrides:
                 self.__active_overrides[(override.target, override.qualifier)] = override.new
@@ -350,4 +349,3 @@ class DependencyContainer:
         finally:
             for override in overrides:
                 del self.__active_overrides[(override.target, override.qualifier)]
-
