@@ -56,6 +56,7 @@ class DependencyContainer:
         "__service_registry",
         "__initialized_objects",
         "__initialized_proxies",
+        "__buildable_types",
         "__params",
     )
 
@@ -64,6 +65,7 @@ class DependencyContainer:
         self.__service_registry: _ServiceRegistry = _ServiceRegistry()
         self.__initialized_objects: dict[tuple[type, ContainerProxyQualifierValue], Any] = {}
         self.__initialized_proxies: dict[tuple[type, ContainerProxyQualifierValue], ContainerProxy[Any]] = {}
+        self.__buildable_types: set[type] = set()
         self.__params: ParameterBag = parameter_bag
 
     def get(self, klass: type[__T], qualifier: ContainerProxyQualifierValue = None) -> __T:
@@ -241,6 +243,7 @@ class DependencyContainer:
         if self.__service_registry.is_impl_singleton(klass):
             self.__initialized_objects[klass, qualifier] = instance
 
+        self.__buildable_types.add(klass)
         return instance
 
     def __initialize_container_proxy_object_from_parameter(self, annotated_parameter: AnnotatedParameter) -> Any:
@@ -289,6 +292,10 @@ class DependencyContainer:
         # If there's an existing instance return that directly without having to proxy it
         if instance := self.__initialized_objects.get(obj_id):
             return instance
+
+        # If we can already build this object then let's skip the proxies
+        if klass in self.__buildable_types:
+            return self.__create_instance(klass, qualifier)
 
         if not self.__service_registry.is_impl_singleton(klass):
             return ContainerProxy(lambda: self.__create_instance(klass, qualifier))

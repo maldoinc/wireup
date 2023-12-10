@@ -509,3 +509,13 @@ class TestContainer(unittest.IsolatedAsyncioTestCase):
             str(err.exception),
             f"Cannot register {services} with the container. " f"Allowed types are callables and types",
         )
+
+    def test_returns_real_instances_on_second_build(self):
+        class Foo:
+            def bar(self):
+                pass
+
+        self.container.register(Foo, lifetime=ServiceLifetime.TRANSIENT)
+        self.container.get(Foo).bar()
+
+        self.assertIsInstance(self.container.get(Foo), Foo)
