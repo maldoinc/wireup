@@ -41,7 +41,7 @@ def wireup_init_flask_integration(
     The default wireup singleton will be used when this is unset.
     This will be a noop and have no performance penalty for views which do not use the container.
     :param config_prefix: If set to a value all registered configuration will be prefixed with config and be accessible
-    via "prefix.config_name". E.g: app.DEBUG. This is a noop if config_as_params is False.
+    via "prefix.config_name". E.g: app.DEBUG.
     """
     warmup_container(dependency_container, service_modules or [])
 
