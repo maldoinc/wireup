@@ -1,4 +1,6 @@
 import unittest
+from dataclasses import dataclass
+
 from test.fixtures import FooBar, FooBase
 from test.services.no_annotations.random.random_service import RandomService
 
@@ -73,3 +75,19 @@ class TestFlaskIntegration(unittest.TestCase):
         res = self.client.get("/intf")
         self.assertEqual(res.status_code, 200)
         self.assertEqual(res.text, "bar")
+
+    def test_service_depends_on_flask_params(self):
+        @self.container.register
+        @dataclass
+        class Foo:
+            is_test: Annotated[bool, Wire(param="TESTING")]
+
+        @self.app.get("/")
+        def get_environment(foo: Foo):
+            return {"test": foo.is_test}
+
+        wireup_init_flask_integration(self.app, dependency_container=self.container, service_modules=[])
+        res = self.client.get("/")
+
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual(res.json, {"test": True})

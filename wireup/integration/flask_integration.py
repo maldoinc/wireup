@@ -43,15 +43,14 @@ def wireup_init_flask_integration(
     :param config_prefix: If set to a value all registered configuration will be prefixed with config and be accessible
     via "prefix.config_name". E.g: app.DEBUG.
     """
+    config: dict[str, Any] = flask_app.config
+    if config_prefix:
+        config = {f"{config_prefix}.{name}": val for name, val in config.items()}
+
+    dependency_container.params.update(config)
     warmup_container(dependency_container, service_modules or [])
 
     flask_app.view_functions = {
         name: dependency_container.autowire(view) if _is_view_using_container(dependency_container, view) else view
         for name, view in flask_app.view_functions.items()
     }
-
-    config: dict[str, Any] = flask_app.config
-    if config_prefix:
-        config = {f"{config_prefix}.{name}": val for name, val in config.items()}
-
-    dependency_container.params.update(config)
