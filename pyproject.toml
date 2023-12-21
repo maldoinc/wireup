@@ -60,6 +60,8 @@ typing-extensions = "^4.7.1"
 mypy = "^1.5.1"
 flask = "^3.0.0"
 coverage = "^7.3.2"
+fastapi = "^0.105.0"
+httpx = "^0.26.0"
 
 [tool.ruff]
 target-version = "py38"
