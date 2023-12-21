@@ -174,13 +174,13 @@ class DependencyContainer:
 
             @functools.wraps(fn)
             async def async_inner(*args: Any, **kwargs: Any) -> Any:
-                return await fn(*args, **kwargs, **self.__callable_get_params_to_inject(fn))
+                return await fn(*args, **{**kwargs, **self.__callable_get_params_to_inject(fn)})
 
             return async_inner
 
         @functools.wraps(fn)
         def sync_inner(*args: Any, **kwargs: Any) -> Any:
-            return fn(*args, **kwargs, **self.__callable_get_params_to_inject(fn))
+            return fn(*args, **{**kwargs, **self.__callable_get_params_to_inject(fn)})
 
         return sync_inner
 
