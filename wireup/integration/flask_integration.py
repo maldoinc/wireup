@@ -1,25 +1,14 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Callable
+from typing import TYPE_CHECKING, Any
 
 from wireup import DependencyContainer, container, warmup_container
-from wireup.ioc.types import InjectableType
+from wireup.integration.util import is_view_using_container
 
 if TYPE_CHECKING:
     from types import ModuleType
 
     from flask import Flask
-
-
-def _is_view_using_container(dependency_container: DependencyContainer, view: Callable[..., Any]) -> bool:
-    if hasattr(view, "__annotations__"):
-        for dep in set(view.__annotations__.values()):
-            is_requesting_injection = hasattr(dep, "__metadata__") and isinstance(dep.__metadata__[0], InjectableType)
-
-            if is_requesting_injection or dependency_container.is_type_known(dep):
-                return True
-
-    return False
 
 
 def wireup_init_flask_integration(
@@ -51,6 +40,6 @@ def wireup_init_flask_integration(
     warmup_container(dependency_container, service_modules or [])
 
     flask_app.view_functions = {
-        name: dependency_container.autowire(view) if _is_view_using_container(dependency_container, view) else view
+        name: dependency_container.autowire(view) if is_view_using_container(dependency_container, view) else view
         for name, view in flask_app.view_functions.items()
     }
