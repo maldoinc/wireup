@@ -519,3 +519,17 @@ class TestContainer(unittest.IsolatedAsyncioTestCase):
         self.container.get(Foo).bar()
 
         self.assertIsInstance(self.container.get(Foo), Foo)
+
+    async def test_container_overrides_already_passed_keyword_args(self):
+        self.container.params.put("foo", "Foo")
+
+        @self.container.autowire
+        def sync_inner(name: Annotated[str, Wire(param="foo")]):
+            self.assertEqual(name, "Foo")
+
+        @self.container.autowire
+        async def async_inner(name: Annotated[str, Wire(param="foo")]):
+            self.assertEqual(name, "Foo")
+
+        sync_inner(name="Ignored")
+        await async_inner(name="Ignored")

@@ -1,4 +1,4 @@
-.PHONY: install lint check-fmt check-ruff check-mypy test profile fix format
+.PHONY: install lint check-fmt check-ruff check-mypy test profile fix format docs-deploy
 
 ifdef GITHUB_ACTIONS
 RUFF_ARGS := --output-format github
@@ -31,3 +31,7 @@ format:
 
 fix:
 	./.venv/bin/ruff wireup --fix
+
+# make docs-deploy version=...
+docs-deploy $(version):
+	cd docs && ../.venv/bin/mike deploy --update-aliases $(version) latest

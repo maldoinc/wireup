@@ -4,7 +4,7 @@ import typing
 from inspect import Parameter
 from typing import Any
 
-from wireup.ioc.types import AnnotatedParameter, InjectableType
+from wireup.ioc.types import AnnotatedParameter, EmptyContainerInjectionRequest, InjectableType
 
 
 def parameter_get_type_and_annotation(parameter: Parameter) -> AnnotatedParameter:
@@ -12,10 +12,23 @@ def parameter_get_type_and_annotation(parameter: Parameter) -> AnnotatedParamete
 
     Returns either the first annotation for an Annotated type or the default value.
     """
+
+    def map_to_injectable_type(metadata: Any) -> InjectableType | None:
+        if isinstance(metadata, InjectableType):
+            return metadata
+
+        if (
+            str(metadata.__class__) == "<class 'fastapi.params.Depends'>"
+            and metadata.dependency == EmptyContainerInjectionRequest
+        ):
+            return EmptyContainerInjectionRequest()
+
+        return None
+
     if hasattr(parameter.annotation, "__metadata__") and hasattr(parameter.annotation, "__args__"):
         klass = parameter.annotation.__args__[0]
         annotation = next(
-            (ann for ann in parameter.annotation.__metadata__ if isinstance(ann, InjectableType)),
+            (map_to_injectable_type(ann) for ann in parameter.annotation.__metadata__ if map_to_injectable_type(ann)),
             None,
         )
     else:
