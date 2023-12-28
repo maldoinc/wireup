@@ -3,10 +3,10 @@
 Dependency injection container with a focus on developer experience, type safety and ease of use.
 
 !!! note "New: Dependency injection for Flask"
-    Simplify usage in Flask applications by using the new [Flask integration](flask_integration.md)!
+    Simplify usage in Flask applications by using the new [Flask integration](integrations/flask)!
 
     * Automatically inject dependencies on views without having to manually decorate.
-    * Expose flask application configuration in the container.
+    * Expose Flask application configuration in the container.
 
 ## Key features
 
@@ -39,7 +39,6 @@ Dependency injection container with a focus on developer experience, type safety
             Interfaces / Abstract classes
         </div>
         Define abstract types and have the container automatically inject the implementation.
-        Say goodbye to mocks in your tests!
     </div>
     <div class="card">
         <div class="card-title">
