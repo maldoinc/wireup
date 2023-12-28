@@ -38,9 +38,9 @@ if __name__ == '__main__':
 ### Using parameter enums
 
 Parameter enums offer a typed way of representing parameters. 
-See [Parameter Enum documentation for more details](parameters.md#parameter-enums)
+See [Parameter Enum documentation for more details](../parameters.md#parameter-enums)
 
 ## Api Reference
 
-* [flask_integration](class/flask_integration.md)
-* [ParameterEnum](class/parameter_enum.md)
+* [flask_integration](../class/flask_integration.md)
+* [ParameterEnum](../class/parameter_enum.md)
