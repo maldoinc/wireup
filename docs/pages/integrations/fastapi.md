@@ -27,7 +27,7 @@ app = FastAPI()
 
 @app.get("/random")
 async def target(
-    # Wire annotation tells wireup that this argument should be injected
+    # Wire annotation tells wireup that this argument should be injected.
     random_service: Annotated[RandomService, Wire()],
     is_debug: Annotated[bool, Wire(param="env.debug")],
 
