@@ -39,4 +39,4 @@ def wireup_init_fastapi_integration(
             and route.dependant.call
             and is_view_using_container(dependency_container, route.dependant.call)
         ):
-            route.dependant.call = dependency_container.autowire(route.endpoint)
+            route.dependant.call = dependency_container.autowire(route.dependant.call)
