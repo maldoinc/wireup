@@ -17,7 +17,10 @@ def parameter_get_type_and_annotation(parameter: Parameter) -> AnnotatedParamete
         if isinstance(metadata, InjectableType):
             return metadata
 
-        if str(metadata.__class__) == "<class 'fastapi.params.Depends'>":
+        if (
+            str(metadata.__class__) == "<class 'fastapi.params.Depends'>"
+            and metadata.dependency == EmptyContainerInjectionRequest
+        ):
             return EmptyContainerInjectionRequest()
 
         return None
