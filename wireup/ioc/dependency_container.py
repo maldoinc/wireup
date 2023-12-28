@@ -3,8 +3,7 @@ from __future__ import annotations
 import asyncio
 import functools
 import sys
-from contextlib import contextmanager
-from typing import TYPE_CHECKING, Any, Callable, Iterator, Tuple, TypeVar, overload
+from typing import TYPE_CHECKING, Any, Callable, Tuple, TypeVar, overload
 
 from .override_manager import OverrideManager
 
@@ -29,7 +28,6 @@ from .types import (
     EmptyContainerInjectionRequest,
     ParameterWrapper,
     ServiceLifetime,
-    ServiceOverride,
 )
 
 if TYPE_CHECKING:
@@ -212,8 +210,7 @@ class DependencyContainer:
 
     @property
     def override(self) -> OverrideManager:
-        """Override container services.
-        Injection requests to overriden services will instead return the new values while the override is active."""
+        """Override registered container services with new values."""
         return self.__override_manager
 
     def __callable_get_params_to_inject(self, fn: AnyCallable) -> dict[str, Any]:

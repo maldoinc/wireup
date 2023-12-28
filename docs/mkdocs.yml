@@ -23,6 +23,7 @@ nav:
   - API Reference:
       - wireup: class/wireup.md
       - DependencyContainer: class/dependency_container.md
+      - OverrideManager: class/override_manager.md
       - ParameterBag: class/parameter_bag.md
       - ParameterEnum: class/parameter_enum.md
       - InitializationContext: class/initialization_context.md

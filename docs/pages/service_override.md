@@ -6,7 +6,8 @@ This process can be useful in testing autowired targets for which there is no ea
 way to pass a mock object.
 
 The `container.override` property provides access to a number of useful methods
-which will help temporarily overriding dependencies.
+which will help temporarily overriding dependencies 
+(See [override manager](class/override_manager.md)).
 
 
 !!! warning
