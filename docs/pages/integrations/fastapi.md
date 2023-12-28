@@ -16,7 +16,7 @@ Dependency injection for FastAPI (all versions) is available via the first-party
     As FastAPI does not have a fixed configuration mechanism, you need to expose
     any configuration objects to the container using one of the two options: 
 
-    * By dumping all values in the parameter bag
+    * By dumping all values in the parameter bag.
     * Registering the configuration object as a service using a factory function.
 
 ## Examples
@@ -30,6 +30,8 @@ async def target(
     # Wire annotation tells wireup that this argument should be injected
     random_service: Annotated[RandomService, Wire()],
     is_debug: Annotated[bool, Wire(param="env.debug")],
+
+    # This is a regular FastAPI dependency.
     lucky_number: Annotated[int, Depends(get_lucky_number)]
 ):
     return {
