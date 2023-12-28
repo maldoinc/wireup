@@ -44,7 +44,7 @@ def wire(
     try:
         # Allow fastapi users to do .get() without any params
         # It is meant to be used as a default value in where Depends() is expected
-        return importlib.import_module("fastapi").Depends(lambda: None)
+        return importlib.import_module("fastapi").Depends(EmptyContainerInjectionRequest)
     except ModuleNotFoundError:
         return EmptyContainerInjectionRequest()
 
