@@ -30,6 +30,10 @@ class OverrideManager:
         if (target, qualifier) in self.__active_overrides:
             del self.__active_overrides[target, qualifier]
 
+    def clear(self) -> None:
+        """Clear all active service overrides."""
+        self.__active_overrides.clear()
+
     @contextmanager
     def service(self, target: type, new: Any, qualifier: ContainerProxyQualifierValue = None) -> Iterator[None]:
         """Override the target service with new for the duration of the context manager.

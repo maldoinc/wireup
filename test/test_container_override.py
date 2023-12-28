@@ -6,6 +6,7 @@ from unittest.mock import MagicMock, patch
 
 from typing_extensions import Annotated
 from wireup import DependencyContainer, ParameterBag, Wire
+from wireup.ioc.override_manager import OverrideManager
 from wireup.ioc.types import ServiceOverride
 
 
@@ -84,3 +85,13 @@ class TestContainerOverride(unittest.TestCase):
                 self.assertEqual(svc.foo, "mock")
 
                 target()
+
+    def test_clear_services_removes_all(self):
+        overrides = {}
+        mock1 = MagicMock()
+        override_mgr = OverrideManager(overrides)
+        override_mgr.set(RandomService, new=mock1)
+        self.assertEqual(overrides, {(RandomService, None): mock1})
+
+        override_mgr.clear()
+        self.assertEqual(overrides, {})
