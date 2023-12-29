@@ -10,7 +10,7 @@ which will help temporarily overriding dependencies
 (See [override manager](class/override_manager.md)).
 
 
-!!! warning
+!!! info "Good to know"
     * Overriding only applies to subsequent autowire calls.
     * If a singleton service has been initialized, it is not possible to override any
     of its dependencies as the object is already in memory. You may need to override
