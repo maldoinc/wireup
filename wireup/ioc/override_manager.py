@@ -31,7 +31,7 @@ class OverrideManager:
             del self.__active_overrides[target, qualifier]
 
     def clear(self) -> None:
-        """Clear all active service overrides."""
+        """Clear active service overrides."""
         self.__active_overrides.clear()
 
     @contextmanager
@@ -55,7 +55,7 @@ class OverrideManager:
     def services(self, overrides: list[ServiceOverride]) -> Iterator[None]:
         """Override the target service with new for the duration of the context manager.
 
-        Identical behavior to `override` except supports overriding multiple services at a time.
+        Behavior is identical to `override`, except this supports overriding multiple services at a time.
         """
         try:
             for override in overrides:
