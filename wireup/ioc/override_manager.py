@@ -36,7 +36,7 @@ class OverrideManager:
 
     @contextmanager
     def service(self, target: type, new: Any, qualifier: ContainerProxyQualifierValue = None) -> Iterator[None]:
-        """Override the target service with new for the duration of the context manager.
+        """Override the `target` service with `new` for the duration of the context manager.
 
         Subsequent autowire calls to `target` will result in `new` being injected.
 
@@ -53,10 +53,7 @@ class OverrideManager:
 
     @contextmanager
     def services(self, overrides: list[ServiceOverride]) -> Iterator[None]:
-        """Override the target service with new for the duration of the context manager.
-
-        Behavior is identical to `override`, except this supports overriding multiple services at a time.
-        """
+        """Override a number of services with new for the duration of the context manager."""
         try:
             for override in overrides:
                 self.set(override.target, override.new, override.qualifier)

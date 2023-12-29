@@ -11,11 +11,11 @@ which will help temporarily overriding dependencies
 
 
 !!! info "Good to know"
-    * Overriding only applies to subsequent autowire calls.
-    * If a singleton service has been initialized, it is not possible to override any
-    of its dependencies as the object is already in memory. You may need to override
-    the first service directly instead of any transient dependencies.
-    * When using interfaces override the interface rather than any impl.
+    * Overriding only applies to future autowire calls.
+    * If a singleton service A has been initialized, it is not possible to override any
+    of its dependencies as the object is already in memory. You may need to override 
+    Service A directly instead of any transient dependencies.
+    * When using interfaces override the interface rather than any of its implementations.
 
 ## Example
 
