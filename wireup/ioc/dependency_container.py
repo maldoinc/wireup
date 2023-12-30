@@ -3,7 +3,9 @@ from __future__ import annotations
 import asyncio
 import functools
 import sys
-from typing import TYPE_CHECKING, Any, Callable, TypeVar, overload
+from typing import TYPE_CHECKING, Any, Callable, Tuple, TypeVar, overload
+
+from .override_manager import OverrideManager
 
 if sys.version_info[:2] > (3, 8):
     from graphlib import TopologicalSorter
@@ -34,6 +36,7 @@ if TYPE_CHECKING:
 
 
 __T = TypeVar("__T")
+__ObjectIdentifier = Tuple[type, ContainerProxyQualifierValue]
 
 
 class DependencyContainer:
@@ -57,16 +60,20 @@ class DependencyContainer:
         "__initialized_objects",
         "__initialized_proxies",
         "__buildable_types",
+        "__active_overrides",
+        "__override_manager",
         "__params",
     )
 
     def __init__(self, parameter_bag: ParameterBag) -> None:
         """:param parameter_bag: ParameterBag instance holding parameter information."""
         self.__service_registry: _ServiceRegistry = _ServiceRegistry()
-        self.__initialized_objects: dict[tuple[type, ContainerProxyQualifierValue], Any] = {}
-        self.__initialized_proxies: dict[tuple[type, ContainerProxyQualifierValue], ContainerProxy[Any]] = {}
+        self.__initialized_objects: dict[__ObjectIdentifier, Any] = {}
+        self.__active_overrides: dict[__ObjectIdentifier, Any] = {}
+        self.__initialized_proxies: dict[__ObjectIdentifier, ContainerProxy[Any]] = {}
         self.__buildable_types: set[type] = set()
         self.__params: ParameterBag = parameter_bag
+        self.__override_manager: OverrideManager = OverrideManager(self.__active_overrides)
 
     def get(self, klass: type[__T], qualifier: ContainerProxyQualifierValue = None) -> __T:
         """Get an instance of the requested type.
@@ -77,7 +84,11 @@ class DependencyContainer:
         :param klass: Class of the dependency already registered in the container.
         :return: An instance of the requested object. Always returns an existing instance when one is available.
         """
+        if res := self.__active_overrides.get((klass, qualifier)):
+            return res  # type: ignore[no-any-return]
+
         self.__assert_dependency_exists(klass, qualifier)
+
         if self.__service_registry.is_interface_known(klass):
             klass = self.__resolve_impl(klass, qualifier)
 
@@ -197,24 +208,29 @@ class DependencyContainer:
                 if (klass, qualifier) not in self.__initialized_objects:
                     self.__create_instance(klass, qualifier)
 
+    @property
+    def override(self) -> OverrideManager:
+        """Override registered container services with new values."""
+        return self.__override_manager
+
     def __callable_get_params_to_inject(self, fn: AnyCallable) -> dict[str, Any]:
         values_from_parameters: dict[str, Any] = {}
         params = self.__service_registry.context.dependencies[fn]
         names_to_remove: set[str] = set()
 
-        for name, annotated_parameter in params.items():
-            # Check if there's already an instantiated object with this id which can be directly injected
-            obj_id = annotated_parameter.klass, annotated_parameter.qualifier_value
+        for name, param in params.items():
+            # This block is particularly crucial for performance and has to be written to be as fast as possible.
 
-            if obj := self.__initialized_objects.get(obj_id):  # type: ignore[arg-type]
+            # Check if there's already an instantiated object with this id which can be directly injected
+            obj_id = param.klass, param.qualifier_value
+
+            if param.klass and (obj := self.__active_overrides.get(obj_id, self.__initialized_objects.get(obj_id))):  # type: ignore[arg-type]
                 values_from_parameters[name] = obj
             # Dealing with parameter, return the value as we cannot proxy int str etc.
             # We don't want to check here for none because as long as it exists in the bag, the value is good.
-            elif isinstance(annotated_parameter.annotation, ParameterWrapper):
-                values_from_parameters[name] = self.params.get(annotated_parameter.annotation.param)
-            elif annotated_parameter.klass and (
-                obj := self.__initialize_container_proxy_object_from_parameter(annotated_parameter)
-            ):
+            elif isinstance(param.annotation, ParameterWrapper):
+                values_from_parameters[name] = self.params.get(param.annotation.param)
+            elif param.klass and (obj := self.__initialize_container_proxy_object_from_parameter(param)):
                 values_from_parameters[name] = obj
             else:
                 names_to_remove.add(name)
