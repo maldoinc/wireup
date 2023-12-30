@@ -12,7 +12,7 @@ nav:
       - Working with Interfaces: interfaces.md
       - Manual configuration: manual_configuration.md
       - Multiple containers: multiple_containers.md
-      - Overriding services: service_override.md
+      - Testing: testing.md
   - Integrations:
     - Flask: integrations/flask.md
     - FastAPI: integrations/fastapi.md

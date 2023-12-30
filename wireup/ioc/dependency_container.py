@@ -167,6 +167,18 @@ class DependencyContainer:
         """Parameter bag associated with this container."""
         return self.__params
 
+    def clear_initialized_objects(self) -> None:
+        """Drop references to initialized singleton objects.
+
+        Calling this will cause the container to drop references to initialized singletons
+        and cause it to create new instances when they are requested to be injected.
+
+        This can be useful in tests in a `unittest.TestCase.setUp` method or pytest autouse=True fixture,
+        allowing you to have a fresh copy of the container with no previously intitialized instances
+        to make test cases independent of each-other.
+        """
+        self.__initialized_objects.clear()
+
     def autowire(self, fn: AnyCallable) -> AnyCallable:
         """Automatically inject resources from the container to the decorated methods.
 
