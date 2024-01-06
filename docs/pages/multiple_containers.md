@@ -1,7 +1,7 @@
 As each container has its own state and does not modify the underlying classes, use of multiple containers is possible.
 A few things to keep in mind when using multiple containers.
 
-* The default `wireup.container` is simply an instance just like any other.
+* The default `wireup.container` is an instance just like any other.
 * If a dependency belongs to multiple containers you can use decorators on them, but it is preferable you manage
 register dependencies without the decorators.
 * To wire parameters use initialization context or the `wire` method. The `wire` method is not bound to any single

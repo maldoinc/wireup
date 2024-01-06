@@ -7,7 +7,7 @@ that's marked as abstract within the container.
 The following code registers `Engine` as an interface. This implies that `Engine` can't be directly injected. 
 Instead, a dependency that implements the interface must be present and also be registered in the container.
 
-To autowire interfaces, you can simply register a dependency that **directly inherits** the interface 
+To autowire interfaces, register a dependency that **directly inherits** the interface 
 within the container. When injecting, ask for the interface itself, not any of the implementations.
 
 ```python

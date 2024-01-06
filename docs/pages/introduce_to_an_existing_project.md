@@ -13,7 +13,7 @@ Another case might be an existing service that is already constructed, and you w
 ## Using a Service
 
 A typical way to solve this would involve create a service with a single method 
-that uses existing functionality to get the desired object and simply returns it.
+that uses existing functionality to get the desired object and returns it.
 
 ```python
 # Example of a service acting as a factory

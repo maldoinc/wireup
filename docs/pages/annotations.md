@@ -1,4 +1,4 @@
-Wireup relies on various kind of type annotations or hints to be able to autowire dependencies.
+Autowiring relies on annotations or hints to be able to inject dependencies.
 When it is not possible to automatically locate a given dependency the argument must be annotated
 with additional metadata.
 
@@ -8,13 +8,13 @@ with additional metadata.
 
 ## When do you need to provide annotations.
 
-| Injecting                               | Annotations required     | What is required     |
-|-----------------------------------------|--------------------------|----------------------|
-| Services                                | No                       |                      |
-| Interface with only one implementation  | No                       |                      |
-| Interface with multiple implementations | Yes                      | Qualifier            |
-| Parameters                              | Yes                      | Parameter name       |
-| Parameter expressions                   | Yes                      | Parameter expression |
+| Injecting                               | Annotations required? | What is required     |
+|-----------------------------------------|-----------------------|----------------------|
+| Services                                | No                    |                      |
+| Interface with only one implementation  | No                    |                      |
+| Interface with multiple implementations | Yes                   | Qualifier            |
+| Parameters                              | Yes                   | Parameter name       |
+| Parameter expressions                   | Yes                   | Parameter expression |
  
 ## Annotation types
 

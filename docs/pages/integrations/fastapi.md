@@ -17,7 +17,7 @@ Dependency injection for FastAPI (all versions) is available via the first-party
     any configuration objects to the container using one of the two options: 
 
     * By dumping all values in the parameter bag.
-    * Registering the configuration object as a service using a factory function.
+    * By registering the configuration object as a service using a factory function.
 
 ## Examples
 

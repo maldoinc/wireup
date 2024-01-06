@@ -46,7 +46,7 @@ def _find_classes_in_module(module: ModuleType, pattern: str = "*") -> Generator
 def register_all_in_module(container: DependencyContainer, module: ModuleType, pattern: str = "*") -> None:
     """Register all modules inside a given module.
 
-    Useful when your components reside in one place, and you'd like to avoid having to `@register` each of them.
+    Useful when your services reside in one place, and you'd like to avoid having to `@container.register` each of them.
     Alternatively this can be used if you want to use the library without having to rely on decorators.
 
     See Also: `DependencyContainer.context` to manually wire dependencies without having to use annotations.

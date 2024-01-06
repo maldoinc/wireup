@@ -26,7 +26,7 @@
 * Static factories
 * Singleton/Transient dependencies
 * Framework Agnostic
-* Flask Integration provided
+* Simplified usage in Flask and FastAPI using the first-party integrations.
 
 ## 📋 Quickstart
 
@@ -69,7 +69,7 @@ class PostRepository:
 @container.autowire 
 # Decorate all targets where the library must perform injection, such as views in an Api.
 # Services are automatically injected based on annotated type.
-# Optional for views when using flask integration.
+# Optional for views when using flask or fastapi integration.
 def get_posts(post_repository: PostRepository):
     return post_repository.find_all()
 ```

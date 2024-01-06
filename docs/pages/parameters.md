@@ -1,7 +1,4 @@
-In addition to service objects, the container also holds configuration, called parameters.
-
-Parameters are stored as a flat key-value store. They are able to retrieved at a later time by 
-services when being constructed. They serve as configuration for services. 
+In addition to service objects, the container also holds configuration, called parameters. 
 Think of a database url or environment name.
 
 !!! warning
@@ -31,7 +28,7 @@ annotate the function parameter with the parameter name or expression being inje
 
 ### By name
 
-To inject a parameter by name simply call `Wire(param="param_name")`.
+To inject a parameter by name annotate the type with `Wire(param="param_name")`.
 
 ```python
 @container.autowire
@@ -42,7 +39,7 @@ def target(cache_dir: Annotated[str, Wire(param="cache_dir")]) -> None:
 ### Parameter expressions
 
 It is possible to interpolate parameters using a special syntax. This will enable you to retrieve several parameters
-at once and concatenate their values together or simply format the value of a single parameter.
+at once and concatenate their values together or concatenate the value of a single parameter.
 
 **Note:** As the result is a string, any non-string parameters will be converted using `str()`.
 

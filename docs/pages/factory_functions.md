@@ -1,6 +1,3 @@
-Factory functions allow the container to wire dependencies that require additional logic to create 
-or be able to inject objects it doesn't own.
-
 Typically getting the necessary dependencies is enough to construct an object. However, there are scenarios
 where you need to delegate the creation of an object to a special function called a 
 [factory](https://en.wikipedia.org/wiki/Factory_(object-oriented_programming)){: target=_blank }.
@@ -17,6 +14,7 @@ Such as injecting the same database connection as the rest of the application.
 * Eliminate services which have only one method that returns the same object and instead inject the object directly.
     * Register the result of a service's method as its own service. Instead of calling `db_service.get_db()` every time,
       inject the session directly.
+* Inject a model/dto which represents the result of an action, such as the current authenticated user.
 
 ## Usage
 
@@ -27,11 +25,9 @@ When the container needs to inject a dependency it checks known factories to see
 
 
 !!! info
-    The return type of the function is mandatory to annotate as tells the container what 
+    * The return type of the function is mandatory to annotate as tells the container what 
     type of dependency it can create.
-
-!!! warning
-    Factories can only depend on objects known by the container!
+    * Factories can only depend on objects known by the container!
 
 ## Examples
 
@@ -51,7 +47,7 @@ AuthenticatedUser = NewType("AuthenticatedUser", User)
 
 @container.register(lifetime=ServiceLifetime.TRANSIENT)
 def get_current_user(auth_service: AuthService) -> AuthenticatedUser:
-    return auth_service.get_current_user()
+    return AuthenticatedUser(auth_service.get_current_user())
 
 # Now it is possible to inject the authenticated user directly wherever it is necessary.
 def get_user_logs(user: AuthenticatedUser):

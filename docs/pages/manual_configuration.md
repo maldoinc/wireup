@@ -74,7 +74,7 @@ otherwise gather from the decorators or annotations.
 ```python
 wireup.register_all_in_module(app.services, "*Service")
 
-# Register parameters individually using add_param
+# Register parameters individually using add_dependency
 container.context.add_dependency(
     klass=DbService,
     argument_name="connection_str",

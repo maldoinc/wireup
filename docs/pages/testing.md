@@ -32,10 +32,11 @@ which will help temporarily overriding dependencies
     * It is possible to override any service directly.
     * Once a singleton service has been instantiated, it is not possible to directly replace
     any of its direct or transitive dependencies via overriding as the object is already in memory.
-        * You will need to call `clear_initialized_objects()` and then override the 
+        * You will need to call `container.clear_initialized_objects()` and then override the 
         desired service. This will make the container use the override when the 
         new copy of the service is being built.
-    * When using interfaces, override the interface rather than the implementation that will be injected.
+    * When using interfaces and/or qualifiers, override the interface and/or qualifier rather than the implementation 
+    that will be injected.
 
 ### Examples
     
