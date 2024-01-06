@@ -48,7 +48,7 @@ container.context.add_dependency(
     argument_name="connection_str",
     value=AnnotatedParameter(annotation=ParameterWrapper("connection_str")),
 )
-container.context.put_param(
+container.context.add_dependency(
     klass=DbService,
     argument_name="connection_str",
     value=AnnotatedParameter(
