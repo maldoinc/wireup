@@ -1,8 +1,40 @@
-Wireup provides convenient decorators and functions for you to use and perform dependency injection.
-If using decorators or functions such as `wire`/`Wire` not appropriate for your application then manual container
-configuration is also possible.
+Wireup provides convenient decorators and functions for you to use and configure service objects.
+If using them is not appropriate for the project, or you want to keep service objects free of wireup imports,
+manual configuration is also possible.
 
-## Using wireup without registration decorators
+## Using factory functions
+
+With this method you keep service objects free of any annotations and instead use factory functions to create them.
+The function requests any dependencies necessary to create the service and instantiates it.
+
+```python
+# service/translator.py
+
+@dataclass
+class TranslatorService:
+    default_locale: str
+
+# service/greeter.py
+@dataclass
+class GreeterService:
+    translator: TranslatorService
+
+
+# service/factories.py
+# Factory functions will have to be registered and use annotations as usual.
+@container.register
+def translator_factory(
+    default_locale: Annotated[str, Wire(param="default_locale")],
+) -> TranslatorService:
+    return TranslatorService(default_locale)
+
+
+@container.register
+def greeter_factory(translator: TranslatorService):
+    return GreeterService(translator)
+```
+
+## Using initialization context
 
 In addition to using `@container.register` to register each dependency, automatic registration is also possible by
 using the `wireup.register_all_in_module(module, pattern = "*")` method.
@@ -19,7 +51,7 @@ wireup.register_all_in_module(app.service, "*Service")
     Register services either using `register_all_in_module` or by calling `container.register` on each.
     Doing so will automatically discover all non-parameter dependencies.
 
-## Interfaces
+### Interfaces
 
 Even though It's not possible to automatically register abstract types and implementation using qualifiers. 
 Manual registration is still possible.
@@ -30,7 +62,7 @@ container.register(FooBar, qualifier="bar")
 container.register(FooBaz, qualifier="baz")
 ```
 
-## Manually wiring parameters
+### Manually wiring parameters
 
 Given that parameters can't be resolved from type annotations alone, they must be annotated.
 
