@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "wireup"
-version = "0.6.2"
+version = "0.7.0"
 description = "Python Dependency Injection Library"
 authors = ["Aldo Mateli <aldo.mateli@gmail.com>"]
 license = "MIT"
