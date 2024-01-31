@@ -27,7 +27,7 @@ class _ServiceRegistry:
     def __init__(self) -> None:
         self.known_interfaces: dict[type, dict[ContainerProxyQualifierValue, type]] = {}
         self.known_impls: dict[type, set[ContainerProxyQualifierValue]] = defaultdict(set)
-        self.factory_functions: dict[type, Callable[..., Any]] = {}
+        self.factory_functions: dict[tuple[type, ContainerProxyQualifierValue], Callable[..., Any]] = {}
 
         self.context = InitializationContext()
 
@@ -52,21 +52,23 @@ class _ServiceRegistry:
     def register_abstract(self, klass: type) -> None:
         self.known_interfaces[klass] = defaultdict()
 
-    def register_factory(self, fn: Callable[..., Any], lifetime: ServiceLifetime) -> None:
+    def register_factory(
+        self, fn: Callable[..., Any], lifetime: ServiceLifetime, qualifier: ContainerProxyQualifierValue = None
+    ) -> None:
         return_type = inspect.signature(fn).return_annotation
 
         if return_type is Parameter.empty:
             raise FactoryReturnTypeIsEmptyError
 
-        if self.is_impl_known_from_factory(return_type):
+        if self.is_impl_known_from_factory(return_type, qualifier):
             raise FactoryDuplicateServiceRegistrationError(return_type)
 
-        if self.is_impl_known(return_type):
+        if self.is_type_with_qualifier_known(return_type, qualifier):
             raise DuplicateServiceRegistrationError(return_type, qualifier=None)
 
         self.target_init_context(fn, lifetime=lifetime)
-        self.factory_functions[return_type] = fn
-        self.known_impls[return_type].add(None)
+        self.factory_functions[return_type, qualifier] = fn
+        self.known_impls[return_type].add(qualifier)
 
         # The target and its lifetime just needs to be known. No need to check its dependencies
         # as the factory will be the one to create it.
@@ -97,7 +99,7 @@ class _ServiceRegistry:
         * Objects depending on interfaces will instead depend on all implementations of that interface.
         * Factories are replaced with the thing they produce.
         """
-        factory_to_type = {v: k for k, v in self.factory_functions.items()}
+        factory_to_type = {v: k[0] for k, v in self.factory_functions.items()}
         res: dict[type, set[type]] = {}
         for target, dependencies in self.context.dependencies.items():
             if not isinstance(target, type):
@@ -137,7 +139,7 @@ class _ServiceRegistry:
     def is_type_with_qualifier_known(self, klass: type, qualifier: ContainerProxyQualifierValue) -> bool:
         is_known_impl = self.is_impl_with_qualifier_known(klass, qualifier)
         is_known_intf = self.__is_interface_with_qualifier_known(klass, qualifier)
-        is_known_from_factory = self.is_impl_known_from_factory(klass)
+        is_known_from_factory = self.is_impl_known_from_factory(klass, qualifier)
 
         return is_known_impl or is_known_intf or is_known_from_factory
 
@@ -148,8 +150,8 @@ class _ServiceRegistry:
     ) -> bool:
         return klass in self.known_interfaces and qualifier in self.known_interfaces[klass]
 
-    def is_impl_known_from_factory(self, klass: type) -> bool:
-        return klass in self.factory_functions
+    def is_impl_known_from_factory(self, klass: type, qualifier: ContainerProxyQualifierValue) -> bool:
+        return (klass, qualifier) in self.factory_functions
 
     def is_impl_singleton(self, klass: type) -> bool:
         return self.context.lifetime.get(klass) == ServiceLifetime.SINGLETON

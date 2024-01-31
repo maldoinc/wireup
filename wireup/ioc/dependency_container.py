@@ -152,7 +152,7 @@ class DependencyContainer:
             return obj
 
         if callable(obj):
-            self.__service_registry.register_factory(obj, lifetime)
+            self.__service_registry.register_factory(obj, qualifier=qualifier, lifetime=lifetime)
             return obj
 
         raise InvalidRegistrationTypeError(obj)
@@ -257,12 +257,12 @@ class DependencyContainer:
     def __create_instance(self, klass: type, qualifier: ContainerProxyQualifierValue) -> Any:
         """Create the real instances of dependencies. Additional dependencies they may have will be lazily created."""
         self.__assert_dependency_exists(klass, qualifier)
+        obj_id = klass, qualifier
 
         if self.__service_registry.is_interface_known(klass):
             klass = self.__resolve_impl(klass, qualifier)
 
-        if self.__service_registry.is_impl_known_from_factory(klass):
-            fn = self.__service_registry.factory_functions[klass]
+        if fn := self.__service_registry.factory_functions.get(obj_id):
             instance = fn(**self.__callable_get_params_to_inject(fn))
         else:
             args = self.__callable_get_params_to_inject(klass)
@@ -277,12 +277,11 @@ class DependencyContainer:
     def __initialize_container_proxy_object_from_parameter(self, annotated_parameter: AnnotatedParameter) -> Any:
         # Disable type checker here as the only caller ensures that klass is not none to avoid the call entirely.
         annotated_type: type = annotated_parameter.klass  # type: ignore[assignment]
+        qualifier_value = annotated_parameter.qualifier_value
 
-        if self.__service_registry.is_impl_known_from_factory(annotated_type):
+        if self.__service_registry.is_impl_known_from_factory(annotated_type, qualifier_value):
             # Objects generated from factories do not have qualifiers
             return self.__get_instance_or_proxy(annotated_type, None)
-
-        qualifier_value = annotated_parameter.qualifier_value
 
         if self.__service_registry.is_interface_known(annotated_type):
             concrete_class = self.__resolve_impl(annotated_type, qualifier_value)

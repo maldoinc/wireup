@@ -110,7 +110,7 @@ class TestContainerStaticFactory(TestCase):
                 return RandomService()
 
         self.assertEqual(
-            f"A function is already registered as a factory for dependency type {RandomService}.",
+            f"A function is already registered as a factory for dependency type {RandomService} with qualifier None.",
             str(context.exception),
         )
 
@@ -180,3 +180,18 @@ class TestContainerStaticFactory(TestCase):
 
         warmup_container(self.container, service_modules=[])
         inner()
+
+    def test_factory_allow_registering_with_qualifier(self):
+        self.container.register(FooBar)
+
+        @self.container.register(qualifier="1")
+        def foo_factory() -> FooBar:
+            return FooBar()
+
+        @self.container.register(qualifier="2")
+        def foo_factory2() -> FooBar:
+            return FooBar()
+
+        self.assertTrue(self.container.get(FooBar))
+        self.assertTrue(self.container.get(FooBar, "1"))
+        self.assertTrue(self.container.get(FooBar, "2"))

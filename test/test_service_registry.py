@@ -39,7 +39,7 @@ class TestServiceRegistry(unittest.TestCase):
         self.registry.register_factory(my_factory, lifetime=ServiceLifetime.SINGLETON)
 
         # Check if the factory function is registered correctly
-        self.assertTrue(self.registry.is_impl_known_from_factory(RandomService))
+        self.assertTrue(self.registry.is_impl_known_from_factory(RandomService, None))
 
         # Test registering a factory function with missing return type
         def invalid_factory():
@@ -71,10 +71,10 @@ class TestServiceRegistry(unittest.TestCase):
         self.assertTrue(self.registry.is_type_with_qualifier_known(MyService, "default"))
 
     def test_is_impl_known_from_factory(self):
-        self.assertFalse(self.registry.is_impl_known_from_factory(str))
+        self.assertFalse(self.registry.is_impl_known_from_factory(str, None))
 
         self.registry.register_factory(my_factory, lifetime=ServiceLifetime.SINGLETON)
-        self.assertTrue(self.registry.is_impl_known_from_factory(RandomService))
+        self.assertTrue(self.registry.is_impl_known_from_factory(RandomService, None))
 
     def test_is_impl_singleton(self):
         self.assertFalse(self.registry.is_impl_singleton(MyService))

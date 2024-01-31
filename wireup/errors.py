@@ -49,9 +49,12 @@ class FactoryReturnTypeIsEmptyError(WireupError):
 class FactoryDuplicateServiceRegistrationError(WireupError):
     """Raised when a factory function declares that it produces a type which is already known."""
 
-    def __init__(self, return_type: type[Any]) -> None:
+    def __init__(self, return_type: type[Any], qualifier: ContainerProxyQualifierValue = None) -> None:
         self.return_type = return_type
-        super().__init__(f"A function is already registered as a factory for dependency type {return_type}.")
+        super().__init__(
+            f"A function is already registered as a factory for dependency type {return_type} "
+            f"with qualifier {qualifier}."
+        )
 
 
 class UnknownQualifiedServiceRequestedError(WireupError):
