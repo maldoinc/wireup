@@ -25,8 +25,8 @@ def warmup_container(dependency_container: DependencyContainer, service_modules:
     dependency_container.warmup()
 
 
-def _find_classes_in_module(module: ModuleType, pattern: str = "*") -> list[type]:
-    classes = []
+def _find_classes_in_module(module: ModuleType, pattern: str = "*") -> set[type]:
+    classes = set()
 
     def _module_get_classes(m: ModuleType) -> list[type]:
         return [
@@ -45,7 +45,7 @@ def _find_classes_in_module(module: ModuleType, pattern: str = "*") -> list[type
             elif file.name.endswith(".py"):
                 full_module_name = f"{parent_module_name}.{file.name[:-3]}"
                 sub_module = importlib.import_module(full_module_name)
-                classes.extend(_module_get_classes(sub_module))
+                classes.update(_module_get_classes(sub_module))
 
     if f := module.__file__:
         _find_in_path(Path(f).parent, module.__name__)
