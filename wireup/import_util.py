@@ -1,17 +1,15 @@
 from __future__ import annotations
 
 import fnmatch
-import pkgutil
-from typing import TYPE_CHECKING, Any, TypeVar
+import importlib
+import inspect
+from pathlib import Path
+from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
-    from collections.abc import Generator
     from types import ModuleType
 
     from wireup import DependencyContainer
-
-
-__T = TypeVar("__T")
 
 
 def warmup_container(dependency_container: DependencyContainer, service_modules: list[ModuleType]) -> None:
@@ -27,20 +25,32 @@ def warmup_container(dependency_container: DependencyContainer, service_modules:
     dependency_container.warmup()
 
 
-def _find_classes_in_module(module: ModuleType, pattern: str = "*") -> Generator[type[__T], None, None]:
-    """Return a list of object types found in a given module that matches the pattern in the argument.
+def _find_classes_in_module(module: ModuleType, pattern: str = "*") -> list[type]:
+    classes = []
 
-    :param module: The module under which to recursively look for types.
-    :param pattern: A fnmatch pattern which the type name will be tested against.
-    """
-    for _, modname, __ in pkgutil.walk_packages(module.__path__, prefix=module.__name__ + "."):
-        mod = __import__(modname, fromlist="dummy")
+    def _module_get_classes(m: ModuleType) -> list[type]:
+        return [
+            klass
+            for name, klass in inspect.getmembers(m)
+            if isinstance(klass, type) and klass.__module__.startswith(m.__name__) and fnmatch.fnmatch(name, pattern)
+        ]
 
-        for name in dir(mod):
-            obj = getattr(mod, name)
+    def _find_in_path(path: Path, parent_module_name: str) -> None:
+        for file in path.iterdir():
+            full_path = path / file
 
-            if isinstance(obj, type) and obj.__module__ == mod.__name__ and fnmatch.fnmatch(obj.__name__, pattern):
-                yield obj
+            if Path.is_dir(full_path):
+                sub_module_name = f"{parent_module_name}.{file.name}"
+                _find_in_path(full_path, sub_module_name)
+            elif file.name.endswith(".py"):
+                full_module_name = f"{parent_module_name}.{file.name[:-3]}"
+                sub_module = importlib.import_module(full_module_name)
+                classes.extend(_module_get_classes(sub_module))
+
+    if f := module.__file__:
+        _find_in_path(Path(f).parent, module.__name__)
+
+    return classes
 
 
 def register_all_in_module(container: DependencyContainer, module: ModuleType, pattern: str = "*") -> None:
