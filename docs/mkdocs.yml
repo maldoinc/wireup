@@ -9,7 +9,7 @@ nav:
     - Optimizing the container: optimizing_container.md
   - Advanced Topics:
       - Factory functions: factory_functions.md
-      - Working with Interfaces: interfaces.md
+      - Interfaces: interfaces.md
       - Manual configuration: manual_configuration.md
       - Multiple containers: multiple_containers.md
       - Testing: testing.md

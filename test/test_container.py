@@ -242,6 +242,17 @@ class TestContainer(unittest.IsolatedAsyncioTestCase):
         self.container.register(FooBaz, qualifier="sub2")
         inner()
 
+    def test_default_impl_is_injected(self):
+        @self.container.autowire
+        def inner(sub1: FooBase, sub2: Annotated[FooBase, Wire(qualifier="baz")]):
+            self.assertEqual(sub1.foo, "bar")
+            self.assertEqual(sub2.foo, "baz")
+
+        self.container.abstract(FooBase)
+        self.container.register(FooBar)
+        self.container.register(FooBaz, qualifier="baz")
+        inner()
+
     def test_two_qualifiers_are_injected_annotated(self):
         @self.container.autowire
         def inner(sub1: Annotated[FooBase, Wire(qualifier="sub1")], sub2: Annotated[FooBase, Wire(qualifier="sub2")]):
