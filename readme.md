@@ -40,7 +40,7 @@ from wireup import container
 
 # Optionally wire parameters, they serve as configuration for services. 
 # Think of a database url or environment name.
-container.params.update(existing_dict_config)
+container.params.update(app.config.items())
 
 
 # Register a class as a service in the container.

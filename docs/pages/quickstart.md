@@ -6,7 +6,7 @@ from a fictional blog db.
 ```python
 from wireup import container
 
-container.params.update(existing_dict_config) # (3)!
+container.params.update(app.config.items()) # (3)!
 
 
 @container.register # (1)!
