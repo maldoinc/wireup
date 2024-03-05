@@ -34,9 +34,9 @@ class RecursiveModuleLoadingTest(unittest.TestCase):
         container = DependencyContainer(ParameterBag())
         register_all_in_module(container, module=services, pattern="*Random*")
         self.assertEqual(
-            sorted([x.__name__ for x in container.context.dependencies.keys()]),
-            [
+            {x.__name__ for x in container.context.dependencies.keys()},
+            {
                 "RandomService",
                 "TrulyRandomService",
-            ],
+            },
         )
