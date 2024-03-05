@@ -34,4 +34,4 @@ fix:
 
 # make docs-deploy version=...
 docs-deploy $(version):
-	cd docs && ../.venv/bin/mike deploy --update-aliases $(version) latest
+	cd docs && ../.venv/bin/mike deploy --push --update-aliases $(version) latest
