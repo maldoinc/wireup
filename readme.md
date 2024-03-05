@@ -12,7 +12,7 @@
 
 > [!TIP]
 >    Simplify Dependency injection for Flask using the new
-[Flask integration](https://maldoinc.github.io/wireup/latest/integrations/flask/)!
+[Flask integration](https://maldoinc.github.io/wireup/latest/integrations/flask)!
 >
 >    * Automatically inject dependencies without having to manually call autowire.
 >    * Expose flask application configuration in the container.
@@ -28,7 +28,7 @@
 * Framework Agnostic
 * Simplified usage in 
 [Flask](https://maldoinc.github.io/wireup/latest/integrations/flask/) 
-and [FastApi](https://maldoinc.github.io/wireup/latest/integrations/flask/) using the first-party integrations.
+and [FastApi](https://maldoinc.github.io/wireup/latest/integrations/fastapi/) using the first-party integrations.
 
 ## 📋 Quickstart
 

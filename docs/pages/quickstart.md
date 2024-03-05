@@ -42,7 +42,8 @@ def get_posts(post_repository: PostRepository):
 ```
 
 1. Decorate all methods where the library must perform injection.
-   Optional when using the [Flask integration](integrations/flask).
+   Optional when using the [Flask](integrations/flask.md)
+   or [FastApi](integrations/fastapi.md) integrations.
 
 
 **Installation**
