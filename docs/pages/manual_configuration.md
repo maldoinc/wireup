@@ -37,7 +37,8 @@ def greeter_factory(translator: TranslatorService):
 ## Using initialization context
 
 In addition to using `@container.register` to register each dependency, automatic registration is also possible by
-using the `wireup.register_all_in_module(module, pattern = "*")` method.
+using the `wireup.register_all_in_module` method. You can use this to import any classes that match a `fnmatch` pattern
+or a regular expression.
 
 Module represents the top level module containing all your dependencies, optionally a `fnmatch` pattern can be specified
 to only register classes that match the pattern. This is the equivalent of using `@container.register`

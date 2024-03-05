@@ -3,6 +3,7 @@ from __future__ import annotations
 import fnmatch
 import importlib
 import inspect
+import re
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
@@ -25,15 +26,17 @@ def warmup_container(dependency_container: DependencyContainer, service_modules:
     dependency_container.warmup()
 
 
-def _find_classes_in_module(module: ModuleType, pattern: str = "*") -> set[type]:
+def _find_classes_in_module(module: ModuleType, pattern: str | re.Pattern[str] = "*") -> set[type]:
     classes = set()
 
-    def _module_get_classes(m: ModuleType) -> list[type]:
-        return [
+    def _module_get_classes(m: ModuleType) -> set[type]:
+        return {
             klass
             for name, klass in inspect.getmembers(m)
-            if isinstance(klass, type) and klass.__module__.startswith(m.__name__) and fnmatch.fnmatch(name, pattern)
-        ]
+            if isinstance(klass, type)
+            and klass.__module__.startswith(m.__name__)
+            and (fnmatch.fnmatch(name, pattern) if isinstance(pattern, str) else re.match(pattern, name))
+        }
 
     def _find_in_path(path: Path, parent_module_name: str) -> None:
         for file in path.iterdir():
@@ -53,7 +56,9 @@ def _find_classes_in_module(module: ModuleType, pattern: str = "*") -> set[type]
     return classes
 
 
-def register_all_in_module(container: DependencyContainer, module: ModuleType, pattern: str = "*") -> None:
+def register_all_in_module(
+    container: DependencyContainer, module: ModuleType, pattern: str | re.Pattern[str] = "*"
+) -> None:
     """Register all modules inside a given module.
 
     Useful when your services reside in one place, and you'd like to avoid having to `@container.register` each of them.
@@ -63,7 +68,7 @@ def register_all_in_module(container: DependencyContainer, module: ModuleType, p
 
     :param container: Dependency container to register services in.
     :param module: The package name to recursively search for classes.
-    :param pattern: A pattern that will be fed to fnmatch to determine if a class will be registered or not.
+    :param pattern: A string representing a fnmatch pattern or a regular expression compiled with re.compile.
     """
     klass: type[Any]
     for klass in _find_classes_in_module(module, pattern):
