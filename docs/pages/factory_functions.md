@@ -29,6 +29,16 @@ When the container needs to inject a dependency it checks known factories to see
     type of dependency it can create.
     * Factories can only depend on objects known by the container!
 
+!!! warning
+    Modules which perform service registration need to be imported otherwise any `@container.register` calls
+    will not be triggered. This can be an issue when the service does not reside in the same file as the
+    factory. 
+
+    E.g: A model residing in `app.model.user` and the factory being in `app.service.factory`.
+    If `app.service.factory` is never imported the container won't know how to build the user model.
+
+    In those cases use `import_util.load_module` once on startup in order to trigger registrations.
+
 ## Examples
 
 Assume in the context of a web application a class `User` exists and represents a user of the system.

@@ -73,3 +73,11 @@ def register_all_in_module(
     klass: type[Any]
     for klass in _find_classes_in_module(module, pattern):
         container.register(klass)
+
+
+def load_module(module: ModuleType) -> None:
+    """Recursively load a given module.
+
+    This can be useful to import them module and trigger any container registrations.
+    """
+    _find_classes_in_module(module)
