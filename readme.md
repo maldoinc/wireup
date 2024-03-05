@@ -26,7 +26,9 @@
 * Static factories
 * Singleton/Transient dependencies
 * Framework Agnostic
-* Simplified usage in Flask and FastAPI using the first-party integrations.
+* Simplified usage in 
+[Flask](https://maldoinc.github.io/wireup/latest/integrations/flask/) 
+and [FastApi](https://maldoinc.github.io/wireup/latest/integrations/flask/) using the first-party integrations.
 
 ## 📋 Quickstart
 
