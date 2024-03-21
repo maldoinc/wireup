@@ -15,7 +15,7 @@ check-fmt:
 	.venv/bin/ruff format . --check
 
 check-ruff:
-	.venv/bin/ruff wireup $(RUFF_ARGS)
+	.venv/bin/ruff check wireup $(RUFF_ARGS)
 
 check-mypy:
 	.venv/bin/mypy wireup --strict

@@ -49,7 +49,7 @@ python = "^3.8"
 graphlib2 = {version="^0.4.7", python=">=3.8,<3.9"}
 
 [tool.poetry.group.dev.dependencies]
-ruff = "0.1.*"
+ruff = "0.3.4"
 setuptools = "^68.0.0"
 mkdocs = "^1.5.2"
 mkdocs-material = "^9.4.14"
@@ -67,9 +67,9 @@ httpx = "^0.26.0"
 target-version = "py38"
 line-length = 120
 src = ["wireup"]
-fixable = ["ALL"]
-select = ["ALL"]
-ignore = [
+lint.fixable = ["ALL"]
+lint.select = ["ALL"]
+lint.ignore = [
     "ANN401", # Allow returning any. Parameter bag has to store/retrieve arbitraty types.
     "PT009", # Prefer using assertEqual instead of plain asserts
     "ANN101", # Exclude self from type hint requirement,
