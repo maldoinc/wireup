@@ -76,7 +76,7 @@ When there are many implementations associated with a given interface you may wa
 "default" implementation. This means that the container will inject that when there is no qualifier specified
 even though there are multiple implementations registered.
 
-To achieve that simply do not set the qualifier for that implementation when registering it.
+To achieve that simply omit the qualifier when registering.
 
 ```python
 @container.register  # <-- Qualifier being absent will make this the default impl.
@@ -88,5 +88,5 @@ class CombustionEngine(Engine):
     pass
 ```
 
-In the above example when asking for `Engine` the container will inject `ElectricEngine`. For the rest of the 
-implementations you need to specify the qualifier as usual.
+In the above example when asking for `Engine` the container will inject `ElectricEngine`. For the other implementations 
+you need to specify the qualifier as usual.
