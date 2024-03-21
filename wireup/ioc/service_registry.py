@@ -40,7 +40,7 @@ class _ServiceRegistry:
         if self.is_type_with_qualifier_known(klass, qualifier):
             raise DuplicateServiceRegistrationError(klass, qualifier)
 
-        if self.is_interface_known(klass.__base__):
+        if klass.__base__ and self.is_interface_known(klass.__base__):
             if qualifier in self.known_interfaces[klass.__base__]:
                 raise DuplicateQualifierForInterfaceError(klass, qualifier)
 
