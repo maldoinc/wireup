@@ -9,7 +9,6 @@ The function requests any dependencies necessary to create the service and insta
 
 ```python
 # service/translator.py
-
 @dataclass
 class TranslatorService:
     default_locale: str
@@ -30,7 +29,7 @@ def translator_factory(
 
 
 @container.register
-def greeter_factory(translator: TranslatorService):
+def greeter_factory(translator: TranslatorService) -> GreeterService:
     return GreeterService(translator)
 ```
 
