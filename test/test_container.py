@@ -36,8 +36,7 @@ class TestContainer(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(rand.get_random(), 4, "Assert that proxy pass-through works")
 
     def test_raises_on_unknown_dependency(self):
-        class UnknownDep:
-            ...
+        class UnknownDep: ...
 
         self.assertRaises(UnknownServiceRequestedError, lambda: self.container.get(UnknownDep))
 
@@ -99,8 +98,7 @@ class TestContainer(unittest.IsolatedAsyncioTestCase):
 
     def test_inject_using_annotated_empty_wire_fails_to_inject_unknown(self):
         @self.container.autowire
-        def inner(random: Annotated[unittest.TestCase, Wire()]):
-            ...
+        def inner(random: Annotated[unittest.TestCase, Wire()]): ...
 
         with self.assertRaises(UnknownServiceRequestedError) as context:
             inner()
@@ -308,8 +306,7 @@ class TestContainer(unittest.IsolatedAsyncioTestCase):
 
     def test_qualifier_raises_wire_called_on_unknown_type(self):
         @self.container.autowire
-        def inner(sub1: FooBase = wire(qualifier="sub1")):
-            ...
+        def inner(sub1: FooBase = wire(qualifier="sub1")): ...
 
         self.container.abstract(FooBase)
         with self.assertRaises(UnknownQualifiedServiceRequestedError) as context:
@@ -323,8 +320,7 @@ class TestContainer(unittest.IsolatedAsyncioTestCase):
 
     def test_inject_abstract_directly_raises(self):
         @self.container.autowire
-        def inner(sub1: FooBase):
-            ...
+        def inner(sub1: FooBase): ...
 
         self.container.abstract(FooBase)
         self.container.register(FooBar, qualifier="foobar")
@@ -339,8 +335,7 @@ class TestContainer(unittest.IsolatedAsyncioTestCase):
 
     def test_inject_abstract_directly_with_no_impls_raises(self):
         @self.container.autowire
-        def inner(sub1: FooBase):
-            ...
+        def inner(sub1: FooBase): ...
 
         self.container.abstract(FooBase)
         with self.assertRaises(Exception) as context:
@@ -354,12 +349,10 @@ class TestContainer(unittest.IsolatedAsyncioTestCase):
 
     def test_register_with_qualifier_fails_when_invoked_without(self):
         @self.container.register(qualifier=__name__)
-        class RegisterWithQualifierClass:
-            ...
+        class RegisterWithQualifierClass: ...
 
         @self.container.autowire
-        def inner(foo: RegisterWithQualifierClass):
-            ...
+        def inner(foo: RegisterWithQualifierClass): ...
 
         with self.assertRaises(UnknownQualifiedServiceRequestedError) as context:
             inner()
@@ -386,8 +379,7 @@ class TestContainer(unittest.IsolatedAsyncioTestCase):
 
     def test_inject_qualifier_on_unknown_type(self):
         @self.container.autowire
-        def inner(foo: str = wire(qualifier=__name__)):
-            ...
+        def inner(foo: str = wire(qualifier=__name__)): ...
 
         with self.assertRaises(UsageOfQualifierOnUnknownObjectError) as context:
             inner()
@@ -497,7 +489,10 @@ class TestContainer(unittest.IsolatedAsyncioTestCase):
 
     def test_get_returns_real_instance(self):
         first = self.container.get(RandomService)
+        self.assertIn((RandomService, None), self.container._DependencyContainer__initialized_proxies)
+
         first.get_random()  # Trigger object initialization
+        self.assertNotIn((RandomService, None), self.container._DependencyContainer__initialized_proxies)
 
         second = self.container.get(RandomService)
         self.assertIsInstance(first, ContainerProxy)

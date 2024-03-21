@@ -271,6 +271,9 @@ class DependencyContainer:
         if self.__service_registry.is_impl_singleton(klass):
             self.__initialized_objects[obj_id] = instance
 
+            if obj_id in self.__initialized_proxies:
+                del self.__initialized_proxies[obj_id]
+
         self.__buildable_types.add(klass)
         return instance
 

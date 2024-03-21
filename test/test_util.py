@@ -12,14 +12,12 @@ from wireup.ioc.util import (
 
 class TestUtilityFunctions(unittest.TestCase):
     def test_get_annotated_parameter_retrieves_first_injectable_type(self):
-        class Dummy(InjectableType):
-            ...
+        class Dummy(InjectableType): ...
 
         d1 = Dummy()
         d2 = Dummy()
 
-        def inner(_a: Annotated[str, "ignored", unittest.TestCase, d1], _b, _c: str, _d=d2):
-            ...
+        def inner(_a: Annotated[str, "ignored", unittest.TestCase, d1], _b, _c: str, _d=d2): ...
 
         params = inspect.signature(inner)
         self.assertEqual(parameter_get_type_and_annotation(params.parameters["_a"]), AnnotatedParameter(str, d1))

@@ -89,8 +89,7 @@ class TestServiceRegistry(unittest.TestCase):
         self.assertTrue(self.registry.is_interface_known(MyInterface))
 
     def test_register_only_injectable_params(self):
-        def target(_a, _b, _c, _d: RandomService, _e: str, _f: Annotated[str, Wire(param="name")]):
-            ...
+        def target(_a, _b, _c, _d: RandomService, _e: str, _f: Annotated[str, Wire(param="name")]): ...
 
         self.registry.target_init_context(target)
         self.assertEqual(
