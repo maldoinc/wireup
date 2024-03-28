@@ -1,52 +1,42 @@
 from __future__ import annotations
 
-import importlib
-import os
-from types import ModuleType
+from typing import TYPE_CHECKING, Any
 
-import wireup
-from wireup import DependencyContainer, warmup_container
+from django.conf import settings
+
+from wireup import container, warmup_container
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
+
+    from django.http import HttpRequest, HttpResponse
 
 
 class WireupMiddleware:
-    """
-    Django middleware class which performs autowiring on views.
+    """Django middleware class which performs autowiring on views.
 
     Using this eliminates the need to decorate views with `@container.autowire`.
     """
-    def __init__(self, get_response):
+
+    def __init__(self, get_response: Callable[..., HttpResponse]) -> None:
+        self.__boot_container()
         self.get_response = get_response
 
-    def __call__(self, request):
+    def __call__(self, request: HttpRequest) -> HttpResponse:  # noqa: D102
         return self.get_response(request)
 
-    def process_view(self, request, view_func, args, kwargs):
-        return wireup.container.autowire(view_func)(request, *args, **kwargs)
+    def process_view(
+        self, request: HttpRequest, view_func: Callable[..., HttpResponse], args: Any, kwargs: Any
+    ) -> HttpResponse:
+        """Perform autowiring on django views before processing the request."""
+        return container.autowire(view_func)(request, *args, **kwargs)
 
+    @staticmethod
+    def __boot_container() -> None:
+        service_modules = getattr(settings, "WIREUP_SERVICE_MODULES", [])
 
-def wireup_init_django_integration(
-    service_modules: list[ModuleType],
-    dependency_container: DependencyContainer = wireup.container,
-    config_prefix: str | None = None,
-) -> None:
-    """
-    Initialize the Django integration with the given service modules.
+        for entry in dir(settings):
+            if not entry.startswith("__") and hasattr(settings, entry):
+                container.params.put(entry, getattr(settings, entry))
 
-    :param service_modules: A list of python modules where application services reside. These will be loaded to trigger
-    container registrations.
-    :param dependency_container: The instance of the dependency container.
-    The default wireup singleton will be used when this is unset.
-    This will be a noop and have no performance penalty for views which do not use the container.
-    :param config_prefix: If set to a value all registered configuration will be prefixed with config and be accessible
-    via "prefix.config_name". E.g: app.DEBUG.
-    """
-    settings_module = importlib.import_module(os.environ.get("DJANGO_SETTINGS_MODULE"))
-
-    for entry in dir(settings_module):
-        if not entry.startswith("__"):
-            dependency_container.params.put(
-                entry if not config_prefix else f"{config_prefix}.{entry}",
-                getattr(settings_module, entry),
-            )
-
-    warmup_container(dependency_container, service_modules or [])
+        warmup_container(container, service_modules)

@@ -6,9 +6,27 @@ Dependency injection for Django is available via the first-party integration wir
 * Automatically decorate views.
 * Expose Django configuration in the container's parameters.
 
+## Installation
+
+To install the integration, add `WireupMiddleware` to the list of middlewares and define a setting
+`WIREUP_SERVICE_MODULES` containing a list of modules (not strings!) with application services.
+
+This will automatically register settings as parameters with the same name, perform autowiring 
+in views and [warmup the container](../optimizing_container.md).
+
+```python title="settings.py"
+MIDDLEWARE = [
+    ...,
+    # Add the wireup integration middleware
+    "wireup.integration.django_integration.WireupMiddleware"
+]
+WIREUP_SERVICE_MODULES=[service]
+```
+
+
 ## Usage
 
-### 0. Define some services
+### Define some services
 ```python title="app/services/greeter_service.py"
 class GreeterService:
     # reference configuration by name.
@@ -19,26 +37,7 @@ class GreeterService:
       return ...
 ```
 
-### 1. Initialize the integration
-
-```python title="wsgi.py"
-from app import services
-
-# Import the top level service module(s) and pass them to the integration.
-# Execute this as the last statement in wsgi.py.
-wireup_init_django_integration(service_modules=[services])
-```
-
-Next, add the wireup middleware. This will automatically perform injection in django views. 
-If this step is omitted then the `@container.autowire` decorator must be used instead.
-```python title="settings.py"
-MIDDLEWARE = [
-    ...,
-    "wireup.integration.django_integration.WireupMiddleware",
-]
-```
-
-### 2. Use in views
+### Use in views
 ```python title="views.py"
 @require_GET
 def greet_view(request: HttpRequest, greeter: GreeterService) -> HttpResponse:
