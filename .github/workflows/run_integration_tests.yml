@@ -1,5 +1,5 @@
 name: Integration tests
-on: [push, pull_request]
+on: [push]
 jobs:
   test:
     name: Run Tox
