@@ -1,0 +1,20 @@
+name: Integration tests
+on: [push]
+jobs:
+  test:
+    name: Run Tox
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: "3.8"
+    - name: Create venv
+      run: python -m venv .venv
+    - name: Install dependencies
+      run: |
+        make install
+    - name: Run tox
+      run: .venv/bin/tox

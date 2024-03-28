@@ -21,7 +21,7 @@ check-mypy:
 	.venv/bin/mypy wireup --strict
 
 test:
-	.venv/bin/python -m unittest discover -s test/
+	.venv/bin/python -m unittest discover -s test/unit
 
 profile ./profile_tests $(num_runs):
 	./.venv/bin/python ./profile_tests.py $(num_runs)

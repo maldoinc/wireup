@@ -1,7 +1,7 @@
 import re
 import unittest
 
-from test import services
+from test.unit import services
 from wireup import DependencyContainer, ParameterBag, register_all_in_module
 
 
