@@ -1,4 +1,4 @@
-from test.services.no_annotations.random.random_service import RandomService
+from test.unit.services.no_annotations.random.random_service import RandomService
 
 
 class TrulyRandomService:
