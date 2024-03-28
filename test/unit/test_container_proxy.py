@@ -1,7 +1,7 @@
 import unittest
-from test.services.no_annotations.random.random_service import RandomService
-from test.services.no_annotations.random.truly_random_service import TrulyRandomService
 
+from test.unit.services.no_annotations.random.random_service import RandomService
+from test.unit.services.no_annotations.random.truly_random_service import TrulyRandomService
 from wireup.ioc.proxy import ContainerProxy
 
 

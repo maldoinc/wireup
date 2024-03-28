@@ -1,10 +1,11 @@
 import unittest
 
 from test.fixtures import FooBase, FooBar
-from test.services.no_annotations.random.random_service import RandomService
 from unittest.mock import MagicMock, patch
 
 from typing_extensions import Annotated
+
+from test.unit.services.no_annotations.random.random_service import RandomService
 from wireup import DependencyContainer, ParameterBag, Wire
 from wireup.ioc.override_manager import OverrideManager
 from wireup.ioc.types import ServiceOverride

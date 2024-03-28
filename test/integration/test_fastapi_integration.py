@@ -4,7 +4,7 @@ from fastapi import FastAPI, Depends
 from fastapi.testclient import TestClient
 from typing_extensions import Annotated
 
-from test.services.no_annotations.random.random_service import RandomService
+from test.unit.services.no_annotations.random.random_service import RandomService
 from wireup import Wire, ParameterBag, DependencyContainer
 from wireup.errors import UnknownServiceRequestedError
 from wireup.integration.fastapi_integration import wireup_init_fastapi_integration

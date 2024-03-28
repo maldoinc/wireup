@@ -1,13 +1,14 @@
 import datetime
 import unittest
 from dataclasses import dataclass
-from test import services
 from test.fixtures import Counter, FooBar, FooBase, FooBaz
-from test.services.no_annotations.random.random_service import RandomService
-from test.services.no_annotations.random.truly_random_service import TrulyRandomService
 from unittest.mock import Mock, patch
 
 from typing_extensions import Annotated
+
+from test.unit import services
+from test.unit.services.no_annotations.random.random_service import RandomService
+from test.unit.services.no_annotations.random.truly_random_service import TrulyRandomService
 from wireup import ServiceLifetime, Wire, register_all_in_module, wire
 from wireup.errors import (
     DuplicateQualifierForInterfaceError,

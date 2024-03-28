@@ -1,9 +1,8 @@
 import unittest
-from test import services
-from test.services import no_annotations, with_annotations
-from test.services.with_annotations.env import EnvService
 
 import wireup
+from test.unit.services import no_annotations, with_annotations
+from test.unit.services.with_annotations.env import EnvService
 from wireup import DependencyContainer, ParameterBag, register_all_in_module, warmup_container
 
 
