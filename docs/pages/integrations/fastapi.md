@@ -9,15 +9,12 @@ Dependency injection for FastAPI (all versions) is available via the first-party
     * Views without container references will not be decorated.
     * Services **must** be annotated with `Wire()`.
 * Can: Mix FastAPI dependencies and Wireup in views
-* Can: Autowire any FastAPI target with `@container.autowire`.
+* Can: Autowire FastAPI target with `@container.autowire`.
 * Cannot: Use FastAPI dependencies in Wireup service objects.
 
 !!! tip
-    As FastAPI does not have a fixed configuration mechanism, you need to expose
-    any configuration objects to the container using one of the two options: 
-
-    * By dumping all values in the parameter bag.
-    * By registering the configuration object as a service using a factory function.
+    As FastAPI does not have a fixed configuration mechanism, you need to expose 
+    configuration to the container. See [configuration docs](../configuration.md).
 
 ## Examples
 
@@ -41,7 +38,7 @@ async def target(
     }
 
 # Initialize the integration.
-# Must be called after all views have been registered.
+# Must be called after views have been registered.
 # Pass to service_modules a list of top-level modules where your services reside.
 wireup_init_fastapi_integration(app, service_modules=[services])
 ```

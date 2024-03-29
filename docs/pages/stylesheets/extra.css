@@ -1,12 +1,18 @@
+.md-header,
+.md-tabs {
+    background-color: #242b3f;
+}
+
 .md-typeset {
     font-size: .7rem;
 }
 
 .highlight {
-    font-size: .7rem;
+    font-size: .75rem;
 }
 
-dd, dd p {
+dd,
+dd p {
     margin-top: 0 !important;
 }
 
@@ -21,41 +27,14 @@ dd, dd p {
     gap: 10px;
 }
 
-.card {
-    flex: 0 1 calc(50% - 5px);
-    border: 1px solid #ddd;
-    border-radius: 3px;
-    padding: 20px;
+body[data-md-color-scheme="default"] .grid.cards>ul>li {
+    border: 1px solid #ddd !important;
 }
 
-body[data-md-color-scheme="slate"] .card {
+body[data-md-color-scheme="slate"] .grid.cards>ul>li {
     border: 1px solid var(--md-default-fg-color--lightest) !important;
 }
 
-.card-title{
-    font-weight: bold;
-    display: flex;
-    align-items: center;
-    padding-bottom: .5rem;
-    margin-bottom: .5rem;
-    border-bottom: .05rem solid var(--md-default-fg-color--lightest);
-}
-
-.card-title img {
-    height: 1rem; /* Set the height to match the font size (adjust as needed) */
-    width: auto; /* Maintain aspect ratio */
-    margin-right: 10px; /* Add spacing between the image and text (adjust as needed) */
-}
-
-
-@media (max-width: 768px) {
-    .card {
-        flex: 0 1 calc(50% - 20px); /* Two cards in a row for smaller screens */
-    }
-}
-
-@media (max-width: 480px) {
-    .card {
-        flex: 0 1 100%; /* Full width for mobile devices */
-    }
+.grid.cards>ul>li span.twemoji {
+    vertical-align: text-bottom;
 }

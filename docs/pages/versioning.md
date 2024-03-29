@@ -6,11 +6,11 @@ its users.
 * Changes in the MAJOR version indicate backward-incompatible changes, such as breaking API alterations. 
 * MINOR version updates signify new, backward-compatible features or enhancements, while PATCH versions are reserved for
 backward-compatible bug fixes. 
-* All releases with a MAJOR version of 0 are considered pre-release and as such, the api is considered unstable.
+* Releases with a MAJOR version of 0 are considered pre-release and as such, the api is considered unstable.
   Minor-version releases may contain breaking changes as the api evolves.
 * The following is considered public API
-  * All direct exports of the `wireup` package.
-  * All accessible objects from the public interface of the above exported objects.
+  * Direct exports of the `wireup` package.
+  * Accessible objects from the public interface of the above exported objects.
 
 
 !!! tip

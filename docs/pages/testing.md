@@ -3,16 +3,16 @@
 Unit testing service objects is meant to be easy as the container does not interfere in
 any way with the underlying classes.
 
-All of them can be instantiated as usual in tests, and you need to pass any dependencies 
+Classes can be instantiated as usual in tests, and you need to pass dependencies 
 such as services or parameters to them yourself.
 
-To specify custom behavior for tests, you can provide a custom implementation 
+To specify custom behavior for tests, provide a custom implementation 
 or a subclass that returns test data as a dependency instead of mocks.
 
 It is also possible to use the container to build a part of your dependencies by
 calling `container.get(ThingService)` which will return a `ThingService` instance.
 
-## Integration tests
+## Overriding
 
 While wireup tries to make it as easy as possible to test services by not modifying
 the underlying classes in any way even when decorated, sometimes you need to be able
@@ -29,7 +29,7 @@ which will help temporarily overriding dependencies
 
 !!! info "Good to know"
     * Overriding only applies to future autowire calls.
-    * It is possible to override any service directly.
+    * It is possible to override services directly.
     * Once a singleton service has been instantiated, it is not possible to directly replace
     any of its direct or transitive dependencies via overriding as the object is already in memory.
         * You will need to call `container.clear_initialized_objects()` and then override the 
@@ -39,32 +39,32 @@ which will help temporarily overriding dependencies
     that will be injected.
 
 ### Examples
-    
+
 #### Context Manager
 ```python
 random_mock = MagicMock()
-random_mock.get_random.return_value = 5
+# Chosen by fair dice roll. Guaranteed to be random.
+random_mock.get_random.return_value = 4
 
 with self.container.override.service(target=RandomService, new=random_mock):
     # Assuming in the context of a web app:
     # /random endpoint has a dependency on RandomService
-    # any requests to inject RandomService during the lifetime
+    # requests to inject RandomService during the lifetime
     # of this context manager will result in random_mock being injected instead.
     response = client.get("/random")
 ```
 
 #### Python unittest
 
-You can use the setup method to replace a service with a mock for the duration of
-the test. In each method `self.db_service` is available 
+Use the setup method to replace a service with a mock for the duration of the test. 
 
 ```python
 class SomeEndpointTest(unittest.TestCase):
     def setUp(self) -> None:
         self.db_service = MagicMock()
         
-        # Drop all references to initialized objects.
-        # Any services or autowire targets requesting DBService
+        # Drop references to initialized objects.
+        # Services or autowire targets requesting DBService
         # will get the mocked object instead.
         container.clear_initialized_objects()
         container.override.service(DbService, new=self.db_service)
@@ -76,12 +76,11 @@ Similar to the above example but this uses pytest's autouse to achieve the same 
 
 ```python
 @pytest.fixture(autouse=True)
-def clear_container(db_service_mock) -> Iterator[None]:
+def setup_container(db_service_mock: MagicMock) -> None:
     container.clear_initialized_objects()
     container.override.service(DbService, new=db_service_mock)
-    yield
 
-def test_something_with_mocked_db_service(client, db_service_mock):
+def test_something_with_mocked_db_service(client: TestClient, db_service_mock: MagicMock):
     # Set up the db service mock
     db_service_mock.get_things.return_value = ...
     response = client.get("/some/path")

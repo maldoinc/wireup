@@ -29,16 +29,11 @@ def get_environment(
 
 if __name__ == '__main__':
     # Initialize the integration.
-    # Must be called after all views and configuration have been added.
+    # Must be called after views and configuration have been added.
     # Pass to service_modules a list of top-level modules where your services reside.
     wireup_init_flask_integration(app, service_modules=[services])
     app.run()
 ```
-
-### Using parameter enums
-
-Parameter enums offer a typed way of representing parameters. 
-See [Parameter Enum documentation for more details](../parameters.md#parameter-enums)
 
 ## Api Reference
 

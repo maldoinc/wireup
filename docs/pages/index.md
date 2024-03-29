@@ -1,77 +1,82 @@
-# :thread: Wireup
+---
+hide:
+    - navigation
+---
 
-Dependency injection container with a focus on developer experience, type safety and ease of use.
+# Wireup
 
-!!! note "New: Dependency injection for Flask"
-    Simplify usage in Flask applications by using the new [Flask integration](integrations/flask.md)!
+Performant, concise and easy to use dependency injection container for Python 3.8+.
 
-    * Automatically inject dependencies on views without having to manually decorate.
-    * Expose Flask application configuration in the container.
+
+[![GitHub](https://img.shields.io/github/license/maldoinc/wireup)](https://github.com/maldoinc/wireup)
+[![Code Climate maintainability](https://img.shields.io/codeclimate/maintainability/maldoinc/wireup?label=Code+Climate)](https://codeclimate.com/github/maldoinc/wireup)
+[![Coverage](https://img.shields.io/codeclimate/coverage/maldoinc/wireup?label=Coverage)](https://codeclimate.com/github/maldoinc/wireup)
+[![PyPI - Python Version](https://img.shields.io/pypi/pyversions/wireup)](https://pypi.org/project/wireup/)
+[![PyPI - Version](https://img.shields.io/pypi/v/wireup)](https://pypi.org/project/wireup/)
+
 
 ## Key features
 
-<div class="card-container">
-    <div class="card">
-        <div class="card-title">
-            <img src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@14.1.2/assets/72x72/27a1.png" /> 
-            Dependency Injection
-        </div>
-        Inject services and configuration using a clean and intuitive syntax.
-    </div>
-    <div class="card">
-        <div class="card-title">
-            <img src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@14.1.2/assets/72x72/2699.png" /> 
-            Auto-configuration
-        </div>
-        Automatically inject dependencies based on their types without additional configuration.
-    </div>
-    <div class="card">
-        <div class="card-title">
-            <img src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@14.1.2/assets/72x72/231b.png" /> 
-            Short and long-lived processes
-        </div>
-        Suitable for use in long-running as well as short-lived processes.
-        Preload services for performance or lazily inject to instantiate only what you use.
-    </div>
-    <div class="card">
-        <div class="card-title">
-            <img src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@14.1.2/assets/72x72/1f4dc.png" /> 
-            Interfaces / Abstract classes
-        </div>
-        Define abstract types and have the container automatically inject the implementation.
-    </div>
-    <div class="card">
-        <div class="card-title">
-            <img src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@14.1.2/assets/72x72/1f465.png" /> 
-            Multiple Containers
-        </div>
-        Use the provided container or instantiate and use multiple ones depending on your project's needs.
-    </div>
-    <div class="card">
-        <div class="card-title">
-            <img src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@14.1.2/assets/72x72/1f3ed.png" />
-            Factory pattern
-        </div>
-        Defer instantiation to specialized factories for full control over object creation when necessary.
-    </div>
-    <div class="card">
-        <div class="card-title">
-            <img src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@14.1.2/assets/72x72/31-20e3.png" /> 
-            Singletons/Transient dependencies
-        </div>
-        Declare dependencies as transient or singletons which tells the container whether 
-        to inject a fresh copy or reuse existing instances.
-    </div>
-    <div class="card">
-        <div class="card-title">
-            <img src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@14.1.2/assets/72x72/2753.png" /> 
-            Framework Agnostic
-        </div>
-        Seamlessly integrate with popular web frameworks like Django, Flask and FastAPI
-        to simplify dependency management.
-    </div>
 
+<div class="grid cards" markdown>
+
+-   :arrow_right:{ .lg .middle } __Dependency Injection__
+
+    ---
+
+    Inject services and configuration using a clean and intuitive syntax.
+
+    [:octicons-arrow-right-24:Getting Started](getting_started.md)
+
+-   :gear:{ .lg .middle } __Autoconfiguration__
+
+    ---
+    Automatically inject dependencies based on their types without additional configuration for the
+    most common use cases.
+
+    [:octicons-arrow-right-24: Learn more](annotations.md)
+
+-   :scroll:{ .lg .middle } __Interfaces / Abstract classes__
+
+    ---
+
+    Define abstract types and have the container automatically inject the implementation.
+
+    [:octicons-arrow-right-24: Learn more](interfaces.md)
+
+
+-   :factory:{ .lg .middle } __Factory pattern__
+
+    ---
+
+    Defer instantiation to specialized factories for full control over object creation when necessary.
+
+    [:octicons-arrow-right-24: Learn more](factory_functions.md)
+
+
+-   :one:{ .lg .middle } __Singletons/Transient dependencies__
+
+    ---
+
+    Declare dependencies as transient or singletons which tells the container whether to inject a fresh copy or reuse existing instances.
+
+    [:octicons-arrow-right-24: Learn more](services.md)
+
+
+-   :question:{ .lg .middle } __Framework agnostic__
+
+    ---
+    With its decorator style injection, wireup works with any framework. It also comes with first-party integrations
+    for [Flask](integrations/flask.md) and [FastAPI](integrations/fastapi.md).
 </div>
+
+
+## First-party integrations
+
+Simplified integration with the following frameworks through the provided integrations.
+
+- [x] [Flask](integrations/flask.md)
+- [x] [FastAPI](integrations/fastapi.md)
 
 ## License
 

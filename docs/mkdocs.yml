@@ -1,26 +1,24 @@
 site_name: Wireup
 nav:
-  - Home: index.md
-  - Quickstart: quickstart.md
-  - Basics:
-    - Services: services.md
-    - Parameters: parameters.md
-    - Annotations: annotations.md
-    - Optimizing the container: optimizing_container.md
-  - Advanced Topics:
-      - Factory functions: factory_functions.md
-      - Interfaces: interfaces.md
-      - Manual configuration: manual_configuration.md
-      - Multiple containers: multiple_containers.md
-      - Testing: testing.md
+  - Wireup: index.md
+  - 📚 Documentation:
+    - Getting started: getting_started.md
+    - Learn:
+        - Services: services.md
+        - Configuration: configuration.md
+        - Annotations: annotations.md
+        - Interfaces: interfaces.md
+        - Factory functions: factory_functions.md
+        - Testing: testing.md
+    - Guides:
+      - Introduce to an existing project: introduce_to_an_existing_project.md
+      - Multiple registrations: multiple_registrations.md
+    - Misc:
+      - Demo application: demo_app.md
+      - Versioning: versioning.md
   - Integrations:
     - Flask: integrations/flask.md
     - FastAPI: integrations/fastapi.md
-  - Misc:
-    - Introduce to an existing project: introduce_to_an_existing_project.md
-    - Multiple db connections: multiple_registrations.md
-    - Demo application: demo_app.md
-    - Versioning: versioning.md
   - API Reference:
       - wireup: class/wireup.md
       - DependencyContainer: class/dependency_container.md
@@ -33,6 +31,8 @@ nav:
 repo_url: https://github.com/maldoinc/wireup
 repo_name: maldoinc/wireup
 theme:
+  icon:
+    logo: simple/wire
   name: material
   custom_dir: overrides
   features:
@@ -40,9 +40,11 @@ theme:
     - navigation.sections
     - content.code.annotate
     - navigation.instant
+    - navigation.tabs
+    - content.tabs.link
   font:
-    text: PT Sans
-    code: Noto Mono
+    text: Reddit Sans
+    code: Reddit Mono
   palette:
       - media: "(prefers-color-scheme)"
         toggle:
@@ -66,11 +68,20 @@ markdown_extensions:
   - attr_list
   - md_in_html
   - admonition
+  - pymdownx.details
   - pymdownx.highlight
   - pymdownx.superfences
   - def_list
   - pymdownx.emoji:
-        emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
+  - pymdownx.tasklist:
+      custom_checkbox: true
+  - pymdownx.tabbed:
+      slugify: !!python/object/apply:pymdownx.slugs.slugify
+        kwds:
+          case: lower
+      alternate_style: true
 plugins:
   - mike
   - search

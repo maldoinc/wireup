@@ -1,10 +1,5 @@
 Autowiring relies on annotations or hints to be able to inject dependencies.
-When it is not possible to automatically locate a given dependency the argument must be annotated
-with additional metadata.
-
-!!! note
-    Although using annotations is recommended, they are entirely optional.
-    For more info see: [Manual Configuration](manual_configuration.md).
+When it is not possible to automatically locate a given dependency, it must be annotated with additional metadata.
 
 ## When do you need to provide annotations.
 
@@ -12,13 +7,14 @@ with additional metadata.
 |-----------------------------------------|-----------------------|----------------------|
 | Services                                | No                    |                      |
 | Interface with only one implementation  | No                    |                      |
+| Default implementation of an interface  | No                    |                      |
 | Interface with multiple implementations | Yes                   | Qualifier            |
 | Parameters                              | Yes                   | Parameter name       |
-| Parameter expressions                   | Yes                   | Parameter expression |
+| Parameter expressions                   | Yes                   | Expression           |
  
 ## Annotation types
 
-Wireup supports two types of annotations. Using Python's `Annotated` or by using default values.
+Wireup supports two types of annotations. Using Python's `Annotated` and default values.
 
 ### Annotated
 
@@ -50,9 +46,12 @@ def target(
 ```
 
 ### Explicit injection annotation
- Even though annotating services is optional, you CAN still annotate them to be explicit about what will 
- be injected. This also has the benefit of making the container throw when such as service
- does not exist instead of silently skipping this parameter.
+Even though annotating services is optional, you CAN still annotate them to be explicit about what will 
+be injected. This also has the benefit of making the container throw when such as service
+does not exist instead of silently skipping this parameter.
+
+This has limited application when using annotated types as the runtime will raise regardless, but when using
+default values as annotations it can be quite useful.
 
 ```python
 @container.autowire

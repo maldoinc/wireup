@@ -1,6 +1,6 @@
 When autowiring dependencies, you might want to inject an interface rather than 
-the concrete implementation directly. Since Python doesn't have built-in interfaces, you can leverage any class 
-that's marked as abstract within the container.
+the concrete implementation directly. Since Python doesn't have built-in interfaces, you can use classes
+that are marked as abstract within the container.
 
 This method helps to make testing easier as you can create dummy implementations of these services in your tests
 in order to control their behavior.
@@ -8,16 +8,16 @@ in order to control their behavior.
 ## Example
 
 The following code registers `Engine` as an interface. This implies that `Engine` can't be directly injected. 
-Instead, a dependency that implements the interface must be present and also be registered in the container.
+Instead, a dependency that implements the interface must also be registered in the container.
 
 To autowire interfaces, register a dependency that **directly inherits** the interface 
-within the container. When injecting, ask for the interface itself, not any of the implementations.
+with the container. When injecting, ask for the interface itself, not the implementations.
 
 ```python
 @container.abstract
 class Engine(abc.ABC):
     def get_type(self) -> EngineType:
-        raise NotImplementedError()
+        raise NotImplementedError
     
     
 @container.register
@@ -33,10 +33,9 @@ def target(engine: Engine):
     ...
 ```
 
-### Multiple implementations
+## Multiple implementations
 
-In scenarios where there are multiple implementations of an interface, each implementation must be 
-associated with a qualifier.
+When dealing with multiple implementations of an interface, associate them with a qualifier.
 
 ```python
 @container.register(qualifier="electric")
@@ -57,7 +56,7 @@ When injecting an interface with multiple implementing dependencies, you need to
 which concrete class should be resolved.
 
 ```python
-container.autowire
+@container.autowire
 def target(
     engine: Annotated[Engine, Wire(qualifier="electric")],
     combustion: Annotated[Engine, Wire(qualifier="combustion")],
@@ -73,10 +72,9 @@ def target(
 ## Default implementation
 
 When there are many implementations associated with a given interface you may want to associate one of them as the
-"default" implementation. This means that the container will inject that when there is no qualifier specified
-even though there are multiple implementations registered.
+"default" implementation.
 
-To achieve that simply omit the qualifier when registering.
+To achieve that omit the qualifier when registering the implementation that should be injected by default.
 
 ```python
 @container.register  # <-- Qualifier being absent will make this the default impl.
@@ -88,5 +86,5 @@ class CombustionEngine(Engine):
     pass
 ```
 
-In the above example when asking for `Engine` the container will inject `ElectricEngine`. For the other implementations 
+In the above example when asking for `Engine` the container will inject `ElectricEngine`. To inject the other implementations 
 you need to specify the qualifier as usual.

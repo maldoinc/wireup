@@ -1,12 +1,12 @@
-Wireup supports registering the same class multiple times under different qualifiers through the use of factories. 
+Wireup supports registering the same class multiple times under different qualifiers through factories. 
 
-A common use case for this would be to have multiple services connected to resources of the same underlying
-type, such as maintaining multiple database connections: a main and a readonly copy.
+A use case for this would be to have multiple services connected to resources of the same underlying type, 
+such as maintaining two database connections: a main and a read-only copy.
 
 ## Example
 
-Assume an application which has two databases set up: A main one and a readonly replica. In these scenarios the main
-connection is used for writes while the readonly connection will be used to perform reads.
+Assume an application with two databases: A main one and a read-only replica. In these scenarios, the main
+connection handles writes, and the read-only one will handle reads.
 
 ### Service registration via factories
 
