@@ -28,7 +28,7 @@
 * Simplified usage in 
 [Django](https://maldoinc.github.io/wireup/latest/integrations/django/),
 [Flask](https://maldoinc.github.io/wireup/latest/integrations/flask/) 
-and [FastApi](https://maldoinc.github.io/wireup/latest/integrations/fastapi/) using the first-party integrations.
+and [FastAPI](https://maldoinc.github.io/wireup/latest/integrations/fastapi/) using the first-party integrations.
 
 ## 📋 Quickstart
 
