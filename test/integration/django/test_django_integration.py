@@ -13,9 +13,7 @@ settings.configure(
     DEBUG=True,
     ROOT_URLCONF=sys.modules[__name__],
     MIDDLEWARE=["wireup.integration.django_integration.WireupMiddleware"],
-    WIREUP={
-        "SERVICE_MODULES": ["test.integration.django.service"]
-    },
+    WIREUP={"SERVICE_MODULES": ["test.integration.django.service"]},
     SECRET_KEY="secret",
 )
 
