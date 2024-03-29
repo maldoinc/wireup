@@ -1,6 +1,5 @@
 import sys
 import unittest
-from test.integration.django import service
 from test.integration.django.service.greeter_interface import GreeterService
 
 from django.conf import settings
@@ -14,7 +13,7 @@ settings.configure(
     DEBUG=True,
     ROOT_URLCONF=sys.modules[__name__],
     MIDDLEWARE=["wireup.integration.django_integration.WireupMiddleware"],
-    WIREUP_SERVICE_MODULES=[service],
+    WIREUP_SERVICE_MODULES=["test.integration.django.service"],
     SECRET_KEY="secret",
 )
 

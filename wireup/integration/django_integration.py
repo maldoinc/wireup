@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import importlib
 from typing import TYPE_CHECKING, Any
 
 from django.conf import settings
@@ -39,4 +40,4 @@ class WireupMiddleware:
             if not entry.startswith("__") and hasattr(settings, entry):
                 container.params.put(entry, getattr(settings, entry))
 
-        warmup_container(container, service_modules)
+        warmup_container(container, [importlib.import_module(m) if isinstance(m, str) else m for m in service_modules])

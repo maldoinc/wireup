@@ -2,12 +2,12 @@
 
 Dependency injection container with a focus on developer experience, type safety and ease of use.
 
-!!! note "New: Dependency injection for Flask"
-    Simplify usage in Flask applications by using the new [Flask integration](integrations/flask.md)!
+!!! note "New: First-party integrations"
+    Simplify Dependency injection using the first-party integrations
 
-    * Automatically inject dependencies on views without having to manually decorate.
-    * Expose Flask application configuration in the container.
-
+    * [Django Integration](integrations/django.md)
+    * [Flask Integration](integrations/flask.md)
+    * [FastAPI Integration](integrations/fastapi.md)
 ## Key features
 
 <div class="card-container">
@@ -67,7 +67,7 @@ Dependency injection container with a focus on developer experience, type safety
             <img src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@14.1.2/assets/72x72/2753.png" /> 
             Framework Agnostic
         </div>
-        Seamlessly integrate with popular web frameworks like Django, Flask and FastAPI
+        Seamlessly integrate with popular web frameworks such as Django, Flask and FastAPI
         to simplify dependency management.
     </div>
 

@@ -9,7 +9,7 @@ Dependency injection for Django is available via the first-party integration wir
 ## Installation
 
 To install the integration, add `WireupMiddleware` to the list of middlewares and define a setting
-`WIREUP_SERVICE_MODULES` containing a list of modules (not strings!) with application services.
+`WIREUP_SERVICE_MODULES` containing a list of modules with application services.
 
 This will automatically register settings as parameters with the same name, perform autowiring 
 in views and [warmup the container](../optimizing_container.md).
@@ -20,33 +20,39 @@ MIDDLEWARE = [
     # Add the wireup integration middleware
     "wireup.integration.django_integration.WireupMiddleware"
 ]
-WIREUP_SERVICE_MODULES=[service]
+
+# This is a list of top-level modules containing application services.
+# It can be either a list of strings or module types
+WIREUP_SERVICE_MODULES=[
+    "polls.services"
+]
 ```
 
 
 ## Usage
 
 ### Define some services
-```python title="app/services/greeter_service.py"
-class GreeterService:
-    # reference configuration by name.
-    def __init__(self, default_locale: Annotated[str, Wire(parameter="LANGUAGE_CODE")]):
-        self.default_locale = default_locale
-    
-    def greet(self) -> str:
-      return ...
+
+```python title="app/services/s3_manager.py"
+@container.register
+class S3Manager:
+    # Reference configuration by name.
+    # This is the same name this appears in settings.
+    def __init__(self, token: Annotated[str, Wire(parameter="S3_BUCKET_ACCESS_TOKEN")]):
+        self.access_token = token
+
+    def upload(self, file: File) -> None: ...
 ```
 
 ### Use in views
-```python title="views.py"
-@require_GET
-def greet_view(request: HttpRequest, greeter: GreeterService) -> HttpResponse:
-    name = request.GET.get("name")
-
-    return HttpResponse(greeter.greet(name))
+```python title="app/views.py"
+# s3_manager is automatically injected by wireup based on the annotated type.
+def upload_file(request: HttpRequest, s3_manager: S3Manager) -> HttpResponse:
+    return HttpResponse(...)
 
 ```
 
+For more examples see the [Wireup Django integration tests](https://github.com/maldoinc/wireup/tree/master/test/integration/django).
 
 
 ## Api Reference
