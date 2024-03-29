@@ -3,13 +3,13 @@ Dependency injection for Django is available via the first-party integration wir
 
 **Features:**
 
-* Automatically decorate views.
+* Automatically decorate views
+    * Removes the need for `@container.autowire`.
 * Expose Django configuration in the container's parameters.
 
 ## Installation
 
-To install the integration, add `WireupMiddleware` to the list of middlewares and define a setting
-`WIREUP_SERVICE_MODULES` containing a list of modules with application services.
+To install the integration, add `WireupMiddleware` to the list of middlewares and define a new "WIREUP" setting.
 
 This will automatically register settings as parameters with the same name, perform autowiring 
 in views and [warmup the container](../optimizing_container.md).
@@ -21,11 +21,11 @@ MIDDLEWARE = [
     "wireup.integration.django_integration.WireupMiddleware"
 ]
 
-# This is a list of top-level modules containing application services.
-# It can be either a list of strings or module types
-WIREUP_SERVICE_MODULES=[
-    "polls.services"
-]
+WIREUP = {
+    # This is a list of top-level modules containing application services.
+    # It can be either a list of strings or module types
+    "SERVICE_MODULES": ["test.integration.django.service"]
+},
 ```
 
 

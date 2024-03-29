@@ -34,7 +34,7 @@ class WireupMiddleware:
 
     @staticmethod
     def __boot_container() -> None:
-        service_modules = getattr(settings, "WIREUP_SERVICE_MODULES", [])
+        service_modules = settings.WIREUP.get("SERVICE_MODULES", [])
 
         for entry in dir(settings):
             if not entry.startswith("__") and hasattr(settings, entry):
