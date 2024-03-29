@@ -3,8 +3,7 @@ Dependency injection for Django is available via the first-party integration wir
 
 **Features:**
 
-* Automatically decorate views
-    * Removes the need for `@container.autowire`.
+* Automatically decorate views (removes the need for `@container.autowire`).
 * Expose Django configuration in the container's parameters.
 
 ## Installation
