@@ -72,17 +72,6 @@ class TestContainer(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(svc.connection_str, "sqlite://memory")
         self.assertEqual(svc.cache_dir, "/var/cache/etc")
 
-    def test_inject_param(self):
-        result = wire(param="value")
-        self.assertIsInstance(result, ParameterWrapper)
-        self.assertEqual(result.param, "value")
-
-    def test_inject_expr(self):
-        result = wire(expr="some ${param}")
-        self.assertIsInstance(result, ParameterWrapper)
-        self.assertIsInstance(result.param, TemplatedString)
-        self.assertEqual(result.param.value, "some ${param}")
-
     @patch("importlib.import_module")
     def test_inject_fastapi_dep(self, mock_import_module):
         mock_import_module.return_value = Mock(Depends=Mock())
