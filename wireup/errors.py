@@ -96,3 +96,10 @@ class InvalidRegistrationTypeError(WireupError):
 
     def __init__(self, attempted: Any) -> None:
         super().__init__(f"Cannot register {attempted} with the container. Allowed types are callables and types")
+
+
+class UnknownOverrideRequestedError(WireupError):
+    """Raised when attempting to override a service which does not exist."""
+
+    def __init__(self, klass: type, qualifier: ContainerProxyQualifierValue) -> None:
+        super().__init__(f"Cannot override unknown {klass} with qualifier '{qualifier}'.")

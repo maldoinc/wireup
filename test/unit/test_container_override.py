@@ -7,6 +7,7 @@ from typing_extensions import Annotated
 
 from test.unit.services.no_annotations.random.random_service import RandomService
 from wireup import DependencyContainer, ParameterBag, Wire
+from wireup.errors import UnknownOverrideRequestedError
 from wireup.ioc.override_manager import OverrideManager
 from wireup.ioc.types import ServiceOverride
 
@@ -30,13 +31,14 @@ class TestContainerOverride(unittest.TestCase):
 
     def test_container_overrides_deps_service_locator_interface(self):
         self.container.abstract(FooBase)
+        self.container.register(FooBar)
 
         foo_mock = MagicMock()
+        foo_mock.foo = "mock"
 
-        with patch.object(foo_mock, "foo", new="mock"):
-            with self.container.override.service(target=FooBase, new=foo_mock):
-                svc = self.container.get(FooBase)
-                self.assertEqual(svc.foo, "mock")
+        with self.container.override.service(target=FooBase, new=foo_mock):
+            svc = self.container.get(FooBase)
+            self.assertEqual(svc.foo, "mock")
 
     def test_container_override_many_with_qualifier(self):
         self.container.register(RandomService, qualifier="Rand1")
@@ -90,9 +92,18 @@ class TestContainerOverride(unittest.TestCase):
     def test_clear_services_removes_all(self):
         overrides = {}
         mock1 = MagicMock()
-        override_mgr = OverrideManager(overrides)
+        override_mgr = OverrideManager(overrides, lambda _klass, _qualifier: True)
         override_mgr.set(RandomService, new=mock1)
         self.assertEqual(overrides, {(RandomService, None): mock1})
 
         override_mgr.clear()
         self.assertEqual(overrides, {})
+
+    def test_raises_on_unknown_override(self):
+        with self.assertRaises(UnknownOverrideRequestedError) as e:
+            with self.container.override.service(target=unittest.TestCase, qualifier="foo", new=MagicMock()):
+                pass
+
+        self.assertEqual(
+            str(e.exception), "Cannot override unknown <class 'unittest.case.TestCase'> with qualifier 'foo'."
+        )

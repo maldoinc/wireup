@@ -3,14 +3,23 @@ from __future__ import annotations
 from contextlib import contextmanager
 from typing import TYPE_CHECKING, Any, Iterator
 
+from wireup.errors import UnknownOverrideRequestedError
+
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
     from wireup.ioc.types import ContainerProxyQualifierValue, ServiceOverride
 
 
 class OverrideManager:
     """Enables overriding of services registered with the container."""
 
-    def __init__(self, active_overrides: dict[tuple[type, ContainerProxyQualifierValue], Any]) -> None:
+    def __init__(
+        self,
+        active_overrides: dict[tuple[type, ContainerProxyQualifierValue], Any],
+        is_valid_override: Callable[[type, ContainerProxyQualifierValue], bool],
+    ) -> None:
+        self.__is_valid_override = is_valid_override
         self.__active_overrides = active_overrides
 
     def set(self, target: type, new: Any, qualifier: ContainerProxyQualifierValue = None) -> None:
@@ -23,6 +32,9 @@ class OverrideManager:
         with the qualifier parameter set to a value.
         :param new: The new object to be injected instead of `target`.
         """
+        if not self.__is_valid_override(target, qualifier):
+            raise UnknownOverrideRequestedError(klass=target, qualifier=qualifier)
+
         self.__active_overrides[target, qualifier] = new
 
     def delete(self, target: type, qualifier: ContainerProxyQualifierValue = None) -> None:
