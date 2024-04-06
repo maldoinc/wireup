@@ -1,7 +1,7 @@
 from test.fixtures import Counter, FooBar, FooBase
+from test.unit.services.no_annotations.random.random_service import RandomService
 from unittest import TestCase
 
-from test.unit.services.no_annotations.random.random_service import RandomService
 from wireup import DependencyContainer, ParameterBag, ServiceLifetime, warmup_container, wire
 from wireup.errors import (
     DuplicateServiceRegistrationError,

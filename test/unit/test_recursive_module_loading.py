@@ -1,7 +1,7 @@
 import re
 import unittest
-
 from test.unit import services
+
 from wireup import DependencyContainer, ParameterBag, register_all_in_module
 
 
@@ -10,7 +10,7 @@ class RecursiveModuleLoadingTest(unittest.TestCase):
         container = DependencyContainer(ParameterBag())
         register_all_in_module(container, module=services, pattern="*Service")
         self.assertSetEqual(
-            {x.__name__ for x in container.context.dependencies.keys()},
+            {x.__name__ for x in container.context.dependencies},
             {
                 "EnvService",
                 "TrulyRandomService",
@@ -26,7 +26,7 @@ class RecursiveModuleLoadingTest(unittest.TestCase):
         container = DependencyContainer(ParameterBag())
         register_all_in_module(container, module=services, pattern=re.compile("^Db.+|.+Repository$"))
         self.assertSetEqual(
-            {x.__name__ for x in container.context.dependencies.keys()},
+            {x.__name__ for x in container.context.dependencies},
             {"DbService", "FooRepository"},
         )
 
@@ -34,7 +34,7 @@ class RecursiveModuleLoadingTest(unittest.TestCase):
         container = DependencyContainer(ParameterBag())
         register_all_in_module(container, module=services, pattern="*Random*")
         self.assertEqual(
-            {x.__name__ for x in container.context.dependencies.keys()},
+            {x.__name__ for x in container.context.dependencies},
             {
                 "RandomService",
                 "TrulyRandomService",

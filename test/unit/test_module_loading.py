@@ -1,8 +1,8 @@
 import unittest
-
-import wireup
 from test.unit.services import no_annotations, with_annotations
 from test.unit.services.with_annotations.env import EnvService
+
+import wireup
 from wireup import DependencyContainer, ParameterBag, register_all_in_module, warmup_container
 
 
@@ -11,7 +11,7 @@ class ModuleLoadingTest(unittest.TestCase):
         container = DependencyContainer(ParameterBag())
         register_all_in_module(container, module=no_annotations, pattern="*Service")
 
-        registered = {t.__name__ for t in container.context.dependencies.keys()}
+        registered = {t.__name__ for t in container.context.dependencies}
         self.assertEqual(
             registered, {"BarService", "DbService", "TrulyRandomService", "BazService", "FooService", "RandomService"}
         )

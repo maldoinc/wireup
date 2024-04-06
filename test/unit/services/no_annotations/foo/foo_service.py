@@ -1,5 +1,4 @@
 from dataclasses import dataclass
-
 from test.unit.services.no_annotations.db_service import DbService
 
 

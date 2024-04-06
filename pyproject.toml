@@ -84,6 +84,9 @@ lint.ignore = [
     "COM812",
     "ISC001"
 ]
+[tool.ruff.lint.per-file-ignores]
+"test/*" = ["D", "ANN", "PT", "SLF001", "T201", "EM101", "TRY", "FA100", "B008", "RUF009", "F401", "SIM117"]
+
 
 [build-system]
 requires = ["poetry-core"]

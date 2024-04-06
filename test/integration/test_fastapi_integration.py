@@ -1,11 +1,10 @@
 import unittest
+from test.unit.services.no_annotations.random.random_service import RandomService
 
-from fastapi import FastAPI, Depends
+from fastapi import Depends, FastAPI
 from fastapi.testclient import TestClient
 from typing_extensions import Annotated
-
-from test.unit.services.no_annotations.random.random_service import RandomService
-from wireup import Wire, ParameterBag, DependencyContainer
+from wireup import DependencyContainer, ParameterBag, Wire
 from wireup.errors import UnknownServiceRequestedError
 from wireup.integration.fastapi_integration import wireup_init_fastapi_integration
 

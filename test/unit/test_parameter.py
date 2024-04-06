@@ -49,7 +49,7 @@ class TestParameterBag(unittest.TestCase):
         self.bag.put("foo", "bar")
         self.assertEqual(self.bag.get(TemplatedString("${foo}-${foo}")), "bar-bar")
         self.assertEqual(self.bag.get(TemplatedString("${foo}-${foo}")), "bar-bar")
-        self.assertEqual(self.bag._ParameterBag__cache, {"${foo}-${foo}": "bar-bar"})  # noqa: SLF001
+        self.assertEqual(self.bag._ParameterBag__cache, {"${foo}-${foo}": "bar-bar"})
 
     def test_get_parameter_unknown(self):
         with self.assertRaises(UnknownParameterError) as context:

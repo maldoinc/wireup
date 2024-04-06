@@ -1,12 +1,10 @@
 import unittest
 from dataclasses import dataclass
-
 from test.fixtures import FooBar, FooBase
+from test.unit.services.no_annotations.random.random_service import RandomService
 
 from flask import Flask
 from typing_extensions import Annotated
-
-from test.unit.services.no_annotations.random.random_service import RandomService
 from wireup import DependencyContainer, ParameterBag, Wire
 from wireup.integration.flask_integration import wireup_init_flask_integration
 
