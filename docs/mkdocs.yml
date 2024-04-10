@@ -18,6 +18,7 @@ nav:
     - FastAPI: integrations/fastapi.md
   - Misc:
     - Introduce to an existing project: introduce_to_an_existing_project.md
+    - Multiple db connections: multiple_registrations.md
     - Demo application: demo_app.md
     - Versioning: versioning.md
   - API Reference:
