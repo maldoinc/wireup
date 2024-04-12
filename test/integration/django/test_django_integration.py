@@ -7,24 +7,26 @@ from django.http import HttpRequest, HttpResponse
 from django.test import Client
 from django.urls import path
 from typing_extensions import Annotated
+
+from test.integration.django.service.random_service import RandomService
 from wireup import Wire
 
 settings.configure(
     DEBUG=True,
     ROOT_URLCONF=sys.modules[__name__],
     MIDDLEWARE=["wireup.integration.django_integration.WireupMiddleware"],
-    WIREUP={"SERVICE_MODULES": ["test.integration.django.service"]},
+    WIREUP={"SERVICE_MODULES": ["test.integration.django.service", "test.integration.django.factory"]},
     SECRET_KEY="secret",
 )
 
 
 def index(
-    request: HttpRequest, greeter: GreeterService, is_debug: Annotated[bool, Wire(param="DEBUG")]
+    request: HttpRequest, greeter: GreeterService, is_debug: Annotated[bool, Wire(param="DEBUG")], random_service: RandomService
 ) -> HttpResponse:
     name = request.GET.get("name")
     greeting = greeter.greet(name)
 
-    return HttpResponse(f"{greeting}! Debug = {is_debug}")
+    return HttpResponse(f"{greeting}! Debug = {is_debug}. Your lucky number is {random_service.get_random()}")
 
 
 urlpatterns = [
@@ -38,4 +40,4 @@ class TestDjango(unittest.TestCase):
         res = c.get("/?name=World")
 
         self.assertEqual(res.status_code, 200)
-        self.assertEqual(res.content.decode("utf8"), "Hello World! Debug = True")
+        self.assertEqual(res.content.decode("utf8"), "Hello World! Debug = True. Your lucky number is 4")
