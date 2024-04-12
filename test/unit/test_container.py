@@ -350,7 +350,7 @@ class TestContainer(unittest.IsolatedAsyncioTestCase):
 
         self.assertIn(
             f"Cannot instantiate concrete class for {RegisterWithQualifierClass} "
-            "as qualifier 'None' is unknown. Available qualifiers: {'test_container'}",
+            f"as qualifier 'None' is unknown. Available qualifiers: {{'{__name__}'}}",
             str(context.exception),
         )
 
@@ -376,7 +376,7 @@ class TestContainer(unittest.IsolatedAsyncioTestCase):
             inner()
 
         self.assertEqual(
-            "Cannot use qualifier test_container on a type that is not managed by the container.",
+            f"Cannot use qualifier {__name__} on a type that is not managed by the container.",
             str(context.exception),
         )
 
