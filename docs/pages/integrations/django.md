@@ -43,6 +43,21 @@ class S3Manager:
     def upload(self, file: File) -> None: ...
 ```
 
+It is also possible to use django settings in factories.
+
+```python title="app/services/github_client.py"
+@dataclass
+class GithubClient:
+    api_key: str
+```
+
+
+```python title="app/services/factories.py"
+@container.register
+def github_client_factory() -> GithubClient:
+    return GithubClient(settings.GH_API_KEY)
+```
+
 ### Use in views
 ```python title="app/views.py"
 # s3_manager is automatically injected by wireup based on the annotated type.

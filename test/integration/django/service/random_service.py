@@ -1,3 +1,6 @@
 class RandomService:
+    def __init__(self, num: int) -> None:
+        self.num = num
+
     def get_random(self) -> int:
-        return 4
+        return self.num

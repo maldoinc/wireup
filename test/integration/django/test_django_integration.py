@@ -1,14 +1,13 @@
 import sys
 import unittest
 from test.integration.django.service.greeter_interface import GreeterService
+from test.integration.django.service.random_service import RandomService
 
 from django.conf import settings
 from django.http import HttpRequest, HttpResponse
 from django.test import Client
 from django.urls import path
 from typing_extensions import Annotated
-
-from test.integration.django.service.random_service import RandomService
 from wireup import Wire
 
 settings.configure(
@@ -17,11 +16,15 @@ settings.configure(
     MIDDLEWARE=["wireup.integration.django_integration.WireupMiddleware"],
     WIREUP={"SERVICE_MODULES": ["test.integration.django.service", "test.integration.django.factory"]},
     SECRET_KEY="secret",
+    START_NUM=4,
 )
 
 
 def index(
-    request: HttpRequest, greeter: GreeterService, is_debug: Annotated[bool, Wire(param="DEBUG")], random_service: RandomService
+    request: HttpRequest,
+    greeter: GreeterService,
+    is_debug: Annotated[bool, Wire(param="DEBUG")],
+    random_service: RandomService,
 ) -> HttpResponse:
     name = request.GET.get("name")
     greeting = greeter.greet(name)
