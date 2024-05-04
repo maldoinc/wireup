@@ -40,6 +40,9 @@ def _find_classes_in_module(module: ModuleType, pattern: str | re.Pattern[str] =
 
     def _find_in_path(path: Path, parent_module_name: str) -> None:
         for file in path.iterdir():
+            if file.name == "__pycache__":
+                continue
+
             full_path = path / file
 
             if Path.is_dir(full_path):
