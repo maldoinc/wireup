@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "wireup"
-version = "0.7.1"
+version = "0.7.2"
 description = "Python Dependency Injection Library"
 authors = ["Aldo Mateli <aldo.mateli@gmail.com>"]
 license = "MIT"
@@ -84,6 +84,9 @@ lint.ignore = [
     "COM812",
     "ISC001"
 ]
+[tool.ruff.lint.per-file-ignores]
+"test/*" = ["D", "ANN", "PT", "SLF001", "T201", "EM101", "TRY", "FA100", "B008", "RUF009", "F401", "SIM117"]
+
 
 [build-system]
 requires = ["poetry-core"]

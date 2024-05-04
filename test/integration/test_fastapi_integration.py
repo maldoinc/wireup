@@ -1,11 +1,10 @@
 import unittest
+from test.unit.services.no_annotations.random.random_service import RandomService
 
-from fastapi import FastAPI, Depends
+from fastapi import Depends, FastAPI
 from fastapi.testclient import TestClient
 from typing_extensions import Annotated
-
-from test.unit.services.no_annotations.random.random_service import RandomService
-from wireup import Wire, ParameterBag, DependencyContainer
+from wireup import DependencyContainer, ParameterBag, Wire
 from wireup.errors import UnknownServiceRequestedError
 from wireup.integration.fastapi_integration import wireup_init_fastapi_integration
 
@@ -18,8 +17,18 @@ class TestFastAPI(unittest.TestCase):
 
     def test_injects_service(self):
         self.container.register(RandomService)
+        is_lucky_number_invoked = False
 
         def get_lucky_number() -> int:
+            nonlocal is_lucky_number_invoked
+
+            # Raise if this will be invoked more than once
+            # That would be the case if wireup also "unwraps" and tries
+            # to resolve dependencies it doesn't own.
+            if is_lucky_number_invoked:
+                raise Exception("Lucky Number was already invoked")
+
+            is_lucky_number_invoked = True
             return 42
 
         @self.app.get("/")
@@ -32,6 +41,18 @@ class TestFastAPI(unittest.TestCase):
         response = self.client.get("/")
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json(), {"number": 4, "lucky_number": 42})
+
+    def test_injects_parameters(self):
+        self.container.params.put("foo", "bar")
+
+        @self.app.get("/")
+        async def target(foo: Annotated[str, Wire(param="foo")], foo_foo: Annotated[str, Wire(expr="${foo}-${foo}")]):
+            return {"foo": foo, "foo_foo": foo_foo}
+
+        wireup_init_fastapi_integration(self.app, dependency_container=self.container, service_modules=[])
+        response = self.client.get("/")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json(), {"foo": "bar", "foo_foo": "bar-bar"})
 
     def test_raises_on_unknown_service(self):
         @self.app.get("/")

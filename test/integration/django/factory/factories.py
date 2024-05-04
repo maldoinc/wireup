@@ -1,7 +1,6 @@
-from django.conf import settings
-
 from test.integration.django.service.random_service import RandomService
 
+from django.conf import settings
 from wireup import container
 
 

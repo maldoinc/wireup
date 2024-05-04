@@ -11,7 +11,7 @@ INSTALLED_APPS = ["wireup.integration.django"]
 DEBUG = True
 ROOT_URLCONF = sys.modules[__name__]
 WIREUP = {"SERVICE_MODULES": ["test.integration.django.service", "test.integration.django.factory"]}
-SECRET_KEY = "secret"
+SECRET_KEY = "not_actually_a_secret"  # noqa: S105
 START_NUM = 4
 
 urlpatterns = [

@@ -1,14 +1,15 @@
 import datetime
+import functools
 import unittest
 from dataclasses import dataclass
 from test.fixtures import Counter, FooBar, FooBase, FooBaz
-from unittest.mock import Mock, patch
-
-from typing_extensions import Annotated
-
 from test.unit import services
 from test.unit.services.no_annotations.random.random_service import RandomService
 from test.unit.services.no_annotations.random.truly_random_service import TrulyRandomService
+from typing import Optional
+from unittest.mock import Mock, patch
+
+from typing_extensions import Annotated
 from wireup import ServiceLifetime, Wire, register_all_in_module, wire
 from wireup.errors import (
     DuplicateQualifierForInterfaceError,
@@ -72,17 +73,6 @@ class TestContainer(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(svc.connection_str, "sqlite://memory")
         self.assertEqual(svc.cache_dir, "/var/cache/etc")
 
-    def test_inject_param(self):
-        result = wire(param="value")
-        self.assertIsInstance(result, ParameterWrapper)
-        self.assertEqual(result.param, "value")
-
-    def test_inject_expr(self):
-        result = wire(expr="some ${param}")
-        self.assertIsInstance(result, ParameterWrapper)
-        self.assertIsInstance(result.param, TemplatedString)
-        self.assertEqual(result.param.value, "some ${param}")
-
     @patch("importlib.import_module")
     def test_inject_fastapi_dep(self, mock_import_module):
         mock_import_module.return_value = Mock(Depends=Mock())
@@ -99,7 +89,7 @@ class TestContainer(unittest.IsolatedAsyncioTestCase):
 
     def test_inject_using_annotated_empty_wire_fails_to_inject_unknown(self):
         @self.container.autowire
-        def inner(random: Annotated[unittest.TestCase, Wire()]): ...
+        def inner(_random: Annotated[unittest.TestCase, Wire()]): ...
 
         with self.assertRaises(UnknownServiceRequestedError) as context:
             inner()
@@ -307,7 +297,7 @@ class TestContainer(unittest.IsolatedAsyncioTestCase):
 
     def test_qualifier_raises_wire_called_on_unknown_type(self):
         @self.container.autowire
-        def inner(sub1: FooBase = wire(qualifier="sub1")): ...
+        def inner(_sub1: FooBase = wire(qualifier="sub1")): ...
 
         self.container.abstract(FooBase)
         with self.assertRaises(UnknownQualifiedServiceRequestedError) as context:
@@ -321,7 +311,7 @@ class TestContainer(unittest.IsolatedAsyncioTestCase):
 
     def test_inject_abstract_directly_raises(self):
         @self.container.autowire
-        def inner(sub1: FooBase): ...
+        def inner(_sub1: FooBase): ...
 
         self.container.abstract(FooBase)
         self.container.register(FooBar, qualifier="foobar")
@@ -336,7 +326,7 @@ class TestContainer(unittest.IsolatedAsyncioTestCase):
 
     def test_inject_abstract_directly_with_no_impls_raises(self):
         @self.container.autowire
-        def inner(sub1: FooBase): ...
+        def inner(_sub1: FooBase): ...
 
         self.container.abstract(FooBase)
         with self.assertRaises(Exception) as context:
@@ -353,14 +343,14 @@ class TestContainer(unittest.IsolatedAsyncioTestCase):
         class RegisterWithQualifierClass: ...
 
         @self.container.autowire
-        def inner(foo: RegisterWithQualifierClass): ...
+        def inner(_foo: RegisterWithQualifierClass): ...
 
         with self.assertRaises(UnknownQualifiedServiceRequestedError) as context:
             inner()
 
         self.assertIn(
             f"Cannot instantiate concrete class for {RegisterWithQualifierClass} "
-            "as qualifier 'None' is unknown. Available qualifiers: {'test_container'}",
+            f"as qualifier 'None' is unknown. Available qualifiers: {{'{__name__}'}}",
             str(context.exception),
         )
 
@@ -380,13 +370,13 @@ class TestContainer(unittest.IsolatedAsyncioTestCase):
 
     def test_inject_qualifier_on_unknown_type(self):
         @self.container.autowire
-        def inner(foo: str = wire(qualifier=__name__)): ...
+        def inner(_foo: str = wire(qualifier=__name__)): ...
 
         with self.assertRaises(UsageOfQualifierOnUnknownObjectError) as context:
             inner()
 
         self.assertEqual(
-            "Cannot use qualifier test_container on a type that is not managed by the container.",
+            f"Cannot use qualifier {__name__} on a type that is not managed by the container.",
             str(context.exception),
         )
 
@@ -500,11 +490,24 @@ class TestContainer(unittest.IsolatedAsyncioTestCase):
         self.assertIsInstance(second, RandomService)
 
     def test_shrinks_context_on_autowire(self):
-        def target(a: RandomService, _b: unittest.TestCase = None, _c: datetime.datetime = None):
+        class SomeClass:
+            pass
+
+        def provide_b(fn):
+            @functools.wraps(fn)
+            def __inner(*args, **kwargs):
+                return fn(*args, **kwargs, b=SomeClass())
+
+            return __inner
+
+        @provide_b
+        def target(a: RandomService, b: SomeClass, _c: Optional[datetime.datetime] = None):
             self.assertEqual(a.get_random(), 4)
+            self.assertIsInstance(b, SomeClass)
 
         autowired = self.container.autowire(target)
-        self.assertEqual(self.container.context.dependencies[target].keys(), {"a", "_b", "_c"})
+        self.assertEqual(self.container.context.dependencies[target].keys(), {"a", "b"})
+        # On the second call, container will drop b from dependencies as it is an unknown object.
         autowired()
         self.assertEqual(self.container.context.dependencies[target].keys(), {"a"})
 

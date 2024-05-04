@@ -34,7 +34,6 @@ if TYPE_CHECKING:
     from .initialization_context import InitializationContext
     from .parameter import ParameterBag
 
-
 __T = TypeVar("__T")
 __ObjectIdentifier = Tuple[type, ContainerProxyQualifierValue]
 
@@ -73,7 +72,9 @@ class DependencyContainer:
         self.__initialized_proxies: dict[__ObjectIdentifier, ContainerProxy[Any]] = {}
         self.__buildable_types: set[type] = set()
         self.__params: ParameterBag = parameter_bag
-        self.__override_manager: OverrideManager = OverrideManager(self.__active_overrides)
+        self.__override_manager: OverrideManager = OverrideManager(
+            self.__active_overrides, self.__service_registry.is_type_with_qualifier_known
+        )
 
     def get(self, klass: type[__T], qualifier: ContainerProxyQualifierValue = None) -> __T:
         """Get an instance of the requested type.

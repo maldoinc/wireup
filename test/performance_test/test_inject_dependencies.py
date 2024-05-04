@@ -1,6 +1,7 @@
 import timeit
 import unittest
 from dataclasses import dataclass
+from typing import Optional
 
 from typing_extensions import Annotated
 from wireup import DependencyContainer, ParameterBag, Wire
@@ -60,10 +61,10 @@ class UnitTestInject(unittest.TestCase):
             a: A,
             b: B,
             c: C,
-            _d: unittest.TestCase = None,
-            _e: unittest.TestCase = None,
-            _f: unittest.TestCase = None,
-            _g: unittest.TestCase = None,
+            _d: Optional[unittest.TestCase] = None,
+            _e: Optional[unittest.TestCase] = None,
+            _f: Optional[unittest.TestCase] = None,
+            _g: Optional[unittest.TestCase] = None,
         ):
             return c.c() + b.b() + a.a()
 

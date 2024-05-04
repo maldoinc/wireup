@@ -1,16 +1,21 @@
 from __future__ import annotations
 
+import contextlib
 import importlib
 from enum import Enum
-from typing import Any
+from typing import TYPE_CHECKING
 
 from wireup.ioc.types import (
     ContainerProxyQualifier,
     ContainerProxyQualifierValue,
     EmptyContainerInjectionRequest,
+    InjectableType,
     ParameterWrapper,
     TemplatedString,
 )
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
 
 
 def wire(
@@ -18,7 +23,7 @@ def wire(
     param: str | None = None,
     expr: str | None = None,
     qualifier: ContainerProxyQualifierValue = None,
-) -> Any:
+) -> InjectableType | Callable[[], InjectableType]:
     """Inject resources from the container to autowired method arguments.
 
     Arguments are exclusive and only one of them must be used at any time.
@@ -32,21 +37,28 @@ def wire(
     :param qualifier: Qualify which implementation to bind when there are multiple components
     implementing an interface that is registered in the container via `@abstract`.
     """
+    res: InjectableType
+
     if param:
-        return ParameterWrapper(param)
+        res = ParameterWrapper(param)
+    elif expr:
+        res = ParameterWrapper(TemplatedString(expr))
+    elif qualifier:
+        res = ContainerProxyQualifier(qualifier)
+    else:
+        res = EmptyContainerInjectionRequest()
 
-    if expr:
-        return ParameterWrapper(TemplatedString(expr))
+    # Fastapi needs all dependencies to be wrapped with Depends.
+    with contextlib.suppress(ModuleNotFoundError):
 
-    if qualifier:
-        return ContainerProxyQualifier(qualifier)
+        def _inner() -> InjectableType:
+            return res
 
-    try:
-        # Allow fastapi users to do .get() without any params
-        # It is meant to be used as a default value in where Depends() is expected
-        return importlib.import_module("fastapi").Depends(EmptyContainerInjectionRequest)
-    except ModuleNotFoundError:
-        return EmptyContainerInjectionRequest()
+        # This will act as a flag so that wireup knows this dependency belongs to it.
+        _inner.__is_wireup_depends__ = True  # type: ignore[attr-defined]
+        return importlib.import_module("fastapi").Depends(_inner)  # type: ignore[no-any-return]
+
+    return res
 
 
 class ParameterEnum(Enum):
@@ -59,7 +71,7 @@ class ParameterEnum(Enum):
     This will inject a parameter by name and won't work with expressions.
     """
 
-    def wire(self) -> Any:
+    def wire(self) -> InjectableType | Callable[[], InjectableType]:
         """Inject the parameter this enumeration member represents.
 
         Equivalent of `wire(param=EnumParam.enum_member.value)`
