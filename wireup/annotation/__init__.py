@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import contextlib
 import importlib
+import warnings
 from enum import Enum
 from typing import TYPE_CHECKING
 
@@ -76,6 +77,12 @@ class ParameterEnum(Enum):
 
         Equivalent of `wire(param=EnumParam.enum_member.value)`
         """
+        warnings.warn(
+            "ParameterEnum is deprecated. Please use type aliases instead. "
+            "E.g.: SomeParam = Annotated[str, Wire(..)]",
+            stacklevel=2,
+        )
+
         return wire(param=self.value)
 
 

@@ -4,6 +4,7 @@ import fnmatch
 import importlib
 import inspect
 import re
+import warnings
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
@@ -75,6 +76,11 @@ def register_all_in_module(
     :param module: The package name to recursively search for classes.
     :param pattern: A string representing a fnmatch pattern or a regular expression compiled with re.compile.
     """
+    warnings.warn(
+        "Using register_all_in_module is deprecated. "
+        "Use @container.register or factories in conjunction with warmup_container to register services.",
+        stacklevel=2,
+    )
     klass: type[Any]
     for klass in _find_classes_in_module(module, pattern):
         container.register(klass)
@@ -85,4 +91,9 @@ def load_module(module: ModuleType) -> None:
 
     This can be useful to import them module and trigger any container registrations.
     """
+    warnings.warn(
+        "Using load_module is deprecated. "
+        "Use @container.register or factories in conjunction with warmup_container to register services.",
+        stacklevel=2,
+    )
     _find_classes_in_module(module)
