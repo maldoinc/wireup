@@ -1,3 +1,2 @@
-## WireupMiddleware
-::: wireup.integration.django_integration.WireupMiddleware
+::: wireup.integration.django.apps
 

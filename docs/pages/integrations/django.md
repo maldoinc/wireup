@@ -1,29 +1,20 @@
 Dependency injection for Django is available via the first-party integration wireup provides, available in
-`wireup.integration.django_integration`.
-
-**Features:**
-
-* Automatically decorate views (removes the need for `@container.autowire`).
-* Expose Django configuration in the container's parameters.
+`wireup.integration.django`.
 
 ## Installation
 
-To install the integration, add `WireupMiddleware` to the list of middlewares and define a new "WIREUP" setting.
-
-This will automatically register settings as parameters with the same name, perform autowiring 
-in views and [warmup the container](../optimizing_container.md).
+To install the integration, add `wireup.integration.django` to `INSTALLED_APPS` and define a new `WIREUP` setting.
 
 ```python title="settings.py"
-MIDDLEWARE = [
+INSTALLED_APPS = [
     ...,
-    # Add the wireup integration middleware
-    "wireup.integration.django_integration.WireupMiddleware"
+    "wireup.integration.django"
 ]
 
 WIREUP = {
-    # This is a list of top-level modules containing application services.
-    # It can be either a list of strings or module types
-    "SERVICE_MODULES": ["test.integration.django.service"]
+    # This is a list of top-level modules containing service registrations.
+    # It can be either a list of strings or module types.
+    "SERVICE_MODULES": ["mysite.polls.services"]
 },
 ```
 
@@ -32,7 +23,7 @@ WIREUP = {
 
 ### Define some services
 
-```python title="app/services/s3_manager.py"
+```python title="mysite/polls/services/s3_manager.py"
 @container.register
 class S3Manager:
     # Reference configuration by name.
@@ -45,14 +36,14 @@ class S3Manager:
 
 It is also possible to use django settings in factories.
 
-```python title="app/services/github_client.py"
+```python title="mysite/polls/services/github_client.py"
 @dataclass
 class GithubClient:
     api_key: str
 ```
 
 
-```python title="app/services/factories.py"
+```python title="mysite/polls/services/factories.py"
 @container.register
 def github_client_factory() -> GithubClient:
     return GithubClient(settings.GH_API_KEY)
@@ -60,11 +51,13 @@ def github_client_factory() -> GithubClient:
 
 ### Use in views
 ```python title="app/views.py"
-# s3_manager is automatically injected by wireup based on the annotated type.
+@container.autowire
 def upload_file(request: HttpRequest, s3_manager: S3Manager) -> HttpResponse:
     return HttpResponse(...)
-
 ```
+
+Class-based views are also supported. You autowire both `__init__` and the handler method as necessary. 
+
 
 For more examples see the [Wireup Django integration tests](https://github.com/maldoinc/wireup/tree/master/test/integration/django).
 
