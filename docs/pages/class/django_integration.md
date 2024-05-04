@@ -1,0 +1,2 @@
+::: wireup.integration.django.apps
+
