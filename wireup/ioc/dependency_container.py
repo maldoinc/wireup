@@ -3,7 +3,7 @@ from __future__ import annotations
 import asyncio
 import functools
 import sys
-from typing import TYPE_CHECKING, Any, Callable, Tuple, TypeVar, overload
+from typing import TYPE_CHECKING, Any, Callable, Optional, Tuple, TypeVar, overload
 
 from .override_manager import OverrideManager
 
@@ -35,7 +35,7 @@ if TYPE_CHECKING:
     from .parameter import ParameterBag
 
 __T = TypeVar("__T")
-__ObjectIdentifier = Tuple[type, Qualifier | None]
+__ObjectIdentifier = Tuple[type, Optional[Qualifier]]
 
 
 class DependencyContainer:
