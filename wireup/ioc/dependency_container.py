@@ -175,7 +175,7 @@ class DependencyContainer:
         and cause it to create new instances when they are requested to be injected.
 
         This can be useful in tests in a `unittest.TestCase.setUp` method or pytest autouse=True fixture,
-        allowing you to have a fresh copy of the container with no previously intitialized instances
+        allowing you to have a fresh copy of the container with no previously initialized instances
         to make test cases independent of each-other.
         """
         self.__initialized_objects.clear()
