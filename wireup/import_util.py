@@ -46,7 +46,9 @@ def _find_classes_in_module(module: ModuleType, pattern: str | re.Pattern[str] =
                 sub_module_name = f"{parent_module_name}.{file.name}"
                 _find_in_path(full_path, sub_module_name)
             elif file.name.endswith(".py"):
-                full_module_name = f"{parent_module_name}.{file.name[:-3]}"
+                full_module_name = (
+                    parent_module_name if file.name == "__init__.py" else f"{parent_module_name}.{file.name[:-3]}"
+                )
                 sub_module = importlib.import_module(full_module_name)
                 classes.update(_module_get_classes(sub_module))
 
