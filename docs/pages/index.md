@@ -3,8 +3,6 @@ hide:
     - navigation
 ---
 
-# Wireup
-
 Performant, concise and easy to use dependency injection container for Python 3.8+.
 
 
@@ -75,8 +73,9 @@ Performant, concise and easy to use dependency injection container for Python 3.
 
 Simplified integration with the following frameworks through the provided integrations.
 
-- [x] [Flask](integrations/flask.md)
+- [x] [Django](integrations/django.md)
 - [x] [FastAPI](integrations/fastapi.md)
+- [x] [Flask](integrations/flask.md)
 
 ## License
 

@@ -17,8 +17,9 @@ nav:
       - Demo application: demo_app.md
       - Versioning: versioning.md
   - Integrations:
-    - Flask: integrations/flask.md
+    - Django: integrations/django.md
     - FastAPI: integrations/fastapi.md
+    - Flask: integrations/flask.md
   - API Reference:
       - wireup: class/wireup.md
       - DependencyContainer: class/dependency_container.md

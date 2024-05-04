@@ -20,7 +20,9 @@
 * Factory pattern
 * Singleton/Transient dependencies
 * Framework Agnostic
-* Simplified usage in [Flask](https://maldoinc.github.io/wireup/latest/integrations/flask/) and [FastApi](https://maldoinc.github.io/wireup/latest/integrations/fastapi/).
+* Simplified usage in [Django](https://maldoinc.github.io/wireup/latest/integrations/flask/),
+[Flask](https://maldoinc.github.io/wireup/latest/integrations/flask/) and 
+[FastAPI](https://maldoinc.github.io/wireup/latest/integrations/fastapi/).
 
 ## 📋 Quickstart
 
