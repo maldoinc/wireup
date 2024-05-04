@@ -8,7 +8,7 @@ from wireup.errors import UnknownOverrideRequestedError
 if TYPE_CHECKING:
     from collections.abc import Callable
 
-    from wireup.ioc.types import ContainerProxyQualifierValue, ServiceOverride
+    from wireup.ioc.types import Qualifier, ServiceOverride
 
 
 class OverrideManager:
@@ -16,13 +16,13 @@ class OverrideManager:
 
     def __init__(
         self,
-        active_overrides: dict[tuple[type, ContainerProxyQualifierValue], Any],
-        is_valid_override: Callable[[type, ContainerProxyQualifierValue], bool],
+        active_overrides: dict[tuple[type, Qualifier], Any],
+        is_valid_override: Callable[[type, Qualifier], bool],
     ) -> None:
         self.__is_valid_override = is_valid_override
         self.__active_overrides = active_overrides
 
-    def set(self, target: type, new: Any, qualifier: ContainerProxyQualifierValue = None) -> None:
+    def set(self, target: type, new: Any, qualifier: Qualifier | None = None) -> None:
         """Override the `target` service with `new`.
 
         Subsequent autowire calls to `target` will result in `new` being injected.
@@ -37,7 +37,7 @@ class OverrideManager:
 
         self.__active_overrides[target, qualifier] = new
 
-    def delete(self, target: type, qualifier: ContainerProxyQualifierValue = None) -> None:
+    def delete(self, target: type, qualifier: Qualifier | None = None) -> None:
         """Clear active override for the `target` service."""
         if (target, qualifier) in self.__active_overrides:
             del self.__active_overrides[target, qualifier]
@@ -47,7 +47,7 @@ class OverrideManager:
         self.__active_overrides.clear()
 
     @contextmanager
-    def service(self, target: type, new: Any, qualifier: ContainerProxyQualifierValue = None) -> Iterator[None]:
+    def service(self, target: type, new: Any, qualifier: Qualifier | None = None) -> Iterator[None]:
         """Override the `target` service with `new` for the duration of the context manager.
 
         Subsequent autowire calls to `target` will result in `new` being injected.

@@ -1,8 +1,9 @@
 from __future__ import annotations
 
+from collections.abc import Hashable
 from dataclasses import dataclass
 from enum import Enum, auto
-from typing import Any, Callable, Optional, Union
+from typing import Any, Callable, Union
 
 AnyCallable = Callable[..., Any]
 AutowireTarget = Union[AnyCallable, type]
@@ -41,7 +42,7 @@ class ParameterWrapper(InjectableType):
     param: ParameterReference
 
 
-ContainerProxyQualifierValue = Optional[Any]
+Qualifier = Hashable
 
 
 @dataclass(frozen=True)
@@ -54,7 +55,7 @@ class ContainerProxyQualifier(InjectableType):
 
     __slots__ = ("qualifier",)
 
-    qualifier: ContainerProxyQualifierValue
+    qualifier: Qualifier | None
 
 
 class EmptyContainerInjectionRequest(InjectableType):
@@ -118,5 +119,5 @@ class ServiceOverride:
     """Data class to represent a service override. Target type will be replaced with the new type by the container."""
 
     target: type
-    qualifier: ContainerProxyQualifierValue
+    qualifier: Qualifier | None
     new: Any

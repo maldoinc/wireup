@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
-    from wireup.ioc.types import ContainerProxyQualifierValue
+    from wireup.ioc.types import Qualifier
 
 
 class WireupError(Exception):
@@ -13,7 +13,7 @@ class WireupError(Exception):
 class DuplicateServiceRegistrationError(WireupError):
     """Raised when attempting to register a service with the same qualifier twice."""
 
-    def __init__(self, klass: type[Any], qualifier: ContainerProxyQualifierValue) -> None:
+    def __init__(self, klass: type[Any], qualifier: Qualifier | None) -> None:
         self.klass = klass
         self.qualifier = qualifier
 
@@ -24,7 +24,7 @@ class DuplicateServiceRegistrationError(WireupError):
 class DuplicateQualifierForInterfaceError(WireupError):
     """Raised when registering an impl for an interface using a qualifier that is already known."""
 
-    def __init__(self, klass: type[Any], qualifier: ContainerProxyQualifierValue) -> None:
+    def __init__(self, klass: type[Any], qualifier: Qualifier | None) -> None:
         super().__init__(
             f"Cannot register implementation class {klass} for {klass.__base__} "
             f"with qualifier '{qualifier}' as it already exists",
@@ -49,7 +49,7 @@ class FactoryReturnTypeIsEmptyError(WireupError):
 class FactoryDuplicateServiceRegistrationError(WireupError):
     """Raised when a factory function declares that it produces a type which is already known."""
 
-    def __init__(self, return_type: type[Any], qualifier: ContainerProxyQualifierValue = None) -> None:
+    def __init__(self, return_type: type[Any], qualifier: Qualifier | None = None) -> None:
         self.return_type = return_type
         super().__init__(
             f"A function is already registered as a factory for dependency type {return_type} "
@@ -63,8 +63,8 @@ class UnknownQualifiedServiceRequestedError(WireupError):
     def __init__(
         self,
         klass: type[Any],
-        qualifier: ContainerProxyQualifierValue,
-        available_qualifiers: set[ContainerProxyQualifierValue],
+        qualifier: Qualifier | None,
+        available_qualifiers: set[Qualifier | None],
     ) -> None:
         self.klass = klass
         self.qualifier = qualifier
@@ -87,7 +87,7 @@ class UnknownServiceRequestedError(WireupError):
 class UsageOfQualifierOnUnknownObjectError(WireupError):
     """Raised when using a qualifier on an unknown type that is not managed by the container."""
 
-    def __init__(self, qualifier_value: ContainerProxyQualifierValue) -> None:
+    def __init__(self, qualifier_value: Qualifier | None) -> None:
         super().__init__(f"Cannot use qualifier {qualifier_value} on a type that is not managed by the container.")
 
 
@@ -101,5 +101,5 @@ class InvalidRegistrationTypeError(WireupError):
 class UnknownOverrideRequestedError(WireupError):
     """Raised when attempting to override a service which does not exist."""
 
-    def __init__(self, klass: type, qualifier: ContainerProxyQualifierValue) -> None:
+    def __init__(self, klass: type, qualifier: Qualifier | None) -> None:
         super().__init__(f"Cannot override unknown {klass} with qualifier '{qualifier}'.")

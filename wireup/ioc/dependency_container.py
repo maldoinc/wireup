@@ -24,9 +24,9 @@ from .service_registry import _ServiceRegistry
 from .types import (
     AnnotatedParameter,
     AnyCallable,
-    ContainerProxyQualifierValue,
     EmptyContainerInjectionRequest,
     ParameterWrapper,
+    Qualifier,
     ServiceLifetime,
 )
 
@@ -35,7 +35,7 @@ if TYPE_CHECKING:
     from .parameter import ParameterBag
 
 __T = TypeVar("__T")
-__ObjectIdentifier = Tuple[type, ContainerProxyQualifierValue]
+__ObjectIdentifier = Tuple[type, Qualifier | None]
 
 
 class DependencyContainer:
@@ -76,7 +76,7 @@ class DependencyContainer:
             self.__active_overrides, self.__service_registry.is_type_with_qualifier_known
         )
 
-    def get(self, klass: type[__T], qualifier: ContainerProxyQualifierValue = None) -> __T:
+    def get(self, klass: type[__T], qualifier: Qualifier | None = None) -> __T:
         """Get an instance of the requested type.
 
         Use this to locate services by their type but strongly prefer using injection instead.
@@ -111,7 +111,7 @@ class DependencyContainer:
         self,
         obj: None = None,
         *,
-        qualifier: ContainerProxyQualifierValue | None = None,
+        qualifier: Qualifier | None = None,
         lifetime: ServiceLifetime = ServiceLifetime.SINGLETON,
     ) -> Callable[[__T], __T]:
         pass
@@ -121,7 +121,7 @@ class DependencyContainer:
         self,
         obj: __T,
         *,
-        qualifier: ContainerProxyQualifierValue | None = None,
+        qualifier: Qualifier | None = None,
         lifetime: ServiceLifetime = ServiceLifetime.SINGLETON,
     ) -> __T:
         pass
@@ -130,7 +130,7 @@ class DependencyContainer:
         self,
         obj: __T | None = None,
         *,
-        qualifier: ContainerProxyQualifierValue | None = None,
+        qualifier: Qualifier | None = None,
         lifetime: ServiceLifetime = ServiceLifetime.SINGLETON,
     ) -> __T | Callable[[__T], __T]:
         """Register a dependency in the container. Dependency must be either a class or a factory function.
@@ -255,7 +255,7 @@ class DependencyContainer:
 
         return values_from_parameters
 
-    def __create_instance(self, klass: type, qualifier: ContainerProxyQualifierValue) -> Any:
+    def __create_instance(self, klass: type, qualifier: Qualifier | None) -> Any:
         """Create the real instances of dependencies. Additional dependencies they may have will be lazily created."""
         self.__assert_dependency_exists(klass, qualifier)
         obj_id = klass, qualifier
@@ -314,9 +314,7 @@ class DependencyContainer:
 
         return None
 
-    def __get_instance_or_proxy(
-        self, klass: type, qualifier: ContainerProxyQualifierValue
-    ) -> ContainerProxy[Any] | Any:
+    def __get_instance_or_proxy(self, klass: type, qualifier: Qualifier | None) -> ContainerProxy[Any] | Any:
         """Return a container proxy or an instance of the requested singleton class if one has been initialized."""
         obj_id = klass, qualifier
 
@@ -339,7 +337,7 @@ class DependencyContainer:
 
         return proxy
 
-    def __resolve_impl(self, klass: type, qualifier: ContainerProxyQualifierValue) -> type:
+    def __resolve_impl(self, klass: type, qualifier: Qualifier | None) -> type:
         impls = self.__service_registry.known_interfaces.get(klass, {})
 
         if qualifier in impls:
@@ -353,7 +351,7 @@ class DependencyContainer:
         """Given a class type return True if's registered in the container as a service or interface."""
         return self.__service_registry.is_impl_known(klass) or self.__service_registry.is_interface_known(klass)
 
-    def __assert_dependency_exists(self, klass: type, qualifier: ContainerProxyQualifierValue) -> None:
+    def __assert_dependency_exists(self, klass: type, qualifier: Qualifier | None) -> None:
         """Assert that there exists an impl with that qualifier or an interface with an impl and the same qualifier."""
         if not self.__service_registry.is_type_with_qualifier_known(klass, qualifier):
             raise UnknownServiceRequestedError(klass)

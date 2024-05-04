@@ -17,7 +17,7 @@ from wireup.ioc.util import is_type_autowireable, parameter_get_type_and_annotat
 
 if TYPE_CHECKING:
     from wireup.ioc.types import (
-        ContainerProxyQualifierValue,
+        Qualifier,
     )
 
 
@@ -25,16 +25,16 @@ class _ServiceRegistry:
     __slots__ = ("known_interfaces", "known_impls", "factory_functions", "context")
 
     def __init__(self) -> None:
-        self.known_interfaces: dict[type, dict[ContainerProxyQualifierValue, type]] = {}
-        self.known_impls: dict[type, set[ContainerProxyQualifierValue]] = defaultdict(set)
-        self.factory_functions: dict[tuple[type, ContainerProxyQualifierValue], Callable[..., Any]] = {}
+        self.known_interfaces: dict[type, dict[Qualifier, type]] = {}
+        self.known_impls: dict[type, set[Qualifier]] = defaultdict(set)
+        self.factory_functions: dict[tuple[type, Qualifier], Callable[..., Any]] = {}
 
         self.context = InitializationContext()
 
     def register_service(
         self,
         klass: type,
-        qualifier: ContainerProxyQualifierValue,
+        qualifier: Qualifier | None,
         lifetime: ServiceLifetime,
     ) -> None:
         if self.is_type_with_qualifier_known(klass, qualifier):
@@ -53,7 +53,7 @@ class _ServiceRegistry:
         self.known_interfaces[klass] = defaultdict()
 
     def register_factory(
-        self, fn: Callable[..., Any], lifetime: ServiceLifetime, qualifier: ContainerProxyQualifierValue = None
+        self, fn: Callable[..., Any], lifetime: ServiceLifetime, qualifier: Qualifier | None = None
     ) -> None:
         return_type = inspect.signature(fn).return_annotation
 
@@ -133,10 +133,10 @@ class _ServiceRegistry:
     def is_impl_known(self, klass: type) -> bool:
         return klass in self.known_impls
 
-    def is_impl_with_qualifier_known(self, klass: type, qualifier_value: ContainerProxyQualifierValue) -> bool:
+    def is_impl_with_qualifier_known(self, klass: type, qualifier_value: Qualifier | None) -> bool:
         return klass in self.known_impls and qualifier_value in self.known_impls[klass]
 
-    def is_type_with_qualifier_known(self, klass: type, qualifier: ContainerProxyQualifierValue) -> bool:
+    def is_type_with_qualifier_known(self, klass: type, qualifier: Qualifier | None) -> bool:
         is_known_impl = self.is_impl_with_qualifier_known(klass, qualifier)
         is_known_intf = self.__is_interface_with_qualifier_known(klass, qualifier)
         is_known_from_factory = self.is_impl_known_from_factory(klass, qualifier)
@@ -146,11 +146,11 @@ class _ServiceRegistry:
     def __is_interface_with_qualifier_known(
         self,
         klass: type,
-        qualifier: ContainerProxyQualifierValue,
+        qualifier: Qualifier | None,
     ) -> bool:
         return klass in self.known_interfaces and qualifier in self.known_interfaces[klass]
 
-    def is_impl_known_from_factory(self, klass: type, qualifier: ContainerProxyQualifierValue) -> bool:
+    def is_impl_known_from_factory(self, klass: type, qualifier: Qualifier | None) -> bool:
         return (klass, qualifier) in self.factory_functions
 
     def is_impl_singleton(self, klass: type) -> bool:

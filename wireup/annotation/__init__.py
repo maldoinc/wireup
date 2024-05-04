@@ -7,10 +7,10 @@ from typing import TYPE_CHECKING
 
 from wireup.ioc.types import (
     ContainerProxyQualifier,
-    ContainerProxyQualifierValue,
     EmptyContainerInjectionRequest,
     InjectableType,
     ParameterWrapper,
+    Qualifier,
     TemplatedString,
 )
 
@@ -22,7 +22,7 @@ def wire(
     *,
     param: str | None = None,
     expr: str | None = None,
-    qualifier: ContainerProxyQualifierValue = None,
+    qualifier: Qualifier | None = None,
 ) -> InjectableType | Callable[[], InjectableType]:
     """Inject resources from the container to autowired method arguments.
 
@@ -81,6 +81,5 @@ class ParameterEnum(Enum):
 
 Wire = wire
 """Alias of `wire`. Meant to be used with `Annotated`."""
-
 
 __all__ = ["ParameterEnum", "Wire", "wire"]
