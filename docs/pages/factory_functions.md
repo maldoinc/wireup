@@ -36,8 +36,6 @@ When the container needs to inject a dependency it checks known factories to see
     Passing the module name to the `warmup_container(service_modules=[service])` 
     or the `wireup_init_*_integration` calls will import it recursively and bring it into scope.
 
-    If you're not using either, `import_util.load_module` can be used once on startup in order to trigger registrations.
-
 ## Examples
 
 ### Inject a model
@@ -46,7 +44,7 @@ Assume in the context of a web application a class `User` exists and represents 
 
 ```python
 # Create a factory and inject the authenticated user directly.
-# You may want to create a new type to make a disctinction on the type of user this is.
+# You may want to create a new type to make a distinction on the type of user this is.
 AuthenticatedUser = NewType("AuthenticatedUser", User)
 
 @container.register(lifetime=ServiceLifetime.TRANSIENT)
