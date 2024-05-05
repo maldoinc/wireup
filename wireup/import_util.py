@@ -28,7 +28,7 @@ def warmup_container(dependency_container: DependencyContainer, service_modules:
 
 
 def _find_classes_in_module(module: ModuleType, pattern: str | re.Pattern[str] = "*") -> set[type]:
-    classes = set()
+    classes: set[type[Any]] = set()
 
     def _module_get_classes(m: ModuleType) -> set[type]:
         return {
