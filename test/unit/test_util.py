@@ -3,10 +3,11 @@ import unittest
 from typing import Dict, List, Tuple, Union
 
 from typing_extensions import Annotated
-from wireup.ioc.types import AnnotatedParameter, ContainerProxyQualifier, InjectableType
+from wireup.annotation import Wire, wire
+from wireup.ioc.types import AnnotatedParameter, ContainerProxyQualifier, InjectableType, ParameterWrapper
 from wireup.ioc.util import (
     is_type_autowireable,
-    parameter_get_type_and_annotation,
+    param_get_annotation,
 )
 
 
@@ -17,13 +18,24 @@ class TestUtilityFunctions(unittest.TestCase):
         d1 = Dummy()
         d2 = Dummy()
 
-        def inner(_a: Annotated[str, "ignored", unittest.TestCase, d1], _b, _c: str, _d=d2): ...
+        def inner(
+            _a: Annotated[str, "ignored", unittest.TestCase, d1],
+            _b,
+            _c: str,
+            _d: Annotated[str, Wire(param="d")],
+            _e: str = wire(param="e"),
+            _f=wire(param="f"),
+            _g=d2,
+        ): ...
 
         params = inspect.signature(inner)
-        self.assertEqual(parameter_get_type_and_annotation(params.parameters["_a"]), AnnotatedParameter(str, d1))
-        self.assertEqual(parameter_get_type_and_annotation(params.parameters["_b"]), AnnotatedParameter(None, None))
-        self.assertEqual(parameter_get_type_and_annotation(params.parameters["_c"]), AnnotatedParameter(str, None))
-        self.assertEqual(parameter_get_type_and_annotation(params.parameters["_d"]), AnnotatedParameter(None, d2))
+        self.assertEqual(param_get_annotation(params.parameters["_a"]), AnnotatedParameter(str, None))
+        self.assertEqual(param_get_annotation(params.parameters["_b"]), None)
+        self.assertEqual(param_get_annotation(params.parameters["_c"]), AnnotatedParameter(str, None))
+        self.assertEqual(param_get_annotation(params.parameters["_d"]), AnnotatedParameter(str, ParameterWrapper("d")))
+        self.assertEqual(param_get_annotation(params.parameters["_e"]), AnnotatedParameter(str, ParameterWrapper("e")))
+        self.assertEqual(param_get_annotation(params.parameters["_f"]), AnnotatedParameter(None, ParameterWrapper("f")))
+        self.assertEqual(param_get_annotation(params.parameters["_g"]), AnnotatedParameter(None, d2))
 
     def test_is_type_autowireable_basic_types(self):
         self.assertFalse(is_type_autowireable(int))

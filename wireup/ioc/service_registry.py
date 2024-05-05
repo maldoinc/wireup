@@ -12,8 +12,8 @@ from wireup.errors import (
     FactoryReturnTypeIsEmptyError,
 )
 from wireup.ioc.initialization_context import InitializationContext
-from wireup.ioc.types import AutowireTarget, InjectableType, ServiceLifetime
-from wireup.ioc.util import is_type_autowireable, parameter_get_type_and_annotation
+from wireup.ioc.types import AutowireTarget, ServiceLifetime
+from wireup.ioc.util import is_type_autowireable, param_get_annotation
 
 if TYPE_CHECKING:
     from wireup.ioc.types import (
@@ -80,15 +80,15 @@ class _ServiceRegistry:
             return
 
         for name, parameter in inspect.signature(target).parameters.items():
-            annotated_param = parameter_get_type_and_annotation(parameter)
+            annotated_param = param_get_annotation(parameter)
 
-            if not (annotated_param.klass or annotated_param.annotation):
+            if not annotated_param:
                 continue
 
             # Add to the context only if it's something we can inject
             # or if it is a class that's not one of the builtins: int str dict etc.
             # This is the case for services which are only typed and do not require an annotation.
-            if isinstance(annotated_param.annotation, InjectableType) or is_type_autowireable(annotated_param.klass):
+            if annotated_param.annotation or is_type_autowireable(annotated_param.klass):
                 self.context.add_dependency(target, name, annotated_param)
 
     def get_dependency_graph(self) -> dict[type, set[type]]:
