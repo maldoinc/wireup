@@ -31,7 +31,7 @@ def target(
     ...
 ```
 
-### Default values
+### Default values (deprecated)
 
 This relies on the use of default values to inject parameters. Anything that can be passed to `Annotated` may also
 be used here.
