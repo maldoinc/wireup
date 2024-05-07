@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import typing
-import warnings
 from inspect import Parameter
 from typing import Any
 
@@ -34,11 +33,6 @@ def _get_metadata_from_annotated_type(parameter: Parameter) -> AnnotatedParamete
 
 
 def _get_metadata_from_default_value(parameter: Parameter) -> AnnotatedParameter | None:
-    warnings.warn(
-        "Using default values to annotate parameters for injection is deprecated. "
-        "Use annotated types. E.g.: Annotated[str, Wire(...)]",
-        stacklevel=2,
-    )
     klass = None if parameter.annotation is Parameter.empty else parameter.annotation
     annotation = None if parameter.default is Parameter.empty else _get_injectable_type(parameter.default)
 
