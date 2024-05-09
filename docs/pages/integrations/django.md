@@ -6,16 +6,19 @@ Dependency injection for Django is available via the first-party integration wir
 To install the integration, add `wireup.integration.django` to `INSTALLED_APPS` and define a new `WIREUP` setting.
 
 ```python title="settings.py"
+from wireup.integration.django import WireupSettings
+
+
 INSTALLED_APPS = [
     ...,
     "wireup.integration.django"
 ]
 
-WIREUP = {
+WIREUP = WireupSettings(
     # This is a list of top-level modules containing service registrations.
     # It can be either a list of strings or module types.
-    "SERVICE_MODULES": ["mysite.polls.services"]
-},
+    service_modules=["mysite.polls.services"]
+)
 ```
 
 
