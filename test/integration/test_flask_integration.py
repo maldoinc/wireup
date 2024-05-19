@@ -5,7 +5,7 @@ from test.unit.services.no_annotations.random.random_service import RandomServic
 
 from flask import Flask
 from typing_extensions import Annotated
-from wireup import DependencyContainer, ParameterBag, Wire
+from wireup import DependencyContainer, Inject, ParameterBag
 from wireup.integration.flask_integration import wireup_init_flask_integration
 
 
@@ -33,7 +33,7 @@ class TestFlaskIntegration(unittest.TestCase):
     def test_get_env_injects_from_params(self):
         @self.app.get("/env")
         def get_environment(
-            is_debug: Annotated[bool, Wire(param="DEBUG")], is_test: Annotated[bool, Wire(param="TESTING")]
+            is_debug: Annotated[bool, Inject(param="DEBUG")], is_test: Annotated[bool, Inject(param="TESTING")]
         ):
             return {"debug": is_debug, "test": is_test}
 
@@ -79,7 +79,7 @@ class TestFlaskIntegration(unittest.TestCase):
         @self.container.register
         @dataclass
         class Foo:
-            is_test: Annotated[bool, Wire(param="TESTING")]
+            is_test: Annotated[bool, Inject(param="TESTING")]
 
         @self.app.get("/")
         def get_environment(foo: Foo):

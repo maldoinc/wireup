@@ -23,7 +23,7 @@ class TemplatedString:
     """Wrapper for strings which contain values that must be interpolated by the parameter bag.
 
     Use this with the special ${param_name} syntax to reference a parameter in a string similar to python f-string.
-    Strings in .wire(expr="") calls are automatically wrapped.
+    Strings in Inject(expr="") calls are automatically wrapped.
     """
 
     __slots__ = ("value",)
@@ -90,7 +90,7 @@ class AnnotatedParameter:
         If the annotation is a ContainerProxyQualifier, `qualifier_value` will be set to its value.
 
         :param klass: The type of the dependency
-        :param annotation: Any annotation passed along. Such as Wire(param=...) calls
+        :param annotation: Any annotation passed along. Such as Inject(param=...) calls
         """
         self.klass = klass
         self.annotation = annotation

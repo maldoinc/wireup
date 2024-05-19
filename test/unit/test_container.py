@@ -10,7 +10,7 @@ from typing import Optional
 from unittest.mock import Mock, patch
 
 from typing_extensions import Annotated
-from wireup import ServiceLifetime, Wire, register_all_in_module, wire
+from wireup import Inject, ServiceLifetime, Wire, register_all_in_module, wire
 from wireup.errors import (
     DuplicateQualifierForInterfaceError,
     DuplicateServiceRegistrationError,
@@ -60,8 +60,8 @@ class TestContainer(unittest.IsolatedAsyncioTestCase):
         class ServiceWithParams:
             def __init__(
                 self,
-                connection_str: str = wire(param="connection_str"),
-                cache_dir: str = wire(expr="${cache_dir}/etc"),
+                connection_str: str = Inject(param="connection_str"),
+                cache_dir: str = Inject(expr="${cache_dir}/etc"),
             ) -> None:
                 self.connection_str = connection_str
                 self.cache_dir = cache_dir
@@ -76,20 +76,20 @@ class TestContainer(unittest.IsolatedAsyncioTestCase):
     @patch("importlib.import_module")
     def test_inject_fastapi_dep(self, mock_import_module):
         mock_import_module.return_value = Mock(Depends=Mock())
-        result = wire()
+        result = Inject()
         self.assertEqual(result, mock_import_module.return_value.Depends.return_value)
         mock_import_module.assert_called_once_with("fastapi")
 
     def test_inject_using_annotated_empty_wire(self):
         @self.container.autowire
-        def inner(random: Annotated[RandomService, Wire()]):
+        def inner(random: Annotated[RandomService, Inject()]):
             self.assertEqual(random.get_random(), 4)
 
         inner()
 
     def test_inject_using_annotated_empty_wire_fails_to_inject_unknown(self):
         @self.container.autowire
-        def inner(_random: Annotated[unittest.TestCase, Wire()]): ...
+        def inner(_random: Annotated[unittest.TestCase, Inject()]): ...
 
         with self.assertRaises(UnknownServiceRequestedError) as context:
             inner()
@@ -105,7 +105,7 @@ class TestContainer(unittest.IsolatedAsyncioTestCase):
         mock_import_module.return_value = Mock(Depends=Mock())
 
         @self.container.autowire
-        def inner(rand: Annotated[RandomService, Wire()]):
+        def inner(rand: Annotated[RandomService, Inject()]):
             self.assertEqual(rand.get_random(), 4)
 
         inner()
@@ -126,7 +126,7 @@ class TestContainer(unittest.IsolatedAsyncioTestCase):
     def test_autowire_sync(self):
         self.container.params.put("env", "test")
 
-        def test_function(random: TrulyRandomService, env: str = wire(param="env")) -> int:
+        def test_function(random: TrulyRandomService, env: str = Inject(param="env")) -> int:
             self.assertEqual(env, "test")
             return random.get_truly_random()
 
@@ -137,7 +137,7 @@ class TestContainer(unittest.IsolatedAsyncioTestCase):
     async def test_autowire_async(self):
         self.container.params.put("env", "test")
 
-        async def test_function(random: RandomService, env: str = wire(param="env")) -> int:
+        async def test_function(random: RandomService, env: str = Inject(param="env")) -> int:
             self.assertEqual(env, "test")
             return random.get_random()
 
@@ -186,8 +186,8 @@ class TestContainer(unittest.IsolatedAsyncioTestCase):
     def test_db_service_dataclass_with_params(self):
         @dataclass
         class MyDbService:
-            connection_str: str = wire(param="connection_str")
-            cache_dir: str = wire(expr="${cache_dir}/${auth.user}/db")
+            connection_str: str = Inject(param="connection_str")
+            cache_dir: str = Inject(expr="${cache_dir}/${auth.user}/db")
 
         self.container = DependencyContainer(ParameterBag())
         self.container.register(MyDbService)
@@ -222,7 +222,7 @@ class TestContainer(unittest.IsolatedAsyncioTestCase):
 
     def test_two_qualifiers_are_injected(self):
         @self.container.autowire
-        def inner(sub1: FooBase = wire(qualifier="sub1"), sub2: FooBase = wire(qualifier="sub2")):
+        def inner(sub1: FooBase = Inject(qualifier="sub1"), sub2: FooBase = Inject(qualifier="sub2")):
             self.assertEqual(sub1.foo, "bar")
             self.assertEqual(sub2.foo, "baz")
 
@@ -233,7 +233,7 @@ class TestContainer(unittest.IsolatedAsyncioTestCase):
 
     def test_default_impl_is_injected(self):
         @self.container.autowire
-        def inner(sub1: FooBase, sub2: Annotated[FooBase, Wire(qualifier="baz")]):
+        def inner(sub1: FooBase, sub2: Annotated[FooBase, Inject(qualifier="baz")]):
             self.assertEqual(sub1.foo, "bar")
             self.assertEqual(sub2.foo, "baz")
 
@@ -244,7 +244,9 @@ class TestContainer(unittest.IsolatedAsyncioTestCase):
 
     def test_two_qualifiers_are_injected_annotated(self):
         @self.container.autowire
-        def inner(sub1: Annotated[FooBase, Wire(qualifier="sub1")], sub2: Annotated[FooBase, Wire(qualifier="sub2")]):
+        def inner(
+            sub1: Annotated[FooBase, Inject(qualifier="sub1")], sub2: Annotated[FooBase, Inject(qualifier="sub2")]
+        ):
             self.assertEqual(sub1.foo, "bar")
             self.assertEqual(sub2.foo, "baz")
 
@@ -297,7 +299,7 @@ class TestContainer(unittest.IsolatedAsyncioTestCase):
 
     def test_qualifier_raises_wire_called_on_unknown_type(self):
         @self.container.autowire
-        def inner(_sub1: FooBase = wire(qualifier="sub1")): ...
+        def inner(_sub1: FooBase = Inject(qualifier="sub1")): ...
 
         self.container.abstract(FooBase)
         with self.assertRaises(UnknownQualifiedServiceRequestedError) as context:
@@ -361,7 +363,7 @@ class TestContainer(unittest.IsolatedAsyncioTestCase):
             foo = "bar"
 
         @self.container.autowire
-        def inner(foo: RegisterWithQualifierClass = wire(qualifier=__name__)):
+        def inner(foo: RegisterWithQualifierClass = Inject(qualifier=__name__)):
             self.assertEqual(foo.foo, "bar")
 
         inner()
@@ -370,7 +372,7 @@ class TestContainer(unittest.IsolatedAsyncioTestCase):
 
     def test_inject_qualifier_on_unknown_type(self):
         @self.container.autowire
-        def inner(_foo: str = wire(qualifier=__name__)): ...
+        def inner(_foo: str = Inject(qualifier=__name__)): ...
 
         with self.assertRaises(UsageOfQualifierOnUnknownObjectError) as context:
             inner()
@@ -403,7 +405,7 @@ class TestContainer(unittest.IsolatedAsyncioTestCase):
         c1.register(Counter)
         c2.register(Counter)
 
-        def inner(counter: Counter, p1: str = wire(param="param1")):
+        def inner(counter: Counter, p1: str = Inject(param="param1")):
             counter.inc()
             self.assertEqual(counter.count, 1)
             self.assertEqual(p1, "param_value")
@@ -420,7 +422,7 @@ class TestContainer(unittest.IsolatedAsyncioTestCase):
 
     def test_wire_param_without_typing(self):
         @self.container.autowire
-        def inner(name=wire(param="name")):
+        def inner(name=Inject(param="name")):
             self.assertEqual(name, "foo")
 
         self.container.params.put("name", "foo")
@@ -429,9 +431,9 @@ class TestContainer(unittest.IsolatedAsyncioTestCase):
     def test_wire_from_annotation(self):
         @self.container.autowire
         def inner(
-            name: Annotated[str, wire(param="name")],
-            env: Annotated[str, Wire(param="env")],
-            env_name: Annotated[str, Wire(expr="${env}-${name}")],
+            name: Annotated[str, Inject(param="name")],
+            env: Annotated[str, Inject(param="env")],
+            env_name: Annotated[str, Inject(expr="${env}-${name}")],
         ):
             self.assertEqual(name, "foo")
             self.assertEqual(env, "test")
@@ -445,7 +447,7 @@ class TestContainer(unittest.IsolatedAsyncioTestCase):
         self.container.params.put("foo", None)
 
         @self.container.autowire
-        def inner(name: Annotated[str, Wire(param="foo")], name2: str = wire(param="foo")):
+        def inner(name: Annotated[str, Inject(param="foo")], name2: str = Inject(param="foo")):
             self.assertIsNone(name)
             self.assertIsNone(name2)
 
@@ -463,7 +465,7 @@ class TestContainer(unittest.IsolatedAsyncioTestCase):
     def test_injects_ctor(self):
         class Dummy:
             @self.container.autowire
-            def __init__(self, rand_service: RandomService, env: str = wire(param="env")):
+            def __init__(self, rand_service: RandomService, env: str = Inject(param="env")):
                 self.env = env
                 self.rand_service = rand_service
 
@@ -534,12 +536,32 @@ class TestContainer(unittest.IsolatedAsyncioTestCase):
         self.container.params.put("foo", "Foo")
 
         @self.container.autowire
-        def sync_inner(name: Annotated[str, Wire(param="foo")]):
+        def sync_inner(name: Annotated[str, Inject(param="foo")]):
             self.assertEqual(name, "Foo")
 
         @self.container.autowire
-        async def async_inner(name: Annotated[str, Wire(param="foo")]):
+        async def async_inner(name: Annotated[str, Inject(param="foo")]):
             self.assertEqual(name, "Foo")
 
         sync_inner(name="Ignored")
         await async_inner(name="Ignored")
+
+    def test_inject_aliases(self) -> None:
+        self.assertEqual(wire, Wire)
+
+    def test_inject_alias_wire_same_behavior(self) -> None:
+        container = DependencyContainer(ParameterBag())
+        container.params.put("foo", "Foo")
+        container.register(RandomService, qualifier="foo")
+
+        @container.autowire
+        def inner(
+            foo: Annotated[str, Wire(param="foo")],
+            foo_foo: Annotated[str, Wire(expr="${foo}-${foo}")],
+            rand_service: Annotated[RandomService, Wire(qualifier="foo")],
+        ):
+            self.assertEqual(foo, "Foo")
+            self.assertEqual(foo_foo, "Foo-Foo")
+            self.assertEqual(rand_service.get_random(), 4)
+
+        inner()

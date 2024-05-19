@@ -92,15 +92,15 @@ which we fetch from the configuration.
         for parameters it is not possible to infer which one to inject solely from its type so additional metadata must
         be provided. [Learn more](annotations.md).
 
-    Parameters must be annotated with the `Wire(param=name)` syntax. This tells the container which parameter to inject.
+    Parameters must be annotated with the `Inject(param=name)` syntax. This tells the container which parameter to inject.
     
     ```python title="services/key_value_store.py" hl_lines="4 6"
-    from wireup import service, Wire
+    from wireup import service, Inject
     from typing_extensions import Annotated
 
     @service  #(1)!
     class KeyValueStore:
-        def __init__(self, dsn: Annotated[str, Wire(param="redis_url")]) -> None:
+        def __init__(self, dsn: Annotated[str, Inject(param="redis_url")]) -> None:
             self.client = redis.from_url(dsn)
 
         def get(self, key: str) -> Any: ...
@@ -156,7 +156,7 @@ as necessary.
     @service #(1)!
     @dataclass
     class WeatherService:
-        api_key: Annotated[str, Wire(param="weather_api_key")]
+        api_key: Annotated[str, Inject(param="weather_api_key")]
         kv_store: KeyValueStore
 
         def get_forecast(self, lat: float, lon: float) -> WeatherForecast:

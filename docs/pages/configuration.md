@@ -36,18 +36,18 @@ Adding configuration is done by updating the dict exposed via `container.params`
 
 #### By name
 
-To inject a parameter by name, annotate the type with `Wire(param="param_name")`.
+To inject a parameter by name, annotate the type with `Inject(param="param_name")`.
 
 ```python
 @service
-def target(cache_dir: Annotated[str, Wire(param="cache_dir")]) -> None:
+def target(cache_dir: Annotated[str, Inject(param="cache_dir")]) -> None:
     ...
 ```
 
 ```python
 @service
 class GithubClient:
-    def __init__(self, api_key: Annotated[str, Wire(param="gh_api_key")]) -> None:
+    def __init__(self, api_key: Annotated[str, Inject(param="gh_api_key")]) -> None:
         pass
 ```
 
@@ -59,7 +59,7 @@ It is possible to interpolate parameters using a special syntax. This will enabl
 
 ```python
 @container.autowire
-def target(logs_dir: Annotated[str, Wire(expr="${cache_dir}/${env}/logs")]) -> None:
+def target(logs_dir: Annotated[str, Inject(expr="${cache_dir}/${env}/logs")]) -> None:
     ...
 ```
 

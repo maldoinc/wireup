@@ -61,8 +61,8 @@ which concrete class should be resolved.
 ```python
 @container.autowire
 def target(
-    engine: Annotated[Engine, Wire(qualifier="electric")],
-    combustion: Annotated[Engine, Wire(qualifier="combustion")],
+    engine: Annotated[Engine, Inject(qualifier="electric")],
+    combustion: Annotated[Engine, Inject(qualifier="combustion")],
 ):
     ...
 ```

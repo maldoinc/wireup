@@ -96,7 +96,7 @@ example.
 
 
     @service
-    def redis_factory(redis_url: Annotated[str, Wire(param="redis_url")]) -> Redis:
+    def redis_factory(redis_url: Annotated[str, Inject(param="redis_url")]) -> Redis:
         return redis.from_url(redis_url)
     ```
 

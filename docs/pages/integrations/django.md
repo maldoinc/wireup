@@ -34,7 +34,7 @@ from wireup import service
 class S3Manager:
     # Reference configuration by name.
     # This is the same name this appears in settings.
-    def __init__(self, token: Annotated[str, Wire(parameter="S3_BUCKET_ACCESS_TOKEN")]):
+    def __init__(self, token: Annotated[str, Inject(parameter="S3_BUCKET_ACCESS_TOKEN")]):
         self.access_token = token
 
     def upload(self, file: File) -> None: ...

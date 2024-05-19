@@ -4,7 +4,7 @@ from test.unit.services.no_annotations.random.random_service import RandomServic
 from fastapi import Depends, FastAPI
 from fastapi.testclient import TestClient
 from typing_extensions import Annotated
-from wireup import DependencyContainer, ParameterBag, Wire
+from wireup import DependencyContainer, Inject, ParameterBag
 from wireup.errors import UnknownServiceRequestedError
 from wireup.integration.fastapi_integration import wireup_init_fastapi_integration
 
@@ -33,7 +33,7 @@ class TestFastAPI(unittest.TestCase):
 
         @self.app.get("/")
         async def target(
-            random_service: Annotated[RandomService, Wire()], lucky_number: Annotated[int, Depends(get_lucky_number)]
+            random_service: Annotated[RandomService, Inject()], lucky_number: Annotated[int, Depends(get_lucky_number)]
         ):
             return {"number": random_service.get_random(), "lucky_number": lucky_number}
 
@@ -46,7 +46,9 @@ class TestFastAPI(unittest.TestCase):
         self.container.params.put("foo", "bar")
 
         @self.app.get("/")
-        async def target(foo: Annotated[str, Wire(param="foo")], foo_foo: Annotated[str, Wire(expr="${foo}-${foo}")]):
+        async def target(
+            foo: Annotated[str, Inject(param="foo")], foo_foo: Annotated[str, Inject(expr="${foo}-${foo}")]
+        ):
             return {"foo": foo, "foo_foo": foo_foo}
 
         wireup_init_fastapi_integration(self.app, dependency_container=self.container, service_modules=[])
@@ -56,7 +58,7 @@ class TestFastAPI(unittest.TestCase):
 
     def test_raises_on_unknown_service(self):
         @self.app.get("/")
-        async def target(_unknown_service: Annotated[unittest.TestCase, Wire()]):
+        async def target(_unknown_service: Annotated[unittest.TestCase, Inject()]):
             return {"msg": "Hello World"}
 
         wireup_init_fastapi_integration(self.app, dependency_container=self.container, service_modules=[])

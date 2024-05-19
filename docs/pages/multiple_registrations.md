@@ -12,7 +12,7 @@ connection handles writes, and the read-only one will handle reads.
 
 ```python title="db_service.py"
 from typing import Annotated
-from wireup import service, Wire
+from wireup import service, Inject
 
 # Define a class that holds the base methods for interacting with the db.
 class DatabaseService:
@@ -28,7 +28,7 @@ class DatabaseService:
 # when services depend on DatabaseService.
 @service
 def main_db_connection_factory(
-    dsn: Annotated[str, Wire(param="APP_DB_DSN")]
+    dsn: Annotated[str, Inject(param="APP_DB_DSN")]
 ) -> DatabaseService:
     return DatabaseService(dsn)
 
@@ -36,7 +36,7 @@ def main_db_connection_factory(
 # and requests the parameter that corresponds to the read replica DSN.
 @service(qualifier="read")
 def read_db_connection_factory(
-    dsn: Annotated[str, Wire(param="APP_READ_DB_DSN")]
+    dsn: Annotated[str, Inject(param="APP_READ_DB_DSN")]
 ) -> DatabaseService:
     return DatabaseService(dsn)
 ```
@@ -56,7 +56,7 @@ class ThingRepository:
     main_db_connection: DatabaseService
 
     # To inject the read connection the qualifier must be specified.
-    read_db_connection: Annotated[DatabaseService, Wire(qualifier="read")]
+    read_db_connection: Annotated[DatabaseService, Inject(qualifier="read")]
 
     def create_thing(self, ...) -> None:
         return self.main_db_connection...

@@ -4,12 +4,12 @@ from dataclasses import dataclass
 from typing import Optional
 
 from typing_extensions import Annotated
-from wireup import DependencyContainer, ParameterBag, Wire
+from wireup import DependencyContainer, Inject, ParameterBag
 
 
 @dataclass(frozen=True)
 class A:
-    start: Annotated[int, Wire(param="start")]
+    start: Annotated[int, Inject(param="start")]
 
     def a(self) -> int:
         return self.start

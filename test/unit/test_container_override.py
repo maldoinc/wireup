@@ -4,7 +4,7 @@ from test.unit.services.no_annotations.random.random_service import RandomServic
 from unittest.mock import MagicMock, patch
 
 from typing_extensions import Annotated
-from wireup import DependencyContainer, ParameterBag, Wire
+from wireup import DependencyContainer, Inject, ParameterBag
 from wireup.errors import UnknownOverrideRequestedError
 from wireup.ioc.override_manager import OverrideManager
 from wireup.ioc.types import ServiceOverride
@@ -44,8 +44,8 @@ class TestContainerOverride(unittest.TestCase):
 
         @self.container.autowire
         def target(
-            rand1: Annotated[RandomService, Wire(qualifier="Rand1")],
-            rand2: Annotated[RandomService, Wire(qualifier="Rand2")],
+            rand1: Annotated[RandomService, Inject(qualifier="Rand1")],
+            rand2: Annotated[RandomService, Inject(qualifier="Rand2")],
         ):
             self.assertEqual(rand1.get_random(), 5)
             self.assertEqual(rand2.get_random(), 6)

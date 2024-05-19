@@ -3,7 +3,7 @@ import unittest
 from typing import Dict, List, Tuple, Union
 
 from typing_extensions import Annotated
-from wireup.annotation import Wire, wire
+from wireup import Inject
 from wireup.ioc.types import AnnotatedParameter, ContainerProxyQualifier, InjectableType, ParameterWrapper
 from wireup.ioc.util import (
     is_type_autowireable,
@@ -22,9 +22,9 @@ class TestUtilityFunctions(unittest.TestCase):
             _a: Annotated[str, "ignored", unittest.TestCase, d1],
             _b,
             _c: str,
-            _d: Annotated[str, Wire(param="d")],
-            _e: str = wire(param="e"),
-            _f=wire(param="f"),
+            _d: Annotated[str, Inject(param="d")],
+            _e: str = Inject(param="e"),
+            _f=Inject(param="f"),
             _g=d2,
         ): ...
 

@@ -4,14 +4,14 @@ from test.integration.django.service.random_service import RandomService
 from django.http import HttpRequest, HttpResponse
 from django.views import View
 from typing_extensions import Annotated
-from wireup import Wire, container
+from wireup import Inject, container
 
 
 @container.autowire
 def index(
     request: HttpRequest,
     greeter: GreeterService,
-    is_debug: Annotated[bool, Wire(param="DEBUG")],
+    is_debug: Annotated[bool, Inject(param="DEBUG")],
     random_service: RandomService,
 ) -> HttpResponse:
     name = request.GET.get("name")
@@ -25,7 +25,7 @@ class RandomNumberView(View):
     def __init__(
         self,
         greeter: GreeterService,
-        is_debug: Annotated[bool, Wire(param="DEBUG")],
+        is_debug: Annotated[bool, Inject(param="DEBUG")],
         random_service: RandomService,
     ) -> None:
         self.random_service = random_service

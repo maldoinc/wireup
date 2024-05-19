@@ -21,7 +21,7 @@ if TYPE_CHECKING:
     from collections.abc import Callable
 
 
-def wire(
+def Inject(  # noqa: N802
     *,
     param: str | None = None,
     expr: str | None = None,
@@ -64,6 +64,23 @@ def wire(
     return res
 
 
+def wire(
+    *,
+    param: str | None = None,
+    expr: str | None = None,
+    qualifier: Qualifier | None = None,
+) -> InjectableType | Callable[[], InjectableType]:
+    """Inject resources from the container to autowired method arguments."""
+    warnings.warn(
+        "Using Wire/wire aliases is deprecated. Prefer using Inject instead",
+        stacklevel=2,
+    )
+    return Inject(param=param, expr=expr, qualifier=qualifier)
+
+
+Wire = wire
+
+
 class ParameterEnum(Enum):
     """Enum with a `.wire` method allowing easy injection of members.
 
@@ -77,19 +94,16 @@ class ParameterEnum(Enum):
     def wire(self) -> InjectableType | Callable[[], InjectableType]:
         """Inject the parameter this enumeration member represents.
 
-        Equivalent of `wire(param=EnumParam.enum_member.value)`
+        Equivalent of `Inject(param=EnumParam.enum_member.value)`
         """
         warnings.warn(
             "ParameterEnum is deprecated. Please use type aliases instead. "
-            "E.g.: SomeParam = Annotated[str, Wire(..)]",
+            "E.g.: SomeParam = Annotated[str, Inject(..)]",
             stacklevel=2,
         )
 
-        return wire(param=self.value)
+        return Inject(param=self.value)
 
-
-Wire = wire
-"""Alias of `wire`. Meant to be used with `Annotated`."""
 
 __T = TypeVar("__T")
 
@@ -161,4 +175,4 @@ def abstract(cls: type[__T]) -> type[__T]:
     return cls
 
 
-__all__ = ["ParameterEnum", "AbstractDeclaration", "ServiceDeclaration", "abstract", "service", "Wire", "wire"]
+__all__ = ["ParameterEnum", "AbstractDeclaration", "ServiceDeclaration", "abstract", "service", "Wire", "Inject"]

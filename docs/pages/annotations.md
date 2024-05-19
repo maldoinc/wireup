@@ -25,8 +25,8 @@ backport this using `typing_extensions` for Python 3.8.
 ```python
 @container.autowire
 def target(
-    env: Annotated[str, Wire(param="env_name")],
-    logs_cache_dir: Annotated[str, Wire(expr="${cache_dir}/logs")],
+    env: Annotated[str, Inject(param="env_name")],
+    logs_cache_dir: Annotated[str, Inject(expr="${cache_dir}/logs")],
 ):
     ...
 ```
@@ -39,8 +39,8 @@ be used here.
 ```python
 @container.autowire
 def target(
-    env: str = wire(param="env_name"), 
-    logs_cache_dir: str = wire(expr="${cache_dir}/logs")
+    env: str = Inject(param="env_name"), 
+    logs_cache_dir: str = Inject(expr="${cache_dir}/logs")
 ):
     ...
 ```
@@ -55,6 +55,6 @@ default values as annotations it can be quite useful.
 
 ```python
 @container.autowire
-def target(random_service: Annotated[RandomService, Wire()]):
+def target(random_service: Annotated[RandomService, Inject()]):
     ...
 ```

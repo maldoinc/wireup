@@ -21,8 +21,8 @@ def get_random(random: RandomService):
 
 @app.get("/env")
 def get_environment(
-    is_debug: Annotated[bool, Wire(param="DEBUG")], 
-    foo: Annotated[str, Wire(param="FOO")]
+    is_debug: Annotated[bool, Inject(param="DEBUG")], 
+    foo: Annotated[str, Inject(param="FOO")]
 ):
     return {"debug": is_debug, "foo": foo}
 

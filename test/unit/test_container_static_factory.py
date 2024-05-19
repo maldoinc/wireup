@@ -2,7 +2,7 @@ from test.fixtures import Counter, FooBar, FooBase
 from test.unit.services.no_annotations.random.random_service import RandomService
 from unittest import TestCase
 
-from wireup import DependencyContainer, ParameterBag, ServiceLifetime, warmup_container, wire
+from wireup import DependencyContainer, Inject, ParameterBag, ServiceLifetime, warmup_container
 from wireup.errors import (
     DuplicateServiceRegistrationError,
     FactoryDuplicateServiceRegistrationError,
@@ -24,7 +24,7 @@ class TestContainerStaticFactory(TestCase):
         self.container.params.put("dummy_val", "foo")
 
         @self.container.register
-        def create_thing(val=wire(param="dummy_val")) -> ThingToBeCreated:
+        def create_thing(val=Inject(param="dummy_val")) -> ThingToBeCreated:
             return ThingToBeCreated(val=val)
 
         @self.container.autowire
@@ -39,7 +39,7 @@ class TestContainerStaticFactory(TestCase):
         self.container.params.put("start", 5)
 
         @self.container.register
-        def create_thing(start=wire(param="start")) -> Counter:
+        def create_thing(start=Inject(param="start")) -> Counter:
             return Counter(count=start)
 
         @self.container.autowire
@@ -55,7 +55,7 @@ class TestContainerStaticFactory(TestCase):
         self.container.params.put("start", 5)
 
         @self.container.register(lifetime=ServiceLifetime.TRANSIENT)
-        def create_thing(start=wire(param="start")) -> Counter:
+        def create_thing(start=Inject(param="start")) -> Counter:
             return Counter(count=start)
 
         @self.container.autowire

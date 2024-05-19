@@ -56,11 +56,11 @@ def create_app():
 Use a declarative syntax to describe the services and let the container take care of the rest.
 
 ```python
-from wireup import service, Wire
+from wireup import service, Inject
 
 @service
 class KeyValueStore:
-    def __init__(self, dsn: Annotated[str, Wire(param="redis_url")]):
+    def __init__(self, dsn: Annotated[str, Inject(param="redis_url")]):
         self.client = redis.from_url(dsn)
 
     def get(self, key: str) -> Any: ...
@@ -70,7 +70,7 @@ class KeyValueStore:
 @service
 @dataclass
 class WeatherService:
-    api_key: Annotated[str, Wire(param="weather_api_key")]
+    api_key: Annotated[str, Inject(param="weather_api_key")]
     kv_store: KeyValueStore
 
     def get_forecast(self, lat: float, lon: float) -> WeatherForecast:
