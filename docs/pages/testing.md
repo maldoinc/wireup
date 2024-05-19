@@ -14,29 +14,22 @@ calling `container.get(ThingService)` which will return a `ThingService` instanc
 
 ## Overriding
 
-While wireup tries to make it as easy as possible to test services by not modifying
-the underlying classes in any way even when decorated, sometimes you need to be able
-to swap a service object on the fly for a different one such as a mock.
+Sometimes you need to be able to swap a service object on the fly for a different one such as a mock.
 
-This process can be useful in testing autowired targets such as an api endpoint 
-for which there is no easy way to pass a mock object as it's not being called directly
-by the test.
-
-The `container.override` property provides access to a number of useful methods
-which will help temporarily overriding dependencies 
+The `container.override` property provides access to a number of useful methods and context managers
+which help with overriding dependencies 
 (See [override manager](class/override_manager.md)).
 
 
 !!! info "Good to know"
     * Overriding only applies to future autowire calls.
-    * It is possible to override services directly.
     * Once a singleton service has been instantiated, it is not possible to directly replace
     any of its direct or transitive dependencies via overriding as the object is already in memory.
         * You will need to call `container.clear_initialized_objects()` and then override the 
         desired service. This will make the container use the override when the 
         new copy of the service is being built.
-    * When using interfaces and/or qualifiers, override the interface and/or qualifier rather than the implementation 
-    that will be injected.
+    * When using injecting interfaces and/or qualifiers, override the interface and/or qualifier 
+    rather than the implementation that will be injected.
 
 ### Examples
 

@@ -1,4 +1,4 @@
-Wireup supports registering the same class multiple times under different qualifiers through factories. 
+Registering the same class multiple times is supported under different qualifiers through factories. 
 
 A use case for this would be to have multiple services connected to resources of the same underlying type, 
 such as maintaining two database connections: a main and a read-only copy.
@@ -32,9 +32,9 @@ def main_db_connection_factory(
 ) -> DatabaseService:
     return DatabaseService(dsn)
 
-# This factory registers the function using the qualifier "read"
+# This factory registers the function using the qualifier "readonly"
 # and requests the parameter that corresponds to the read replica DSN.
-@service(qualifier="read")
+@service(qualifier="readonly")
 def read_db_connection_factory(
     dsn: Annotated[str, Inject(param="APP_READ_DB_DSN")]
 ) -> DatabaseService:
@@ -56,7 +56,7 @@ class ThingRepository:
     main_db_connection: DatabaseService
 
     # To inject the read connection the qualifier must be specified.
-    read_db_connection: Annotated[DatabaseService, Inject(qualifier="read")]
+    read_db_connection: Annotated[DatabaseService, Inject(qualifier="readonly")]
 
     def create_thing(self, ...) -> None:
         return self.main_db_connection...

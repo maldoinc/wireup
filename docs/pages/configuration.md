@@ -1,10 +1,13 @@
 Wireup configuration can be injected through annotations or programmatically by using factory functions.
-You can mix and match the two as necessary but often for consistency it's best to stick to one.
+You can mix and match the two as necessary but for consistency it's best to stick to one for a given project.
 
 ## @ Annotations
 
-With an annotation-based approach (Decorators and Annotated types) the container works in a declarative way: 
-You tell it how to build your services, and it will build them for you.
+This declarative approach uses configuration metadata
+provided from decorators and annotations to define services and the dependencies between them. 
+
+It allows you to declare the final state and let the container handle the rest rather than
+imperatively coding the object creation and dependency injection.
 
 This generally results in less boilerplate code as opposed to using a programmatic approach 
 and is how many popular frameworks operate.
@@ -48,7 +51,7 @@ def target(cache_dir: Annotated[str, Inject(param="cache_dir")]) -> None:
 @service
 class GithubClient:
     def __init__(self, api_key: Annotated[str, Inject(param="gh_api_key")]) -> None:
-        pass
+        ...
 ```
 
 #### Parameter expressions

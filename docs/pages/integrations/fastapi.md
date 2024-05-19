@@ -14,7 +14,7 @@ Dependency injection for FastAPI (all versions) is available via the first-party
 
 !!! tip
     As FastAPI does not have a fixed configuration mechanism, you need to expose 
-    configuration to the container. See [configuration docs](../configuration.md).
+    configuration to the container. See [configuration docs](../configuration.md) for more details.
 
 ## Examples
 

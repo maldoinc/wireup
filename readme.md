@@ -43,8 +43,6 @@ def create_app():
     container.params.update(Settings().model_dump())
     
     # Specify top-level modules containing registrations.
-    # This will bring listed modules recursively into scope
-    # and instantiate singleton services.
     warmup_container(container, service_modules=[services])
 
     return app

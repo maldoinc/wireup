@@ -1,13 +1,12 @@
-Dependency injection for Django is available via the first-party integration wireup provides, available in
-`wireup.integration.django`.
+Dependency injection for Django is available via the provided integration in `wireup.integration.django`.
 
 ## Installation
 
 To install the integration, add `wireup.integration.django` to `INSTALLED_APPS` and define a new `WIREUP` setting.
 
 ```python title="settings.py"
+import os
 from wireup.integration.django import WireupSettings
-
 
 INSTALLED_APPS = [
     ...,
@@ -19,6 +18,9 @@ WIREUP = WireupSettings(
     # It can be either a list of strings or module types.
     service_modules=["mysite.polls.services"]
 )
+
+# Additional application settings.
+S3_BUCKET_ACCESS_TOKEN = os.environ["S3_BUCKET_ACCESS_TOKEN"]
 ```
 
 
@@ -31,11 +33,11 @@ from wireup import service
 
 
 @service
+@dataclass
 class S3Manager:
     # Reference configuration by name.
     # This is the same name this appears in settings.
-    def __init__(self, token: Annotated[str, Inject(parameter="S3_BUCKET_ACCESS_TOKEN")]):
-        self.access_token = token
+    access_token: Annotated[str, Inject(parameter="S3_BUCKET_ACCESS_TOKEN")]
 
     def upload(self, file: File) -> None: ...
 ```
@@ -71,7 +73,7 @@ def upload_file_view(request: HttpRequest, s3_manager: S3Manager) -> HttpRespons
 Class-based views are also supported. You can autowire the `__init__` or the handler method as necessary. 
 
 
-For more examples see the [Wireup Django integration tests](https://github.com/maldoinc/wireup/tree/master/test/integration/django).
+For more examples see the [Wireup Django integration tests](https://github.com/maldoinc/wireup/tree/master/test/integration/django/view.py).
 
 
 ## Api Reference

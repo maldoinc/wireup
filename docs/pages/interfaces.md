@@ -2,7 +2,7 @@ When autowiring dependencies, you might want to inject an interface rather than
 the concrete implementation directly. Since Python doesn't have built-in interfaces, you can use classes
 that are marked as abstract within the container.
 
-This method helps to make testing easier as you can create dummy implementations of these services in your tests
+This method makes testing easier as you can create dummy implementations of these services in your tests
 in order to control their behavior.
 
 ## Example
@@ -25,7 +25,6 @@ class Engine(abc.ABC):
 
 @service
 class CombustionEngine(Engine):
-    @override
     def get_type(self) -> EngineType:
         return EngineType.COMBUSTION
 
@@ -43,14 +42,12 @@ When dealing with multiple implementations of an interface, associate them with 
 ```python
 @service(qualifier="electric")
 class ElectricEngine(Engine):
-    @override
     def get_type(self):
         return EngineType.ELECTRIC
 
 
 @service(qualifier="combustion")
 class CombustionEngine(Engine):
-    @override
     def get_type(self) -> EngineType:
         return EngineType.COMBUSTION
 ```
@@ -69,15 +66,15 @@ def target(
 
 
 !!! tip
-    Qualifiers can be anything, not just strings! For the above example, `EngineType` enum members
+    Qualifiers can be anything hashable, not just strings! For the above example, `EngineType` enum members
     could have been used as qualifiers just as well.
 
 ## Default implementation
 
-When there are many implementations associated with a given interface you may want to associate one of them as the
+When there are many implementations associated with a given interface, you may want to associate one of them as the
 "default" implementation.
 
-To achieve that omit the qualifier when registering the implementation that should be injected by default.
+To achieve that, omit the qualifier when registering the implementation that should be injected by default.
 
 ```python
 @service  # <-- Qualifier being absent will make this the default impl.

@@ -14,38 +14,25 @@ inheriting from the same base (See: [Strategy Pattern](https://en.wikipedia.org/
 
 ## Usage
 
-In order for the container to inject these dependencies you must register the factory function.
+In order for the container to inject these dependencies, you must register the factory function.
 This can be achieved by using the `@service` decorator or by calling `container.register(fn)` directly.
 
-When the container needs to inject a dependency it checks known factories to see if any of them can create it.
+When the container needs to inject a dependency, it checks known factories to see if any of them can create it.
 
 
-!!! info
-    * The return type of the function is mandatory to annotate as tells the container what 
-    type of dependency it can create.
-    * Factories can only depend on objects known by the container!
-
-!!! warning
-    Modules which perform service registration need to be imported, otherwise `@service`/`@container.register` calls
-    may not be triggered. This can be an issue when the service does not reside in the same file as the
-    factory. 
-
-    E.g: A model residing in `app.model.user` and the factory being in `app.service.factory`.
-    If `app.service.factory` is never imported the container won't know how to build the user model.
-
-    Passing the module name to the `warmup_container(service_modules=[service])` 
-    or the `wireup_init_*_integration` calls will import it recursively and bring it into scope.
+!!! info "Good to know"
+    Return type annotation of the factory is required as it tells the container what is being built.
 
 ## Examples
 
 ### Inject a model
 
-Assume in the context of a web application a class `User` exists and represents a user of the system.
+Assume in the context of an application a class `User` exists and represents a user of the system.
+We can use a factory to inject a user model that represents the current authenticated user.
 
 ```python
 from wireup import service, ServiceLifetime
 
-# Create a factory and inject the authenticated user directly.
 # You may want to create a new type to make a distinction on the type of user this is.
 AuthenticatedUser = NewType("AuthenticatedUser", User)
 
@@ -82,12 +69,12 @@ def get_user_notifier(
     return notifier
 ```
 
-When injecting `Notifier` the correct type will be created based on the authenticated user's preferences.
+When injecting `Notifier` the correct type will be injected based on the authenticated user's preferences.
 
 ### Inject a third-party class
 
-You can use factory functions to inject a class which you have not declared yourself. Let's take redis client as an
-example.
+You can use factory functions to inject a class which you have not declared yourself and therefore cannot annotate. 
+Let's take redis client as an example. 
 
 === "@ Annotations"
 
