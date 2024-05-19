@@ -8,34 +8,56 @@ import warnings
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
+from wireup.annotation import AbstractDeclaration, ServiceDeclaration
+
 if TYPE_CHECKING:
+    from collections.abc import Callable
     from types import ModuleType
 
     from wireup import DependencyContainer
 
 
 def warmup_container(dependency_container: DependencyContainer, service_modules: list[ModuleType]) -> None:
-    """Import all modules provided in `service_modules` and initializes all registered singleton services.
+    """Trigger service registrations in `service_modules` and initialize registered singleton services.
 
     !!! note
         For long-lived processes this should be executed once at startup.
     """
-    for module in service_modules:
-        for _ in _find_classes_in_module(module):
-            pass
-
+    _register_services(dependency_container, service_modules)
     dependency_container.warmup()
 
 
-def _find_classes_in_module(module: ModuleType, pattern: str | re.Pattern[str] = "*") -> set[type]:
+def _register_services(dependency_container: DependencyContainer, service_modules: list[ModuleType]) -> None:
+    abstract_registrations: set[type[Any]] = set()
+    service_registrations: list[ServiceDeclaration] = []
+
+    for module in service_modules:
+        for cls in _find_objects_in_module(module, predicate=lambda obj: hasattr(obj, "__wireup_registration__")):
+            reg = getattr(cls, "__wireup_registration__", None)
+
+            if isinstance(reg, ServiceDeclaration):
+                service_registrations.append(reg)
+            elif isinstance(reg, AbstractDeclaration):
+                abstract_registrations.add(cls)
+
+    for cls in abstract_registrations:
+        dependency_container.abstract(cls)
+
+    for svc in service_registrations:
+        dependency_container.register(obj=svc.obj, qualifier=svc.qualifier, lifetime=svc.lifetime)
+
+
+def _find_objects_in_module(
+    module: ModuleType, predicate: Callable[[Any], bool], pattern: str | re.Pattern[str] = "*"
+) -> set[type]:
     classes: set[type[Any]] = set()
 
-    def _module_get_classes(m: ModuleType) -> set[type]:
+    def _module_get_objects(m: ModuleType) -> set[type]:
         return {
-            klass
-            for name, klass in inspect.getmembers(m)
-            if isinstance(klass, type)
-            and klass.__module__.startswith(m.__name__)
+            obj
+            for name, obj in inspect.getmembers(m)
+            if predicate(obj)
+            and obj.__module__.startswith(m.__name__)
             and (fnmatch.fnmatch(name, pattern) if isinstance(pattern, str) else re.match(pattern, name))
         }
 
@@ -54,7 +76,7 @@ def _find_classes_in_module(module: ModuleType, pattern: str | re.Pattern[str] =
                     parent_module_name if file.name == "__init__.py" else f"{parent_module_name}.{file.name[:-3]}"
                 )
                 sub_module = importlib.import_module(full_module_name)
-                classes.update(_module_get_classes(sub_module))
+                classes.update(_module_get_objects(sub_module))
 
     if f := module.__file__:
         _find_in_path(Path(f).parent, module.__name__)
@@ -78,11 +100,11 @@ def register_all_in_module(
     """
     warnings.warn(
         "Using register_all_in_module is deprecated. "
-        "Use @container.register or factories in conjunction with warmup_container to register services.",
+        "Use @service or factories in conjunction with warmup_container to register services.",
         stacklevel=2,
     )
     klass: type[Any]
-    for klass in _find_classes_in_module(module, pattern):
+    for klass in _find_objects_in_module(module, predicate=lambda obj: isinstance(obj, type), pattern=pattern):
         container.register(klass)
 
 
@@ -93,7 +115,7 @@ def load_module(module: ModuleType) -> None:
     """
     warnings.warn(
         "Using load_module is deprecated. "
-        "Use @container.register or factories in conjunction with warmup_container to register services.",
+        "Use @service or factories in conjunction with warmup_container to register services.",
         stacklevel=2,
     )
-    _find_classes_in_module(module)
+    _find_objects_in_module(module, lambda _: True)

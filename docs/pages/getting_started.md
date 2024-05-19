@@ -95,10 +95,10 @@ which we fetch from the configuration.
     Parameters must be annotated with the `Wire(param=name)` syntax. This tells the container which parameter to inject.
     
     ```python title="services/key_value_store.py" hl_lines="4 6"
-    from wireup import container, Wire
+    from wireup import service, Wire
     from typing_extensions import Annotated
 
-    @container.register  #(1)!
+    @service  #(1)!
     class KeyValueStore:
         def __init__(self, dsn: Annotated[str, Wire(param="redis_url")]) -> None:
             self.client = redis.from_url(dsn)
@@ -128,13 +128,13 @@ which we fetch from the configuration.
     ```
 
 
-    The `@container.register` decorator makes this factory known with the container.
+    The `@service` decorator makes this factory known with the container.
     Return type is mandatory and denotes what will be built.
 
     ```python title="services/factories.py" hl_lines="3 4"
-    from wireup import container
+    from wireup import service
 
-    @container.register
+    @service
     def key_value_store_factory(settings: Settings) -> KeyValueStore:
         return KeyValueStore(dsn=settings.redis_url)
     ```
@@ -150,10 +150,10 @@ as necessary.
     KeyValueStore will be automatically injected without requiring additional metadata.
 
     ```python title="services/weather.py" hl_lines="4 7 8"
-    from wireup import container
+    from wireup import service
 
     # Initializer injection is supported for regular classes as well as dataclasses.
-    @container.register #(1)!
+    @service #(1)!
     @dataclass
     class WeatherService:
         api_key: Annotated[str, Wire(param="weather_api_key")]
@@ -187,9 +187,9 @@ as necessary.
     ```
 
     ```python title="services/factories.py" hl_lines="3 4"
-    from wireup import container
+    from wireup import service
 
-    @container.register
+    @service
     def weather_service_factory(settings: Settings, kv_store: KeyValueStore) -> WeatherService:
         return WeatherService(api_key=settings.weather_api_key, kv=kv_store)
     ```

@@ -3,8 +3,9 @@ from __future__ import annotations
 import contextlib
 import importlib
 import warnings
+from dataclasses import dataclass
 from enum import Enum
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, TypeVar, overload
 
 from wireup.ioc.types import (
     ContainerProxyQualifier,
@@ -12,6 +13,7 @@ from wireup.ioc.types import (
     InjectableType,
     ParameterWrapper,
     Qualifier,
+    ServiceLifetime,
     TemplatedString,
 )
 
@@ -89,4 +91,74 @@ class ParameterEnum(Enum):
 Wire = wire
 """Alias of `wire`. Meant to be used with `Annotated`."""
 
-__all__ = ["ParameterEnum", "Wire", "wire"]
+__T = TypeVar("__T")
+
+
+@dataclass
+class ServiceDeclaration:
+    """Object containing service declaration metadata."""
+
+    obj: Any
+    qualifier: Qualifier | None = None
+    lifetime: ServiceLifetime = ServiceLifetime.SINGLETON
+
+
+class AbstractDeclaration:
+    """Used to denote a registration for a service that is abstract."""
+
+
+@overload
+def service(
+    obj: None = None,
+    *,
+    qualifier: Qualifier | None = None,
+    lifetime: ServiceLifetime = ServiceLifetime.SINGLETON,
+) -> Callable[[__T], __T]:
+    pass
+
+
+@overload
+def service(
+    obj: __T,
+    *,
+    qualifier: Qualifier | None = None,
+    lifetime: ServiceLifetime = ServiceLifetime.SINGLETON,
+) -> __T:
+    pass
+
+
+def service(
+    obj: __T | None = None,
+    *,
+    qualifier: Qualifier | None = None,
+    lifetime: ServiceLifetime = ServiceLifetime.SINGLETON,
+) -> __T | Callable[[__T], __T]:
+    """Mark the decorated class as a service.
+
+    If used on a function it will register it as a factory for the class
+    denoted by its return type.
+    """
+    # Allow this to be used as a decorator factory or as a decorator directly.
+    if obj is None:
+
+        def decorator(decorated_obj: __T) -> __T:
+            decorated_obj.__wireup_registration__ = ServiceDeclaration(  # type: ignore[attr-defined]
+                obj=decorated_obj, qualifier=qualifier, lifetime=lifetime
+            )
+            return decorated_obj
+
+        return decorator
+
+    obj.__wireup_registration__ = ServiceDeclaration(obj=obj)  # type: ignore[attr-defined]
+
+    return obj
+
+
+def abstract(cls: type[__T]) -> type[__T]:
+    """Mark the decorated class as a service."""
+    cls.__wireup_registration__ = AbstractDeclaration()  # type: ignore[attr-defined]
+
+    return cls
+
+
+__all__ = ["ParameterEnum", "AbstractDeclaration", "ServiceDeclaration", "abstract", "service", "Wire", "wire"]

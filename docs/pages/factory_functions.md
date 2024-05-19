@@ -15,7 +15,7 @@ inheriting from the same base (See: [Strategy Pattern](https://en.wikipedia.org/
 ## Usage
 
 In order for the container to inject these dependencies you must register the factory function.
-This can be achieved by using the `@container.register` decorator or by calling `container.register(fn)` directly.
+This can be achieved by using the `@service` decorator or by calling `container.register(fn)` directly.
 
 When the container needs to inject a dependency it checks known factories to see if any of them can create it.
 
@@ -26,7 +26,7 @@ When the container needs to inject a dependency it checks known factories to see
     * Factories can only depend on objects known by the container!
 
 !!! warning
-    Modules which perform service registration need to be imported, otherwise `@container.register` calls
+    Modules which perform service registration need to be imported, otherwise `@service`/`@container.register` calls
     may not be triggered. This can be an issue when the service does not reside in the same file as the
     factory. 
 
@@ -43,13 +43,17 @@ When the container needs to inject a dependency it checks known factories to see
 Assume in the context of a web application a class `User` exists and represents a user of the system.
 
 ```python
+from wireup import service, ServiceLifetime
+
 # Create a factory and inject the authenticated user directly.
 # You may want to create a new type to make a distinction on the type of user this is.
 AuthenticatedUser = NewType("AuthenticatedUser", User)
 
-@container.register(lifetime=ServiceLifetime.TRANSIENT)
+
+@service(lifetime=ServiceLifetime.TRANSIENT)
 def get_current_user(auth_service: AuthService) -> AuthenticatedUser:
     return AuthenticatedUser(auth_service.get_current_user())
+
 
 # Now it is possible to inject the authenticated user directly wherever it is necessary.
 @container.autowire
@@ -64,13 +68,16 @@ Given a user it is possible to instantiate the correct type of notifier based on
 
 
 ```python
-@container.register(lifetime=ServiceLifetime.TRANSIENT)
+from wireup import service, ServiceLifetime
+
+
+@service(lifetime=ServiceLifetime.TRANSIENT)
 def get_user_notifier(
     user: AuthenticatedUser, 
     slack_notifier: SlackNotifier, 
     email_mailer: EmailNotifier
 ) -> Notifier:
-    notifier = ... # get notifier type from preferences.
+    notifier = ...  # get notifier type from preferences.
 
     return notifier
 ```
@@ -85,7 +92,10 @@ example.
 === "@ Annotations"
 
     ```python
-    @container.register
+    from wireup import service
+
+
+    @service
     def redis_factory(redis_url: Annotated[str, Wire(param="redis_url")]) -> Redis:
         return redis.from_url(redis_url)
     ```
@@ -93,7 +103,10 @@ example.
 === "🏭 Programmatic"
 
     ```python
-    @container.register
+    from wireup import service
+
+
+    @service
     def redis_factory(settings: Settings) -> Redis:
         return redis.from_url(settings.redis_url)
     ```

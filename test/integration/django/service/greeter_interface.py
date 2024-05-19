@@ -1,9 +1,9 @@
 import abc
 
-from wireup import container
+from wireup import abstract
 
 
-@container.abstract
+@abstract
 class GreeterService(abc.ABC):
     @abc.abstractmethod
     def greet(self, name: str) -> str:

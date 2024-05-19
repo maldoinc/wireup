@@ -14,7 +14,9 @@ Another case might be an existing service that is already constructed elsewhere,
 In order to expose such resources to the container, use factory functions.
 
 ```python
-@container.register
+from wireup import service
+
+@service
 def db_connection_factory() -> Connection:
     return get_existing_db_configuration(...)
 ```

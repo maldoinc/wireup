@@ -1,8 +1,10 @@
 import unittest
 from test.unit.services import no_annotations, with_annotations
+from test.unit.services.no_annotations.random.random_service import RandomService
+from test.unit.services.no_annotations.random.truly_random_service import TrulyRandomService
 from test.unit.services.with_annotations.env import EnvService
+from test.unit.services.with_annotations.services import IFoo
 
-import wireup
 from wireup import DependencyContainer, ParameterBag, register_all_in_module, warmup_container
 
 
@@ -17,7 +19,11 @@ class ModuleLoadingTest(unittest.TestCase):
         )
 
     def test_warmup_loads_all_in_module_with_annotations(self):
-        wireup.container.params.put("env_name", "dev")
-        warmup_container(wireup.container, service_modules=[with_annotations])
+        container = DependencyContainer(ParameterBag())
+        container.params.put("env_name", "dev")
+        warmup_container(container, service_modules=[with_annotations])
 
-        self.assertEqual("dev", wireup.container.get(EnvService).env_name)
+        self.assertEqual("dev", container.get(EnvService).env_name)
+        self.assertEqual("foo", container.get(IFoo).get_foo())
+        self.assertEqual(5, container.get(TrulyRandomService, qualifier="foo").get_truly_random())
+        self.assertEqual(4, container.get(RandomService, qualifier="foo").get_random())

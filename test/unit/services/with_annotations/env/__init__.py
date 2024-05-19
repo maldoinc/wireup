@@ -1,8 +1,9 @@
 from typing_extensions import Annotated
-from wireup import Wire, container
+from wireup import Wire
+from wireup.annotation import service
 
 
-@container.register
+@service
 class EnvService:
     def __init__(self, env_name: Annotated[str, Wire(param="env_name")]):
         self.env_name = env_name

@@ -39,15 +39,15 @@ Adding configuration is done by updating the dict exposed via `container.params`
 To inject a parameter by name, annotate the type with `Wire(param="param_name")`.
 
 ```python
-@container.autowire
+@service
 def target(cache_dir: Annotated[str, Wire(param="cache_dir")]) -> None:
     ...
 ```
 
 ```python
-@container.register
+@service
 class GithubClient:
-    def __init__(self, api_key: Annotated[str, Wire(param="GH_API_KEY")]) -> None:
+    def __init__(self, api_key: Annotated[str, Wire(param="gh_api_key")]) -> None:
         pass
 ```
 
@@ -107,27 +107,28 @@ class DatabaseConnection:
 To wire everything together we can use a few factories.
 
 ```python title="factories.py"
-from wireup import container
+from wireup import service, container
 
 # Since settings has no parameters it can also be 
 # registered directly as the constructor can be the factory.
 container.register(Settings)
 
+
 # If it needs additional configuration then it is also possible to use a regular factory.
-@container.register
+@service
 def settings_factory() -> Settings:
     return Settings(...)
 
 
 # Now that settings is registered with the container 
 # it is possible to inject it like a regular service.
+@service
 def github_client_factory(settings: Settings) -> GithubClient:
     return GithubClient(api_key=settings.gh_api_key)
 
+
+@service
 def database_connection_factory(settings: Settings) -> DatabaseConnection:
     return DatabaseConnection(dsn=str(settings.pg_dsn))
 ```
-
-
-
 

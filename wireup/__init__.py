@@ -1,4 +1,4 @@
-from wireup.annotation import ParameterEnum, Wire, wire
+from wireup.annotation import ParameterEnum, Wire, abstract, service, wire
 from wireup.import_util import load_module, register_all_in_module, warmup_container
 from wireup.ioc.dependency_container import DependencyContainer
 from wireup.ioc.parameter import ParameterBag
@@ -10,7 +10,6 @@ container = DependencyContainer(ParameterBag())
 Use when your application only needs one container.
 """
 
-
 __all__ = [
     "DependencyContainer",
     "ParameterBag",
@@ -19,9 +18,11 @@ __all__ = [
     "ServiceLifetime",
     "ServiceOverride",
     "Wire",
+    "abstract",
     "container",
-    "register_all_in_module",
-    "warmup_container",
     "load_module",
+    "register_all_in_module",
+    "service",
+    "warmup_container",
     "wire",
 ]

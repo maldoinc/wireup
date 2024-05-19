@@ -27,7 +27,10 @@ WIREUP = WireupSettings(
 ### Define some services
 
 ```python title="mysite/polls/services/s3_manager.py"
-@container.register
+from wireup import service
+
+
+@service
 class S3Manager:
     # Reference configuration by name.
     # This is the same name this appears in settings.
@@ -47,19 +50,25 @@ class GithubClient:
 
 
 ```python title="mysite/polls/services/factories.py"
-@container.register
+from wireup import service
+
+
+@service
 def github_client_factory() -> GithubClient:
     return GithubClient(settings.GH_API_KEY)
 ```
 
 ### Use in views
 ```python title="app/views.py"
+from wireup import container
+
+
 @container.autowire
-def upload_file(request: HttpRequest, s3_manager: S3Manager) -> HttpResponse:
+def upload_file_view(request: HttpRequest, s3_manager: S3Manager) -> HttpResponse:
     return HttpResponse(...)
 ```
 
-Class-based views are also supported. You autowire both `__init__` and the handler method as necessary. 
+Class-based views are also supported. You can autowire the `__init__` or the handler method as necessary. 
 
 
 For more examples see the [Wireup Django integration tests](https://github.com/maldoinc/wireup/tree/master/test/integration/django).

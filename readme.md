@@ -31,7 +31,7 @@ Example showing a redis wrapper and a weather service which calls an external ap
 **1. Set up**
 
 ```python
-from wireup import container, Wire
+from wireup import container
 def create_app():
     app = ...
     
@@ -53,21 +53,21 @@ def create_app():
 
 **2. Register dependencies**
 
-```python
-from wireup import container, Wire
+Use a declarative syntax to describe the services and let the container take care of the rest.
 
-@container.register 
+```python
+from wireup import service, Wire
+
+@service
 class KeyValueStore:
     def __init__(self, dsn: Annotated[str, Wire(param="redis_url")]):
         self.client = redis.from_url(dsn)
 
     def get(self, key: str) -> Any: ...
     def set(self, key: str, value: Any): ...
-```       
-Injection is supported for dataclasses as well
 
-```python
-@container.register
+
+@service
 @dataclass
 class WeatherService:
     api_key: Annotated[str, Wire(param="weather_api_key")]
@@ -82,6 +82,8 @@ class WeatherService:
 Decorate targets where the library must perform injection. 
 
 ```python
+from wireup import container
+
 @app.get("/weather/forecast")
 @container.autowire 
 def get_weather_forecast_view(weather_service: WeatherService, request):

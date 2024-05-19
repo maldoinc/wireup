@@ -7,7 +7,7 @@ Top-level modules containing registrations must also be declared in the `warmup_
 
 To register a class as a service you can use one of the following
 
-* Decorate the class using `container.register`.
+* Decorate the class with `@service`.
 * Call `container.register(YourService)` directly.
 
 ### Lifetime

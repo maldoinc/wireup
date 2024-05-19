@@ -14,13 +14,16 @@ To autowire interfaces, register a dependency that **directly inherits** the int
 with the container. When injecting, ask for the interface itself, not the implementations.
 
 ```python
-@container.abstract
+from wireup import abstract, container, service
+
+
+@abstract
 class Engine(abc.ABC):
     def get_type(self) -> EngineType:
         raise NotImplementedError
-    
-    
-@container.register
+
+
+@service
 class CombustionEngine(Engine):
     @override
     def get_type(self) -> EngineType:
@@ -29,7 +32,7 @@ class CombustionEngine(Engine):
 
 @container.autowire
 def target(engine: Engine):
-    engine_type = engine.get_type() # Returns EngineType.COMBUSTION
+    engine_type = engine.get_type()  # Returns EngineType.COMBUSTION
     ...
 ```
 
@@ -38,14 +41,14 @@ def target(engine: Engine):
 When dealing with multiple implementations of an interface, associate them with a qualifier.
 
 ```python
-@container.register(qualifier="electric")
+@service(qualifier="electric")
 class ElectricEngine(Engine):
     @override
     def get_type(self):
         return EngineType.ELECTRIC
 
 
-@container.register(qualifier="combustion")
+@service(qualifier="combustion")
 class CombustionEngine(Engine):
     @override
     def get_type(self) -> EngineType:
@@ -77,11 +80,11 @@ When there are many implementations associated with a given interface you may wa
 To achieve that omit the qualifier when registering the implementation that should be injected by default.
 
 ```python
-@container.register  # <-- Qualifier being absent will make this the default impl.
+@service  # <-- Qualifier being absent will make this the default impl.
 class ElectricEngine(Engine):
     pass
 
-@container.register(qualifier="combustion")
+@service(qualifier="combustion")
 class CombustionEngine(Engine):
     pass
 ```
