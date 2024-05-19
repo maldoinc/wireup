@@ -12,10 +12,12 @@ from wireup.errors import (
     FactoryReturnTypeIsEmptyError,
 )
 from wireup.ioc.initialization_context import InitializationContext
-from wireup.ioc.types import AutowireTarget, ServiceLifetime
+from wireup.ioc.types import AnnotatedParameter, AutowireTarget, ServiceLifetime
 from wireup.ioc.util import is_type_autowireable, param_get_annotation
 
 if TYPE_CHECKING:
+    from collections.abc import Iterable
+
     from wireup.ioc.types import (
         Qualifier,
     )
@@ -99,36 +101,38 @@ class _ServiceRegistry:
         * Objects depending on interfaces will instead depend on all implementations of that interface.
         * Factories are replaced with the thing they produce.
         """
-        factory_to_type = {v: k[0] for k, v in self.factory_functions.items()}
-        res: dict[type, set[type]] = {}
+        factory_to_type: dict[Callable[..., Any], type[Any]] = {v: k[0] for k, v in self.factory_functions.items()}
+        types_created_by_factories = set(factory_to_type.values())
+        res: dict[type, set[type[Any]]] = {}
+
         for target, dependencies in self.context.dependencies.items():
-            if not isinstance(target, type):
+            # If this type is being created by a factory then do not process the current entry
+            # as the dependency graph for it will be processed through the factory.
+            if target in types_created_by_factories:
                 continue
 
-            klass = factory_to_type.get(target, target)
+            klass: type[Any] = factory_to_type.get(target, target)  # type: ignore[arg-type]
 
             if not self.is_impl_singleton(klass):
                 continue
 
-            res[klass] = set()
-            current_deps: list[type] = []
-
-            for annotated_param in dependencies.values():
-                if annotated_param.is_parameter or not annotated_param.klass:
-                    continue
-
-                dependency = annotated_param.klass
-
-                if self.is_interface_known(dependency):
-                    current_deps.extend(self.known_interfaces.get(dependency, {}).values())
-                else:
-                    current_deps.append(dependency)
-
-            for dep in current_deps:
-                if self.is_impl_singleton(dep):
-                    res[klass].add(dep)
+            res[klass] = {cls for cls in self._get_class_deps(dependencies.values()) if self.is_impl_singleton(cls)}
 
         return res
+
+    def _get_class_deps(self, dependencies: Iterable[AnnotatedParameter]) -> set[type[Any]]:
+        """Return a set with non-parameter dependencies from the given annotated parameter list."""
+        current_deps: set[type[Any]] = set()
+
+        for annotated_param in dependencies:
+            if annotated_param.is_parameter or not annotated_param.klass:
+                continue
+
+            if self.is_interface_known(annotated_param.klass):
+                current_deps.update(self.known_interfaces.get(annotated_param.klass, {}).values())
+            else:
+                current_deps.add(annotated_param.klass)
+        return current_deps
 
     def is_impl_known(self, klass: type) -> bool:
         return klass in self.known_impls
