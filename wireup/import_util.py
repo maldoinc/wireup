@@ -17,7 +17,7 @@ if TYPE_CHECKING:
     from wireup import DependencyContainer
 
 
-def warmup_container(dependency_container: DependencyContainer, service_modules: list[ModuleType]) -> None:
+def initialize_container(dependency_container: DependencyContainer, *, service_modules: list[ModuleType]) -> None:
     """Trigger service registrations in `service_modules` and initialize registered singleton services.
 
     !!! note
@@ -25,6 +25,19 @@ def warmup_container(dependency_container: DependencyContainer, service_modules:
     """
     _register_services(dependency_container, service_modules)
     dependency_container.warmup()
+
+
+def warmup_container(dependency_container: DependencyContainer, service_modules: list[ModuleType]) -> None:
+    """Trigger service registrations in `service_modules` and initialize registered singleton services.
+
+    !!! note
+        For long-lived processes this should be executed once at startup.
+    """
+    warnings.warn(
+        "Using warmup_container is deprecated. Use 'initialize_container' instead",
+        stacklevel=2,
+    )
+    initialize_container(dependency_container, service_modules=service_modules)
 
 
 def _register_services(dependency_container: DependencyContainer, service_modules: list[ModuleType]) -> None:
@@ -100,7 +113,7 @@ def register_all_in_module(
     """
     warnings.warn(
         "Using register_all_in_module is deprecated. "
-        "Use @service or factories in conjunction with warmup_container to register services.",
+        "Use @service or factories in conjunction with initialize_container to register services.",
         stacklevel=2,
     )
     klass: type[Any]
@@ -115,7 +128,7 @@ def load_module(module: ModuleType) -> None:
     """
     warnings.warn(
         "Using load_module is deprecated. "
-        "Use @service or factories in conjunction with warmup_container to register services.",
+        "Use @service or factories in conjunction with initialize_container to register services.",
         stacklevel=2,
     )
     _find_objects_in_module(module, lambda _: True)

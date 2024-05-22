@@ -3,7 +3,7 @@ Use service objects to implement functionality in your application. Services can
 ## Registration
 Wireup does not enforce a code structure. Services may live anywhere in the application but must 
 be registered with the container. 
-Top-level modules containing registrations must also be declared in the `warmup_container` call.
+Top-level modules containing registrations must also be declared in the `initialize_container` call.
 
 To register a class as a service you can use one of the following
 

@@ -29,7 +29,7 @@ In this example, we will store the Redis URL and an API key for the weather serv
 
     ```python title="main.py" hl_lines="9 10 13 16"
     import os
-    from wireup import container, warmup_container
+    from wireup import container, initialize_container
     from myapp import services
 
     def create_app():
@@ -43,7 +43,7 @@ In this example, we will store the Redis URL and an API key for the weather serv
         container.params.update(Settings().model_dump())
         
         # Specify top-level modules containing registrations.
-        warmup_container(container, service_modules=[services])
+        initialize_container(container, service_modules=[services])
 
         return app
     ```
@@ -52,7 +52,7 @@ In this example, we will store the Redis URL and an API key for the weather serv
     ```python title="main.py" hl_lines="15 18"
     from pydantic import Field, PostgresDsn
     from pydantic_settings import BaseSettings
-    from wireup import container, warmup_container
+    from wireup import container, initialize_container
 
     from myapp.services import factories
     
@@ -67,7 +67,7 @@ In this example, we will store the Redis URL and an API key for the weather serv
         container.register(Settings)
         
         # Specify top-level modules containing registrations.
-        warmup_container(container, service_modules=[factories])
+        initialize_container(container, service_modules=[factories])
 
         return app
     ```

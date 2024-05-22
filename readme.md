@@ -31,7 +31,7 @@ Example showing a redis wrapper and a weather service which calls an external ap
 **1. Set up**
 
 ```python
-from wireup import container
+from wireup import container, initialize_container
 def create_app():
     app = ...
     
@@ -43,7 +43,7 @@ def create_app():
     container.params.update(Settings().model_dump())
     
     # Specify top-level modules containing registrations.
-    warmup_container(container, service_modules=[services])
+    initialize_container(container, service_modules=[services])
 
     return app
 ```
