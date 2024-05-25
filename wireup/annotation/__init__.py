@@ -175,4 +175,13 @@ def abstract(cls: type[__T]) -> type[__T]:
     return cls
 
 
-__all__ = ["ParameterEnum", "AbstractDeclaration", "ServiceDeclaration", "abstract", "service", "Wire", "Inject"]
+__all__ = [
+    "ParameterEnum",
+    "AbstractDeclaration",
+    "ServiceDeclaration",
+    "abstract",
+    "service",
+    "wire",
+    "Wire",
+    "Inject",
+]

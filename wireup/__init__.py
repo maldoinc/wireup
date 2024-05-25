@@ -1,5 +1,5 @@
 from wireup.annotation import Inject, ParameterEnum, Wire, abstract, service, wire
-from wireup.import_util import load_module, register_all_in_module, warmup_container
+from wireup.import_util import load_module, register_all_in_module, warmup_container, initialize_container
 from wireup.ioc.dependency_container import DependencyContainer
 from wireup.ioc.parameter import ParameterBag
 from wireup.ioc.types import ParameterReference, ServiceLifetime, ServiceOverride
@@ -25,5 +25,6 @@ __all__ = [
     "register_all_in_module",
     "service",
     "warmup_container",
+    "initialize_container",
     "wire",
 ]
