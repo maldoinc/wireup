@@ -7,7 +7,7 @@ This declarative approach uses configuration metadata
 provided from decorators and annotations to define services and the dependencies between them. 
 
 It allows you to declare the final state and let the container handle the rest rather than
-imperatively coding the object creation and dependency injection.
+imperatively coding object creation and dependency injection.
 
 This generally results in less boilerplate code as opposed to using a programmatic approach 
 and is how many popular frameworks operate.
@@ -18,7 +18,7 @@ and is how many popular frameworks operate.
 With a programmatic approach you are in full control over how services are created and can keep service definitions
 devoid of container references if this is important to you. 
 
-This will result in more code as you will need to write these factories and construct the objects yourself.
+This will result in more code as you will need to write these factories and construct services yourself.
 
 This will also be somewhat familiar to you if you're coming from FastAPI, with the major difference
 being that you won't need to `Depends(get_service_from_function)` everywhere.

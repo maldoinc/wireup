@@ -23,11 +23,8 @@ The first step is to set up the container. We do this by exposing configuration 
 In this example, we will store the Redis URL and an API key for the weather service.
 
 === "@ Annotations"
-    With a declarative approach the container uses configuration metadata
-    provided from decorators and annotations to define services and the dependencies between them. 
-    This means that the service declaration is self-contained and does not require additional set up.
 
-    ```python title="main.py" hl_lines="9 10 13 16"
+    ```python title="main.py" hl_lines="9 10 13 17"
     import os
     from wireup import container, initialize_container
     from myapp import services
@@ -35,21 +32,22 @@ In this example, we will store the Redis URL and an API key for the weather serv
     def create_app():
         app = ...
         
-        # Expose configuration in the container by populating container.params.
+        # Expose configuration by populating container.params.
         container.params.put("redis_url", os.environ["APP_REDIS_URL"])
         container.params.put("weather_api_key", os.environ["APP_WEATHER_API_KEY"])
 
         # Bulk updating is possible via the "update" method.
         container.params.update(Settings().model_dump())
         
-        # Specify top-level modules containing registrations.
+        # Start the container and register + initialize services
+        # service_modules contains top-level modules containing registrations.
         initialize_container(container, service_modules=[services])
 
         return app
     ```
 
 === "🏭 Programmatic"
-    ```python title="main.py" hl_lines="15 18"
+    ```python title="main.py" hl_lines="15 19"
     from pydantic import Field, PostgresDsn
     from pydantic_settings import BaseSettings
     from wireup import container, initialize_container
@@ -66,7 +64,8 @@ In this example, we will store the Redis URL and an API key for the weather serv
         # Expose configuration as a service in the container.
         container.register(Settings)
         
-        # Specify top-level modules containing registrations.
+        # Start the container and register + initialize services
+        # service_modules contains top-level modules containing registrations.
         initialize_container(container, service_modules=[factories])
 
         return app
@@ -86,6 +85,10 @@ The Redis client requires specific configuration details to establish a connecti
 which we fetch from the configuration.
 
 === "@ Annotations"
+    With a declarative approach the container uses configuration metadata
+    provided from decorators and annotations to define services and the dependencies between them. 
+    This means that the service declaration is self-contained and does not require additional set up.
+
 
     ```python title="services/key_value_store.py" hl_lines="4 6"
     from wireup import service, Inject
@@ -96,13 +99,16 @@ which we fetch from the configuration.
         def __init__(self, dsn: Annotated[str, Inject(param="redis_url")]) -> None:  #(2)!
             self.client = redis.from_url(dsn)
 
-        async def get(self, key: str) -> Any: ...
-        async def set(self, key: str, value: Any): ...
+        def get(self, key: str) -> Any: ...
+        def set(self, key: str, value: Any): ...
     ```
 
     1. Decorators do not modify the classes in any way and only serve to collect metadata. This behavior can make
        testing a lot simpler as you can still instantiate this like a regular class in your tests.
     2. Parameters must be annotated with the `Inject(param=name)` syntax. This tells the container which parameter to inject.
+    
+    The `@service` decorator marks this class as a service to be registered in the container. Decorators/annotations
+    are read once during the call to `initialize_container`.
 
 === "🏭 Programmatic"
     With this approach, services are devoid of container references. 
@@ -113,12 +119,12 @@ which we fetch from the configuration.
         def __init__(self, dsn: str) -> None:
             self.client = redis.from_url(dsn)
 
-        async def get(self, key: str) -> Any: ...
-        async def set(self, key: str, value: Any): ...
+        def get(self, key: str) -> Any: ...
+        def set(self, key: str, value: Any): ...
     ```
 
-
-    The `@service` decorator makes this factory known with the container.
+    The `@service` decorator makes this factory known with the container.. Decorators/annotations
+    are read once during the call to `initialize_container`. 
     Return type is mandatory and denotes what will be built.
 
     ```python title="services/factories.py" hl_lines="3 4"

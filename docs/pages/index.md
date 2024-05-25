@@ -3,8 +3,7 @@ hide:
     - navigation
 ---
 
-Performant, concise and easy to use dependency injection container for Python 3.8+.
-
+Performant, concise, and easy-to-use dependency injection container for Python 3.8+.
 
 [![GitHub](https://img.shields.io/github/license/maldoinc/wireup)](https://github.com/maldoinc/wireup)
 [![Code Climate maintainability](https://img.shields.io/codeclimate/maintainability/maldoinc/wireup?label=Code+Climate)](https://codeclimate.com/github/maldoinc/wireup)

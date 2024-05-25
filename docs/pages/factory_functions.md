@@ -1,10 +1,8 @@
 Typically getting the necessary dependencies is enough to construct an object. However, there are scenarios
-where you need to delegate the creation of an object to a special function called a 
+where you need to delegate service creation to a special function called a 
 [factory](https://en.wikipedia.org/wiki/Factory_(object-oriented_programming)){: target=_blank }.
 
 ## Use cases
-
-Some of the use cases for factories are as follows:
 
 * Object construction needs additional logic or configuration.
 * Depending on the runtime environment or configuration, you may need to create different objects 
