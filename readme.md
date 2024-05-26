@@ -15,11 +15,11 @@
 ---
 
 ## ⚡ Key Features
-* Effortlessly Inject services and configurations.
+* Effortlessly Inject services and configuration.
 * Support for interfaces and abstract classes.
 * Factory pattern.
 * Singleton and transient dependencies.
-* Use as a truly declrative container
+* Truly declrative container.
 * Framework-agnostic.
 * Simplified integration with [Django](https://maldoinc.github.io/wireup/latest/integrations/django/),
 [Flask](https://maldoinc.github.io/wireup/latest/integrations/flask/), and 
@@ -36,7 +36,7 @@ from wireup import container, initialize_container
 def create_app():
     app = ...
     
-    # 👇 Expose configuration by populating container.params.
+    # ⬇️ Expose configuration by populating container.params.
     container.params.put("redis_url", os.environ["APP_REDIS_URL"])
     container.params.put("weather_api_key", os.environ["APP_WEATHER_API_KEY"])
 
@@ -45,7 +45,7 @@ def create_app():
     
     # Start the container: This registers and initializes services.
     # `service_modules` contains top-level modules containing registrations.
-    # 👇
+    # ⬇️
     initialize_container(container, service_modules=[services])
 
     return app
@@ -58,11 +58,11 @@ Use a declarative syntax to describe services, and let the container handle the 
 ```python
 from wireup import service, Inject
 
-@service # 👈 Decorator tells the container this is a service.
+@service # ⬅️ Decorator tells the container this is a service.
 class KeyValueStore:
                                            # This tells the container to inject the value
                                            # of the parameter during creation.
-                                           # 👇 
+                                           # ⬇️ 
     def __init__(self, dsn: Annotated[str, Inject(param="redis_url")]):
         self.client = redis.from_url(dsn)
 
@@ -73,9 +73,9 @@ class KeyValueStore:
 @service
 @dataclass
 class WeatherService:
-    # Inject the value of the parameter to this field. 👇
+    # Inject the value of the parameter to this field. ⬇️
     api_key: Annotated[str, Inject(param="weather_api_key")]
-    kv_store: KeyValueStore # 👈 This will be injected automatically without additional metadata.
+    kv_store: KeyValueStore # ⬅️ This will be injected automatically without additional metadata.
 
     def get_forecast(self, lat: float, lon: float) -> WeatherForecast:
         ...
@@ -89,7 +89,7 @@ Decorate targets where the library should perform injection.
 from wireup import container
 
 @app.get("/weather/forecast")
-# 👇 Decorating views with autowire enables the container to inject services/parameters.
+# ⬇️ Decorating views with autowire enables the container to inject services/parameters.
 @container.autowire
 def get_weather_forecast_view(weather_service: WeatherService, request):
     return weather_service.get_forecast(request.lat, request.lon)
