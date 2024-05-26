@@ -1457,7 +1457,7 @@ In this example, we will store the Redis URL and an API key for the weather serv
     <span class="n">weather_api_key</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">alias</span><span class="o">=</span><span class="s2">&quot;APP_WEATHER_API_KEY&quot;</span><span class="p">)</span>  
 
 <span class="k">def</span> <span class="nf">create_app</span><span class="p">():</span>
-    <span class="n">app</span> <span class="o">=</span> <span class="o">...</span><span class="n">f</span>
+    <span class="n">app</span> <span class="o">=</span> <span class="o">...</span>
 
     <span class="c1"># Expose configuration as a service in the container.</span>
 <span class="hll">    <span class="n">container</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="n">Settings</span><span class="p">)</span>
