@@ -62,7 +62,7 @@ In this example, we will store the Redis URL and an API key for the weather serv
         weather_api_key: str = Field(alias="APP_WEATHER_API_KEY")  
 
     def create_app():
-        app = ...f
+        app = ...
         
         # Expose configuration as a service in the container.
         container.register(Settings)
