@@ -1,27 +1,23 @@
-Wireup configuration can be injected through annotations or programmatically by using factory functions.
-You can mix and match the two as necessary but for consistency it's best to stick to one for a given project.
+Wireup configuration can be injected through annotations or programmatically using factory functions. 
+You can mix and match the two as necessary, but for consistency, it's best to stick to one approach for a given project.
 
 ## @ Annotations
 
-This declarative approach uses configuration metadata
-provided from decorators and annotations to define services and the dependencies between them. 
+This declarative approach uses configuration metadata provided by decorators and annotations to define services and dependencies between them.
+It allows you to declare the final state and let the container handle the rest, rather than imperatively coding object creation and dependency injection.
 
-It allows you to declare the final state and let the container handle the rest rather than
-imperatively coding object creation and dependency injection.
-
-This generally results in less boilerplate code as opposed to using a programmatic approach 
-and is how many popular frameworks operate.
+This generally results in less boilerplate code compared to a programmatic approach and is how many popular frameworks operate.
 
 
 ## 🏭 Programmatic
 
-With a programmatic approach you are in full control over how services are created and can keep service definitions
-devoid of container references if this is important to you. 
+With a programmatic approach, you have full control over how services are created and can keep service
+definitions devoid of container references if this is important to you.
 
-This will result in more code as you will need to write these factories and construct services yourself.
+This approach results in more code as you will need to write these factories and construct services yourself.
 
-This will also be somewhat familiar to you if you're coming from FastAPI, with the major difference
-being that you won't need to `Depends(get_service_from_function)` everywhere.
+This will also be somewhat familiar if you're coming from FastAPI,
+with the major difference being that you won't need to `Depends(get_service_from_function)` everywhere.
 
 Factories can request dependencies as usual and may use annotations for configuration.
 
@@ -66,12 +62,12 @@ def target(logs_dir: Annotated[str, Inject(expr="${cache_dir}/${env}/logs")]) ->
     ...
 ```
 
-## Class-based configuration
+## 🏭 Class-based configuration
 
-While wireup provides its own configuration mechanism in the form of parameters, it is entirely optional. 
-If you prefer using typed classes for configuration then they are also supported via factories.
+While Wireup provides its own configuration mechanism in the form of parameters, it is entirely optional.
+If you prefer using typed classes for configuration, they are also supported via factories.
 
-The main idea is to register your settings as a service and inject it in factories like a regular dependency.
+The main idea is to register your settings as a service and inject it into factories like a regular dependency.
 
 ### Configuration
 

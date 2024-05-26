@@ -15,10 +15,11 @@
 ---
 
 ## ⚡ Key Features
-* Inject services and configurations effortlessly.
+* Effortlessly Inject services and configurations.
 * Support for interfaces and abstract classes.
-* Built-in factory pattern.
+* Factory pattern.
 * Singleton and transient dependencies.
+* Use as a truly declrative container
 * Framework-agnostic.
 * Simplified integration with [Django](https://maldoinc.github.io/wireup/latest/integrations/django/),
 [Flask](https://maldoinc.github.io/wireup/latest/integrations/flask/), and 
@@ -42,8 +43,9 @@ def create_app():
     # Bulk update is possible via the "update" method.
     container.params.update(Settings().model_dump())
     
-    # Start the container and register + initialize services
-    # service_modules contains top-level modules containing registrations.
+    # Start the container: This registers and initializes services.
+    # `service_modules` contains top-level modules containing registrations.
+    # 👇
     initialize_container(container, service_modules=[services])
 
     return app
@@ -56,7 +58,7 @@ Use a declarative syntax to describe services, and let the container handle the 
 ```python
 from wireup import service, Inject
 
-@service # 👈 This decorator tells the container that this is a service.
+@service # 👈 Decorator tells the container this is a service.
 class KeyValueStore:
                                            # This tells the container to inject the value
                                            # of the parameter during creation.

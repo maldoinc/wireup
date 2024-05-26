@@ -16,9 +16,11 @@ $ pip install wireup
 
 ### Configuration
 
-!!! quote ""
+!!! tip "Use Wireup the way you prefer"
     The container can be configured through annotations or programmatically.
-    Sections below show how to achieve the same result using each method.
+    It was designed with annotations in mind but all features are available with either approach.
+
+    Sections below show how to achieve the same result using each method. [Learn more](configuration.md).
 
 The first step is to set up the container by exposing configuration on startup.
 In this example, we will store the Redis URL and an API key for the weather service.
@@ -37,11 +39,11 @@ In this example, we will store the Redis URL and an API key for the weather serv
         container.params.put("redis_url", os.environ["APP_REDIS_URL"])
         container.params.put("weather_api_key", os.environ["APP_WEATHER_API_KEY"])
 
-        # Bulk updating is possible via the "update" method.
+        # Bulk update is also possible.
         container.params.update(Settings().model_dump())
         
-        # Start the container and register + initialize services
-        # service_modules contains top-level modules containing registrations.
+        # Start the container: This registers + initializes services.
+        # `service_modules` contains top-level modules containing registrations.
         initialize_container(container, service_modules=[services])
 
         return app
@@ -65,7 +67,7 @@ In this example, we will store the Redis URL and an API key for the weather serv
         # Expose configuration as a service in the container.
         container.register(Settings)
         
-        # Start the container and register + initialize services
+        # Start the container: This registers + initializes services
         # service_modules contains top-level modules containing registrations.
         initialize_container(container, service_modules=[factories])
 

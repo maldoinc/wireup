@@ -17,7 +17,7 @@ Performant, concise, and easy-to-use dependency injection container for Python 3
 
 <div class="grid cards" markdown>
 
--   :arrow_right:{ .lg .middle } __Dependency Injection__
+-   :arrow_heading_down:{ .lg .middle } __Dependency Injection__
 
     ---
 
@@ -60,11 +60,13 @@ Performant, concise, and easy-to-use dependency injection container for Python 3
     [:octicons-arrow-right-24: Learn more](services.md)
 
 
--   :question:{ .lg .middle } __Framework agnostic__
+-   :package:{ .lg .middle } __Declarative/Imperative__
 
     ---
-    With its decorator style injection, wireup works with any framework. It also comes with first-party integrations
-    for [Flask](integrations/flask.md) and [FastAPI](integrations/fastapi.md).
+    Configure services through annotations in a fully declarative style or
+    build everything by code for full control over instantiation.
+
+    [:octicons-arrow-right-24: Learn more](configuration.md)
 </div>
 
 
