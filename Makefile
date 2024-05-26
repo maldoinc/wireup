@@ -35,3 +35,7 @@ fix:
 # make docs-deploy version=...
 docs-deploy $(version):
 	cd docs && ../.venv/bin/mike deploy --push --update-aliases $(version) latest
+
+publish:
+	./.venv/bin/poetry build
+	./.venv/bin/poetry publish
