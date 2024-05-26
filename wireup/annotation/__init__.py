@@ -8,12 +8,12 @@ from enum import Enum
 from typing import TYPE_CHECKING, Any, TypeVar, overload
 
 from wireup.ioc.types import (
-    ContainerProxyQualifier,
     EmptyContainerInjectionRequest,
     InjectableType,
     ParameterWrapper,
     Qualifier,
     ServiceLifetime,
+    ServiceQualifier,
     TemplatedString,
 )
 
@@ -47,7 +47,7 @@ def Inject(  # noqa: N802
     elif expr:
         res = ParameterWrapper(TemplatedString(expr))
     elif qualifier:
-        res = ContainerProxyQualifier(qualifier)
+        res = ServiceQualifier(qualifier)
     else:
         res = EmptyContainerInjectionRequest()
 

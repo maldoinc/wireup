@@ -46,7 +46,7 @@ Qualifier = Hashable
 
 
 @dataclass(frozen=True)
-class ContainerProxyQualifier(InjectableType):
+class ServiceQualifier(InjectableType):
     """Hint the container registry which dependency to load when there are multiple ones registered with the same type.
 
     Use in case of interfaces where there are multiple dependencies that inherit it, but the type of the parameter
@@ -94,9 +94,7 @@ class AnnotatedParameter:
         """
         self.klass = klass
         self.annotation = annotation
-        self.qualifier_value = (
-            self.annotation.qualifier if isinstance(self.annotation, ContainerProxyQualifier) else None
-        )
+        self.qualifier_value = self.annotation.qualifier if isinstance(self.annotation, ServiceQualifier) else None
         self.is_parameter = isinstance(self.annotation, ParameterWrapper)
 
     def __eq__(self, other: object) -> bool:

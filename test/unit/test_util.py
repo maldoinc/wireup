@@ -4,7 +4,7 @@ from typing import Dict, List, Tuple, Union
 
 from typing_extensions import Annotated
 from wireup import Inject
-from wireup.ioc.types import AnnotatedParameter, ContainerProxyQualifier, InjectableType, ParameterWrapper
+from wireup.ioc.types import AnnotatedParameter, InjectableType, ParameterWrapper, ServiceQualifier
 from wireup.ioc.util import (
     is_type_autowireable,
     param_get_annotation,
@@ -60,8 +60,8 @@ class TestUtilityFunctions(unittest.TestCase):
 
     def test_annotated_parameter_hash_equality(self):
         self.assertEqual(
-            hash(AnnotatedParameter(AnnotatedParameter, ContainerProxyQualifier("wow"))),
-            hash(AnnotatedParameter(AnnotatedParameter, ContainerProxyQualifier("wow"))),
+            hash(AnnotatedParameter(AnnotatedParameter, ServiceQualifier("wow"))),
+            hash(AnnotatedParameter(AnnotatedParameter, ServiceQualifier("wow"))),
         )
 
 
