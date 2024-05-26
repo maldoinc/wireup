@@ -1341,7 +1341,7 @@
 <span class="k">class</span> <span class="nc">S3Manager</span><span class="p">:</span>
     <span class="c1"># Reference configuration by name.</span>
     <span class="c1"># This is the same name this appears in settings.</span>
-    <span class="n">access_token</span><span class="p">:</span> <span class="n">Annotated</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Inject</span><span class="p">(</span><span class="n">parameter</span><span class="o">=</span><span class="s2">&quot;S3_BUCKET_ACCESS_TOKEN&quot;</span><span class="p">)]</span>
+    <span class="n">access_token</span><span class="p">:</span> <span class="n">Annotated</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Inject</span><span class="p">(</span><span class="n">param</span><span class="o">=</span><span class="s2">&quot;S3_BUCKET_ACCESS_TOKEN&quot;</span><span class="p">)]</span>
 
     <span class="k">def</span> <span class="nf">upload</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">file</span><span class="p">:</span> <span class="n">File</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span> <span class="o">...</span>
 </code></pre></div>
