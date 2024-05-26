@@ -1,7 +1,8 @@
-This walkthrough will bring you up to speed with the most common use cases for a typical application.
+This walkthrough will introduce you to the most common use cases for a typical application. 
 
-We're going to build a simple weather forecast application that calls a remote weather service and 
-uses a distributed key-value store to cache results.
+We'll build a simple weather forecast application that calls a remote weather service 
+and uses a distributed key-value store to cache results.
+
 
 ## 1. Setup
 
@@ -16,10 +17,10 @@ $ pip install wireup
 ### Configuration
 
 !!! quote ""
-    The container can be configured through annotations or programmatically. 
-    Sections below use tabs showing how to achieve the result using each method.
+    The container can be configured through annotations or programmatically.
+    Sections below show how to achieve the same result using each method.
 
-The first step is to set up the container. We do this by exposing configuration on startup.
+The first step is to set up the container by exposing configuration on startup.
 In this example, we will store the Redis URL and an API key for the weather service.
 
 === "@ Annotations"
@@ -71,7 +72,7 @@ In this example, we will store the Redis URL and an API key for the weather serv
         return app
     ```
 
-Now that the setup is complete it's time to move on to the next step.
+Now that the setup is complete, let's move on to the next step.
 
 ## 2. Define services
 ### KeyValueStore
@@ -81,14 +82,13 @@ First, let's add a `KeyValueStore` service. We wrap Redis with a class that abst
 While we have the option to [inject Redis directly](factory_functions.md#inject-a-third-party-class), 
 in this example, we've chosen the abstraction route. 
 
-The Redis client requires specific configuration details to establish a connection with the server, 
+The Redis client requires specific configuration details to establish a connection with the server,
 which we fetch from the configuration.
 
 === "@ Annotations"
-    With a declarative approach the container uses configuration metadata
+    With a declarative approach, the container uses configuration metadata 
     provided from decorators and annotations to define services and the dependencies between them. 
-    This means that the service declaration is self-contained and does not require additional set up.
-
+    This means that the service declaration is self-contained and does not require additional setup.
 
     ```python title="services/key_value_store.py" hl_lines="4 6"
     from wireup import service, Inject
@@ -103,12 +103,12 @@ which we fetch from the configuration.
         def set(self, key: str, value: Any): ...
     ```
 
-    1. Decorators do not modify the classes in any way and only serve to collect metadata. This behavior can make
-       testing a lot simpler as you can still instantiate this like a regular class in your tests.
+    1. Decorators do not modify the classes in any way and only serve to collect metadata. 
+       This makes testing simpler, as you can still instantiate this like a regular class in your tests.
     2. Parameters must be annotated with the `Inject(param=name)` syntax. This tells the container which parameter to inject.
     
-    The `@service` decorator marks this class as a service to be registered in the container. Decorators/annotations
-    are read once during the call to `initialize_container`.
+    The `@service` decorator marks this class as a service to be registered in the container.
+    Decorators and annotations are read once during the call to `initialize_container`.
 
 === "🏭 Programmatic"
     With this approach, services are devoid of container references. 
@@ -137,12 +137,11 @@ which we fetch from the configuration.
 
 ### WeatherService
 
-Next, we add a new weather service that will perform requests against a remote server and cache results
-as necessary.
+Next, we add a weather service that will perform requests against a remote server and cache results as necessary.
 
 === "@ Annotations"
 
-    The `api_key` field contains the value of the `weather_api_key` parameter as specified in the annotation and
+    The `api_key` field contains the value of the `weather_api_key` parameter as specified in the annotation. 
     `KeyValueStore` will be automatically injected without requiring additional metadata.
 
     ```python title="services/weather.py" hl_lines="3 6 7"
@@ -160,7 +159,7 @@ as necessary.
     ```
 
     1.  * Injection is supported for regular classes as well as dataclasses.
-        * When using dataclasses it is important that the dataclass decorator is applied before `@service`.
+        * When using dataclasses it is important that the `@dataclass` decorator is applied before `@service`.
     2.  * Use type hints to indicate which dependency to inject.
         * Dependencies are automatically discovered and injected.
 
@@ -185,7 +184,7 @@ as necessary.
         return WeatherService(api_key=settings.weather_api_key, kv=kv_store)
     ```
 
-That concludes service creation. The container knows how to build all services and inject them anywhere as necessary.
+That concludes service creation. The container knows how to build services and inject them as necessary.
 
 ## 3. Inject
 
@@ -204,10 +203,10 @@ async def get_forecast_view(weather_service: WeatherService):
 
 ## Conclusion
 
-This concludes the "Getting started" walkthrough which covers the most common dependency injection use cases.
+This concludes the "Getting Started" walkthrough, covering the most common dependency injection use cases.
 
 !!! info "Good to know"
-    * `@container.autowire` decorator is not needed for services.
+    * The `@container.autowire` decorator is not needed for services.
     * Wireup can perform injection on both sync and async functions.
 
 ## Links
