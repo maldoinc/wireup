@@ -19,7 +19,6 @@
 * Support for interfaces and abstract classes.
 * Factory pattern.
 * Singleton and transient dependencies.
-* Truly declrative container.
 * Framework-agnostic.
 * Simplified integration with [Django](https://maldoinc.github.io/wireup/latest/integrations/django/),
 [Flask](https://maldoinc.github.io/wireup/latest/integrations/flask/), and 
