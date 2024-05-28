@@ -15,7 +15,7 @@
 ---
 
 ## ⚡ Key Features
-* Effortlessly Inject services and configuration.
+* Inject services and configuration.
 * Support for interfaces and abstract classes.
 * Factory pattern.
 * Singleton and transient dependencies.
