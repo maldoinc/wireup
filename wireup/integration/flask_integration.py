@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any
 
-from wireup import DependencyContainer, container, warmup_container
+from wireup import DependencyContainer, container, initialize_container
 from wireup.integration.util import is_view_using_container
 
 if TYPE_CHECKING:
@@ -37,7 +37,7 @@ def wireup_init_flask_integration(
         config = {f"{config_prefix}.{name}": val for name, val in config.items()}
 
     dependency_container.params.update(config)
-    warmup_container(dependency_container, service_modules or [])
+    initialize_container(dependency_container, service_modules=service_modules)
 
     flask_app.view_functions = {
         name: dependency_container.autowire(view) if is_view_using_container(dependency_container, view) else view
