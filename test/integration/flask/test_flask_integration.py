@@ -1,9 +1,11 @@
 import unittest
 from dataclasses import dataclass
 from test.fixtures import FooBar, FooBase
+from test.integration.flask import services
+from test.integration.flask.services.factories import FlaskG
 from test.unit.services.no_annotations.random.random_service import RandomService
 
-from flask import Flask
+from flask import Flask, g
 from typing_extensions import Annotated
 from wireup import DependencyContainer, Inject, ParameterBag
 from wireup.integration.flask_integration import wireup_init_flask_integration
@@ -69,7 +71,7 @@ class TestFlaskIntegration(unittest.TestCase):
 
         self.container.abstract(FooBase)
         self.container.register(FooBar)
-        wireup_init_flask_integration(self.app, dependency_container=self.container, service_modules=[])
+        wireup_init_flask_integration(self.app, dependency_container=self.container, service_modules=[services])
 
         res = self.client.get("/intf")
         self.assertEqual(res.status_code, 200)
@@ -90,3 +92,16 @@ class TestFlaskIntegration(unittest.TestCase):
 
         self.assertEqual(res.status_code, 200)
         self.assertEqual(res.json, {"test": True})
+
+    def test_does_not_interact_with_flask_g_when_registering(self):
+        @self.app.get("/")
+        def get_environment(foo: FlaskG):
+            foo.g.value = 1
+
+            return {"g": g.value}
+
+        wireup_init_flask_integration(self.app, dependency_container=self.container, service_modules=[services])
+        res = self.client.get("/")
+
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual(res.json, {"g": 1})

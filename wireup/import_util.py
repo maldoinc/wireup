@@ -4,6 +4,7 @@ import fnmatch
 import importlib
 import inspect
 import re
+import types
 import warnings
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
@@ -44,8 +45,14 @@ def _register_services(dependency_container: DependencyContainer, service_module
     abstract_registrations: set[type[Any]] = set()
     service_registrations: list[ServiceDeclaration] = []
 
+    def _is_valid_wireup_target(obj: Any) -> bool:
+        # Check that the hasattr call is only made on user defined functions and classes.
+        # This is so that it avoids interacting with proxies and things such as flask.g when imported.
+        # "from flask import g" would cause a hasattr call to g outside of app context.
+        return (isinstance(obj, types.FunctionType) or inspect.isclass(obj)) and hasattr(obj, "__wireup_registration__")
+
     for module in service_modules:
-        for cls in _find_objects_in_module(module, predicate=lambda obj: hasattr(obj, "__wireup_registration__")):
+        for cls in _find_objects_in_module(module, predicate=_is_valid_wireup_target):
             reg = getattr(cls, "__wireup_registration__", None)
 
             if isinstance(reg, ServiceDeclaration):
