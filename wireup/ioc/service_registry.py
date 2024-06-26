@@ -23,7 +23,9 @@ if TYPE_CHECKING:
     )
 
 
-class _ServiceRegistry:
+class ServiceRegistry:
+    """Container class holding service registration info and dependencies among them."""
+
     __slots__ = ("known_interfaces", "known_impls", "factory_functions", "context")
 
     def __init__(self) -> None:
@@ -33,7 +35,7 @@ class _ServiceRegistry:
 
         self.context = InitializationContext()
 
-    def register_service(
+    def register_service(  # noqa: D102
         self,
         klass: type,
         qualifier: Qualifier | None,
@@ -51,10 +53,10 @@ class _ServiceRegistry:
         self.known_impls[klass].add(qualifier)
         self.target_init_context(klass, lifetime)
 
-    def register_abstract(self, klass: type) -> None:
+    def register_abstract(self, klass: type) -> None:  # noqa: D102
         self.known_interfaces[klass] = defaultdict()
 
-    def register_factory(
+    def register_factory(  # noqa: D102
         self, fn: Callable[..., Any], lifetime: ServiceLifetime, qualifier: Qualifier | None = None
     ) -> None:
         return_type = inspect.signature(fn).return_annotation
@@ -135,12 +137,15 @@ class _ServiceRegistry:
         return current_deps
 
     def is_impl_known(self, klass: type) -> bool:
+        """Determine if klass is known by the registry."""
         return klass in self.known_impls
 
     def is_impl_with_qualifier_known(self, klass: type, qualifier_value: Qualifier | None) -> bool:
+        """Determine if klass represending a concrete implementation + qualifier is known by the registry."""
         return klass in self.known_impls and qualifier_value in self.known_impls[klass]
 
     def is_type_with_qualifier_known(self, klass: type, qualifier: Qualifier | None) -> bool:
+        """Determine if klass+qualifier is known. Klass can be a concrete class or one registered as abstract."""
         is_known_impl = self.is_impl_with_qualifier_known(klass, qualifier)
         is_known_intf = self.__is_interface_with_qualifier_known(klass, qualifier)
         is_known_from_factory = self.is_impl_known_from_factory(klass, qualifier)
@@ -154,11 +159,11 @@ class _ServiceRegistry:
     ) -> bool:
         return klass in self.known_interfaces and qualifier in self.known_interfaces[klass]
 
-    def is_impl_known_from_factory(self, klass: type, qualifier: Qualifier | None) -> bool:
+    def is_impl_known_from_factory(self, klass: type, qualifier: Qualifier | None) -> bool:  # noqa: D102
         return (klass, qualifier) in self.factory_functions
 
-    def is_impl_singleton(self, klass: type) -> bool:
+    def is_impl_singleton(self, klass: type) -> bool:  # noqa: D102
         return self.context.lifetime.get(klass) == ServiceLifetime.SINGLETON
 
-    def is_interface_known(self, klass: type) -> bool:
+    def is_interface_known(self, klass: type) -> bool:  # noqa: D102
         return klass in self.known_interfaces

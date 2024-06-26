@@ -1,12 +1,12 @@
 import unittest
 
 from wireup import ServiceLifetime
-from wireup.ioc.service_registry import _ServiceRegistry
+from wireup.ioc.service_registry import ServiceRegistry
 
 
 class TestServiceRegistry(unittest.TestCase):
     def setUp(self):
-        self.registry = _ServiceRegistry()
+        self.registry = ServiceRegistry()
 
     def test_dependency_graph_empty(self):
         graph = self.registry.get_dependency_graph()

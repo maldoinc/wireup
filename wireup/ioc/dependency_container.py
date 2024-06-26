@@ -20,7 +20,7 @@ from wireup.errors import (
 )
 
 from .proxy import ContainerProxy
-from .service_registry import _ServiceRegistry
+from .service_registry import ServiceRegistry
 from .types import (
     AnnotatedParameter,
     AnyCallable,
@@ -66,7 +66,7 @@ class DependencyContainer:
 
     def __init__(self, parameter_bag: ParameterBag) -> None:
         """:param parameter_bag: ParameterBag instance holding parameter information."""
-        self.__service_registry: _ServiceRegistry = _ServiceRegistry()
+        self.__service_registry: ServiceRegistry = ServiceRegistry()
         self.__initialized_objects: dict[__ObjectIdentifier, Any] = {}
         self.__active_overrides: dict[__ObjectIdentifier, Any] = {}
         self.__initialized_proxies: dict[__ObjectIdentifier, ContainerProxy[Any]] = {}

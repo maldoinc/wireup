@@ -8,13 +8,13 @@ from wireup.errors import (
     FactoryDuplicateServiceRegistrationError,
     FactoryReturnTypeIsEmptyError,
 )
-from wireup.ioc.service_registry import _ServiceRegistry
+from wireup.ioc.service_registry import ServiceRegistry
 from wireup.ioc.types import AnnotatedParameter, ParameterWrapper
 
 
 class TestServiceRegistry(unittest.TestCase):
     def setUp(self):
-        self.registry = _ServiceRegistry()
+        self.registry = ServiceRegistry()
 
     def test_register_service(self):
         self.registry.register_service(MyService, qualifier="default", lifetime=ServiceLifetime.SINGLETON)
