@@ -19,7 +19,7 @@ from wireup.errors import (
     UnknownServiceRequestedError,
     UsageOfQualifierOnUnknownObjectError,
 )
-from wireup.ioc.dependency_container import ContainerProxy, DependencyContainer
+from wireup.ioc.dependency_container import DependencyContainer
 from wireup.ioc.parameter import ParameterBag, TemplatedString
 from wireup.ioc.types import AnnotatedParameter, ParameterWrapper
 
@@ -28,14 +28,6 @@ class TestContainer(unittest.IsolatedAsyncioTestCase):
     def setUp(self) -> None:
         self.container = DependencyContainer(ParameterBag())
         register_all_in_module(self.container, services)
-
-    def test_works_simple_get_instance(self):
-        rand = self.container.get(RandomService)
-
-        self.assertIsInstance(
-            rand, ContainerProxy, "Assert that we never interact directly with the instantiated classes"
-        )
-        self.assertEqual(rand.get_random(), 4, "Assert that proxy pass-through works")
 
     def test_raises_on_unknown_dependency(self):
         class UnknownDep: ...
@@ -52,7 +44,7 @@ class TestContainer(unittest.IsolatedAsyncioTestCase):
     def test_works_simple_get_instance_with_other_service_injected(self):
         truly_random = self.container.get(TrulyRandomService)
 
-        self.assertIsInstance(truly_random, ContainerProxy)
+        self.assertIsInstance(truly_random, TrulyRandomService)
         self.assertEqual(truly_random.get_truly_random(), 5)
 
     def test_get_class_with_param_bindings(self) -> None:
@@ -482,14 +474,9 @@ class TestContainer(unittest.IsolatedAsyncioTestCase):
 
     def test_get_returns_real_instance(self):
         first = self.container.get(RandomService)
-        self.assertIn((RandomService, None), self.container._DependencyContainer__initialized_proxies)
+        self.assertIsInstance(first, RandomService)
 
-        first.get_random()  # Trigger object initialization
-        self.assertNotIn((RandomService, None), self.container._DependencyContainer__initialized_proxies)
-
-        second = self.container.get(RandomService)
-        self.assertIsInstance(first, ContainerProxy)
-        self.assertIsInstance(second, RandomService)
+        self.assertEqual(4, first.get_random())
 
     def test_shrinks_context_on_autowire(self):
         class SomeClass:

@@ -3,7 +3,7 @@ from __future__ import annotations
 from collections.abc import Hashable
 from dataclasses import dataclass
 from enum import Enum, auto
-from typing import Any, Callable, Union
+from typing import Any, Callable, Optional, Tuple, Union
 
 AnyCallable = Callable[..., Any]
 AutowireTarget = Union[AnyCallable, type]
@@ -43,6 +43,7 @@ class ParameterWrapper(InjectableType):
 
 
 Qualifier = Hashable
+ContainerObjectIdentifier = Tuple[type, Optional[Qualifier]]
 
 
 @dataclass(frozen=True)
