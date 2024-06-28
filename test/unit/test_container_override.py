@@ -1,5 +1,5 @@
 import unittest
-from test.fixtures import FooBar, FooBase
+from test.fixtures import FooBar, FooBase, FooBaz
 from test.unit.services.no_annotations.random.random_service import RandomService
 from unittest.mock import MagicMock, patch
 
@@ -105,3 +105,14 @@ class TestContainerOverride(unittest.TestCase):
         self.assertEqual(
             str(e.exception), "Cannot override unknown <class 'unittest.case.TestCase'> with qualifier 'foo'."
         )
+
+    def test_override_interface_works_with_service_locator(self):
+        self.container.abstract(FooBase)
+        self.container.register(FooBar)
+
+        foobaz = FooBaz()
+
+        self.assertEqual(self.container.get(FooBase).foo, "bar")
+
+        with self.container.override.service(FooBase, new=foobaz):
+            self.assertEqual(self.container.get(FooBase).foo, "baz")
