@@ -6,7 +6,7 @@ from test.fixtures import Counter, FooBar, FooBase, FooBaz
 from test.unit import services
 from test.unit.services.no_annotations.random.random_service import RandomService
 from test.unit.services.no_annotations.random.truly_random_service import TrulyRandomService
-from typing import Optional
+from typing import NewType, Optional
 from unittest.mock import Mock, patch
 
 from typing_extensions import Annotated
@@ -453,6 +453,28 @@ class TestContainer(unittest.IsolatedAsyncioTestCase):
         c1.inc()
         self.assertEqual(c1.count, 1)
         self.assertEqual(c2.count, 0)
+
+    def test_container_register_transient_nested(self):
+        c = DependencyContainer(ParameterBag())
+
+        c.register(TrulyRandomService, lifetime=ServiceLifetime.TRANSIENT)
+        c.register(RandomService, lifetime=ServiceLifetime.TRANSIENT)
+        c1 = c.get(TrulyRandomService)
+        c2 = c.get(TrulyRandomService)
+
+        self.assertNotEqual(c1, c2)
+        self.assertNotEqual(c1.random_service, c2.random_service)
+
+    def test_container_register_transient_nested_singletons(self):
+        c = DependencyContainer(ParameterBag())
+
+        c.register(TrulyRandomService, lifetime=ServiceLifetime.TRANSIENT)
+        c.register(RandomService, lifetime=ServiceLifetime.SINGLETON)
+        c1 = c.get(TrulyRandomService)
+        c2 = c.get(TrulyRandomService)
+
+        self.assertNotEqual(c1, c2)
+        self.assertEqual(c1.random_service, c2.random_service)
 
     def test_injects_ctor(self):
         class Dummy:
