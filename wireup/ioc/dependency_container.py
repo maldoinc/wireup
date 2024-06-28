@@ -272,7 +272,7 @@ class DependencyContainer:
 
     def __get_instance_from_parameter(self, annotated_parameter: AnnotatedParameter) -> Any:
         # Disable type checker here as the only caller ensures that klass is not none to avoid the call entirely.
-        annotated_type: type = annotated_parameter.klass  # type: ignore[assignment]
+        annotated_type: type[Any] = annotated_parameter.klass  # type: ignore[assignment]
         qualifier_value = annotated_parameter.qualifier_value
 
         if self.__service_registry.is_impl_known_from_factory(annotated_type, qualifier_value):
@@ -306,7 +306,7 @@ class DependencyContainer:
 
         return None
 
-    def __resolve_impl(self, klass: type, qualifier: Qualifier | None) -> type:
+    def __resolve_impl(self, klass: type, qualifier: Qualifier | None) -> type[Any]:
         impls = self.__service_registry.known_interfaces.get(klass, {})
 
         if qualifier in impls:
