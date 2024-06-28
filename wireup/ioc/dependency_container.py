@@ -310,9 +310,6 @@ class DependencyContainer:
         if instance := self.__initialized_objects.get(obj_id):
             return instance  # type: ignore[no-any-return]
 
-        if not self.__service_registry.is_impl_singleton(klass):
-            return self.__create_instance(klass, qualifier)
-
         return self.__create_instance(klass, qualifier)
 
     def __resolve_impl(self, klass: type, qualifier: Qualifier | None) -> type:
