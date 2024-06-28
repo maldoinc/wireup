@@ -7,10 +7,10 @@ from typing import TYPE_CHECKING, Any, Callable, Optional, Tuple, TypeVar, overl
 
 from .override_manager import OverrideManager
 
-if sys.version_info[:2] > (3, 8):
-    from graphlib import TopologicalSorter
-else:
+if sys.version_info < (3, 9):
     from graphlib2 import TopologicalSorter
+else:
+    from graphlib import TopologicalSorter
 
 from wireup.errors import (
     InvalidRegistrationTypeError,
