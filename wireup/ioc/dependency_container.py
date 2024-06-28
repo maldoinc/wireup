@@ -21,9 +21,9 @@ from wireup.errors import (
 
 from .service_registry import ServiceRegistry
 from .types import (
-    AnnotatedParameter,
     AnyCallable,
     EmptyContainerInjectionRequest,
+    InjectableType,
     ParameterWrapper,
     Qualifier,
     ServiceLifetime,
@@ -91,7 +91,7 @@ class DependencyContainer:
         if instance := self.__initialized_objects.get((klass, qualifier)):
             return instance  # type: ignore[no-any-return]
 
-        return self.__create_instance(klass, qualifier)
+        return self.__create_concrete_type(klass, qualifier)
 
     def abstract(self, klass: type[__T]) -> type[__T]:
         """Register a type as an interface.
@@ -215,7 +215,7 @@ class DependencyContainer:
         for klass in sorter.static_order():
             for qualifier in self.__service_registry.known_impls[klass]:
                 if (klass, qualifier) not in self.__initialized_objects:
-                    self.__create_instance(klass, qualifier)
+                    self.__create_concrete_type(klass, qualifier)
 
     @property
     def override(self) -> OverrideManager:
@@ -239,7 +239,7 @@ class DependencyContainer:
             # Don't check here for none because as long as it exists in the bag, the value is good.
             elif isinstance(param.annotation, ParameterWrapper):
                 values_from_parameters[name] = self.params.get(param.annotation.param)
-            elif param.klass and (obj := self.__get_instance_from_parameter(param)):
+            elif param.klass and (obj := self.__get_instance(param.klass, param.qualifier_value, param.annotation)):
                 values_from_parameters[name] = obj
             else:
                 names_to_remove.add(name)
@@ -251,13 +251,9 @@ class DependencyContainer:
 
         return values_from_parameters
 
-    def __create_instance(self, klass: type[__T], qualifier: Qualifier | None) -> __T:
+    def __create_concrete_type(self, klass: type[__T], qualifier: Qualifier | None) -> __T:
         """Create the real instances of dependencies. Additional dependencies they may have will be lazily created."""
-        self.__assert_dependency_exists(klass, qualifier)
         obj_id = klass, qualifier
-
-        if self.__service_registry.is_interface_known(klass):
-            klass = self.__resolve_impl(klass, qualifier)
 
         if fn := self.__service_registry.factory_functions.get(obj_id):
             instance = fn(**self.__callable_get_params_to_inject(fn))
@@ -270,43 +266,41 @@ class DependencyContainer:
 
         return instance  # type: ignore[no-any-return]
 
-    def __get_instance_from_parameter(self, annotated_parameter: AnnotatedParameter) -> Any:
-        # Disable type checker here as the only caller ensures that klass is not none to avoid the call entirely.
-        annotated_type: type[Any] = annotated_parameter.klass  # type: ignore[assignment]
-        qualifier_value = annotated_parameter.qualifier_value
-
-        if self.__service_registry.is_impl_known_from_factory(annotated_type, qualifier_value):
+    def __get_instance(
+        self, klass: type[__T], qualifier: Qualifier | None, annotation: InjectableType | None = None
+    ) -> __T | None:
+        if self.__service_registry.is_impl_known_from_factory(klass, qualifier):
             # Objects generated from factories do not have qualifiers
-            return self.__create_instance(annotated_type, None)
+            return self.__create_concrete_type(klass, None)
 
-        if self.__service_registry.is_interface_known(annotated_type):
-            concrete_class = self.__resolve_impl(annotated_type, qualifier_value)
-            return self.__create_instance(concrete_class, qualifier_value)
+        if self.__service_registry.is_interface_known(klass):
+            concrete_class = self.__resolve_impl(klass, qualifier)
+            return self.__create_concrete_type(concrete_class, qualifier)
 
-        if self.__service_registry.is_impl_known(annotated_type):
-            if not self.__service_registry.is_impl_with_qualifier_known(annotated_type, qualifier_value):
+        if self.__service_registry.is_impl_known(klass):
+            if not self.__service_registry.is_impl_with_qualifier_known(klass, qualifier):
                 raise UnknownQualifiedServiceRequestedError(
-                    annotated_type,
-                    qualifier_value,
-                    self.__service_registry.known_impls[annotated_type],
+                    klass,
+                    qualifier,
+                    self.__service_registry.known_impls[klass],
                 )
-            return self.__create_instance(annotated_type, qualifier_value)
+            return self.__create_concrete_type(klass, qualifier)
 
         # Normally the container won't throw if it encounters a type it doesn't know about
         # But if it's explicitly marked as to be injected then we need to throw.
-        if isinstance(annotated_parameter.annotation, EmptyContainerInjectionRequest):
-            raise UnknownServiceRequestedError(annotated_type)
+        if isinstance(annotation, EmptyContainerInjectionRequest):
+            raise UnknownServiceRequestedError(klass)
 
         # When injecting dependencies and a qualifier is used, throw if it's being used on an unknown type.
         # This prevents the default value from being used by the runtime.
         # We don't actually want that to happen as the value is used only for hinting the container
         # and all values should be supplied.
-        if qualifier_value:
-            raise UsageOfQualifierOnUnknownObjectError(qualifier_value)
+        if qualifier:
+            raise UsageOfQualifierOnUnknownObjectError(qualifier)
 
         return None
 
-    def __resolve_impl(self, klass: type, qualifier: Qualifier | None) -> type[Any]:
+    def __resolve_impl(self, klass: type[__T], qualifier: Qualifier | None) -> type[__T]:
         impls = self.__service_registry.known_interfaces.get(klass, {})
 
         if qualifier in impls:
