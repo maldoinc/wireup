@@ -88,7 +88,10 @@ class DependencyContainer:
         if self.__service_registry.is_interface_known(klass):
             klass = self.__resolve_impl(klass, qualifier)
 
-        return self.__get_instance(klass, qualifier)
+        if instance := self.__initialized_objects.get((klass, qualifier)):
+            return instance  # type: ignore[no-any-return]
+
+        return self.__create_instance(klass, qualifier)
 
     def abstract(self, klass: type[__T]) -> type[__T]:
         """Register a type as an interface.
@@ -274,11 +277,11 @@ class DependencyContainer:
 
         if self.__service_registry.is_impl_known_from_factory(annotated_type, qualifier_value):
             # Objects generated from factories do not have qualifiers
-            return self.__get_instance(annotated_type, None)
+            return self.__create_instance(annotated_type, None)
 
         if self.__service_registry.is_interface_known(annotated_type):
             concrete_class = self.__resolve_impl(annotated_type, qualifier_value)
-            return self.__get_instance(concrete_class, qualifier_value)
+            return self.__create_instance(concrete_class, qualifier_value)
 
         if self.__service_registry.is_impl_known(annotated_type):
             if not self.__service_registry.is_impl_with_qualifier_known(annotated_type, qualifier_value):
@@ -287,7 +290,7 @@ class DependencyContainer:
                     qualifier_value,
                     self.__service_registry.known_impls[annotated_type],
                 )
-            return self.__get_instance(annotated_type, qualifier_value)
+            return self.__create_instance(annotated_type, qualifier_value)
 
         # Normally the container won't throw if it encounters a type it doesn't know about
         # But if it's explicitly marked as to be injected then we need to throw.
@@ -302,15 +305,6 @@ class DependencyContainer:
             raise UsageOfQualifierOnUnknownObjectError(qualifier_value)
 
         return None
-
-    def __get_instance(self, klass: type[__T], qualifier: Qualifier | None) -> __T:
-        """Return an instance of the requested singleton class if one has been initialized."""
-        obj_id = klass, qualifier
-
-        if instance := self.__initialized_objects.get(obj_id):
-            return instance  # type: ignore[no-any-return]
-
-        return self.__create_instance(klass, qualifier)
 
     def __resolve_impl(self, klass: type, qualifier: Qualifier | None) -> type:
         impls = self.__service_registry.known_interfaces.get(klass, {})
