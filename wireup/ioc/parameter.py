@@ -6,8 +6,7 @@ from re import Match
 from typing import Any
 
 from wireup.errors import UnknownParameterError
-
-from .types import ParameterReference, TemplatedString
+from wireup.ioc.types import ParameterReference, TemplatedString
 
 
 class ParameterBag:

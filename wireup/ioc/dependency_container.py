@@ -5,7 +5,7 @@ import functools
 import sys
 from typing import TYPE_CHECKING, Any, Callable, Optional, Tuple, TypeVar, overload
 
-from .override_manager import OverrideManager
+from wireup.ioc.override_manager import OverrideManager
 
 if sys.version_info < (3, 9):
     from graphlib2 import TopologicalSorter
@@ -18,9 +18,8 @@ from wireup.errors import (
     UnknownServiceRequestedError,
     UsageOfQualifierOnUnknownObjectError,
 )
-
-from .service_registry import ServiceRegistry
-from .types import (
+from wireup.ioc.service_registry import ServiceRegistry
+from wireup.ioc.types import (
     AnyCallable,
     EmptyContainerInjectionRequest,
     InjectableType,
@@ -30,8 +29,8 @@ from .types import (
 )
 
 if TYPE_CHECKING:
-    from .initialization_context import InitializationContext
-    from .parameter import ParameterBag
+    from wireup.ioc.initialization_context import InitializationContext
+    from wireup.ioc.parameter import ParameterBag
 
 __T = TypeVar("__T")
 __ObjectIdentifier = Tuple[type, Optional[Qualifier]]
