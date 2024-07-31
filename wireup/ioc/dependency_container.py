@@ -3,7 +3,7 @@ from __future__ import annotations
 import asyncio
 import functools
 import sys
-from typing import TYPE_CHECKING, Any, Callable, Optional, Tuple, TypeVar, overload
+from typing import TYPE_CHECKING, Any, Callable, TypeVar, overload
 
 from wireup.ioc.override_manager import OverrideManager
 
@@ -21,6 +21,7 @@ from wireup.errors import (
 from wireup.ioc.service_registry import ServiceRegistry
 from wireup.ioc.types import (
     AnyCallable,
+    ContainerObjectIdentifier,
     EmptyContainerInjectionRequest,
     InjectableType,
     ParameterWrapper,
@@ -33,7 +34,6 @@ if TYPE_CHECKING:
     from wireup.ioc.parameter import ParameterBag
 
 __T = TypeVar("__T")
-__ObjectIdentifier = Tuple[type, Optional[Qualifier]]
 
 
 class DependencyContainer:
@@ -63,8 +63,8 @@ class DependencyContainer:
     def __init__(self, parameter_bag: ParameterBag) -> None:
         """:param parameter_bag: ParameterBag instance holding parameter information."""
         self.__service_registry: ServiceRegistry = ServiceRegistry()
-        self.__initialized_objects: dict[__ObjectIdentifier, Any] = {}
-        self.__active_overrides: dict[__ObjectIdentifier, Any] = {}
+        self.__initialized_objects: dict[ContainerObjectIdentifier, Any] = {}
+        self.__active_overrides: dict[ContainerObjectIdentifier, Any] = {}
         self.__params: ParameterBag = parameter_bag
         self.__override_manager: OverrideManager = OverrideManager(
             self.__active_overrides, self.__service_registry.is_type_with_qualifier_known
