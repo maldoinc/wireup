@@ -2,10 +2,10 @@ from __future__ import annotations
 
 from typing import Any, Callable, Generic, TypeVar
 
-__T = TypeVar("__T")
+T = TypeVar("T")
 
 
-class ContainerProxy(Generic[__T]):
+class ContainerProxy(Generic[T]):
     """A proxy object used by the container to achieve lazy loading.
 
     Contains a reference to the final initialized object and proxies all requests to the instance.
@@ -13,7 +13,7 @@ class ContainerProxy(Generic[__T]):
 
     __slots__ = ("__supplier", "__proxy_object")
 
-    def __init__(self, instance_supplier: Callable[[], __T]) -> None:
+    def __init__(self, instance_supplier: Callable[[], T]) -> None:
         """Initialize a ContainerProxy.
 
         :param instance_supplier: A callable which takes no arguments and returns the object. Will be called to

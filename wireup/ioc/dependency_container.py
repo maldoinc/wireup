@@ -33,7 +33,7 @@ if TYPE_CHECKING:
     from wireup.ioc.initialization_context import InitializationContext
     from wireup.ioc.parameter import ParameterBag
 
-__T = TypeVar("__T")
+T = TypeVar("T")
 
 
 class DependencyContainer:
@@ -70,7 +70,7 @@ class DependencyContainer:
             self.__active_overrides, self.__service_registry.is_type_with_qualifier_known
         )
 
-    def get(self, klass: type[__T], qualifier: Qualifier | None = None) -> __T:
+    def get(self, klass: type[T], qualifier: Qualifier | None = None) -> T:
         """Get an instance of the requested type.
 
         Use this to locate services by their type but strongly prefer using injection instead.
@@ -92,7 +92,7 @@ class DependencyContainer:
 
         return self.__create_concrete_type(klass, qualifier)
 
-    def abstract(self, klass: type[__T]) -> type[__T]:
+    def abstract(self, klass: type[T]) -> type[T]:
         """Register a type as an interface.
 
         This type cannot be initialized directly and one of the components implementing this will be injected instead.
@@ -108,26 +108,26 @@ class DependencyContainer:
         *,
         qualifier: Qualifier | None = None,
         lifetime: ServiceLifetime = ServiceLifetime.SINGLETON,
-    ) -> Callable[[__T], __T]:
+    ) -> Callable[[T], T]:
         pass
 
     @overload
     def register(
         self,
-        obj: __T,
+        obj: T,
         *,
         qualifier: Qualifier | None = None,
         lifetime: ServiceLifetime = ServiceLifetime.SINGLETON,
-    ) -> __T:
+    ) -> T:
         pass
 
     def register(
         self,
-        obj: __T | None = None,
+        obj: T | None = None,
         *,
         qualifier: Qualifier | None = None,
         lifetime: ServiceLifetime = ServiceLifetime.SINGLETON,
-    ) -> __T | Callable[[__T], __T]:
+    ) -> T | Callable[[T], T]:
         """Register a dependency in the container. Dependency must be either a class or a factory function.
 
         * Use as a decorator without parameters @container.register on a factory function or class to register it.
@@ -137,7 +137,7 @@ class DependencyContainer:
         # Allow register to be used either with or without arguments
         if obj is None:
 
-            def decorated(decorated_obj: __T) -> __T:
+            def decorated(decorated_obj: T) -> T:
                 self.register(decorated_obj, qualifier=qualifier, lifetime=lifetime)
                 return decorated_obj
 
@@ -250,7 +250,7 @@ class DependencyContainer:
 
         return values_from_parameters
 
-    def __create_concrete_type(self, klass: type[__T], qualifier: Qualifier | None) -> __T:
+    def __create_concrete_type(self, klass: type[T], qualifier: Qualifier | None) -> T:
         """Create the real instances of dependencies. Additional dependencies they may have will be lazily created."""
         obj_id = klass, qualifier
 
@@ -266,8 +266,8 @@ class DependencyContainer:
         return instance  # type: ignore[no-any-return]
 
     def __get_instance(
-        self, klass: type[__T], qualifier: Qualifier | None, annotation: InjectableType | None = None
-    ) -> __T | None:
+        self, klass: type[T], qualifier: Qualifier | None, annotation: InjectableType | None = None
+    ) -> T | None:
         if self.__service_registry.is_impl_known_from_factory(klass, qualifier):
             # Objects generated from factories do not have qualifiers
             return self.__create_concrete_type(klass, None)
@@ -299,7 +299,7 @@ class DependencyContainer:
 
         return None
 
-    def __resolve_impl(self, klass: type[__T], qualifier: Qualifier | None) -> type[__T]:
+    def __resolve_impl(self, klass: type[T], qualifier: Qualifier | None) -> type[T]:
         impls = self.__service_registry.known_interfaces.get(klass, {})
 
         if qualifier in impls:

@@ -105,7 +105,7 @@ class ParameterEnum(Enum):
         return Inject(param=self.value)
 
 
-__T = TypeVar("__T")
+T = TypeVar("T")
 
 
 @dataclass
@@ -127,26 +127,26 @@ def service(
     *,
     qualifier: Qualifier | None = None,
     lifetime: ServiceLifetime = ServiceLifetime.SINGLETON,
-) -> Callable[[__T], __T]:
+) -> Callable[[T], T]:
     pass
 
 
 @overload
 def service(
-    obj: __T,
+    obj: T,
     *,
     qualifier: Qualifier | None = None,
     lifetime: ServiceLifetime = ServiceLifetime.SINGLETON,
-) -> __T:
+) -> T:
     pass
 
 
 def service(
-    obj: __T | None = None,
+    obj: T | None = None,
     *,
     qualifier: Qualifier | None = None,
     lifetime: ServiceLifetime = ServiceLifetime.SINGLETON,
-) -> __T | Callable[[__T], __T]:
+) -> T | Callable[[T], T]:
     """Mark the decorated class as a service.
 
     If used on a function it will register it as a factory for the class
@@ -155,7 +155,7 @@ def service(
     # Allow this to be used as a decorator factory or as a decorator directly.
     if obj is None:
 
-        def decorator(decorated_obj: __T) -> __T:
+        def decorator(decorated_obj: T) -> T:
             decorated_obj.__wireup_registration__ = ServiceDeclaration(  # type: ignore[attr-defined]
                 obj=decorated_obj, qualifier=qualifier, lifetime=lifetime
             )
@@ -168,7 +168,7 @@ def service(
     return obj
 
 
-def abstract(cls: type[__T]) -> type[__T]:
+def abstract(cls: type[T]) -> type[T]:
     """Mark the decorated class as a service."""
     cls.__wireup_registration__ = AbstractDeclaration()  # type: ignore[attr-defined]
 
