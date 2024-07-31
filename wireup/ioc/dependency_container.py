@@ -237,7 +237,7 @@ class DependencyContainer:
             # Dealing with parameter
             # Don't check here for none because as long as it exists in the bag, the value is good.
             elif isinstance(param.annotation, ParameterWrapper):
-                values_from_parameters[name] = self.params.get(param.annotation.param)
+                values_from_parameters[name] = self.__params.get(param.annotation.param)
             elif param.klass and (obj := self.__get_instance(param.klass, param.qualifier_value, param.annotation)):
                 values_from_parameters[name] = obj
             else:
@@ -246,7 +246,7 @@ class DependencyContainer:
         # If autowiring, the container is assumed to be final, so unnecessary entries can be removed
         # from the context in order to speed up the autowiring process.
         if names_to_remove:
-            self.context.remove_dependencies(fn, names_to_remove)
+            self.__service_registry.context.remove_dependencies(fn, names_to_remove)
 
         return values_from_parameters
 
