@@ -6,8 +6,7 @@ from test.unit.services.with_annotations import services
 from test.unit.services.with_annotations.env import EnvService
 from test.unit.services.with_annotations.services import IFoo
 
-from wireup import DependencyContainer, ParameterBag, register_all_in_module, warmup_container
-from wireup.import_util import initialize_container
+from wireup import DependencyContainer, ParameterBag, initialize_container, register_all_in_module, warmup_container
 
 
 class ModuleLoadingTest(unittest.TestCase):
