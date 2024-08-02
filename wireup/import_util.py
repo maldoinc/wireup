@@ -99,7 +99,10 @@ def _find_objects_in_module(
                 classes.update(_module_get_objects(sub_module))
 
     if f := module.__file__:
-        _find_in_path(Path(f).parent, module.__name__)
+        if f.endswith("__init__.py"):
+            _find_in_path(Path(f).parent, module.__name__)
+        else:
+            classes.update(_module_get_objects(module))
 
     return classes
 
