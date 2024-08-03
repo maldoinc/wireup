@@ -53,7 +53,7 @@ class DependencyContainer:
     """
 
     __slots__ = (
-        "__service_registry",
+        "__registry",
         "__initialized_objects",
         "__active_overrides",
         "__override_manager",
@@ -62,13 +62,11 @@ class DependencyContainer:
 
     def __init__(self, parameter_bag: ParameterBag) -> None:
         """:param parameter_bag: ParameterBag instance holding parameter information."""
-        self.__service_registry: ServiceRegistry = ServiceRegistry()
+        self.__registry = ServiceRegistry()
         self.__initialized_objects: dict[ContainerObjectIdentifier, Any] = {}
         self.__active_overrides: dict[ContainerObjectIdentifier, Any] = {}
         self.__params: ParameterBag = parameter_bag
-        self.__override_manager: OverrideManager = OverrideManager(
-            self.__active_overrides, self.__service_registry.is_type_with_qualifier_known
-        )
+        self.__override_manager = OverrideManager(self.__active_overrides, self.__registry.is_type_with_qualifier_known)
 
     def get(self, klass: type[T], qualifier: Qualifier | None = None) -> T:
         """Get an instance of the requested type.
@@ -82,10 +80,10 @@ class DependencyContainer:
         if res := self.__active_overrides.get((klass, qualifier)):
             return res  # type: ignore[no-any-return]
 
-        self.__assert_dependency_exists(klass, qualifier)
+        self.__registry.assert_dependency_exists(klass, qualifier)
 
-        if self.__service_registry.is_interface_known(klass):
-            klass = self.__resolve_impl(klass, qualifier)
+        if self.__registry.is_interface_known(klass):
+            klass = self.__registry.interface_resolve_impl(klass, qualifier)
 
         if instance := self.__initialized_objects.get((klass, qualifier)):
             return instance  # type: ignore[no-any-return]
@@ -97,7 +95,7 @@ class DependencyContainer:
 
         This type cannot be initialized directly and one of the components implementing this will be injected instead.
         """
-        self.__service_registry.register_abstract(klass)
+        self.__registry.register_abstract(klass)
 
         return klass
 
@@ -144,11 +142,11 @@ class DependencyContainer:
             return decorated
 
         if isinstance(obj, type):
-            self.__service_registry.register_service(obj, qualifier, lifetime)
+            self.__registry.register_service(obj, qualifier, lifetime)
             return obj
 
         if callable(obj):
-            self.__service_registry.register_factory(obj, qualifier=qualifier, lifetime=lifetime)
+            self.__registry.register_factory(obj, qualifier=qualifier, lifetime=lifetime)
             return obj
 
         raise InvalidRegistrationTypeError(obj)
@@ -156,7 +154,7 @@ class DependencyContainer:
     @property
     def context(self) -> InitializationContext:
         """The initialization context for registered targets. A map between an injection target and its dependencies."""
-        return self.__service_registry.context
+        return self.__registry.context
 
     @property
     def params(self) -> ParameterBag:
@@ -187,7 +185,7 @@ class DependencyContainer:
         * When injecting an interface for which there are multiple implementations you need to supply a qualifier
           using annotations.
         """
-        self.__service_registry.target_init_context(fn)
+        self.__registry.target_init_context(fn)
 
         if asyncio.iscoroutinefunction(fn):
 
@@ -209,10 +207,10 @@ class DependencyContainer:
         This should be executed once all services are registered with the container. Targets of autowire will not
         be affected.
         """
-        sorter = TopologicalSorter(self.__service_registry.get_dependency_graph())
+        sorter = TopologicalSorter(self.__registry.get_dependency_graph())
 
         for klass in sorter.static_order():
-            for qualifier in self.__service_registry.known_impls[klass]:
+            for qualifier in self.__registry.known_impls[klass]:
                 if (klass, qualifier) not in self.__initialized_objects:
                     self.__create_concrete_type(klass, qualifier)
 
@@ -223,7 +221,7 @@ class DependencyContainer:
 
     def __callable_get_params_to_inject(self, fn: AnyCallable) -> dict[str, Any]:
         values_from_parameters: dict[str, Any] = {}
-        params = self.__service_registry.context.dependencies[fn]
+        params = self.__registry.context.dependencies[fn]
         names_to_remove: set[str] = set()
 
         for name, param in params.items():
@@ -246,7 +244,7 @@ class DependencyContainer:
         # If autowiring, the container is assumed to be final, so unnecessary entries can be removed
         # from the context in order to speed up the autowiring process.
         if names_to_remove:
-            self.__service_registry.context.remove_dependencies(fn, names_to_remove)
+            self.__registry.context.remove_dependencies(fn, names_to_remove)
 
         return values_from_parameters
 
@@ -254,13 +252,13 @@ class DependencyContainer:
         """Create the real instances of dependencies. Additional dependencies they may have will be lazily created."""
         obj_id = klass, qualifier
 
-        if fn := self.__service_registry.factory_functions.get(obj_id):
+        if fn := self.__registry.factory_functions.get(obj_id):
             instance = fn(**self.__callable_get_params_to_inject(fn))
         else:
             args = self.__callable_get_params_to_inject(klass)
             instance = klass(**args)
 
-        if self.__service_registry.is_impl_singleton(klass):
+        if self.__registry.is_impl_singleton(klass):
             self.__initialized_objects[obj_id] = instance
 
         return instance  # type: ignore[no-any-return]
@@ -268,20 +266,20 @@ class DependencyContainer:
     def __get_instance(
         self, klass: type[T], qualifier: Qualifier | None, annotation: InjectableType | None = None
     ) -> T | None:
-        if self.__service_registry.is_impl_known_from_factory(klass, qualifier):
+        if self.__registry.is_impl_known_from_factory(klass, qualifier):
             # Objects generated from factories do not have qualifiers
             return self.__create_concrete_type(klass, None)
 
-        if self.__service_registry.is_interface_known(klass):
-            concrete_class = self.__resolve_impl(klass, qualifier)
+        if self.__registry.is_interface_known(klass):
+            concrete_class = self.__registry.interface_resolve_impl(klass, qualifier)
             return self.__create_concrete_type(concrete_class, qualifier)
 
-        if self.__service_registry.is_impl_known(klass):
-            if not self.__service_registry.is_impl_with_qualifier_known(klass, qualifier):
+        if self.__registry.is_impl_known(klass):
+            if not self.__registry.is_impl_with_qualifier_known(klass, qualifier):
                 raise UnknownQualifiedServiceRequestedError(
                     klass,
                     qualifier,
-                    self.__service_registry.known_impls[klass],
+                    self.__registry.known_impls[klass],
                 )
             return self.__create_concrete_type(klass, qualifier)
 
@@ -299,19 +297,6 @@ class DependencyContainer:
 
         return None
 
-    def __resolve_impl(self, klass: type[T], qualifier: Qualifier | None) -> type[T]:
-        impls = self.__service_registry.known_interfaces.get(klass, {})
-
-        if qualifier in impls:
-            return impls[qualifier]
-
-        raise UnknownQualifiedServiceRequestedError(klass, qualifier, set(impls.keys()))
-
     def is_type_known(self, klass: type) -> bool:
         """Given a class type return True if's registered in the container as a service or interface."""
-        return self.__service_registry.is_impl_known(klass) or self.__service_registry.is_interface_known(klass)
-
-    def __assert_dependency_exists(self, klass: type, qualifier: Qualifier | None) -> None:
-        """Assert that there exists an impl with that qualifier or an interface with an impl and the same qualifier."""
-        if not self.__service_registry.is_type_with_qualifier_known(klass, qualifier):
-            raise UnknownServiceRequestedError(klass)
+        return self.__registry.is_impl_known(klass) or self.__registry.is_interface_known(klass)

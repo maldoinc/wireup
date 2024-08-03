@@ -3,13 +3,15 @@ from __future__ import annotations
 import inspect
 from collections import defaultdict
 from inspect import Parameter
-from typing import TYPE_CHECKING, Any, Callable
+from typing import TYPE_CHECKING, Any, Callable, TypeVar
 
 from wireup.errors import (
     DuplicateQualifierForInterfaceError,
     DuplicateServiceRegistrationError,
     FactoryDuplicateServiceRegistrationError,
     FactoryReturnTypeIsEmptyError,
+    UnknownQualifiedServiceRequestedError,
+    UnknownServiceRequestedError,
 )
 from wireup.ioc.initialization_context import InitializationContext
 from wireup.ioc.types import AnnotatedParameter, AutowireTarget, ServiceLifetime
@@ -21,6 +23,9 @@ if TYPE_CHECKING:
     from wireup.ioc.types import (
         Qualifier,
     )
+
+
+T = TypeVar("T")
 
 
 class ServiceRegistry:
@@ -167,3 +172,17 @@ class ServiceRegistry:
 
     def is_interface_known(self, klass: type) -> bool:  # noqa: D102
         return klass in self.known_interfaces
+
+    def assert_dependency_exists(self, klass: type, qualifier: Qualifier | None) -> None:
+        """Assert that there exists an impl or interface with that qualifier."""
+        if not self.is_type_with_qualifier_known(klass, qualifier):
+            raise UnknownServiceRequestedError(klass)
+
+    def interface_resolve_impl(self, klass: type[T], qualifier: Qualifier | None) -> type[T]:
+        """Given an interface and qualifier return the concrete implementation."""
+        impls = self.known_interfaces.get(klass, {})
+
+        if qualifier in impls:
+            return impls[qualifier]
+
+        raise UnknownQualifiedServiceRequestedError(klass, qualifier, set(impls.keys()))
