@@ -47,11 +47,8 @@ def target(
 
 ### Explicit injection annotation
 Even though annotating services is optional, you CAN still annotate them to be explicit about what will 
-be injected. This also has the benefit of making the container throw when such as service
-does not exist instead of silently skipping this parameter.
-
-This has limited application when using annotated types as the runtime will raise regardless, but when using
-default values as annotations it can be quite useful.
+be injected. This also has the benefit of making the container throw when the service does not exist instead
+of silently skipping this parameter.
 
 ```python
 @container.autowire

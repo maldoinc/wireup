@@ -1,6 +1,5 @@
-When autowiring dependencies, you might want to inject an interface rather than 
-the concrete implementation directly. Since Python doesn't have built-in interfaces, you can use classes
-that are marked as abstract within the container.
+Sometimes you might want to inject an interface rather than the concrete implementation directly. 
+Since Python doesn't have built-in interfaces, you can use any class marked as abstract.
 
 This method makes testing easier as you can create dummy implementations of these services in your tests
 in order to control their behavior.
@@ -10,7 +9,7 @@ in order to control their behavior.
 The following code registers `Engine` as an interface. This implies that `Engine` can't be directly injected. 
 Instead, a dependency that implements the interface must also be registered in the container.
 
-To autowire interfaces, register a dependency that **directly inherits** the interface 
+To use interfaces, register a dependency that **directly inherits** the interface 
 with the container. When injecting, ask for the interface itself, not the implementations.
 
 ```python
@@ -19,12 +18,14 @@ from wireup import abstract, container, service
 
 @abstract
 class Engine(abc.ABC):
+    @abc.abstractmethod
     def get_type(self) -> EngineType:
         raise NotImplementedError
 
 
-@service
+@Service
 class CombustionEngine(Engine):
+    @override
     def get_type(self) -> EngineType:
         return EngineType.COMBUSTION
 
@@ -37,7 +38,8 @@ def target(engine: Engine):
 
 ## Multiple implementations
 
-When dealing with multiple implementations of an interface, associate them with a qualifier.
+If an interface has multiple implementations, associate each of them with a qualifier.
+This is essentially a tag used to differentiate between implementations.
 
 ```python
 @service(qualifier="electric")
@@ -71,10 +73,10 @@ def target(
 
 ## Default implementation
 
-When there are many implementations associated with a given interface, you may want to associate one of them as the
+If there are many implementations associated with a given interface, you may want to associate one of them as the
 "default" implementation.
 
-To achieve that, omit the qualifier when registering the implementation that should be injected by default.
+To accomplish that, omit the qualifier when registering the implementation.
 
 ```python
 @service  # <-- Qualifier being absent will make this the default impl.

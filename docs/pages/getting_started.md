@@ -161,7 +161,7 @@ Next, we add a weather service that will perform requests against a remote serve
     ```
 
     1.  * Injection is supported for regular classes as well as dataclasses.
-        * When using dataclasses it is important that the `@dataclass` decorator is applied before `@service`.
+        * With dataclasses it is important that the `@dataclass` decorator is applied before `@service`.
     2.  * Use type hints to indicate which dependency to inject.
         * Dependencies are automatically discovered and injected.
 
