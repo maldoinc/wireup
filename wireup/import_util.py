@@ -9,21 +9,35 @@ import warnings
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
+import wireup
+from wireup import DependencyContainer
 from wireup.annotation import AbstractDeclaration, ServiceDeclaration
 
 if TYPE_CHECKING:
     from collections.abc import Callable
     from types import ModuleType
 
-    from wireup import DependencyContainer
 
-
-def initialize_container(dependency_container: DependencyContainer, *, service_modules: list[ModuleType]) -> None:
+def initialize_container(
+    dependency_container: DependencyContainer | None = None,
+    *,
+    service_modules: list[ModuleType],
+    parameters: dict[str, Any] | None = None,
+) -> None:
     """Trigger service registrations in `service_modules` and initialize registered singleton services.
 
-    !!! note
-        For long-lived processes this should be executed once at startup.
+    :param dependency_container: The container to initialize, defaults to `wireup.container` if left empty.
+    :param parameters: Parameters to be added to the container.
+    :param service_modules: Top-level modules containing service registrations.
+
     """
+    if dependency_container is None:
+        wireup.container = DependencyContainer(wireup.ParameterBag())
+        dependency_container = wireup.container
+
+    if parameters:
+        dependency_container.params.update(parameters)
+
     _register_services(dependency_container, service_modules)
     dependency_container.warmup()
 
