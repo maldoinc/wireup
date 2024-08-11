@@ -10,8 +10,8 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 import wireup
-from wireup import DependencyContainer
 from wireup.annotation import AbstractDeclaration, ServiceDeclaration
+from wireup.ioc.dependency_container import DependencyContainer
 
 if TYPE_CHECKING:
     from collections.abc import Callable
