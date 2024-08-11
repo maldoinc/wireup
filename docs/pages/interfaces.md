@@ -23,7 +23,7 @@ class Engine(abc.ABC):
         raise NotImplementedError
 
 
-@Service
+@service
 class CombustionEngine(Engine):
     @override
     def get_type(self) -> EngineType:
