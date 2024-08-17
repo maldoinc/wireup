@@ -1,5 +1,3 @@
-from test.fixtures import Counter, FooBar, FooBase
-from test.unit.services.no_annotations.random.random_service import RandomService
 from unittest import TestCase
 
 from wireup import DependencyContainer, Inject, ParameterBag, ServiceLifetime, warmup_container
@@ -8,6 +6,9 @@ from wireup.errors import (
     FactoryDuplicateServiceRegistrationError,
     FactoryReturnTypeIsEmptyError,
 )
+
+from test.fixtures import Counter, FooBar, FooBase
+from test.unit.services.no_annotations.random.random_service import RandomService
 
 
 class ThingToBeCreated:

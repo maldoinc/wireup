@@ -1,6 +1,4 @@
 import unittest
-from test.fixtures import FooBar, FooBase, FooBaz
-from test.unit.services.no_annotations.random.random_service import RandomService
 from unittest.mock import MagicMock, patch
 
 from typing_extensions import Annotated
@@ -8,6 +6,9 @@ from wireup import DependencyContainer, Inject, ParameterBag
 from wireup.errors import UnknownOverrideRequestedError
 from wireup.ioc.override_manager import OverrideManager
 from wireup.ioc.types import ServiceOverride
+
+from test.fixtures import FooBar, FooBase, FooBaz
+from test.unit.services.no_annotations.random.random_service import RandomService
 
 
 class TestContainerOverride(unittest.TestCase):

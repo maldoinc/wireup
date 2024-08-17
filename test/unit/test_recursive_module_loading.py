@@ -1,8 +1,9 @@
 import re
 import unittest
-from test.unit import services
 
 from wireup import DependencyContainer, ParameterBag, register_all_in_module
+
+from test.unit import services
 
 
 class RecursiveModuleLoadingTest(unittest.TestCase):

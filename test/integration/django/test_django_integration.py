@@ -1,12 +1,13 @@
 import os
 import sys
 import unittest
-from test.integration.django import view
 
 import django
 from django.test import Client
 from django.urls import path
 from wireup.integration.django import WireupSettings
+
+from test.integration.django import view
 
 INSTALLED_APPS = ["wireup.integration.django"]
 DEBUG = True

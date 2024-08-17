@@ -1,8 +1,9 @@
 import unittest
-from test.unit.services.no_annotations.db_service import DbService
 
 from wireup.ioc.initialization_context import InitializationContext
 from wireup.ioc.types import AnnotatedParameter
+
+from test.unit.services.no_annotations.db_service import DbService
 
 
 class InitializationContextTest(unittest.TestCase):

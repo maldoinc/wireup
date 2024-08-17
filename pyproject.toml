@@ -47,7 +47,7 @@ python = "^3.8"
 graphlib2 = { version = "^0.4.7", python = ">=3.8,<3.9" }
 
 [tool.poetry.group.dev.dependencies]
-ruff = "0.3.4"
+ruff = "0.6.1"
 setuptools = "^68.0.0"
 mkdocs = "^1.5.2"
 mkdocs-material = "^9.4.14"
@@ -55,7 +55,7 @@ mkdocstrings-python = "^1.6.2"
 mkdocs-open-in-new-tab = "^1.0.2"
 mike = "^1.1.2"
 typing-extensions = "^4.7.1"
-mypy = "1.9.0"
+mypy = "1.11.1"
 coverage = "^7.3.2"
 tox = "^4.14.2"
 
