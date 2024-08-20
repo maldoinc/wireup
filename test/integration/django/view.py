@@ -1,10 +1,10 @@
-from test.integration.django.service.greeter_interface import GreeterService
-from test.integration.django.service.random_service import RandomService
-
 from django.http import HttpRequest, HttpResponse
 from django.views import View
 from typing_extensions import Annotated
 from wireup import Inject, container
+
+from test.integration.django.service.greeter_interface import GreeterService
+from test.integration.django.service.random_service import RandomService
 
 
 @container.autowire

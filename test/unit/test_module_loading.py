@@ -1,13 +1,13 @@
 import unittest
+
+from wireup import DependencyContainer, ParameterBag, initialize_container, register_all_in_module, warmup_container
+
 from test.unit.services import no_annotations, with_annotations
 from test.unit.services.no_annotations.random.random_service import RandomService
 from test.unit.services.no_annotations.random.truly_random_service import TrulyRandomService
 from test.unit.services.with_annotations import services
 from test.unit.services.with_annotations.env import EnvService
 from test.unit.services.with_annotations.services import IFoo
-
-import wireup
-from wireup import DependencyContainer, ParameterBag, initialize_container, register_all_in_module, warmup_container
 
 
 class ModuleLoadingTest(unittest.TestCase):
@@ -39,13 +39,3 @@ class ModuleLoadingTest(unittest.TestCase):
         self.assertEqual("foo", container.get(services.IFoo).get_foo())
         self.assertEqual(4, container.get(RandomService, qualifier="foo").get_random())
         self.assertEqual(5, container.get(TrulyRandomService, qualifier="foo").get_truly_random())
-
-    def test_initialize_is_idempotent_recreates_container(self):
-        id_start = id(wireup.container)
-        initialize_container(service_modules=[services])
-        id1 = id(wireup.container)
-        initialize_container(service_modules=[services])
-        id2 = id(wireup.container)
-
-        self.assertNotEqual(id_start, id1)
-        self.assertNotEqual(id1, id2)

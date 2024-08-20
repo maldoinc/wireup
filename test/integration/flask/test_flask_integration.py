@@ -1,14 +1,15 @@
 import unittest
 from dataclasses import dataclass
-from test.fixtures import FooBar, FooBase
-from test.integration.flask import services
-from test.integration.flask.services.factories import FlaskG
-from test.unit.services.no_annotations.random.random_service import RandomService
 
 from flask import Flask, g
 from typing_extensions import Annotated
 from wireup import DependencyContainer, Inject, ParameterBag
 from wireup.integration.flask_integration import wireup_init_flask_integration
+
+from test.fixtures import FooBar, FooBase
+from test.integration.flask import services
+from test.integration.flask.services.factories import FlaskG
+from test.unit.services.no_annotations.random.random_service import RandomService
 
 
 class TestFlaskIntegration(unittest.TestCase):

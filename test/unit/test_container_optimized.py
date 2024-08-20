@@ -1,10 +1,11 @@
 import unittest
 from dataclasses import dataclass
-from test.fixtures import FooBar, FooBase, FooBaz
-from test.unit.services.no_annotations.random.random_service import RandomService
 
 from typing_extensions import Annotated
 from wireup import DependencyContainer, Inject, ParameterBag, ServiceLifetime
+
+from test.fixtures import FooBar, FooBase, FooBaz
+from test.unit.services.no_annotations.random.random_service import RandomService
 
 
 @dataclass

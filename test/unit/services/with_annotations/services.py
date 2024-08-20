@@ -1,9 +1,10 @@
 import abc
-from test.unit.services.no_annotations.random.random_service import RandomService
-from test.unit.services.no_annotations.random.truly_random_service import TrulyRandomService
 
 from typing_extensions import Annotated
 from wireup import Inject, abstract, service
+
+from test.unit.services.no_annotations.random.random_service import RandomService
+from test.unit.services.no_annotations.random.truly_random_service import TrulyRandomService
 
 
 @service(qualifier="foo")

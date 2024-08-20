@@ -1,7 +1,7 @@
-from test.integration.django.service.random_service import RandomService
-
 from django.conf import settings
 from wireup import service
+
+from test.integration.django.service.random_service import RandomService
 
 
 @service

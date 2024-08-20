@@ -1,5 +1,4 @@
 import unittest
-from test.unit.services.no_annotations.random.random_service import RandomService
 
 from typing_extensions import Annotated
 from wireup import Inject, ServiceLifetime, Wire
@@ -10,6 +9,8 @@ from wireup.errors import (
 )
 from wireup.ioc.service_registry import ServiceRegistry
 from wireup.ioc.types import AnnotatedParameter, ParameterWrapper
+
+from test.unit.services.no_annotations.random.random_service import RandomService
 
 
 class TestServiceRegistry(unittest.TestCase):

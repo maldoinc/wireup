@@ -1,6 +1,6 @@
-from test.integration.django.service.greeter_interface import GreeterService
-
 from wireup import service
+
+from test.integration.django.service.greeter_interface import GreeterService
 
 
 @service
