@@ -9,17 +9,17 @@ import warnings
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
-import wireup
 from wireup.annotation import AbstractDeclaration, ServiceDeclaration
-from wireup.ioc.dependency_container import DependencyContainer
 
 if TYPE_CHECKING:
     from collections.abc import Callable
     from types import ModuleType
 
+    from wireup.ioc.dependency_container import DependencyContainer
+
 
 def initialize_container(
-    dependency_container: DependencyContainer | None = None,
+    dependency_container: DependencyContainer,
     *,
     service_modules: list[ModuleType],
     parameters: dict[str, Any] | None = None,
@@ -31,10 +31,6 @@ def initialize_container(
     :param service_modules: Top-level modules containing service registrations.
 
     """
-    if dependency_container is None:
-        wireup.container = DependencyContainer(wireup.ParameterBag())
-        dependency_container = wireup.container
-
     if parameters:
         dependency_container.params.update(parameters)
 

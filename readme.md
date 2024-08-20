@@ -35,8 +35,9 @@ import wireup
 
 def create_app():
     app = ...
-    
+
     wireup.initialize_container(
+        wireup.container,
         # Top-level modules containing service registrations.
         # This is where your services live.
         service_modules=[services],
