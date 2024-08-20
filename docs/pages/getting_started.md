@@ -28,13 +28,15 @@ In this example, we will store the Redis URL and an API key for the weather serv
 === "@ Annotations"
 
     ```python title="main.py" hl_lines="9 10 13 17"
-    import wireup
+    import os
+    from wireup import container, initialize_container
     from myapp import services
 
     def create_app():
         app = ...
         
-        wireup.initialize_container(
+        initialize_container(
+            container,
             # Top-level modules containing service registrations.
             # This is where your services live.
             service_modules=[services],
@@ -52,7 +54,7 @@ In this example, we will store the Redis URL and an API key for the weather serv
     ```python title="main.py" hl_lines="15 19"
     from pydantic import Field
     from pydantic_settings import BaseSettings
-    import wireup
+    from wireup import container, initialize_container
 
     from myapp.services import factories
     
@@ -68,7 +70,7 @@ In this example, we will store the Redis URL and an API key for the weather serv
         
         # Start the container: This registers + initializes services
         # service_modules contains top-level modules containing registrations.
-        wireup.initialize_container(container, service_modules=[factories])
+        initialize_container(container, service_modules=[factories])
 
         return app
     ```

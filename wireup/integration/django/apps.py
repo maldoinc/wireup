@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING
 from django.apps import AppConfig
 from django.conf import settings
 
-import wireup
+from wireup import container, initialize_container
 
 if TYPE_CHECKING:
     from wireup.integration.django import WireupSettings
@@ -20,8 +20,8 @@ class WireupConfig(AppConfig):
     def ready(self) -> None:  # noqa: D102
         integration_settings: WireupSettings = settings.WIREUP
 
-        wireup.initialize_container(
-            wireup.container,
+        initialize_container(
+            container,
             parameters={
                 entry: getattr(settings, entry)
                 for entry in dir(settings)

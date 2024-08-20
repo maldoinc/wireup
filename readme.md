@@ -31,14 +31,14 @@ Example showcasing a Redis wrapper and a weather service that calls an external 
 **1. Set up**
 
 ```python
-import wireup
+from wireup import container, initialize_container
 
 def create_app():
     app = ...
 
-    # Start the container: This registers + initializes services.
-    wireup.initialize_container(
-        wireup.container,
+    # ⬇️ Start the container: This registers + initializes services.
+    initialize_container(
+        container,
         # Top-level modules containing service registrations.
         # This is where your services live.
         service_modules=[services],
