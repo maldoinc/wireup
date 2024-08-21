@@ -15,7 +15,7 @@ if TYPE_CHECKING:
     from collections.abc import Callable
     from types import ModuleType
 
-    from wireup.ioc.dependency_container import DependencyContainer
+    from wireup import DependencyContainer
 
 
 def initialize_container(
