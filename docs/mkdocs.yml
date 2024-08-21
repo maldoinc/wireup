@@ -27,6 +27,7 @@ nav:
       - ParameterBag: class/parameter_bag.md
       - ParameterEnum: class/parameter_enum.md
       - InitializationContext: class/initialization_context.md
+      - django_integration: class/django_integration.md
       - flask_integration: class/flask_integration.md
       - fastapi_integration: class/fastapi_integration.md
 repo_url: https://github.com/maldoinc/wireup
