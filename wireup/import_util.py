@@ -18,12 +18,25 @@ if TYPE_CHECKING:
     from wireup import DependencyContainer
 
 
-def initialize_container(dependency_container: DependencyContainer, *, service_modules: list[ModuleType]) -> None:
+def initialize_container(
+    dependency_container: DependencyContainer,
+    *,
+    service_modules: list[ModuleType],
+    parameters: dict[str, Any] | None = None,
+) -> None:
     """Trigger service registrations in `service_modules` and initialize registered singleton services.
 
     !!! note
         For long-lived processes this should be executed once at startup.
+
+    :param dependency_container: The container to initialize.
+    :param service_modules: Top-level modules containing service registrations.
+    :param parameters: Parameters to be added to the container.
+
     """
+    if parameters:
+        dependency_container.params.update(parameters)
+
     _register_services(dependency_container, service_modules)
     dependency_container.warmup()
 

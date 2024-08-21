@@ -27,7 +27,7 @@ In this example, we will store the Redis URL and an API key for the weather serv
 
 === "@ Annotations"
 
-    ```python title="main.py" hl_lines="9 10 13 17"
+    ```python title="main.py" hl_lines="9-18"
     import os
     from wireup import container, initialize_container
     from myapp import services
@@ -35,23 +35,25 @@ In this example, we will store the Redis URL and an API key for the weather serv
     def create_app():
         app = ...
         
-        # Expose configuration by populating container.params.
-        container.params.put("redis_url", os.environ["APP_REDIS_URL"])
-        container.params.put("weather_api_key", os.environ["APP_WEATHER_API_KEY"])
-
-        # Bulk update is also possible.
-        container.params.update(Settings().model_dump())
-        
-        # Start the container: This registers + initializes services.
-        # `service_modules` contains top-level modules containing registrations.
-        initialize_container(container, service_modules=[services])
+        # ⬇️ Start the container: This registers and initializes services.
+        initialize_container(
+            container,
+            # Parameters serve as application/service configuration.
+            parameters={
+                "redis_url": os.environ["APP_REDIS_URL"],
+                "weather_api_key": os.environ["APP_WEATHER_API_KEY"]
+            },
+            # Top-level modules containing service registrations.
+            # This is where your services live.
+            service_modules=[services]
+        )
 
         return app
     ```
 
 === "🏭 Programmatic"
     ```python title="main.py" hl_lines="15 19"
-    from pydantic import Field, PostgresDsn
+    from pydantic import Field
     from pydantic_settings import BaseSettings
     from wireup import container, initialize_container
 

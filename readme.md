@@ -32,20 +32,22 @@ Example showcasing a Redis wrapper and a weather service that calls an external 
 
 ```python
 from wireup import container, initialize_container
+
 def create_app():
     app = ...
-    
-    # ⬇️ Expose configuration by populating container.params.
-    container.params.put("redis_url", os.environ["APP_REDIS_URL"])
-    container.params.put("weather_api_key", os.environ["APP_WEATHER_API_KEY"])
 
-    # Bulk update is possible via the "update" method.
-    container.params.update(Settings().model_dump())
-    
-    # Start the container: This registers and initializes services.
-    # `service_modules` contains top-level modules containing registrations.
-    # ⬇️
-    initialize_container(container, service_modules=[services])
+    # ⬇️ Start the container: This registers and initializes services.
+    initialize_container(
+        container,
+        # Parameters serve as application/service configuration.
+        parameters={
+            "redis_url": os.environ["APP_REDIS_URL"],
+            "weather_api_key": os.environ["APP_WEATHER_API_KEY"]
+        },
+        # Top-level modules containing service registrations.
+        # This is where your services live.
+        service_modules=[services]
+    )
 
     return app
 ```
