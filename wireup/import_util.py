@@ -26,9 +26,12 @@ def initialize_container(
 ) -> None:
     """Trigger service registrations in `service_modules` and initialize registered singleton services.
 
-    :param dependency_container: The container to initialize, defaults to `wireup.container` if left empty.
-    :param parameters: Parameters to be added to the container.
+    !!! note
+        For long-lived processes this should be executed once at startup.
+
+    :param dependency_container: The container to initialize.
     :param service_modules: Top-level modules containing service registrations.
+    :param parameters: Parameters to be added to the container.
 
     """
     if parameters:

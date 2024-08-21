@@ -36,17 +36,17 @@ from wireup import container, initialize_container
 def create_app():
     app = ...
 
-    # ⬇️ Start the container: This registers + initializes services.
+    # ⬇️ Start the container: This registers and initializes services.
     initialize_container(
         container,
-        # Top-level modules containing service registrations.
-        # This is where your services live.
-        service_modules=[services],
         # Parameters serve as application/service configuration.
         parameters={
             "redis_url": os.environ["APP_REDIS_URL"],
             "weather_api_key": os.environ["APP_WEATHER_API_KEY"]
-        }
+        },
+        # Top-level modules containing service registrations.
+        # This is where your services live.
+        service_modules=[services]
     )
 
     return app
