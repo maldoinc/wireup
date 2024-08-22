@@ -47,7 +47,7 @@ def target(
 
 ### Explicit injection annotation
 Even though annotating services is optional, you CAN still annotate them to be explicit about what will 
-be injected. This also has the benefit of making the container throw when the service does not exist instead
+be injected. This also has the benefit of raising when the service does not exist instead
 of silently skipping this parameter.
 
 ```python

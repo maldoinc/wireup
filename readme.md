@@ -61,9 +61,7 @@ from wireup import service, Inject
 
 @service # ⬅️ Decorator tells the container this is a service.
 class KeyValueStore:
-                                           # This tells the container to inject the value
-                                           # of the parameter during creation.
-                                           # ⬇️ 
+    # Inject the value of the parameter during creation. ⬇️ 
     def __init__(self, dsn: Annotated[str, Inject(param="redis_url")]):
         self.client = redis.from_url(dsn)
 

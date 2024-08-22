@@ -22,12 +22,11 @@ $ pip install wireup
 
     Sections below show how to achieve the same result using each method. [Learn more](configuration.md).
 
-The first step is to set up the container by exposing configuration on startup.
-In this example, we will store the Redis URL and an API key for the weather service.
+The first step is to initialize the container on application startup.
 
 === "@ Annotations"
 
-    ```python title="main.py" hl_lines="9-18"
+    ```python title="main.py""
     import os
     from wireup import container, initialize_container
     from myapp import services
@@ -35,16 +34,15 @@ In this example, we will store the Redis URL and an API key for the weather serv
     def create_app():
         app = ...
         
-        # ⬇️ Start the container: This registers and initializes services.
+        # ⬇️ Start the container: Register and initialize services.
         initialize_container(
             container,
-            # Parameters serve as application/service configuration.
+            # Parameters serve as service configuration.
             parameters={
                 "redis_url": os.environ["APP_REDIS_URL"],
                 "weather_api_key": os.environ["APP_WEATHER_API_KEY"]
             },
             # Top-level modules containing service registrations.
-            # This is where your services live.
             service_modules=[services]
         )
 
@@ -69,8 +67,8 @@ In this example, we will store the Redis URL and an API key for the weather serv
         # Expose configuration as a service in the container.
         container.register(Settings)
         
-        # Start the container: This registers + initializes services
-        # service_modules contains top-level modules containing registrations.
+        # ⬇️ Start the container: Register and initialize services.
+        # service_modules is a list of top-level modules containing registrations.
         initialize_container(container, service_modules=[factories])
 
         return app
@@ -212,6 +210,14 @@ This concludes the "Getting Started" walkthrough, covering the most common depen
 !!! info "Good to know"
     * The `@container.autowire` decorator is not needed for services.
     * Wireup can perform injection on both sync and async functions.
+
+## Next Steps
+
+Use Wireup with the provided framework integrations
+
+- [Django](integrations/django.md)
+- [FastAPI](integrations/fastapi.md)
+- [Flask](integrations/flask.md)
 
 ## Links
 

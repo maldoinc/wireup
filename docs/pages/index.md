@@ -70,9 +70,9 @@ Performant, concise, and easy-to-use dependency injection container for Python 3
 </div>
 
 
-## First-party integrations
+## Framework integrations
 
-Simplified integration with the following frameworks through the provided integrations.
+Simplified integration with the following frameworks.
 
 - [x] [Django](integrations/django.md)
 - [x] [FastAPI](integrations/fastapi.md)

@@ -1,5 +1,4 @@
-Dependency injection for Flask (all versions) is available via the first-party integration wireup provides, available in
-`wireup.integration.flask_integration`.
+Dependency injection for Flask (all versions) is available in the`wireup.integration.flask_integration` module.
 
 **Features:**
 
