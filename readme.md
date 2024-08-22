@@ -36,7 +36,7 @@ from wireup import container, initialize_container
 def create_app():
     app = ...
 
-    # ⬇️ Start the container: This registers and initializes services.
+    # ⬇️ Start the container: Register and initialize services.
     initialize_container(
         container,
         # Parameters serve as application/service configuration.
@@ -45,7 +45,6 @@ def create_app():
             "weather_api_key": os.environ["APP_WEATHER_API_KEY"]
         },
         # Top-level modules containing service registrations.
-        # This is where your services live.
         service_modules=[services]
     )
 
