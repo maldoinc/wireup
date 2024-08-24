@@ -3,9 +3,9 @@ from __future__ import annotations
 import asyncio
 import functools
 import sys
-from typing import TYPE_CHECKING, Any, Callable, TypeVar, overload
+from typing import TYPE_CHECKING, Any, TypeVar, overload
 
-from wireup.ioc.override_manager import OverrideManager
+from wireup.ioc.base_container import BaseContainer
 
 if sys.version_info < (3, 9):
     from graphlib2 import TopologicalSorter
@@ -30,13 +30,15 @@ from wireup.ioc.types import (
 )
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
     from wireup.ioc.initialization_context import InitializationContext
     from wireup.ioc.parameter import ParameterBag
 
 T = TypeVar("T")
 
 
-class DependencyContainer:
+class DependencyContainer(BaseContainer):
     """Dependency Injection and Service Locator container registry.
 
     This contains all the necessary information to initialize registered classes.
@@ -52,21 +54,12 @@ class DependencyContainer:
     be located from type alone.
     """
 
-    __slots__ = (
-        "__registry",
-        "__initialized_objects",
-        "__active_overrides",
-        "__override_manager",
-        "__params",
-    )
+    __slots__ = ("__initialized_objects",)
 
     def __init__(self, parameter_bag: ParameterBag) -> None:
         """:param parameter_bag: ParameterBag instance holding parameter information."""
-        self.__registry = ServiceRegistry()
+        super().__init__(registry=ServiceRegistry(), parameters=parameter_bag, overrides={})
         self.__initialized_objects: dict[ContainerObjectIdentifier, Any] = {}
-        self.__active_overrides: dict[ContainerObjectIdentifier, Any] = {}
-        self.__params: ParameterBag = parameter_bag
-        self.__override_manager = OverrideManager(self.__active_overrides, self.__registry.is_type_with_qualifier_known)
 
     def get(self, klass: type[T], qualifier: Qualifier | None = None) -> T:
         """Get an instance of the requested type.
@@ -77,13 +70,13 @@ class DependencyContainer:
         :param klass: Class of the dependency already registered in the container.
         :return: An instance of the requested object. Always returns an existing instance when one is available.
         """
-        if res := self.__active_overrides.get((klass, qualifier)):
+        if res := self._overrides.get((klass, qualifier)):
             return res  # type: ignore[no-any-return]
 
-        self.__registry.assert_dependency_exists(klass, qualifier)
+        self._registry.assert_dependency_exists(klass, qualifier)
 
-        if self.__registry.is_interface_known(klass):
-            klass = self.__registry.interface_resolve_impl(klass, qualifier)
+        if self._registry.is_interface_known(klass):
+            klass = self._registry.interface_resolve_impl(klass, qualifier)
 
         if instance := self.__initialized_objects.get((klass, qualifier)):
             return instance  # type: ignore[no-any-return]
@@ -95,7 +88,7 @@ class DependencyContainer:
 
         This type cannot be initialized directly and one of the components implementing this will be injected instead.
         """
-        self.__registry.register_abstract(klass)
+        self._registry.register_abstract(klass)
 
         return klass
 
@@ -142,11 +135,11 @@ class DependencyContainer:
             return decorated
 
         if isinstance(obj, type):
-            self.__registry.register_service(obj, qualifier, lifetime)
+            self._registry.register_service(obj, qualifier, lifetime)
             return obj
 
         if callable(obj):
-            self.__registry.register_factory(obj, qualifier=qualifier, lifetime=lifetime)
+            self._registry.register_factory(obj, qualifier=qualifier, lifetime=lifetime)
             return obj
 
         raise InvalidRegistrationTypeError(obj)
@@ -154,12 +147,12 @@ class DependencyContainer:
     @property
     def context(self) -> InitializationContext:
         """The initialization context for registered targets. A map between an injection target and its dependencies."""
-        return self.__registry.context
+        return self._registry.context
 
     @property
     def params(self) -> ParameterBag:
         """Parameter bag associated with this container."""
-        return self.__params
+        return self._params
 
     def clear_initialized_objects(self) -> None:
         """Drop references to initialized singleton objects.
@@ -185,7 +178,7 @@ class DependencyContainer:
         * When injecting an interface for which there are multiple implementations you need to supply a qualifier
           using annotations.
         """
-        self.__registry.target_init_context(fn)
+        self._registry.target_init_context(fn)
 
         if asyncio.iscoroutinefunction(fn):
 
@@ -207,21 +200,16 @@ class DependencyContainer:
         This should be executed once all services are registered with the container. Targets of autowire will not
         be affected.
         """
-        sorter = TopologicalSorter(self.__registry.get_dependency_graph())
+        sorter = TopologicalSorter(self._registry.get_dependency_graph())
 
         for klass in sorter.static_order():
-            for qualifier in self.__registry.known_impls[klass]:
+            for qualifier in self._registry.known_impls[klass]:
                 if (klass, qualifier) not in self.__initialized_objects:
                     self.__create_concrete_type(klass, qualifier)
 
-    @property
-    def override(self) -> OverrideManager:
-        """Override registered container services with new values."""
-        return self.__override_manager
-
     def __callable_get_params_to_inject(self, fn: AnyCallable) -> dict[str, Any]:
         values_from_parameters: dict[str, Any] = {}
-        params = self.__registry.context.dependencies[fn]
+        params = self._registry.context.dependencies[fn]
         names_to_remove: set[str] = set()
 
         for name, param in params.items():
@@ -230,12 +218,12 @@ class DependencyContainer:
             # Check if there's already an instantiated object with this id which can be directly injected
             obj_id = param.klass, param.qualifier_value
 
-            if param.klass and (obj := self.__active_overrides.get(obj_id, self.__initialized_objects.get(obj_id))):  # type: ignore[arg-type]
+            if param.klass and (obj := self._overrides.get(obj_id, self.__initialized_objects.get(obj_id))):  # type: ignore[arg-type]
                 values_from_parameters[name] = obj
             # Dealing with parameter
             # Don't check here for none because as long as it exists in the bag, the value is good.
             elif isinstance(param.annotation, ParameterWrapper):
-                values_from_parameters[name] = self.__params.get(param.annotation.param)
+                values_from_parameters[name] = self._params.get(param.annotation.param)
             elif param.klass and (obj := self.__get_instance(param.klass, param.qualifier_value, param.annotation)):
                 values_from_parameters[name] = obj
             else:
@@ -244,7 +232,7 @@ class DependencyContainer:
         # If autowiring, the container is assumed to be final, so unnecessary entries can be removed
         # from the context in order to speed up the autowiring process.
         if names_to_remove:
-            self.__registry.context.remove_dependencies(fn, names_to_remove)
+            self._registry.context.remove_dependencies(fn, names_to_remove)
 
         return values_from_parameters
 
@@ -252,13 +240,13 @@ class DependencyContainer:
         """Create the real instances of dependencies. Additional dependencies they may have will be lazily created."""
         obj_id = klass, qualifier
 
-        if fn := self.__registry.factory_functions.get(obj_id):
+        if fn := self._registry.factory_functions.get(obj_id):
             instance = fn(**self.__callable_get_params_to_inject(fn))
         else:
             args = self.__callable_get_params_to_inject(klass)
             instance = klass(**args)
 
-        if self.__registry.is_impl_singleton(klass):
+        if self._registry.is_impl_singleton(klass):
             self.__initialized_objects[obj_id] = instance
 
         return instance  # type: ignore[no-any-return]
@@ -266,20 +254,20 @@ class DependencyContainer:
     def __get_instance(
         self, klass: type[T], qualifier: Qualifier | None, annotation: InjectableType | None = None
     ) -> T | None:
-        if self.__registry.is_impl_known_from_factory(klass, qualifier):
+        if self._registry.is_impl_known_from_factory(klass, qualifier):
             # Objects generated from factories do not have qualifiers
             return self.__create_concrete_type(klass, None)
 
-        if self.__registry.is_interface_known(klass):
-            concrete_class = self.__registry.interface_resolve_impl(klass, qualifier)
+        if self._registry.is_interface_known(klass):
+            concrete_class = self._registry.interface_resolve_impl(klass, qualifier)
             return self.__create_concrete_type(concrete_class, qualifier)
 
-        if self.__registry.is_impl_known(klass):
-            if not self.__registry.is_impl_with_qualifier_known(klass, qualifier):
+        if self._registry.is_impl_known(klass):
+            if not self._registry.is_impl_with_qualifier_known(klass, qualifier):
                 raise UnknownQualifiedServiceRequestedError(
                     klass,
                     qualifier,
-                    self.__registry.known_impls[klass],
+                    self._registry.known_impls[klass],
                 )
             return self.__create_concrete_type(klass, qualifier)
 
@@ -296,7 +284,3 @@ class DependencyContainer:
             raise UsageOfQualifierOnUnknownObjectError(qualifier)
 
         return None
-
-    def is_type_known(self, klass: type) -> bool:
-        """Given a class type return True if's registered in the container as a service or interface."""
-        return self.__registry.is_impl_known(klass) or self.__registry.is_interface_known(klass)
