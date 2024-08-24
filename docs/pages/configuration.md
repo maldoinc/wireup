@@ -24,6 +24,8 @@ Factories can request dependencies as usual and may use annotations for configur
 ## @ Annotation-based configuration
 In addition to service objects, the container also holds configuration, called parameters.
 
+You can modify the parameters by updating the `container.params` dict.
+
 !!! warning
     **Parameters represent application configuration**. 
     They are not intended to pass values around or to be used as a global session object.

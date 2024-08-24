@@ -1,4 +1,4 @@
-Dependency injection for FastAPI (all versions) is available in the `wireup.integration.fastapi_integration` module.
+Dependency injection for FastAPI is available in the `wireup.integration.fastapi_integration` module.
 
 
 **Features:**
@@ -35,6 +35,10 @@ async def target(
       "lucky_number": lucky_number,
       "is_debug": is_debug,
     }
+
+# Update container configuration.
+# See Configuration page for more information.
+container.params.update(Settings().model_dump())
 
 # Initialize the integration.
 # Must be called after views have been registered.
