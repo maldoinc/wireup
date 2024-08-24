@@ -13,7 +13,7 @@ inheriting from the same base (See: [Strategy Pattern](https://en.wikipedia.org/
 ## Usage
 
 In order for the container to inject these dependencies, you must register the factory function
-by using the `@service` decorator or by calling `container.register(fn)` directly.
+by using the `@service` decorator.
 
 When the container needs to inject a dependency, it checks known factories to see if any of them can create it.
 

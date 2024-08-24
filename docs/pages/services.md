@@ -5,10 +5,7 @@ Wireup does not enforce a code structure. Services may live anywhere in the appl
 be registered with the container. 
 Top-level modules containing registrations must also be declared in the `initialize_container` call.
 
-To register a class as a service you can use one of the following
-
-* Decorate the class with `@service`.
-* Call `container.register(YourService)` directly.
+To register a class as a service you can decorate it with `@service` or `@abstract`.
 
 ### Lifetime
 By default, the container will keep in memory only a single copy of each service. 
