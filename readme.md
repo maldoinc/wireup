@@ -10,6 +10,7 @@
 [![PyPI - Version](https://img.shields.io/pypi/v/wireup)](https://pypi.org/project/wireup/)
 
 <p>Wireup is a performant, concise, and easy-to-use dependency injection container for Python 3.8+.</p>
+<p><a target="_blank" href="https://maldoinc.github.io/wireup">📚 Documentation</a> | <a target="_blank" href="https://github.com/maldoinc/wireup-demo">🎮 Demo Application</a></p>
 </div>
 
 ---
@@ -88,7 +89,6 @@ Decorate targets where the library should perform injection.
 
 ```python
 from wireup import container
-
 @app.get("/weather/forecast")
 # ⬇️ Decorate functions to perform Dependency Injection.
 # Optional in views with Flask or FastAPI integrations.
@@ -137,7 +137,7 @@ def create_post(title: str, contents: str, post_service: PostService) -> None:
 
 ```
 
-**Installation**
+## Installation
 
 ```bash
 # Install using poetry:
@@ -147,7 +147,7 @@ poetry add wireup
 pip install wireup
 ```
 
-## 📑 Documentation
+## 📚 Documentation
 
 For more information [check out the documentation](https://maldoinc.github.io/wireup)
 
