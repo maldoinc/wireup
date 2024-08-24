@@ -25,6 +25,7 @@
 * Simplified use with [Django](https://maldoinc.github.io/wireup/latest/integrations/django/),
 [Flask](https://maldoinc.github.io/wireup/latest/integrations/flask/), and 
 [FastAPI](https://maldoinc.github.io/wireup/latest/integrations/fastapi/).
+* Share service layer between cli and api.
 
 ## 📋 Quickstart
 
@@ -90,9 +91,51 @@ from wireup import container
 
 @app.get("/weather/forecast")
 # ⬇️ Decorate functions to perform Dependency Injection.
+# Optional in views when using Flask or FastAPI.
 @container.autowire
 def get_weather_forecast_view(weather_service: WeatherService, request):
     return weather_service.get_forecast(request.lat, request.lon)
+```
+
+## Share service layer betwen app/api and cli
+
+Many projects have a web application as well as a cli in the same project which
+provides useful commands.
+
+Wireup makes it extremely easy to share the service layer between them without
+code duplication.
+
+### Example
+
+Extract from [maldoinc/wireup-demo](https://github.com/maldoinc/wireup-demo)
+showing the same service being used in a Flask view as well as in a click command.
+
+
+```python
+# blueprints/post.py
+@bp.post("/")
+@container.autowire
+def create_post(post_service: PostService) -> Response:
+    new_post = post_service.create_post(PostCreateModel(**flask.request.json))
+
+    return jsonify(new_post.model_dump())
+
+# commands/create_post_command.py
+@click.command()
+@click.argument("title")
+@click.argument("contents")
+@container.autowire
+def create_post(title: str, contents: str, post_service: PostService) -> None:
+    post = post_service.create_post(
+        PostCreateModel(
+            title=title, 
+            content=contents, 
+            created_at=datetime.now(tz=timezone.utc)
+        )
+    )
+
+    click.echo(f"Created post with id: {post.id}")
+
 ```
 
 **Installation**
