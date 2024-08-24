@@ -1287,7 +1287,7 @@
 
   <h1>FastAPI</h1>
 
-<p>Dependency injection for FastAPI (all versions) is available in the <code>wireup.integration.fastapi_integration</code> module.</p>
+<p>Dependency injection for FastAPI is available in the <code>wireup.integration.fastapi_integration</code> module.</p>
 <p><strong>Features:</strong></p>
 <ul>
 <li>Automatically decorate Flask views and blueprints where the container is being used.<ul>
@@ -1322,6 +1322,10 @@ configuration to the container. See <a href="../../configuration/">configuration
       <span class="s2">&quot;lucky_number&quot;</span><span class="p">:</span> <span class="n">lucky_number</span><span class="p">,</span>
       <span class="s2">&quot;is_debug&quot;</span><span class="p">:</span> <span class="n">is_debug</span><span class="p">,</span>
     <span class="p">}</span>
+
+<span class="c1"># Update container configuration.</span>
+<span class="c1"># See Configuration page for more information.</span>
+<span class="n">container</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">Settings</span><span class="p">()</span><span class="o">.</span><span class="n">model_dump</span><span class="p">())</span>
 
 <span class="c1"># Initialize the integration.</span>
 <span class="c1"># Must be called after views have been registered.</span>
