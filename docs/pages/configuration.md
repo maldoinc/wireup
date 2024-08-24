@@ -1,10 +1,10 @@
 Wireup configuration can be injected through annotations or programmatically using factory functions. 
-You can mix and match the two as necessary, but for consistency, it's best to stick to one approach for a given project.
+You can also mix and match the two as necessary.
 
 ## @ Annotations
 
 This declarative approach uses configuration metadata provided by decorators and annotations to define services and dependencies between them.
-It allows you to declare the final state and let the container handle the rest, rather than imperatively coding object creation and dependency injection.
+It allows you to declare the final state and let the container handle the rest.
 
 This generally results in less boilerplate code compared to a programmatic approach and is how many popular frameworks operate.
 
@@ -23,7 +23,6 @@ Factories can request dependencies as usual and may use annotations for configur
 
 ## @ Annotation-based configuration
 In addition to service objects, the container also holds configuration, called parameters.
-Adding configuration is done by using `container.params`.
 
 !!! warning
     **Parameters represent application configuration**. 
@@ -38,7 +37,7 @@ Adding configuration is done by using `container.params`.
 To inject a parameter by name, annotate the type with `Inject(param="param_name")`.
 
 ```python
-@service
+@container.autowire
 def target(cache_dir: Annotated[str, Inject(param="cache_dir")]) -> None:
     ...
 ```
@@ -80,6 +79,7 @@ Examples use [pydantic-settings](https://docs.pydantic.dev/latest/concepts/pydan
 from pydantic_settings import BaseSettings
 from pydantic import Field, PostgresDsn
 
+
 class Settings(BaseSettings):
     gh_api_key: str = Field(alias="gh_api_key")  
     pg_dsn: PostgresDsn = Field(alias="pg_dsn")  
@@ -108,12 +108,6 @@ To wire everything together we can use a few factories.
 ```python title="factories.py"
 from wireup import service, container
 
-# Since settings has no parameters it can also be 
-# registered directly as the constructor can be the factory.
-container.register(Settings)
-
-
-# If it needs additional configuration then it is also possible to use a regular factory.
 @service
 def settings_factory() -> Settings:
     return Settings(...)

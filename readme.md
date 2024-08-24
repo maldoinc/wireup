@@ -16,11 +16,13 @@
 
 ## ⚡ Key Features
 * Inject services and configuration.
-* Support for interfaces and abstract classes.
+* Interfaces and abstract classes.
 * Factory pattern.
 * Singleton and transient dependencies.
 * Framework-agnostic.
-* Simplified integration with [Django](https://maldoinc.github.io/wireup/latest/integrations/django/),
+* Apply the container anywhere as a decorator
+* Service Locator
+* Simplified use with [Django](https://maldoinc.github.io/wireup/latest/integrations/django/),
 [Flask](https://maldoinc.github.io/wireup/latest/integrations/flask/), and 
 [FastAPI](https://maldoinc.github.io/wireup/latest/integrations/fastapi/).
 
@@ -69,7 +71,7 @@ class KeyValueStore:
 
 
 @service
-@dataclass
+@dataclass # Can be used alongside dataclasses to simplify init boilerplate.
 class WeatherService:
     # Inject the value of the parameter to this field. ⬇️
     api_key: Annotated[str, Inject(param="weather_api_key")]

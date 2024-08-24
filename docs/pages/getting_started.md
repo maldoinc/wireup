@@ -50,26 +50,32 @@ The first step is to initialize the container on application startup.
     ```
 
 === "🏭 Programmatic"
-    ```python title="main.py" hl_lines="15 19"
-    from pydantic import Field
-    from pydantic_settings import BaseSettings
-    from wireup import container, initialize_container
+    Register application settings as a service.
 
-    from myapp.services import factories
-    
+    ```python title="services/config.py"
+    from pydantic_settings import BaseSettings
+    from wireup import service
+
+    @service
     class Settings(BaseSettings):
         redis_url: str = Field(alias="APP_REDIS_URL")  
         weather_api_key: str = Field(alias="APP_WEATHER_API_KEY")  
+    ```
+    
+    In the application's entrypoint initialize wireup.
+
+    ```python title="main.py" hl_lines="15 19"
+    from pydantic import Field
+    from wireup import container, initialize_container
+
+    from myapp import services
 
     def create_app():
         app = ...
         
-        # Expose configuration as a service in the container.
-        container.register(Settings)
-        
         # ⬇️ Start the container: Register and initialize services.
         # service_modules is a list of top-level modules containing registrations.
-        initialize_container(container, service_modules=[factories])
+        initialize_container(container, service_modules=[services])
 
         return app
     ```
@@ -150,14 +156,13 @@ Next, we add a weather service that will perform requests against a remote serve
     from wireup import service
 
     @service #(1)!
-    @dataclass
+    @dataclass # TIP: Use alongside dataclasses to simplify init code.
     class WeatherService:
         api_key: Annotated[str, Inject(param="weather_api_key")]
         kv_store: KeyValueStore
 
         async def get_forecast(self, lat: float, lon: float) -> WeatherForecast:
-            # implementation omitted for brevity
-            pass
+            raise NotImplementedError
     ```
 
     1.  * Injection is supported for regular classes as well as dataclasses.
@@ -174,8 +179,7 @@ Next, we add a weather service that will perform requests against a remote serve
         kv: KeyValueStore
 
         async def get_forecast(self, lat: float, lon: float) -> WeatherForecast:
-            # implementation omitted for brevity
-            pass
+            raise NotImplementedError
     ```
 
     ```python title="services/factories.py" hl_lines="3 4"
@@ -209,11 +213,13 @@ This concludes the "Getting Started" walkthrough, covering the most common depen
 
 !!! info "Good to know"
     * The `@container.autowire` decorator is not needed for services.
-    * Wireup can perform injection on both sync and async functions.
+    * When using the [FastAPI](integrations/fastapi.md), or [Flask](integrations/flask.md) integrations,
+    decorating views with `@container.autowire` is no longer required.
+    * Wireup can perform injection on both sync and async targets.
 
 ## Next Steps
 
-Use Wireup with the provided framework integrations
+While Wireup is framework-agnostic, usage can be further simplified in following frameworks:
 
 - [Django](integrations/django.md)
 - [FastAPI](integrations/fastapi.md)

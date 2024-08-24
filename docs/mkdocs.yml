@@ -17,6 +17,7 @@ nav:
       - Demo application: demo_app.md
       - Versioning: versioning.md
   - Integrations:
+    - Integrations: integrations/index.md
     - Django: integrations/django.md
     - FastAPI: integrations/fastapi.md
     - Flask: integrations/flask.md

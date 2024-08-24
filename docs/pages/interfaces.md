@@ -74,7 +74,7 @@ def target(
 ## Default implementation
 
 If there are many implementations associated with a given interface, you may want to associate one of them as the
-"default" implementation.
+default implementation.
 
 To accomplish that, omit the qualifier when registering the implementation.
 
