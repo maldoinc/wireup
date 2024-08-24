@@ -17,7 +17,7 @@ class WireupConfig(AppConfig):
 
     name = "wireup.integration.django"
 
-    def ready(self) -> None:  # noqa: D102
+    def ready(self) -> None:
         integration_settings: WireupSettings = settings.WIREUP
 
         initialize_container(

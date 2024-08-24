@@ -1,8 +1,14 @@
 from wireup.annotation import Inject, ParameterEnum, Wire, abstract, service, wire
-from wireup.import_util import initialize_container, load_module, register_all_in_module, warmup_container
 from wireup.ioc.dependency_container import DependencyContainer
 from wireup.ioc.parameter import ParameterBag
 from wireup.ioc.types import ParameterReference, ServiceLifetime, ServiceOverride
+from wireup.util import (
+    create_container,
+    initialize_container,
+    load_module,
+    register_all_in_module,
+    warmup_container,
+)
 
 container = DependencyContainer(ParameterBag())
 """Singleton DI container instance.
@@ -21,6 +27,7 @@ __all__ = [
     "Wire",
     "abstract",
     "container",
+    "create_container",
     "load_module",
     "register_all_in_module",
     "service",

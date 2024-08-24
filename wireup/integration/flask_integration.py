@@ -3,12 +3,21 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Any
 
 from wireup import DependencyContainer, container, initialize_container
+from wireup.integration import _BaseIntegration
 from wireup.integration.util import is_view_using_container
 
 if TYPE_CHECKING:
+    from collections.abc import Hashable
     from types import ModuleType
 
     from flask import Flask
+
+
+def _autowire_views(container: DependencyContainer, app: Flask) -> None:
+    app.view_functions = {
+        name: container.autowire(view) if is_view_using_container(container, view) else view
+        for name, view in app.view_functions.items()
+    }
 
 
 def wireup_init_flask_integration(
@@ -38,8 +47,26 @@ def wireup_init_flask_integration(
 
     dependency_container.params.update(config)
     initialize_container(dependency_container, service_modules=service_modules)
+    _autowire_views(dependency_container, flask_app)
 
-    flask_app.view_functions = {
-        name: dependency_container.autowire(view) if is_view_using_container(dependency_container, view) else view
-        for name, view in flask_app.view_functions.items()
-    }
+
+class FlaskIntegration(_BaseIntegration):
+    def __init__(
+        self,
+        container: DependencyContainer,
+        app: Flask,
+        *,
+        import_flask_config: bool,
+    ) -> None:
+        super().__init__(container)
+        self.app = app
+        self.import_flask_config = import_flask_config
+
+    def get_key(self) -> Hashable:
+        return self.app
+
+    def setup(self) -> None:
+        _autowire_views(self.container, self.app)
+
+    def get_parameters(self) -> dict[str, Any]:
+        return self.app.config if self.import_flask_config else {}

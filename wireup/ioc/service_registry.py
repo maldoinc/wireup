@@ -40,7 +40,7 @@ class ServiceRegistry:
 
         self.context = InitializationContext()
 
-    def register_service(  # noqa: D102
+    def register_service(
         self,
         klass: type,
         qualifier: Qualifier | None,
@@ -58,10 +58,10 @@ class ServiceRegistry:
         self.known_impls[klass].add(qualifier)
         self.target_init_context(klass, lifetime)
 
-    def register_abstract(self, klass: type) -> None:  # noqa: D102
+    def register_abstract(self, klass: type) -> None:
         self.known_interfaces[klass] = defaultdict()
 
-    def register_factory(  # noqa: D102
+    def register_factory(
         self, fn: Callable[..., Any], lifetime: ServiceLifetime, qualifier: Qualifier | None = None
     ) -> None:
         return_type = inspect.signature(fn).return_annotation
@@ -164,13 +164,13 @@ class ServiceRegistry:
     ) -> bool:
         return klass in self.known_interfaces and qualifier in self.known_interfaces[klass]
 
-    def is_impl_known_from_factory(self, klass: type, qualifier: Qualifier | None) -> bool:  # noqa: D102
+    def is_impl_known_from_factory(self, klass: type, qualifier: Qualifier | None) -> bool:
         return (klass, qualifier) in self.factory_functions
 
-    def is_impl_singleton(self, klass: type) -> bool:  # noqa: D102
+    def is_impl_singleton(self, klass: type) -> bool:
         return self.context.lifetime.get(klass) == ServiceLifetime.SINGLETON
 
-    def is_interface_known(self, klass: type) -> bool:  # noqa: D102
+    def is_interface_known(self, klass: type) -> bool:
         return klass in self.known_interfaces
 
     def assert_dependency_exists(self, klass: type, qualifier: Qualifier | None) -> None:

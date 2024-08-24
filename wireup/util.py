@@ -10,12 +10,26 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 from wireup.annotation import AbstractDeclaration, ServiceDeclaration
+from wireup.ioc.dependency_container import DependencyContainer
+from wireup.ioc.parameter import ParameterBag
 
 if TYPE_CHECKING:
     from collections.abc import Callable
     from types import ModuleType
 
-    from wireup import DependencyContainer
+
+def create_container(
+    *, service_modules: list[ModuleType] | None = None, parameters: dict[str, Any] | None = None
+) -> DependencyContainer:
+    """Create a container with the given parameters and register all services found in service modules."""
+    bag = ParameterBag()
+    if parameters:
+        bag.update(parameters)
+    container = DependencyContainer(bag)
+    if service_modules:
+        _register_services(container, service_modules)
+
+    return container
 
 
 def initialize_container(
@@ -34,11 +48,10 @@ def initialize_container(
     :param parameters: Parameters to be added to the container.
 
     """
+    _register_services(dependency_container, service_modules)
+
     if parameters:
         dependency_container.params.update(parameters)
-
-    _register_services(dependency_container, service_modules)
-    dependency_container.warmup()
 
 
 def warmup_container(dependency_container: DependencyContainer, service_modules: list[ModuleType]) -> None:
