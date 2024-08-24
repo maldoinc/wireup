@@ -115,7 +115,7 @@ Extract from [maldoinc/wireup-demo](https://github.com/maldoinc/wireup-demo), sh
 @bp.post("/")
 @container.autowire  # Optional with Flask Integration
 def create_post(post_service: PostService) -> Response:
-    new_post = post_service.create_post(PostCreateModel(**flask.request.json))
+    new_post = post_service.create_post(PostCreateRequest(**flask.request.json))
 
     return jsonify(new_post.model_dump())
 
@@ -126,7 +126,7 @@ def create_post(post_service: PostService) -> Response:
 @container.autowire
 def create_post(title: str, contents: str, post_service: PostService) -> None:
     post = post_service.create_post(
-        PostCreateModel(
+        PostCreateRequest(
             title=title, 
             content=contents, 
             created_at=datetime.now(tz=timezone.utc)
