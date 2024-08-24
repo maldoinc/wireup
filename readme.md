@@ -91,7 +91,7 @@ from wireup import container
 
 @app.get("/weather/forecast")
 # ⬇️ Decorate functions to perform Dependency Injection.
-# Optional in views when using Flask or FastAPI.
+# Optional in views with Flask or FastAPI integrations.
 @container.autowire
 def get_weather_forecast_view(weather_service: WeatherService, request):
     return weather_service.get_forecast(request.lat, request.lon)
@@ -107,14 +107,13 @@ code duplication.
 
 ### Example
 
-Extract from [maldoinc/wireup-demo](https://github.com/maldoinc/wireup-demo)
-showing the same service being used in a Flask view as well as in a click command.
+Extract from [maldoinc/wireup-demo](https://github.com/maldoinc/wireup-demo), showing the same service being used in a Flask view as well as in a Click command.
 
 
 ```python
 # blueprints/post.py
 @bp.post("/")
-@container.autowire
+@container.autowire  # Optional with Flask Integration
 def create_post(post_service: PostService) -> Response:
     new_post = post_service.create_post(PostCreateModel(**flask.request.json))
 
