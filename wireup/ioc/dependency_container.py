@@ -20,9 +20,7 @@ from wireup.errors import (
 from wireup.ioc.service_registry import ServiceRegistry
 from wireup.ioc.types import (
     AnyCallable,
-    ContainerObjectIdentifier,
     EmptyContainerInjectionRequest,
-    ParameterWrapper,
     Qualifier,
     ServiceLifetime,
 )
@@ -52,12 +50,9 @@ class DependencyContainer(BaseContainer):
     be located from type alone.
     """
 
-    __slots__ = ("__initialized_objects",)
-
     def __init__(self, parameter_bag: ParameterBag) -> None:
         """:param parameter_bag: ParameterBag instance holding parameter information."""
         super().__init__(registry=ServiceRegistry(), parameters=parameter_bag, overrides={})
-        self.__initialized_objects: dict[ContainerObjectIdentifier, Any] = {}
 
     def get(self, klass: type[T], qualifier: Qualifier | None = None) -> T:
         """Get an instance of the requested type.
@@ -74,7 +69,7 @@ class DependencyContainer(BaseContainer):
         if self._registry.is_interface_known(klass):
             klass = self._registry.interface_resolve_impl(klass, qualifier)
 
-        if instance := self.__initialized_objects.get((klass, qualifier)):
+        if instance := self._initialized_objects.get((klass, qualifier)):
             return instance  # type: ignore[no-any-return]
 
         if res := self.__get_instance(klass, qualifier):
@@ -172,7 +167,7 @@ class DependencyContainer(BaseContainer):
         allowing you to have a fresh copy of the container with no previously initialized instances
         to make test cases independent of each-other.
         """
-        self.__initialized_objects.clear()
+        self._initialized_objects.clear()
 
     def autowire(self, fn: AnyCallable) -> AnyCallable:
         """Automatically inject resources from the container to the decorated methods.
@@ -212,28 +207,18 @@ class DependencyContainer(BaseContainer):
 
         for klass in sorter.static_order():
             for qualifier in self._registry.known_impls[klass]:
-                if (klass, qualifier) not in self.__initialized_objects:
+                if (klass, qualifier) not in self._initialized_objects:
                     self.get(klass, qualifier)
 
     def __callable_get_params_to_inject(self, fn: AnyCallable) -> dict[str, Any]:
-        values_from_parameters: dict[str, Any] = {}
-        params = self._registry.context.dependencies[fn]
+        result: dict[str, Any] = {}
         names_to_remove: set[str] = set()
 
-        for name, param in params.items():
-            # This block is particularly crucial for performance and has to be written to be as fast as possible.
+        for name, param in self._registry.context.dependencies[fn].items():
+            obj, value_found = self._try_get_existing_value(param)
 
-            # Check if there's already an instantiated object with this id which can be directly injected
-            obj_id = param.klass, param.qualifier_value
-
-            if param.klass and (obj := self._overrides.get(obj_id, self.__initialized_objects.get(obj_id))):  # type: ignore[arg-type]
-                values_from_parameters[name] = obj
-            # Dealing with parameter
-            # Don't check here for none because as long as it exists in the bag, the value is good.
-            elif isinstance(param.annotation, ParameterWrapper):
-                values_from_parameters[name] = self._params.get(param.annotation.param)
-            elif param.klass and (obj := self.__get_instance(param.klass, param.qualifier_value)):
-                values_from_parameters[name] = obj
+            if value_found or (param.klass and (obj := self.__get_instance(param.klass, param.qualifier_value))):
+                result[name] = obj
             else:
                 # Normally the container won't throw if it encounters a type it doesn't know about
                 # But if it's explicitly marked as to be injected then we need to throw.
@@ -247,14 +232,14 @@ class DependencyContainer(BaseContainer):
         if names_to_remove:
             self._registry.context.remove_dependencies(fn, names_to_remove)
 
-        return values_from_parameters
+        return result
 
     def __get_instance(self, klass: type[T], qualifier: Qualifier | None) -> T | None:
         if ctor := self._get_ctor(klass=klass, qualifier=qualifier):
             instance = ctor(**self.__callable_get_params_to_inject(ctor))
 
             if self._registry.is_impl_singleton(klass):
-                self.__initialized_objects[klass, qualifier] = instance
+                self._initialized_objects[klass, qualifier] = instance
 
             return instance
 

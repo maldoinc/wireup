@@ -7,6 +7,11 @@ from wireup.errors import (
     UsageOfQualifierOnUnknownObjectError,
 )
 from wireup.ioc.override_manager import OverrideManager
+from wireup.ioc.types import (
+    AnnotatedParameter,
+    ParameterWrapper,
+    Qualifier,
+)
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -21,7 +26,7 @@ T = TypeVar("T")
 class BaseContainer:
     """Base Container class providing core functionality."""
 
-    __slots__ = ("_registry", "_params", "_override_mgr", "_overrides")
+    __slots__ = ("_initialized_objects", "_registry", "_params", "_override_mgr", "_overrides")
 
     def __init__(
         self,
@@ -33,6 +38,7 @@ class BaseContainer:
         self._params = parameters
         self._overrides = overrides
         self._override_mgr = OverrideManager(overrides, self._registry.is_type_with_qualifier_known)
+        self._initialized_objects: dict[ContainerObjectIdentifier, Any] = {}
 
     def is_type_known(self, klass: type) -> bool:
         """Given a class type return True if's registered in the container as a service or interface."""
@@ -68,3 +74,15 @@ class BaseContainer:
             raise UsageOfQualifierOnUnknownObjectError(qualifier)
 
         return None
+
+    def _try_get_existing_value(self, param: AnnotatedParameter) -> tuple[Any, bool]:
+        if param.klass:
+            obj_id = param.klass, param.qualifier_value
+
+            if res := self._overrides.get(obj_id, self._initialized_objects.get(obj_id)):
+                return res, True
+
+        if isinstance(param.annotation, ParameterWrapper):
+            return self._params.get(param.annotation.param), True
+
+        return None, False
