@@ -72,7 +72,7 @@ class DependencyContainer(BaseContainer):
         if instance := self._initialized_objects.get((klass, qualifier)):
             return instance  # type: ignore[no-any-return]
 
-        if res := self.__get_instance(klass, qualifier):
+        if res := self.__create_instance(klass, qualifier):
             return res
 
         raise UnknownServiceRequestedError(klass)
@@ -217,7 +217,7 @@ class DependencyContainer(BaseContainer):
         for name, param in self._registry.context.dependencies[fn].items():
             obj, value_found = self._try_get_existing_value(param)
 
-            if value_found or (param.klass and (obj := self.__get_instance(param.klass, param.qualifier_value))):
+            if value_found or (param.klass and (obj := self.__create_instance(param.klass, param.qualifier_value))):
                 result[name] = obj
             else:
                 # Normally the container won't throw if it encounters a type it doesn't know about
@@ -234,7 +234,7 @@ class DependencyContainer(BaseContainer):
 
         return result
 
-    def __get_instance(self, klass: type[T], qualifier: Qualifier | None) -> T | None:
+    def __create_instance(self, klass: type[T], qualifier: Qualifier | None) -> T | None:
         if ctor := self._get_ctor(klass=klass, qualifier=qualifier):
             instance = ctor(**self.__callable_get_params_to_inject(ctor))
 
