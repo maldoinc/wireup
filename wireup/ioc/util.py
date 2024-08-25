@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import typing
+import warnings
 from inspect import Parameter
 from typing import Any
 
@@ -35,6 +36,15 @@ def _get_metadata_from_annotated_type(parameter: Parameter) -> AnnotatedParamete
 def _get_metadata_from_default_value(parameter: Parameter) -> AnnotatedParameter | None:
     klass = None if parameter.annotation is Parameter.empty else parameter.annotation
     annotation = None if parameter.default is Parameter.empty else _get_injectable_type(parameter.default)
+
+    if annotation:
+        warnings.warn(
+            "Relying on default values for annotations is deprecated. "
+            "Please use Annotated types instead. "
+            "E.g.: Annotated[Foo, Inject(...)]. "
+            "See: https://maldoinc.github.io/wireup/latest/annotations/",
+            stacklevel=2,
+        )
 
     return None if klass is None and annotation is None else AnnotatedParameter(klass=klass, annotation=annotation)
 

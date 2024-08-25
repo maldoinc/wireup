@@ -4,18 +4,16 @@ from typing import TYPE_CHECKING, Any, TypeVar
 
 from wireup.errors import (
     UnknownQualifiedServiceRequestedError,
-    UnknownServiceRequestedError,
     UsageOfQualifierOnUnknownObjectError,
 )
 from wireup.ioc.override_manager import OverrideManager
-from wireup.ioc.types import EmptyContainerInjectionRequest, InjectableType, Qualifier
 
 if TYPE_CHECKING:
     from collections.abc import Callable
 
     from wireup import ParameterBag
     from wireup.ioc.service_registry import ServiceRegistry
-    from wireup.ioc.types import ContainerObjectIdentifier
+    from wireup.ioc.types import ContainerObjectIdentifier, Qualifier
 
 T = TypeVar("T")
 
