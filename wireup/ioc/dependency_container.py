@@ -3,7 +3,6 @@ from __future__ import annotations
 import asyncio
 import functools
 import sys
-import warnings
 from typing import TYPE_CHECKING, Any, TypeVar, overload
 
 from wireup.ioc.base_container import BaseContainer
@@ -82,10 +81,6 @@ class DependencyContainer(BaseContainer):
 
         This type cannot be initialized directly and one of the components implementing this will be injected instead.
         """
-        warnings.warn(
-            "Using container.abstract is deprecated. Use '@abstract' instead",
-            stacklevel=2,
-        )
         self._registry.register_abstract(klass)
 
         return klass
@@ -123,11 +118,6 @@ class DependencyContainer(BaseContainer):
         * Use as a decorator with parameters to specify qualifier and lifetime, @container.register(qualifier=...).
         * Call it directly with @container.register(some_class_or_factory, qualifier=..., lifetime=...).
         """
-        warnings.warn(
-            "Using container.register is deprecated. Use '@service' instead",
-            stacklevel=2,
-        )
-
         # Allow register to be used either with or without arguments
         if obj is None:
 
