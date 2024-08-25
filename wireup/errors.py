@@ -68,10 +68,11 @@ class UnknownQualifiedServiceRequestedError(WireupError):
     ) -> None:
         self.klass = klass
         self.qualifier = qualifier
+        qualifiers_str = ", ".join(sorted(f"'{q}'" for q in available_qualifiers))
 
         super().__init__(
             f"Cannot instantiate concrete class for {klass} as qualifier '{qualifier}' is unknown. "
-            f"Available qualifiers: {available_qualifiers}",
+            f"Available qualifiers: [{qualifiers_str}].",
         )
 
 

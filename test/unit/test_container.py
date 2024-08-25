@@ -300,7 +300,7 @@ class TestContainer(unittest.IsolatedAsyncioTestCase):
 
         self.assertIn(
             "Cannot instantiate concrete class for <class 'test.fixtures.FooBase'> "
-            "as qualifier 'sub1' is unknown. Available qualifiers: set()",
+            "as qualifier 'sub1' is unknown. Available qualifiers: []",
             str(context.exception),
         )
 
@@ -315,7 +315,7 @@ class TestContainer(unittest.IsolatedAsyncioTestCase):
 
         self.assertEqual(
             f"Cannot instantiate concrete class for {FooBase} as qualifier 'None' is unknown. "
-            "Available qualifiers: {'foobar'}",
+            "Available qualifiers: ['foobar'].",
             str(context.exception),
         )
 
@@ -329,7 +329,7 @@ class TestContainer(unittest.IsolatedAsyncioTestCase):
 
         self.assertEqual(
             f"Cannot instantiate concrete class for {FooBase} as qualifier 'None' is unknown. "
-            "Available qualifiers: set()",
+            "Available qualifiers: [].",
             str(context.exception),
         )
 
@@ -345,7 +345,7 @@ class TestContainer(unittest.IsolatedAsyncioTestCase):
 
         self.assertIn(
             f"Cannot instantiate concrete class for {RegisterWithQualifierClass} "
-            f"as qualifier 'None' is unknown. Available qualifiers: {{'{__name__}'}}",
+            f"as qualifier 'None' is unknown. Available qualifiers: ['{__name__}'].",
             str(context.exception),
         )
 
