@@ -68,6 +68,5 @@ class TestFastAPI(unittest.TestCase):
 
         self.assertEqual(
             str(e.exception),
-            f"Cannot wire unknown class {unittest.TestCase}. "
-            "Use @Container.{register,abstract} to enable autowiring",
+            f"Cannot wire unknown class {unittest.TestCase}. Use '@service' or '@abstract' to enable autowiring.",
         )

@@ -81,7 +81,7 @@ class UnknownServiceRequestedError(WireupError):
 
     def __init__(self, klass: type[Any]) -> None:
         super().__init__(
-            f"Cannot wire unknown class {klass}. Use @Container.{{register,abstract}} to enable autowiring",
+            f"Cannot wire unknown class {klass}. Use '@service' or '@abstract' to enable autowiring.",
         )
 
 

@@ -88,8 +88,7 @@ class TestContainer(unittest.IsolatedAsyncioTestCase):
             inner()
 
         self.assertEqual(
-            f"Cannot wire unknown class {unittest.TestCase}. "
-            "Use @Container.{register,abstract} to enable autowiring",
+            f"Cannot wire unknown class {unittest.TestCase}. Use '@service' or '@abstract' to enable autowiring.",
             str(context.exception),
         )
 
@@ -146,7 +145,7 @@ class TestContainer(unittest.IsolatedAsyncioTestCase):
             self.container.get(TestGetUnknown)
 
         self.assertEqual(
-            f"Cannot wire unknown class {TestGetUnknown}. " "Use @Container.{register,abstract} to enable autowiring",
+            f"Cannot wire unknown class {TestGetUnknown}. Use '@service' or '@abstract' to enable autowiring.",
             str(context.exception),
         )
 
@@ -219,7 +218,7 @@ class TestContainer(unittest.IsolatedAsyncioTestCase):
             container.get(Counter)
 
         self.assertEqual(
-            f"Cannot wire unknown class {Counter}. Use @Container.{{register,abstract}} to enable autowiring",
+            f"Cannot wire unknown class {Counter}. Use '@service' or '@abstract' to enable autowiring.",
             str(context.exception),
         )
 
