@@ -71,8 +71,6 @@ class DependencyContainer(BaseContainer):
         if res := self._overrides.get((klass, qualifier)):
             return res  # type: ignore[no-any-return]
 
-        self._registry.assert_dependency_exists(klass, qualifier)
-
         if self._registry.is_interface_known(klass):
             klass = self._registry.interface_resolve_impl(klass, qualifier)
 

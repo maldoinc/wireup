@@ -204,12 +204,22 @@ class TestContainer(unittest.IsolatedAsyncioTestCase):
         self.container.register(Counter, qualifier="foo_qualified")
         self.container.register(Counter, qualifier="foo_qualified2")
 
-        with self.assertRaises(UnknownServiceRequestedError) as context:
+        with self.assertRaises(UnknownQualifiedServiceRequestedError) as context:
             self.container.get(Counter)
 
         self.assertEqual(
-            "Cannot wire unknown class <class 'test.fixtures.Counter'>. "
-            "Use @Container.{register,abstract} to enable autowiring",
+            f"Cannot instantiate concrete class for {Counter} as qualifier 'None' is unknown. "
+            "Available qualifiers: ['foo_qualified', 'foo_qualified2'].",
+            str(context.exception),
+        )
+
+    def test_raises_on_unknown_service(self):
+        container = DependencyContainer(ParameterBag())
+        with self.assertRaises(UnknownServiceRequestedError) as context:
+            container.get(Counter)
+
+        self.assertEqual(
+            f"Cannot wire unknown class {Counter}. Use @Container.{{register,abstract}} to enable autowiring",
             str(context.exception),
         )
 
