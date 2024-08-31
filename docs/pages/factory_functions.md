@@ -9,6 +9,7 @@ where you need to delegate service creation to a special function called a
 inheriting from the same base (See: [Strategy Pattern](https://en.wikipedia.org/wiki/Strategy_pattern){: target=_blank }) or configure them differently. 
 * Inject a model/dto which represents the result of an action, such as the current authenticated user.
 * Inject a class from another library where it's not possible to add annotations.
+* Inject strings, ints and other base types.
 
 ## Usage
 
@@ -95,6 +96,23 @@ Let's take redis client as an example.
     def redis_factory(settings: Settings) -> Redis:
         return redis.from_url(settings.redis_url)
     ```
+
+
+### Inject strings, ints and other base types
+
+If you want to inject resources which are just strings, ints etc then you can use a factory in combination with `NewType`.
+
+
+```python title="factories.py"
+
+AuthenticatedUsername = NewType("AuthenticatedUsername", str)
+
+@service
+def authenticated_username_factory(auth: SomeAuthService) -> AuthenticatedUsername:
+    return AuthenticatedUsername(...)
+```
+
+This can now be injected as usual by annotating the dependency with the new type.
 
 
 ## Links

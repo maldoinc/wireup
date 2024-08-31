@@ -22,11 +22,11 @@ class InitializationContext:
         self.__dependencies: dict[AutowireTarget, dict[str, AnnotatedParameter]] = {}
         self.__dependencies_view = MappingProxyType(self.__dependencies)
 
-        self.__lifetime: dict[type, ServiceLifetime] = {}
+        self.__lifetime: dict[AutowireTarget, ServiceLifetime] = {}
         self.__lifetime_view = MappingProxyType(self.__lifetime)
 
     @property
-    def lifetime(self) -> Mapping[type, ServiceLifetime]:
+    def lifetime(self) -> Mapping[AutowireTarget, ServiceLifetime]:
         """Read-only view of service lifetime mapping."""
         return self.__lifetime_view
 
@@ -45,7 +45,7 @@ class InitializationContext:
 
         self.__dependencies[target] = {}
 
-        if isinstance(target, type) and lifetime is not None:
+        if lifetime is not None:
             self.__lifetime[target] = lifetime
 
         return True

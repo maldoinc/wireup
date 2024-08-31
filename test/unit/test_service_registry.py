@@ -1,4 +1,5 @@
 import unittest
+from typing import NewType
 
 from typing_extensions import Annotated
 from wireup import Inject, ServiceLifetime, Wire
@@ -100,6 +101,29 @@ class TestServiceRegistry(unittest.TestCase):
                 "_f": AnnotatedParameter(klass=str, annotation=ParameterWrapper("name")),
             },
         )
+
+    def test_registry_newtypes_class(self) -> None:
+        class X:
+            pass
+
+        Y = NewType("Y", X)
+
+        def y_factory() -> Y:
+            return Y(X())
+
+        self.registry.register_factory(y_factory, lifetime=ServiceLifetime.SINGLETON)
+
+        self.assertTrue(self.registry.is_impl_singleton(Y))
+
+    def test_registry_newtypes_anything(self) -> None:
+        Y = NewType("Y", str)
+
+        def y_factory() -> Y:
+            return Y("Hi")
+
+        self.registry.register_factory(y_factory, lifetime=ServiceLifetime.SINGLETON)
+
+        self.assertTrue(self.registry.is_impl_singleton(Y))
 
 
 class MyService:
