@@ -66,10 +66,7 @@ class BaseContainer:
                 )
             return klass
 
-        # When injecting dependencies and a qualifier is used, throw if it's being used on an unknown type.
-        # This prevents the default value from being used by the runtime.
-        # We don't actually want that to happen as the value is used only for hinting the container
-        # and all values should be supplied.
+        # Throw if a qualifier is being used on an unknown type.
         if qualifier:
             raise UsageOfQualifierOnUnknownObjectError(qualifier)
 
