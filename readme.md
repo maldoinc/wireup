@@ -21,8 +21,8 @@
 * Factory pattern.
 * Singleton and transient dependencies.
 * Framework-agnostic.
-* Apply the container anywhere as a decorator
-* Service Locator
+* Apply the container anywhere as a decorator.
+* Service Locator.
 * Simplified use with [Django](https://maldoinc.github.io/wireup/latest/integrations/django/),
 [Flask](https://maldoinc.github.io/wireup/latest/integrations/flask/), and 
 [FastAPI](https://maldoinc.github.io/wireup/latest/integrations/fastapi/).
