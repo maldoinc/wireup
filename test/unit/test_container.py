@@ -584,3 +584,31 @@ class TestContainer(unittest.IsolatedAsyncioTestCase):
             self.assertEqual(rand_service.get_random(), 4)
 
         inner()
+
+    def test_container_resolves_existing_instance_from_interface_service_locator(self) -> None:
+        self.container.abstract(FooBase)
+        self.container.register(FooBar)
+
+        self.assertTrue(self.container.get(FooBase) is self.container.get(FooBase))
+
+    def test_container_resolves_existing_instance_from_interface_autowire(self) -> None:
+        self.container.abstract(FooBase)
+        self.container.register(FooBar)
+
+        @self.container.autowire
+        def foo(x: FooBase) -> FooBase:
+            return x
+
+        self.assertTrue(foo() is foo())
+        self.assertIsInstance(foo(), FooBar)
+
+    def test_container_resolves_existing_instance_from_interface_with_qualifier(self) -> None:
+        self.container.abstract(FooBase)
+        self.container.register(FooBar, qualifier="bar")
+
+        @self.container.autowire
+        def foo(x: Annotated[FooBase, Inject(qualifier="bar")]) -> FooBase:
+            return x
+
+        self.assertTrue(foo() is foo())
+        self.assertIsInstance(foo(), FooBar)

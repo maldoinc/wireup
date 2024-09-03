@@ -225,11 +225,12 @@ class DependencyContainer(BaseContainer):
         return result
 
     def __create_instance(self, klass: type[T], qualifier: Qualifier | None) -> T | None:
-        if ctor := self._get_ctor(klass=klass, qualifier=qualifier):
+        if res := self._get_ctor(klass=klass, qualifier=qualifier):
+            ctor, resolved_type = res
             instance = ctor(**self.__callable_get_params_to_inject(ctor))
 
-            if self._registry.is_impl_singleton(klass):
-                self._initialized_objects[klass, qualifier] = instance
+            if self._registry.is_impl_singleton(resolved_type):
+                self._initialized_objects[resolved_type, qualifier] = instance
 
             return instance
 

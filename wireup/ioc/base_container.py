@@ -49,9 +49,9 @@ class BaseContainer:
         """Override registered container services with new values."""
         return self._override_mgr
 
-    def _get_ctor(self, klass: type[T], qualifier: Qualifier | None) -> Callable[..., T] | None:
+    def _get_ctor(self, klass: type[T], qualifier: Qualifier | None) -> tuple[Callable[..., T], type[T]] | None:
         if ctor := self._registry.factory_functions.get((klass, qualifier)):
-            return ctor
+            return ctor, klass
 
         if self._registry.is_interface_known(klass):
             concrete_class = self._registry.interface_resolve_impl(klass, qualifier)
@@ -64,7 +64,7 @@ class BaseContainer:
                     qualifier,
                     self._registry.known_impls[klass],
                 )
-            return klass
+            return klass, klass
 
         # Throw if a qualifier is being used on an unknown type.
         if qualifier:
@@ -76,7 +76,14 @@ class BaseContainer:
         if param.klass:
             obj_id = param.klass, param.qualifier_value
 
-            if res := self._overrides.get(obj_id, self._initialized_objects.get(obj_id)):
+            if res := self._overrides.get(obj_id):
+                return res, True
+
+            if self._registry.is_interface_known(param.klass):
+                resolved_type = self._registry.interface_resolve_impl(param.klass, param.qualifier_value)
+                obj_id = resolved_type, param.qualifier_value
+
+            if res := self._initialized_objects.get(obj_id):
                 return res, True
 
         if isinstance(param.annotation, ParameterWrapper):
