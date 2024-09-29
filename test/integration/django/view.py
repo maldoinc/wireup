@@ -14,7 +14,7 @@ def index(
     is_debug: Annotated[bool, Inject(param="DEBUG")],
     random_service: RandomService,
 ) -> HttpResponse:
-    name = request.GET.get("name")
+    name = request.GET["name"]
     greeting = greeter.greet(name)
 
     return HttpResponse(f"{greeting}! Debug = {is_debug}. Your lucky number is {random_service.get_random()}")
@@ -36,7 +36,7 @@ class RandomNumberView(View):
         self,
         request: HttpRequest,
     ) -> HttpResponse:
-        name = request.GET.get("name")
+        name = request.GET["name"]
         greeting = self.greeter.greet(name)
 
         return HttpResponse(
