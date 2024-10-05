@@ -10,7 +10,7 @@ To specify custom behavior for tests, provide a custom implementation
 or a subclass that returns test data as a dependency instead of mocks.
 
 It is also possible to use the container to build a part of your dependencies by
-calling `container.get(ThingService)` which will return a `ThingService` instance.
+calling `container.get(T)` which will return an instance of `T`.
 
 ## Overriding
 
@@ -25,10 +25,7 @@ which help with overriding dependencies
     * Overriding only applies to future autowire calls.
     * Once a singleton service has been instantiated, it is not possible to directly replace
     any of its direct or transitive dependencies via overriding as the object is already in memory.
-        * You will need to call `container.clear_initialized_objects()` and then override the 
-        desired service. This will make the container use the override when the 
-        new copy of the service is being built.
-    * When using injecting interfaces and/or qualifiers, override the interface and/or qualifier 
+    * When injecting interfaces and/or qualifiers, override the interface and/or qualifier 
     rather than the implementation that will be injected.
 
 
@@ -52,36 +49,50 @@ with container.override.service(target=RandomService, new=random_mock):
     response = client.get("/random")
 ```
 
-#### Python unittest
-
-Use the setup method to replace a service with a mock for the duration of the test. 
-
-```python
-class SomeEndpointTest(unittest.TestCase):
-    def setUp(self) -> None:
-        self.db_service = MagicMock()
-        
-        # Drop references to initialized objects.
-        # Services or autowire targets requesting DBService
-        # will get the mocked object instead.
-        container.clear_initialized_objects()
-        container.override.service(DbService, new=self.db_service)
-```
-
 #### Pytest
 
 Similar to the above example but this uses pytest's autouse to achieve the same result.
+Also shows how to use `get_container` when using integrations.
 
-```python
-@pytest.fixture(autouse=True)
-def setup_container(db_service_mock: MagicMock) -> None:
-    container.clear_initialized_objects()
-    container.override.service(DbService, new=db_service_mock)
+```python title="app.py"
+def create_app():
+    app = ...
 
-def test_something_with_mocked_db_service(client: TestClient, db_service_mock: MagicMock):
-    # Set up the db service mock
-    db_service_mock.get_things.return_value = ...
-    response = client.get("/some/path")
+    container = wireup.create_container(...)
+    # Example shows FastAPI but any integration will work the same.
+    wireup.setup_integration(FastApiIntegration(container, app))
+
+    return app
+```
+
+```python title="conftest.py"
+# This is a function scoped fixture which means 
+# you'll get a fresh copy of the application and container every time.
+@pytest.fixture
+def app():
+    return create_app()
+```
+
+```python title="some_test_file.py"
+def test_something_with_mocked_db_service(client: TestClient, app):
+    with wireup.get_container(app).override.service(DBService, new=...):
+        response = client.get("/some/path")
+
+    # Assert response and mock calls.
+```
+
+It is also possible to add a fixture to fetch the container to avoid the `get_container` call.
+
+```python title="conftest.py"
+@pytest.fixture
+def container(app) -> DependencyContainer:
+    return create_app()
+```
+
+```python title="some_test_file.py"
+def test_override(client: TestClient, container: DependencyContainer):
+    with container.override.service(DBService, new=...):
+        response = client.get("/some/path")
 
     # Assert response and mock calls.
 ```
