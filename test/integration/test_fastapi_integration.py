@@ -1,7 +1,6 @@
 import unittest
 
 import wireup
-import wireup.integration
 from fastapi import Depends, FastAPI
 from fastapi.testclient import TestClient
 from typing_extensions import Annotated
@@ -50,7 +49,7 @@ def create_app() -> FastAPI:
 
     container = wireup.create_container(service_modules=[], parameters={"foo": "bar"})
     container.register(RandomService)
-    wireup.integration.setup(FastApiIntegration(container, app))
+    wireup.setup_integration(FastApiIntegration(container, app))
 
     return app
 
@@ -70,7 +69,7 @@ class TestFastAPI(unittest.TestCase):
             def get_random(self):
                 return super().get_random() ** 2
 
-        with wireup.integration.get_container(self.app).override.service(RandomService, new=RealRandom()):
+        with wireup.get_container(self.app).override.service(RandomService, new=RealRandom()):
             response = self.client.get("/rng")
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json(), {"number": 16})

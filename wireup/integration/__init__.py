@@ -34,7 +34,7 @@ def get_container(key: Hashable) -> DependencyContainer:
     return _integrations[key].container
 
 
-def setup(integration: _BaseIntegration) -> None:
+def setup_integration(integration: _BaseIntegration) -> None:
     """Set up the given integration."""
     integration.setup()
     _integrations[integration.get_key()] = integration
