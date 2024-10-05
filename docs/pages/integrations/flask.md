@@ -26,12 +26,16 @@ def get_environment(
     return {"debug": is_debug, "foo": foo}
 
 
-if __name__ == '__main__':
-    # Initialize the integration.
-    # Must be called after views and configuration have been added.
-    # Pass to service_modules a list of top-level modules where your services reside.
-    wireup_init_flask_integration(app, service_modules=[services])
-    app.run()
+# Initialize the integration.
+# Must be called after views and configuration have been added.
+# Pass to service_modules a list of top-level modules where your services reside.
+container = wireup.create_container(
+    service_modules=[services],
+    parameters={"FOO": "bar"}
+)
+
+wireup.setup_integration(FlaskIntegration(container, app, import_flask_config=True))
+app.run()
 ```
 
 ## Api Reference
