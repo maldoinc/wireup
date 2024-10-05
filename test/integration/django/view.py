@@ -7,7 +7,6 @@ from test.integration.django.service.greeter_interface import GreeterService
 from test.integration.django.service.random_service import RandomService
 
 
-@container.autowire
 def index(
     request: HttpRequest,
     greeter: GreeterService,
@@ -21,7 +20,6 @@ def index(
 
 
 class RandomNumberView(View):
-    @container.autowire
     def __init__(
         self,
         greeter: GreeterService,

@@ -62,15 +62,13 @@ def github_client_factory() -> GithubClient:
 
 ### Use in views
 ```python title="app/views.py"
-from wireup import container
 
 
-@container.autowire
 def upload_file_view(request: HttpRequest, s3_manager: S3Manager) -> HttpResponse:
     return HttpResponse(...)
 ```
 
-Class-based views are also supported. You can autowire the `__init__` or the handler method as necessary. 
+Class-based views are also supported, you can specify dependencies in your class' `__init__` function. 
 
 
 For more examples see the [Wireup Django integration tests](https://github.com/maldoinc/wireup/tree/master/test/integration/django/view.py).

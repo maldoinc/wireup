@@ -13,3 +13,9 @@ class WireupSettings:
 
     service_modules: list[str | ModuleType]
     """List of modules containing wireup service registrations."""
+
+    perform_warmup: bool = True
+    """Setting this to true will cause the container to create
+    at application startup. The opposite is that services are
+    created on first use.
+    """
