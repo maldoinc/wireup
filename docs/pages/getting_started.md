@@ -78,7 +78,7 @@ class KeyValueStore:
 @dataclass # Use alongside dataclasses to simplify init code.
 class WeatherService:
     api_key: Annotated[str, Inject(param="weather_api_key")]
-    kv_store: KeyValueStore # This can be resolved without annotations.
+    kv_store: KeyValueStore # This will be resolved without annotations.
 
     async def get_forecast(self, lat: float, lon: float) -> WeatherForecast:
         raise NotImplementedError
