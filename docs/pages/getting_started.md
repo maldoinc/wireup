@@ -1,12 +1,12 @@
 This walkthrough will introduce you to the most common use cases for a typical application. 
 
-We'll build a simple weather forecast application that calls a remote weather service 
-and uses a distributed key-value store to cache results.
+Wireup can be used standalone as a DI container and service locator
+or it can be integrated with common frameworks for simplified usage.
 
 
-## 1. Setup
+## Guide
 
-### Installation
+### Setup
 
 Install wireup using pip or your favorite package manager.
 
@@ -14,198 +14,93 @@ Install wireup using pip or your favorite package manager.
 $ pip install wireup
 ```
 
-### Configuration
+The first step is to create a container. 
+
+```python title="app/__init__.py"
+import wireup
+
+container = wireup.create_container(
+    # Parameters serve as application/service configuration.
+    parameters={
+        "redis_url": os.environ["APP_REDIS_URL"],
+        "weather_api_key": os.environ["APP_WEATHER_API_KEY"]
+    },
+    # Top-level modules containing service registrations.
+    service_modules=[services]
+)
+
+# Optionally call warmup to create instances of singleton services.
+# If you do not do this they will be created on first use.
+container.warmup()
+```
+
+??? warning "Read: Global variables"
+    Using this approach means relying on global state, which ties your application to a single container instance. 
+    This might be sufficient for you and that's okay but, if you want to avoid global state, it's better to create 
+    the container within your application factory and provide a way to access it from the created application instance.
+
+    With the available integrations, global state is neither necessary nor recommended.
+
+### Declare services
+
+The container uses configuration metadata provided from decorators and annotations 
+to define services and the dependencies between them. 
+This means that the service declaration is self-contained and does not require additional setup for most use cases.
+
 
 !!! tip "Use Wireup the way you prefer"
     The container can be configured through annotations or programmatically.
-    It was designed with annotations in mind but all features are available with either approach.
-
-    Sections below show how to achieve the same result using each method. [Learn more](configuration.md).
-
-The first step is to initialize the container on application startup.
-
-=== "@ Annotations"
-
-    ```python title="main.py""
-    import os
-    from wireup import container, initialize_container
-    from myapp import services
-
-    def create_app():
-        app = ...
-        
-        # ⬇️ Start the container: Register and initialize services.
-        initialize_container(
-            container,
-            # Parameters serve as service configuration.
-            parameters={
-                "redis_url": os.environ["APP_REDIS_URL"],
-                "weather_api_key": os.environ["APP_WEATHER_API_KEY"]
-            },
-            # Top-level modules containing service registrations.
-            service_modules=[services]
-        )
-
-        return app
-    ```
-
-=== "🏭 Programmatic"
-    Register application settings as a service.
-
-    ```python title="services/config.py"
-    from pydantic_settings import BaseSettings
-    from wireup import service
-
-    @service
-    class Settings(BaseSettings):
-        redis_url: str = Field(alias="APP_REDIS_URL")  
-        weather_api_key: str = Field(alias="APP_WEATHER_API_KEY")  
-    ```
-    
-    In the application's entrypoint initialize wireup.
-
-    ```python title="main.py" hl_lines="15 19"
-    from pydantic import Field
-    from wireup import container, initialize_container
-
-    from myapp import services
-
-    def create_app():
-        app = ...
-        
-        # ⬇️ Start the container: Register and initialize services.
-        # service_modules is a list of top-level modules containing registrations.
-        initialize_container(container, service_modules=[services])
-
-        return app
-    ```
-
-Now that the setup is complete, let's move on to the next step.
-
-## 2. Define services
-### KeyValueStore
-
-First, let's add a `KeyValueStore` service. We wrap Redis with a class that abstracts it. 
-
-While we have the option to [inject Redis directly](factory_functions.md#inject-a-third-party-class), 
-in this example, we've chosen the abstraction route. 
-
-The Redis client requires specific configuration details to establish a connection with the server,
-which we fetch from the configuration.
-
-=== "@ Annotations"
-    With a declarative approach, the container uses configuration metadata 
-    provided from decorators and annotations to define services and the dependencies between them. 
-    This means that the service declaration is self-contained and does not require additional setup.
-
-    ```python title="services/key_value_store.py" hl_lines="4 6"
-    from wireup import service, Inject
-    from typing_extensions import Annotated
-
-    @service  #(1)!
-    class KeyValueStore:
-        def __init__(self, dsn: Annotated[str, Inject(param="redis_url")]) -> None:  #(2)!
-            self.client = redis.from_url(dsn)
-
-        def get(self, key: str) -> Any: ...
-        def set(self, key: str, value: Any): ...
-    ```
-
-    1. Decorators do not modify the classes in any way and only serve to collect metadata. 
-       This makes testing simpler, as you can still instantiate this like a regular class in your tests.
-    2. Parameters must be annotated with the `Inject(param=name)` syntax. This tells the container which parameter to inject.
-    
-    The `@service` decorator marks this class as a service to be registered in the container.
-    Decorators and annotations are read once during the call to `initialize_container`.
-
-=== "🏭 Programmatic"
-    With this approach, services are devoid of container references. 
-    Registration and creation is handled by factory functions.
-
-    ```python title="services/key_value_store.py"
-    class KeyValueStore:
-        def __init__(self, dsn: str) -> None:
-            self.client = redis.from_url(dsn)
-
-        def get(self, key: str) -> Any: ...
-        def set(self, key: str, value: Any): ...
-    ```
-
-    The `@service` decorator makes this factory known with the container.. Decorators/annotations
-    are read once during the call to `initialize_container`. 
-    Return type is mandatory and denotes what will be built.
-
-    ```python title="services/factories.py" hl_lines="3 4"
-    from wireup import service
-
-    @service
-    def key_value_store_factory(settings: Settings) -> KeyValueStore:
-        return KeyValueStore(dsn=settings.redis_url)
-    ```
-
-### WeatherService
-
-Next, we add a weather service that will perform requests against a remote server and cache results as necessary.
-
-=== "@ Annotations"
-
-    The `api_key` field contains the value of the `weather_api_key` parameter as specified in the annotation. 
-    `KeyValueStore` will be automatically injected without requiring additional metadata.
-
-    ```python title="services/weather.py" hl_lines="3 6 7"
-    from wireup import service
-
-    @service #(1)!
-    @dataclass # TIP: Use alongside dataclasses to simplify init code.
-    class WeatherService:
-        api_key: Annotated[str, Inject(param="weather_api_key")]
-        kv_store: KeyValueStore
-
-        async def get_forecast(self, lat: float, lon: float) -> WeatherForecast:
-            raise NotImplementedError
-    ```
-
-    1.  * Injection is supported for regular classes as well as dataclasses.
-        * With dataclasses it is important that the `@dataclass` decorator is applied before `@service`.
-    2.  * Use type hints to indicate which dependency to inject.
-        * Dependencies are automatically discovered and injected.
-
-=== "🏭 Programmatic"
-
-    ```python title="services/weather.py"
-    @dataclass 
-    class WeatherService:
-        api_key: str
-        kv: KeyValueStore
-
-        async def get_forecast(self, lat: float, lon: float) -> WeatherForecast:
-            raise NotImplementedError
-    ```
-
-    ```python title="services/factories.py" hl_lines="3 4"
-    from wireup import service
-
-    @service
-    def weather_service_factory(settings: Settings, kv_store: KeyValueStore) -> WeatherService:
-        return WeatherService(api_key=settings.weather_api_key, kv=kv_store)
-    ```
-
-That concludes service creation. The container knows how to build services and inject them as necessary.
-
-## 3. Inject
-
-The final step would be to decorate functions where the container needs to perform injection.
-Decorate injection targets with `@container.autowire`.
+    It was designed with annotations in mind but all features are available with either approach. [Learn more](configuration.md).
 
 
-```python title="views/posts.py" hl_lines="2"
+
+```python title="services/key_value_store.py" hl_lines="4 6"
+from wireup import service, Inject
+from typing_extensions import Annotated
+
+@service  #(1)!
+class KeyValueStore:
+    def __init__(self, dsn: Annotated[str, Inject(param="redis_url")]) -> None:  #(2)!
+        self.client = redis.from_url(dsn)
+
+    def get(self, key: str) -> Any: ...
+    def set(self, key: str, value: Any): ...
+```
+
+
+1. Decorators are used to collect metadata. 
+    This makes testing simpler, as you can still instantiate this like a regular class in your tests.
+2. Parameters must be annotated with the `Inject(param=name)` syntax. This tells the container which parameter to inject.
+
+
+```python title="services/weather_service.py" hl_lines="4 5"
+@service
+@dataclass # Use alongside dataclasses to simplify init code.
+class WeatherService:
+    api_key: Annotated[str, Inject(param="weather_api_key")]
+    kv_store: KeyValueStore # This can be resolved without annotations.
+
+    async def get_forecast(self, lat: float, lon: float) -> WeatherForecast:
+        raise NotImplementedError
+```
+
+
+
+### Use the container
+
+Now you can use the container you created and use it as a service locator 
+or apply it as a decorator.
+
+```python
+weather_service = container.get(WeatherService)
+```
+
+```python title="views/posts.py"
 @app.get("/weather/forecast")
-@container.autowire # (1)!
+@container.autowire
 async def get_forecast_view(weather_service: WeatherService):
     return await weather_service.get_forecast(...)
 ```
-
-1. Decorate methods where the library must perform injection.
 
 ## Conclusion
 
@@ -216,14 +111,16 @@ This concludes the "Getting Started" walkthrough, covering the most common depen
     * When using the [FastAPI](integrations/fastapi.md), or [Flask](integrations/flask.md) integrations,
     decorating views with `@container.autowire` is no longer required.
     * Wireup can perform injection on both sync and async targets.
+    * Every container you create is separate from the rest and has its own state.
 
 ## Next Steps
 
-While Wireup is framework-agnostic, usage can be further simplified in following frameworks:
+While Wireup is framework-agnostic, usage can be simplified when used with the following frameworks:
 
 - [Django](integrations/django.md)
 - [FastAPI](integrations/fastapi.md)
 - [Flask](integrations/flask.md)
+
 
 ## Links
 

@@ -31,6 +31,11 @@ which help with overriding dependencies
     * When using injecting interfaces and/or qualifiers, override the interface and/or qualifier 
     rather than the implementation that will be injected.
 
+
+!!! tip
+    If you're using an integration to get the container instance you can use the `wireup.get_container(app)` method.
+    This will return the container associated with your application.
+
 ### Examples
 
 #### Context Manager
@@ -39,7 +44,7 @@ random_mock = MagicMock()
 # Chosen by fair dice roll. Guaranteed to be random.
 random_mock.get_random.return_value = 4
 
-with self.container.override.service(target=RandomService, new=random_mock):
+with container.override.service(target=RandomService, new=random_mock):
     # Assuming in the context of a web app:
     # /random endpoint has a dependency on RandomService
     # requests to inject RandomService during the lifetime

@@ -35,27 +35,21 @@ Example showcasing a Redis wrapper and a weather service that calls an external 
 **1. Set up**
 
 ```python
-from wireup import container, initialize_container
+import wireup
 
-def create_app():
-    app = ...
 
-    # ⬇️ Start the container: Register and initialize services.
-    initialize_container(
-        container,
-        # Parameters serve as application/service configuration.
-        parameters={
-            "redis_url": os.environ["APP_REDIS_URL"],
-            "weather_api_key": os.environ["APP_WEATHER_API_KEY"]
-        },
-        # Top-level modules containing service registrations.
-        service_modules=[services]
-    )
-
-    return app
+container = wireup.create_container(
+    # Parameters serve as application/service configuration.
+    parameters={
+        "redis_url": os.environ["APP_REDIS_URL"],
+        "weather_api_key": os.environ["APP_WEATHER_API_KEY"]
+    },
+    # Top-level modules containing service registrations.
+    service_modules=[services]
+)
 ```
 
-**2. Register services**
+**2. Declare services**
 
 Use a declarative syntax to describe services, and let the container handle the rest.
 
@@ -83,12 +77,15 @@ class WeatherService:
         ...
 ```
 
-**3. Inject**
+**3. Use**
 
-Decorate targets where the library should perform injection.
+Use the container as a service locator or apply it as a decorator to have it perform injection.
 
 ```python
-from wireup import container
+weather_service = container.get(WeatherService)
+```
+
+```python
 @app.get("/weather/forecast")
 # ⬇️ Decorate functions to perform Dependency Injection.
 # Optional in views with Flask or FastAPI integrations.

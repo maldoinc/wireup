@@ -12,7 +12,7 @@ This generally results in less boilerplate code compared to a programmatic appro
 ## 🏭 Programmatic
 
 With a programmatic approach, you have full control over how services are created and can keep service
-definitions devoid of container references if this is important to you.
+definitions free of container references if this is important to you.
 
 This approach results in more code as you will need to write these factories and construct services yourself.
 
@@ -23,8 +23,6 @@ Factories can request dependencies as usual and may use annotations for configur
 
 ## @ Annotation-based configuration
 In addition to service objects, the container also holds configuration, called parameters.
-
-You can modify the parameters by updating the `container.params` dict.
 
 !!! warning
     **Parameters represent application configuration**. 

@@ -17,8 +17,7 @@ Dependency injection for FastAPI is available in the `wireup.integration.fastapi
 
 ## Examples
 
-```python
-
+```python title="main.py"
 app = FastAPI()
 
 @app.get("/random")
@@ -31,19 +30,19 @@ async def target(
     lucky_number: Annotated[int, Depends(get_lucky_number)]
 ):
     return {
-      "number": random_service.get_random(), 
-      "lucky_number": lucky_number,
-      "is_debug": is_debug,
+        "number": random_service.get_random(), 
+        "lucky_number": lucky_number,
+        "is_debug": is_debug,
     }
-
-# Update container configuration.
-# See Configuration page for more information.
-container.params.update(Settings().model_dump())
 
 # Initialize the integration.
 # Must be called after views have been registered.
 # Pass to service_modules a list of top-level modules where your services reside.
-wireup_init_fastapi_integration(app, service_modules=[services])
+container = wireup.create_container(
+    service_modules=[services], 
+    parameters=get_settings_dict()
+)
+wireup.integration.setup(FastApiIntegration(container, app))
 ```
 
 ## Api Reference
