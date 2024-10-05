@@ -60,10 +60,11 @@ def github_client_factory() -> GithubClient:
     return GithubClient(settings.GH_API_KEY)
 ```
 
-### Use in views
+### Inject
+
+To perform injection simply request the dependencies in the view.
+
 ```python title="app/views.py"
-
-
 def upload_file_view(request: HttpRequest, s3_manager: S3Manager) -> HttpResponse:
     return HttpResponse(...)
 ```
@@ -72,6 +73,24 @@ Class-based views are also supported, you can specify dependencies in your class
 
 
 For more examples see the [Wireup Django integration tests](https://github.com/maldoinc/wireup/tree/master/test/integration/django/view.py).
+
+
+### Testing
+
+For general testing tips with Wireup refer to the [test docs](../testing.md). 
+With Django you can override dependencies in the container as follows:
+
+```python title="test_thing.py"
+from wireup.integration.django.apps import get_container
+
+def test_override():
+    class DummyGreeter(GreeterService):
+        def greet(self, name: str) -> str:
+            return f"Hi, {name}"
+
+    with get_container().override.service(GreeterService, new=DummyGreeter()):
+        res = self.client.get("/greet?name=Test")
+```
 
 
 ## Api Reference

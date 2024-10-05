@@ -1,6 +1,4 @@
-This walkthrough will introduce you to the most common use cases for a typical application. 
-
-Wireup can be used standalone as a DI container and service locator
+Wireup can be used standalone as a DI container/service locator
 or it can be integrated with common frameworks for simplified usage.
 
 
@@ -29,17 +27,10 @@ container = wireup.create_container(
     service_modules=[services]
 )
 
-# Optionally call warmup to create instances of singleton services.
-# If you do not do this they will be created on first use.
+# Services are created on first use.
+# If you want to create them ahead of time you can do so by using the warmup method.
 container.warmup()
 ```
-
-??? warning "Read: Global variables"
-    Using this approach means relying on global state, which ties your application to a single container instance. 
-    This might be sufficient for you and that's okay but, if you want to avoid global state, it's better to create 
-    the container within your application factory and provide a way to access it from the created application instance.
-
-    With the available integrations, global state is neither necessary nor recommended.
 
 ### Declare services
 
@@ -78,7 +69,7 @@ class KeyValueStore:
 @dataclass # Use alongside dataclasses to simplify init code.
 class WeatherService:
     api_key: Annotated[str, Inject(param="weather_api_key")]
-    kv_store: KeyValueStore # This will be resolved without annotations.
+    kv_store: KeyValueStore
 
     async def get_forecast(self, lat: float, lon: float) -> WeatherForecast:
         raise NotImplementedError
@@ -88,8 +79,7 @@ class WeatherService:
 
 ### Use the container
 
-Now you can use the container you created and use it as a service locator 
-or apply it as a decorator.
+Now you can use the container as a service locator or apply it as a decorator.
 
 ```python
 weather_service = container.get(WeatherService)

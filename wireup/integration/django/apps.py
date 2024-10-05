@@ -5,11 +5,12 @@ from typing import TYPE_CHECKING, Any
 
 import django
 import django.urls
-from django.apps import AppConfig
+from django.apps import AppConfig, apps
 from django.conf import settings
 from django.urls import URLPattern, URLResolver
 
 import wireup
+from wireup import DependencyContainer
 
 if TYPE_CHECKING:
     from django.http import HttpRequest
@@ -20,7 +21,10 @@ if TYPE_CHECKING:
 class WireupConfig(AppConfig):
     """Integrate wireup with Django."""
 
-    name = "wireup.integration.django"
+    name = "wireup"
+
+    def __init__(self, app_name: str, app_module: Any | None) -> None:
+        super().__init__(app_name, app_module)
 
     def ready(self) -> None:
         integration_settings: WireupSettings = settings.WIREUP
@@ -71,3 +75,8 @@ class WireupConfig(AppConfig):
             return self.dispatch(request, *args, **kwargs)
 
         return view
+
+
+def get_container() -> DependencyContainer:
+    """Return the container instance associated with the current django application."""
+    return apps.get_app_config(WireupConfig.name).container  # type: ignore[reportAttributeAccessIssue]
