@@ -1,17 +1,13 @@
 Wireup configuration can be injected through annotations or programmatically using factory functions. 
 You can also mix and match the two as necessary.
 
-## @ Annotations
-
-This declarative approach uses configuration metadata provided by decorators and annotations to define services and dependencies between them.
+**Annotations**: This declarative approach uses configuration metadata provided by decorators and annotations to define services and dependencies between them.
 It allows you to declare the final state and let the container handle the rest.
 
 This generally results in less boilerplate code compared to a programmatic approach and is how many popular frameworks operate.
 
 
-## 🏭 Programmatic
-
-With a programmatic approach, you have full control over how services are created and can keep service
+**🏭 Programmatic**: With a programmatic approach, you have full control over how services are created and can keep service
 definitions free of container references if this is important to you.
 
 This approach results in more code as you will need to write these factories and construct services yourself.
@@ -21,8 +17,11 @@ with the major difference being that you won't need to `Depends(get_service_from
 
 Factories can request dependencies as usual and may use annotations for configuration.
 
+---
+
 ## @ Annotation-based configuration
-In addition to service objects, the container also holds configuration, called parameters.
+In addition to service objects, the container also holds configuration, called parameters
+that can be used to configure services.
 
 !!! warning
     **Parameters represent application configuration**. 
@@ -35,12 +34,6 @@ In addition to service objects, the container also holds configuration, called p
 #### By name
 
 To inject a parameter by name, annotate the type with `Inject(param="param_name")`.
-
-```python
-@container.autowire
-def target(cache_dir: Annotated[str, Inject(param="cache_dir")]) -> None:
-    ...
-```
 
 ```python
 @service
@@ -56,7 +49,6 @@ It is possible to interpolate parameters using a special syntax. This will enabl
 **Note:** As the result is a string, non-string parameters will be converted using `str()`.
 
 ```python
-@container.autowire
 def target(logs_dir: Annotated[str, Inject(expr="${cache_dir}/${env}/logs")]) -> None:
     ...
 ```
