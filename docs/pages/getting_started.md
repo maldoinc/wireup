@@ -1,10 +1,13 @@
 Wireup can be used standalone as a DI container/service locator
 or it can be integrated with common frameworks for simplified usage.
 
+This guide will show you how to use the basics of the container
+and will include links to the various integrations at the end.
+
 
 ## Guide
 
-### Setup
+### 1. Setup
 
 Install wireup using pip or your favorite package manager.
 
@@ -14,7 +17,7 @@ $ pip install wireup
 
 The first step is to create a container. 
 
-```python title="app/__init__.py"
+```python title="container.py"
 import wireup
 
 container = wireup.create_container(
@@ -32,9 +35,17 @@ container = wireup.create_container(
 container.warmup()
 ```
 
-### Declare services
+??? note "Read: Global variables"
+    Using this approach means relying on global state, which ties your application to a single container instance. 
+    This might be sufficient for you and that's okay but, if you want to avoid global state, it's better to create 
+    the container within your application factory and provide a way to access it from the created application instance.
 
-The container uses configuration metadata provided from decorators and annotations 
+    With the available integrations, global state is neither necessary nor recommended.
+
+
+### 2. Declare services
+
+The container uses configuration metadata from decorators and annotations 
 to define services and the dependencies between them. 
 This means that the service declaration is self-contained and does not require additional setup for most use cases.
 
@@ -77,7 +88,7 @@ class WeatherService:
 
 
 
-### Use the container
+### 3. Use
 
 Now you can use the container as a service locator or apply it as a decorator.
 

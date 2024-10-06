@@ -42,7 +42,7 @@ container = wireup.create_container(
     service_modules=[services], 
     parameters=get_settings_dict()
 )
-wireup.integration.setup(FastApiIntegration(container, app))
+wireup.integration.flask.setup(container, app)
 ```
 
 ## Api Reference

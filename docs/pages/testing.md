@@ -30,8 +30,8 @@ which help with overriding dependencies
 
 
 !!! tip
-    If you're using an integration to get the container instance you can use the `wireup.get_container(app)` method.
-    This will return the container associated with your application.
+    If you're using an integration to get the container instance you can use the `wireup.integration.xxx.get_container` 
+    method. This returns the container associated with your application.
 
 ### Examples
 
@@ -60,7 +60,7 @@ def create_app():
 
     container = wireup.create_container(...)
     # Example shows FastAPI but any integration will work the same.
-    wireup.setup_integration(FastApiIntegration(container, app))
+    wireup.integration.fastapi.setup(container, app)
 
     return app
 ```
@@ -74,8 +74,10 @@ def app():
 ```
 
 ```python title="some_test_file.py"
+from wireup.integration.fastapi import get_container
+
 def test_something_with_mocked_db_service(client: TestClient, app):
-    with wireup.get_container(app).override.service(DBService, new=...):
+    with get_container(app).override.service(DBService, new=...):
         response = client.get("/some/path")
 
     # Assert response and mock calls.
@@ -84,9 +86,11 @@ def test_something_with_mocked_db_service(client: TestClient, app):
 It is also possible to add a fixture to fetch the container to avoid the `get_container` call.
 
 ```python title="conftest.py"
+from wireup.integration.fastapi import get_container
+
 @pytest.fixture
 def container(app) -> DependencyContainer:
-    return create_app()
+    return get_container(app)
 ```
 
 ```python title="some_test_file.py"
