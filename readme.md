@@ -37,7 +37,6 @@ Example showcasing a Redis wrapper and a weather service that calls an external 
 ```python
 import wireup
 
-
 container = wireup.create_container(
     # Parameters serve as application/service configuration.
     parameters={
