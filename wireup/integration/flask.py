@@ -14,8 +14,7 @@ def _autowire_views(container: DependencyContainer, app: Flask) -> None:
 def setup(container: DependencyContainer, app: Flask, *, import_flask_config: bool = False) -> None:
     """Integrate Wireup with Flask.
 
-    This can import Flask config in the container and will automatically inject dependencies on
-    Flask views.
+    This can import Flask config in the container and will automatically inject dependencies in views.
     """
     if import_flask_config:
         container.params.update(dict(app.config.items()))  # type: ignore[reportArgumentType]
@@ -25,5 +24,5 @@ def setup(container: DependencyContainer, app: Flask, *, import_flask_config: bo
 
 
 def get_container(app: Flask) -> DependencyContainer:
-    """Return the container associated with the given Flask application."""
+    """Return the container associated with the given application."""
     return app.wireup_container  # type: ignore[reportAttributeAccessIssue]
