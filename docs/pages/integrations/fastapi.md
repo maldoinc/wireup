@@ -37,13 +37,33 @@ async def target(
 
 # Initialize the integration.
 # Must be called after views have been registered.
-# Pass to service_modules a list of top-level modules where your services reside.
+# service_modules is a list of top-level modules with service registrations.
 container = wireup.create_container(
     service_modules=[services], 
     parameters=get_settings_dict()
 )
-wireup.integration.flask.setup(container, app)
+wireup.integration.fastapi.setup(container, app)
 ```
+
+### Testing
+
+For general testing tips with Wireup refer to the [test docs](../testing.md). 
+With the FastAPI integration you can override dependencies in the container as follows.
+
+```python title="test_thing.py"
+from wireup.integration.fastapi import get_container
+
+def test_override():
+    class DummyGreeter(GreeterService):
+        def greet(self, name: str) -> str:
+            return f"Hi, {name}"
+
+    with get_container(app).override.service(GreeterService, new=DummyGreeter()):
+        res = self.client.get("/greet?name=Test")
+```
+
+See [FastAPI integration tests](https://github.com/maldoinc/wireup/blob/master/test/integration/test_fastapi_integration.py)
+for more examples.
 
 ## Api Reference
 
