@@ -12,19 +12,15 @@ from wireup.integration.fastapi import get_container
 
 from test.unit.services.no_annotations.random.random_service import RandomService
 
-is_lucky_number_invoked = False
-
 
 def get_lucky_number() -> int:
-    global is_lucky_number_invoked  # noqa: PLW0603
-
     # Raise if this will be invoked more than once
     # That would be the case if wireup also "unwraps" and tries
     # to resolve dependencies it doesn't own.
-    if is_lucky_number_invoked:
+    if hasattr(get_lucky_number, "_called"):
         raise Exception("Lucky Number was already invoked")
 
-    is_lucky_number_invoked = True
+    get_lucky_number._called = True
     return 42
 
 
