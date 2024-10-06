@@ -1,0 +1,40 @@
+.md-header,
+.md-tabs {
+    background-color: #242b3f;
+}
+
+.md-typeset {
+    font-size: .7rem;
+}
+
+.highlight {
+    font-size: .75rem;
+}
+
+dd,
+dd p {
+    margin-top: 0 !important;
+}
+
+.doc-heading {
+    font-size: 1rem !important;
+}
+
+.card-container {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+body[data-md-color-scheme="default"] .grid.cards>ul>li {
+    border: 1px solid #ddd !important;
+}
+
+body[data-md-color-scheme="slate"] .grid.cards>ul>li {
+    border: 1px solid var(--md-default-fg-color--lightest) !important;
+}
+
+.grid.cards>ul>li span.twemoji {
+    vertical-align: text-bottom;
+}
