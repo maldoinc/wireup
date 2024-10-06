@@ -1,11 +1,11 @@
 import unittest
 from unittest.mock import MagicMock
 
-import wireup
+import wireup.integration.flask
 from flask import Flask
 from typing_extensions import Annotated
-from wireup import Inject, create_container, get_container
-from wireup.integration.flask_integration import FlaskIntegration
+from wireup import Inject, create_container
+from wireup.integration.flask import get_container
 
 from test.fixtures import FooBase
 from test.integration.flask import services
@@ -37,12 +37,8 @@ def create_app() -> Flask:
     def _foo(foo: IsTestService):
         return {"test": foo.is_test}
 
-    wireup.setup_integration(
-        FlaskIntegration(
-            create_container(service_modules=[services], parameters={"custom_params": True}),
-            app,
-            import_flask_config=True,
-        ),
+    wireup.integration.flask.setup(
+        create_container(service_modules=[services], parameters={"custom_params": True}), app, import_flask_config=True
     )
 
     return app
