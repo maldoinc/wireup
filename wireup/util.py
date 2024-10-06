@@ -59,6 +59,9 @@ def initialize_container(
     if parameters:
         dependency_container.params.update(parameters)
 
+    _register_services(dependency_container, service_modules)
+    dependency_container.warmup()
+
 
 def warmup_container(dependency_container: DependencyContainer, service_modules: list[ModuleType]) -> None:
     """Trigger service registrations in `service_modules` and initialize registered singleton services.
