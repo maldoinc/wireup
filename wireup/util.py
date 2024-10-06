@@ -54,7 +54,6 @@ def initialize_container(
         DeprecationWarning,
         stacklevel=2,
     )
-    _register_services(dependency_container, service_modules)
 
     if parameters:
         dependency_container.params.update(parameters)
