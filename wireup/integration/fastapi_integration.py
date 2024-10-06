@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import warnings
 from typing import TYPE_CHECKING
 
 from fastapi import FastAPI
@@ -33,5 +34,11 @@ def wireup_init_fastapi_integration(
     The default wireup singleton will be used when this is unset.
     This will be a noop and have no performance penalty for views which do not use the container.
     """
+    warnings.warn(
+        "Using wireup_init_fastapi_integration is deprecated. "
+        "Use wireup.create_container in conjunction with wireup.integration.fastapi.setup. "
+        "See: https://maldoinc.github.io/wireup/latest/integrations/fastapi/",
+        stacklevel=2,
+    )
     initialize_container(dependency_container, service_modules=service_modules)
     _autowire_views(dependency_container, app)

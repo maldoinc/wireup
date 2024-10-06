@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import warnings
 from typing import TYPE_CHECKING, Any
 
 from wireup import DependencyContainer, container, initialize_container
@@ -32,6 +33,12 @@ def wireup_init_flask_integration(
     :param config_prefix: If set to a value all registered configuration will be prefixed with config and be accessible
     via "prefix.config_name". E.g: app.DEBUG.
     """
+    warnings.warn(
+        "Using wireup_init_flask_integration is deprecated. "
+        "Use wireup.create_container in conjunction with wireup.integration.flask.setup. "
+        "See: https://maldoinc.github.io/wireup/latest/integrations/flask/",
+        stacklevel=2,
+    )
     config: dict[str, Any] = flask_app.config
     if config_prefix:
         config = {f"{config_prefix}.{name}": val for name, val in config.items()}

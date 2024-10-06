@@ -48,6 +48,11 @@ def initialize_container(
     :param parameters: Parameters to be added to the container.
 
     """
+    warnings.warn(
+        "Using initialize_container is deprecated. "
+        "Use wireup.create_container instead. See: https://maldoinc.github.io/wireup/latest/getting_started/",
+        stacklevel=2,
+    )
     _register_services(dependency_container, service_modules)
 
     if parameters:
