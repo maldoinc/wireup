@@ -38,6 +38,7 @@ def wireup_init_fastapi_integration(
         "Using wireup_init_fastapi_integration is deprecated. "
         "Use wireup.create_container in conjunction with wireup.integration.fastapi.setup. "
         "See: https://maldoinc.github.io/wireup/latest/integrations/fastapi/",
+        DeprecationWarning,
         stacklevel=2,
     )
     initialize_container(dependency_container, service_modules=service_modules)

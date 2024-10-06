@@ -37,6 +37,7 @@ def wireup_init_flask_integration(
         "Using wireup_init_flask_integration is deprecated. "
         "Use wireup.create_container in conjunction with wireup.integration.flask.setup. "
         "See: https://maldoinc.github.io/wireup/latest/integrations/flask/",
+        DeprecationWarning,
         stacklevel=2,
     )
     config: dict[str, Any] = flask_app.config

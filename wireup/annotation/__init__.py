@@ -73,6 +73,7 @@ def wire(
     """Inject resources from the container to autowired method arguments."""
     warnings.warn(
         "Using Wire/wire aliases is deprecated. Prefer using Inject instead",
+        DeprecationWarning,
         stacklevel=2,
     )
     return Inject(param=param, expr=expr, qualifier=qualifier)
@@ -99,6 +100,7 @@ class ParameterEnum(Enum):
         warnings.warn(
             "ParameterEnum is deprecated. Please use type aliases instead. "
             "E.g.: SomeParam = Annotated[str, Inject(..)]",
+            DeprecationWarning,
             stacklevel=2,
         )
 

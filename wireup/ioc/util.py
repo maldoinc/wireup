@@ -43,6 +43,7 @@ def _get_metadata_from_default_value(parameter: Parameter) -> AnnotatedParameter
             "Please use Annotated types instead. "
             "E.g.: Annotated[Foo, Inject(...)]. "
             "See: https://maldoinc.github.io/wireup/latest/annotations/",
+            DeprecationWarning,
             stacklevel=2,
         )
 

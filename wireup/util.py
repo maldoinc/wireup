@@ -51,6 +51,7 @@ def initialize_container(
     warnings.warn(
         "Using initialize_container is deprecated. "
         "Use wireup.create_container instead. See: https://maldoinc.github.io/wireup/latest/getting_started/",
+        DeprecationWarning,
         stacklevel=2,
     )
     _register_services(dependency_container, service_modules)
@@ -67,6 +68,7 @@ def warmup_container(dependency_container: DependencyContainer, service_modules:
     """
     warnings.warn(
         "Using warmup_container is deprecated. Use 'initialize_container' instead",
+        DeprecationWarning,
         stacklevel=2,
     )
     initialize_container(dependency_container, service_modules=service_modules)
@@ -155,6 +157,7 @@ def register_all_in_module(
     warnings.warn(
         "Using register_all_in_module is deprecated. "
         "Use @service or factories in conjunction with initialize_container to register services.",
+        DeprecationWarning,
         stacklevel=2,
     )
     klass: type[Any]
@@ -170,6 +173,7 @@ def load_module(module: ModuleType) -> None:
     warnings.warn(
         "Using load_module is deprecated. "
         "Use @service or factories in conjunction with initialize_container to register services.",
+        DeprecationWarning,
         stacklevel=2,
     )
     _find_objects_in_module(module, lambda _: True)
