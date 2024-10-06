@@ -62,17 +62,16 @@ class WireupConfig(AppConfig):
 
         # This is taken from the django .as_view() method.
         def view(request: HttpRequest, *args: Any, **kwargs: Any) -> Any:
-            nonlocal self
             autowired_args = self.container._DependencyContainer__callable_get_params_to_inject(callback.view_class)  # type: ignore[reportAttributeAccessIssue] # noqa: SLF001
 
-            self = callback.view_class(**{**callback.view_initkwargs, **autowired_args})
-            self.setup(request, *args, **kwargs)
-            if not hasattr(self, "request"):
+            this = callback.view_class(**{**callback.view_initkwargs, **autowired_args})
+            this.setup(request, *args, **kwargs)
+            if not hasattr(this, "request"):
                 raise AttributeError(
                     "{} instance has no 'request' attribute. Did you override "  # noqa: EM103, UP032
                     "setup() and forget to call super()?".format(callback.view_class.__name__)
                 )
-            return self.dispatch(request, *args, **kwargs)
+            return this.dispatch(request, *args, **kwargs)
 
         return view
 
