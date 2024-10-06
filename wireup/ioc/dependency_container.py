@@ -3,6 +3,7 @@ from __future__ import annotations
 import asyncio
 import functools
 import sys
+import warnings
 from typing import TYPE_CHECKING, Any, TypeVar, overload
 
 from wireup.ioc.base_container import BaseContainer
@@ -140,6 +141,13 @@ class DependencyContainer(BaseContainer):
     @property
     def context(self) -> InitializationContext:
         """The initialization context for registered targets. A map between an injection target and its dependencies."""
+        warnings.warn(
+            "Using the initialization context directly is deprecated. "
+            "Register your services using @service/@abstract. "
+            "See: https://maldoinc.github.io/wireup/latest/getting_started/",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         return self._registry.context
 
     @property
@@ -157,6 +165,13 @@ class DependencyContainer(BaseContainer):
         allowing you to have a fresh copy of the container with no previously initialized instances
         to make test cases independent of each-other.
         """
+        warnings.warn(
+            "Using clear_initialized_objects is deprecated. "
+            "Recreate the container if you want to reset its state. "
+            "See: https://maldoinc.github.io/wireup/latest/testing/",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         self._initialized_objects.clear()
 
     def autowire(self, fn: AnyCallable) -> AnyCallable:
