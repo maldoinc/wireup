@@ -16,6 +16,6 @@ class WireupSettings:
 
     perform_warmup: bool = True
     """Setting this to true will cause the container to create
-    at application startup. The opposite is that services are
-    created on first use.
+    instances of services at application startup.
+    When set to false, services are created on first use.
     """
