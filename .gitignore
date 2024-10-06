@@ -1,6 +1,7 @@
 .venv
 .ruff_cache
 .idea
+.tox
 dist
 docs/site
 __pycache__
