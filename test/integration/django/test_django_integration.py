@@ -1,8 +1,8 @@
 import os
 import sys
-import unittest
 
 import django
+import pytest
 from django.test import Client
 from django.urls import path
 from wireup.integration.django import WireupSettings
@@ -24,31 +24,38 @@ urlpatterns = [
 ]
 
 
-class TestDjango(unittest.TestCase):
-    def setUp(self):
-        os.environ["DJANGO_SETTINGS_MODULE"] = "test.integration.django.test_django_integration"
-        django.setup()
-        self.client = Client()
+@pytest.fixture(autouse=True, scope="module")
+def django_setup() -> None:
+    os.environ["DJANGO_SETTINGS_MODULE"] = "test.integration.django.test_django_integration"
+    django.setup()
 
-    def test_django_thing(self):
-        res = self.client.get("/?name=World")
 
-        self.assertEqual(res.status_code, 200)
-        self.assertEqual(res.content.decode("utf8"), "Hello World! Debug = True. Your lucky number is 4")
+@pytest.fixture
+def client() -> Client:
+    return Client()
 
-    def test_get_random(self):
-        res = self.client.get("/classbased?name=Test")
 
-        self.assertEqual(res.status_code, 200)
-        self.assertEqual(res.content.decode("utf8"), "Hello Test! Debug = True. Your lucky number is 4")
+def test_django_thing(client: Client):
+    res = client.get("/?name=World")
 
-    def test_override(self):
-        class DummyGreeter(GreeterService):
-            def greet(self, name: str) -> str:
-                return f"Bad day to you, {name}"
+    assert res.status_code == 200
+    assert res.content.decode("utf8") == "Hello World! Debug = True. Your lucky number is 4"
 
-        with get_container().override.service(GreeterService, new=DummyGreeter()):
-            res = self.client.get("/classbased?name=Test")
 
-        self.assertEqual(res.status_code, 200)
-        self.assertEqual(res.content.decode("utf8"), "Bad day to you, Test! Debug = True. Your lucky number is 4")
+def test_get_random(client: Client):
+    res = client.get("/classbased?name=Test")
+
+    assert res.status_code == 200
+    assert res.content.decode("utf8") == "Hello Test! Debug = True. Your lucky number is 4"
+
+
+def test_override(client: Client):
+    class DummyGreeter(GreeterService):
+        def greet(self, name: str) -> str:
+            return f"Bad day to you, {name}"
+
+    with get_container().override.service(GreeterService, new=DummyGreeter()):
+        res = client.get("/classbased?name=Test")
+
+    assert res.status_code == 200
+    assert res.content.decode("utf8") == "Bad day to you, Test! Debug = True. Your lucky number is 4"
