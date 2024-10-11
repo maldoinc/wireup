@@ -1,5 +1,4 @@
-import unittest
-
+import pytest
 import wireup
 import wireup.integration
 import wireup.integration.fastapi
@@ -20,7 +19,7 @@ def get_lucky_number() -> int:
     if hasattr(get_lucky_number, "_called"):
         raise Exception("Lucky Number was already invoked")
 
-    get_lucky_number._called = True
+    get_lucky_number._called = True  # type: ignore[reportFunctionMemberAccess]
     return 42
 
 
@@ -42,7 +41,7 @@ def create_app() -> FastAPI:
         return {"foo": foo, "foo_foo": foo_foo}
 
     @app.get("/raise-unknown")
-    async def _(_unknown_service: Annotated[unittest.TestCase, Inject()]):
+    async def _(_unknown_service: Annotated[None, Inject()]):
         return {"msg": "Hello World"}
 
     container = wireup.create_container(service_modules=[], parameters={"foo": "bar"})
@@ -52,36 +51,42 @@ def create_app() -> FastAPI:
     return app
 
 
-class TestFastAPI(unittest.TestCase):
-    def setUp(self):
-        self.app = create_app()
-        self.client = TestClient(self.app)
+@pytest.fixture()
+def app() -> FastAPI:
+    return create_app()
 
-    def test_injects_service(self):
-        response = self.client.get("/lucky-number")
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json(), {"number": 4, "lucky_number": 42})
 
-    def test_override(self):
-        class RealRandom(RandomService):
-            def get_random(self):
-                return super().get_random() ** 2
+@pytest.fixture()
+def client(app: FastAPI) -> TestClient:
+    return TestClient(app)
 
-        with get_container(self.app).override.service(RandomService, new=RealRandom()):
-            response = self.client.get("/rng")
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json(), {"number": 16})
 
-    def test_injects_parameters(self):
-        response = self.client.get("/params")
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json(), {"foo": "bar", "foo_foo": "bar-bar"})
+def test_injects_service(client: TestClient):
+    response = client.get("/lucky-number")
+    assert response.status_code == 200
+    assert response.json() == {"number": 4, "lucky_number": 42}
 
-    def test_raises_on_unknown_service(self):
-        with self.assertRaises(UnknownServiceRequestedError) as e:
-            self.client.get("/raise-unknown")
 
-        self.assertEqual(
-            str(e.exception),
-            f"Cannot wire unknown class {unittest.TestCase}. Use '@service' or '@abstract' to enable autowiring.",
-        )
+def test_override(app: FastAPI, client: TestClient):
+    class RealRandom(RandomService):
+        def get_random(self) -> int:
+            return super().get_random() ** 2
+
+    with get_container(app).override.service(RandomService, new=RealRandom()):
+        response = client.get("/rng")
+    assert response.status_code == 200
+    assert response.json() == {"number": 16}
+
+
+def test_injects_parameters(client: TestClient):
+    response = client.get("/params")
+    assert response.status_code == 200
+    assert response.json() == {"foo": "bar", "foo_foo": "bar-bar"}
+
+
+def test_raises_on_unknown_service(client: TestClient):
+    with pytest.raises(
+        UnknownServiceRequestedError,
+        match="Cannot wire unknown class <class 'NoneType'>. Use '@service' or '@abstract' to enable autowiring.",
+    ):
+        client.get("/raise-unknown")

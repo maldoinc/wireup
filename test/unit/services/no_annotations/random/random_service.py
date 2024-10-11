@@ -1,3 +1,3 @@
 class RandomService:
-    def get_random(self):
+    def get_random(self) -> int:
         return 4
