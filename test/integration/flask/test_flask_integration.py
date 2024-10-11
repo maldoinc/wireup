@@ -1,8 +1,9 @@
-import unittest
 from unittest.mock import MagicMock
 
+import pytest
 import wireup.integration.flask
 from flask import Flask
+from flask.testing import FlaskClient
 from typing_extensions import Annotated
 from wireup import Inject, create_container
 from wireup.integration.flask import get_container
@@ -44,45 +45,50 @@ def create_app() -> Flask:
     return app
 
 
-class TestFlaskIntegration(unittest.TestCase):
-    def setUp(self):
-        self.app = create_app()
-        self.client = self.app.test_client()
+@pytest.fixture
+def app() -> Flask:
+    return create_app()
 
-    def test_get_random_is_autowired_only_from_type(self):
-        res = self.client.get("/random")
 
-        self.assertEqual(res.status_code, 200)
-        self.assertEqual(res.json, {"lucky_number": 4})
+@pytest.fixture
+def client(app: Flask):
+    return app.test_client()
 
-    def test_get_env_injects_from_params(self):
-        res = self.client.get("/env")
 
-        self.assertEqual(res.status_code, 200)
-        self.assertEqual(res.json, {"debug": False, "test": True})
+def test_get_random_is_autowired_only_from_type(client: FlaskClient) -> None:
+    res = client.get("/random")
+    assert res.status_code == 200
+    assert res.json == {"lucky_number": 4}
 
-    def test_will_not_autowire_when_no_injections_requested(self):
-        res = self.client.get("/not-autowired")
 
-        self.assertEqual(res.text, "not autowired")
+def test_get_env_injects_from_params(client: FlaskClient) -> None:
+    res = client.get("/env")
+    assert res.status_code == 200
+    assert res.json == {"debug": False, "test": True}
 
-    def test_autowires_view_with_interface(self):
-        res = self.client.get("/intf")
-        self.assertEqual(res.status_code, 200)
-        self.assertEqual(res.text, "bar")
 
-    def test_service_depends_on_flask_params(self):
-        res = self.client.get("/foo")
+def test_will_not_autowire_when_no_injections_requested(client: FlaskClient) -> None:
+    res = client.get("/not-autowired")
+    assert res.data.decode() == "not autowired"
 
-        self.assertEqual(res.status_code, 200)
-        self.assertEqual(res.json, {"test": True})
 
-    def test_service_override(self):
-        mocked_foo = MagicMock()
-        mocked_foo.is_test = "mocked"
+def test_autowires_view_with_interface(client: FlaskClient) -> None:
+    res = client.get("/intf")
+    assert res.status_code == 200
+    assert res.data.decode() == "bar"
 
-        with get_container(self.app).override.service(IsTestService, new=mocked_foo):
-            res = self.client.get("/foo")
 
-            self.assertEqual(res.status_code, 200)
-            self.assertEqual(res.json, {"test": "mocked"})
+def test_service_depends_on_flask_params(client: FlaskClient) -> None:
+    res = client.get("/foo")
+    assert res.status_code == 200
+    assert res.json == {"test": True}
+
+
+def test_service_override(client: FlaskClient, app: Flask):
+    mocked_foo = MagicMock()
+    mocked_foo.is_test = "mocked"
+
+    with get_container(app).override.service(IsTestService, new=mocked_foo):
+        res = client.get("/foo")
+        assert res.status_code == 200
+        assert res.json == {"test": "mocked"}
