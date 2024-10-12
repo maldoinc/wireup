@@ -87,7 +87,6 @@ class WeatherService:
 ```
 
 
-
 ### 3. Use
 
 Now you can use the container as a service locator or apply it as a decorator.
@@ -102,6 +101,21 @@ weather_service = container.get(WeatherService)
 async def get_forecast_view(weather_service: WeatherService):
     return await weather_service.get_forecast(...)
 ```
+
+### 4. Test
+
+Wireup does not patch your services which means they can be instantiated and tested independently of the container.
+
+To substitute dependencies on autowired targets such as views in a web application you can override dependencies with new ones on the fly.
+
+
+```python
+with container.override.service(WeatherService, new=test_weather_service):
+    response = client.get("/weather/forecast")
+```
+
+Requests to inject `WeatherService` during the lifetime of the context manager 
+will result in `test_weather_service` being injected instead.
 
 ## Conclusion
 

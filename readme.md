@@ -91,6 +91,20 @@ def get_weather_forecast_view(weather_service: WeatherService, request):
     return weather_service.get_forecast(request.lat, request.lon)
 ```
 
+**4. Test**
+
+Wireup does not patch your services which means they can be instantiated and tested independently of the container.
+
+To substitute dependencies on autowired targets such as views in a web application you can override dependencies with new ones on the fly.
+
+```python
+with container.override.service(WeatherService, new=test_weather_service):
+    response = client.get("/weather/forecast")
+```
+
+Requests to inject `WeatherService` during the lifetime of the context manager 
+will result in `test_weather_service` being injected instead.
+
 ## Share service layer betwen app/api and cli
 
 Many projects have a web application as well as a cli in the same project which
