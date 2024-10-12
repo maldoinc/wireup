@@ -45,6 +45,7 @@ Changelog = "https://github.com/maldoinc/wireup/releases"
 [tool.poetry.dependencies]
 python = "^3.8"
 graphlib2 = { version = "^0.4.7", python = ">=3.8,<3.9" }
+pytest = "^8.3.3"
 
 [tool.poetry.group.dev.dependencies]
 ruff = "0.6.1"
