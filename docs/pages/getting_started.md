@@ -109,7 +109,7 @@ This concludes the "Getting Started" walkthrough, covering the most common depen
 
 !!! info "Good to know"
     * The `@container.autowire` decorator is not needed for services.
-    * When using the [FastAPI](integrations/fastapi.md), or [Flask](integrations/flask.md) integrations,
+    * When using the provided integrations,
     decorating views with `@container.autowire` is no longer required.
     * Wireup can perform injection on both sync and async targets.
     * Every container you create is separate from the rest and has its own state.

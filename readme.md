@@ -21,7 +21,7 @@
 * Factory pattern.
 * Singleton and transient dependencies.
 * Framework-agnostic.
-* Apply the container anywhere as a decorator.
+* Apply the container as a decorator.
 * Service Locator.
 * Simplified use with [Django](https://maldoinc.github.io/wireup/latest/integrations/django/),
 [Flask](https://maldoinc.github.io/wireup/latest/integrations/flask/), and 
@@ -29,8 +29,6 @@
 * Share service layer between cli and api.
 
 ## 📋 Quickstart
-
-Example showcasing a Redis wrapper and a weather service that calls an external API and caches results as needed.
 
 **1. Set up**
 
@@ -87,7 +85,7 @@ weather_service = container.get(WeatherService)
 ```python
 @app.get("/weather/forecast")
 # ⬇️ Decorate functions to perform Dependency Injection.
-# Optional in views with Flask or FastAPI integrations.
+# No longer required when using the provided integrations.
 @container.autowire
 def get_weather_forecast_view(weather_service: WeatherService, request):
     return weather_service.get_forecast(request.lat, request.lon)
