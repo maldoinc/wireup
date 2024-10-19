@@ -5,8 +5,10 @@ import functools
 import inspect
 import sys
 import warnings
+from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, TypeVar, overload
 
+from wireup.ioc._exit_stack import clean_exit_stack
 from wireup.ioc.base_container import BaseContainer
 
 if sys.version_info < (3, 9):
@@ -15,7 +17,6 @@ else:
     from graphlib import TopologicalSorter
 
 from wireup.errors import (
-    ContainerCloseError,
     InvalidRegistrationTypeError,
     UnknownServiceRequestedError,
     WireupError,
@@ -36,6 +37,18 @@ if TYPE_CHECKING:
     from wireup.ioc.parameter import ParameterBag
 
 T = TypeVar("T")
+
+
+@dataclass
+class CreationResult:
+    instance: Any
+    exit_stack: list[GeneratorType[Any, Any, Any]]
+
+
+@dataclass
+class InjectionResult:
+    args: dict[str, Any]
+    exit_stack: list[GeneratorType[Any, Any, Any]]
 
 
 class DependencyContainer(BaseContainer):
@@ -80,7 +93,11 @@ class DependencyContainer(BaseContainer):
             return instance  # type: ignore[no-any-return]
 
         if res := self.__create_instance(klass, qualifier):
-            return res
+            if res.exit_stack:
+                msg = "Generators are not currently supported with transient-scoped dependencies."
+                raise WireupError(msg)
+
+            return res.instance
 
         raise UnknownServiceRequestedError(klass)
 
@@ -199,13 +216,21 @@ class DependencyContainer(BaseContainer):
 
             @functools.wraps(fn)
             async def async_inner(*args: Any, **kwargs: Any) -> Any:
-                return await fn(*args, **{**kwargs, **self.__callable_get_params_to_inject(fn)})
+                res = self.__callable_get_params_to_inject(fn)
+                try:
+                    return await fn(*args, **{**kwargs, **res.args})
+                finally:
+                    clean_exit_stack(res.exit_stack)
 
             return async_inner
 
         @functools.wraps(fn)
         def sync_inner(*args: Any, **kwargs: Any) -> Any:
-            return fn(*args, **{**kwargs, **self.__callable_get_params_to_inject(fn)})
+            res = self.__callable_get_params_to_inject(fn)
+            try:
+                return fn(*args, **{**kwargs, **res.args})
+            finally:
+                clean_exit_stack(res.exit_stack)
 
         return sync_inner
 
@@ -222,15 +247,20 @@ class DependencyContainer(BaseContainer):
                 if (klass, qualifier) not in self._initialized_objects:
                     self.get(klass, qualifier)
 
-    def __callable_get_params_to_inject(self, fn: AnyCallable) -> dict[str, Any]:
+    def __callable_get_params_to_inject(self, fn: AnyCallable) -> InjectionResult:
         result: dict[str, Any] = {}
         names_to_remove: set[str] = set()
+        exit_stack: list[GeneratorType[Any, Any, Any]] = []
 
         for name, param in self._registry.context.dependencies[fn].items():
             obj, value_found = self._try_get_existing_value(param)
 
-            if value_found or (param.klass and (obj := self.__create_instance(param.klass, param.qualifier_value))):
+            if value_found:
                 result[name] = obj
+            elif param.klass and (creation := self.__create_instance(param.klass, param.qualifier_value)):
+                if creation.exit_stack:
+                    exit_stack.extend(creation.exit_stack)
+                result[name] = creation.instance
             else:
                 # Normally the container won't throw if it encounters a type it doesn't know about
                 # But if it's explicitly marked as to be injected then we need to throw.
@@ -244,42 +274,38 @@ class DependencyContainer(BaseContainer):
         if names_to_remove:
             self._registry.context.remove_dependencies(fn, names_to_remove)
 
-        return result
+        return InjectionResult(args=result, exit_stack=exit_stack)
 
-    def __create_instance(self, klass: type[T], qualifier: Qualifier | None) -> T | None:
+    def __create_instance(self, klass: type[T], qualifier: Qualifier | None) -> CreationResult | None:
         if res := self._get_ctor(klass=klass, qualifier=qualifier):
             ctor, resolved_type = res
-            instance_or_generator = ctor(**self.__callable_get_params_to_inject(ctor))
+            injection_result = self.__callable_get_params_to_inject(ctor)
+            instance_or_generator = ctor(**injection_result.args)
+            is_singleton = self._registry.is_impl_singleton(resolved_type)
 
             if inspect.isgenerator(instance_or_generator):
-                self.__exit_stack.append(instance_or_generator)
                 instance = next(instance_or_generator)
-                is_generator = True
-            else:
-                instance = instance_or_generator
-                is_generator = False
 
-            if self._registry.is_impl_singleton(resolved_type):
+                if is_singleton:
+                    self.__exit_stack.append(instance_or_generator)
+                    self._initialized_objects[resolved_type, qualifier] = instance
+
+                return CreationResult(
+                    instance=instance,
+                    exit_stack=injection_result.exit_stack
+                    if is_singleton
+                    else [*injection_result.exit_stack, instance_or_generator],
+                )
+
+            instance = instance_or_generator
+
+            if is_singleton:
                 self._initialized_objects[resolved_type, qualifier] = instance
-            elif is_generator:
-                msg = "Generators are not currently supported with transient-scoped dependencies."
-                raise WireupError(msg)
 
-            return instance
+            return CreationResult(instance=instance, exit_stack=injection_result.exit_stack)
 
         return None
 
     def close(self) -> None:
         """Consume generator factories allowing them to properly release resources."""
-        errors: list[Exception] = []
-
-        while self.__exit_stack and (gen := self.__exit_stack.pop()):
-            try:
-                gen.send(None)
-            except StopIteration:  # noqa: PERF203
-                pass
-            except Exception as e:  # noqa: BLE001
-                errors.append(e)
-
-        if errors:
-            raise ContainerCloseError(errors)
+        clean_exit_stack(self.__exit_stack)
