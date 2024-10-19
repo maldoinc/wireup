@@ -1,10 +1,14 @@
-from collections.abc import Iterator
-from typing import NewType
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, NewType
 
 import pytest
 from wireup import DependencyContainer, ParameterBag
 from wireup.errors import ContainerCloseError, WireupError
 from wireup.ioc.types import ServiceLifetime
+
+if TYPE_CHECKING:
+    from collections.abc import Iterator
 
 
 def test_cleans_up_on_exit() -> None:
