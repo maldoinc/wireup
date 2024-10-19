@@ -39,14 +39,14 @@ if TYPE_CHECKING:
 T = TypeVar("T")
 
 
-@dataclass
-class CreationResult:
+@dataclass(slots=True, kw_only=True, frozen=True)
+class _CreationResult:
     instance: Any
     exit_stack: list[GeneratorType[Any, Any, Any]]
 
 
-@dataclass
-class InjectionResult:
+@dataclass(slots=True, kw_only=True, frozen=True)
+class _InjectionResult:
     args: dict[str, Any]
     exit_stack: list[GeneratorType[Any, Any, Any]]
 
@@ -94,7 +94,7 @@ class DependencyContainer(BaseContainer):
 
         if res := self.__create_instance(klass, qualifier):
             if res.exit_stack:
-                msg = "Generators are not currently supported with transient-scoped dependencies."
+                msg = "Container.get does not support Transient lifetime service generator factories."
                 raise WireupError(msg)
 
             return res.instance
@@ -247,7 +247,7 @@ class DependencyContainer(BaseContainer):
                 if (klass, qualifier) not in self._initialized_objects:
                     self.get(klass, qualifier)
 
-    def __callable_get_params_to_inject(self, fn: AnyCallable) -> InjectionResult:
+    def __callable_get_params_to_inject(self, fn: AnyCallable) -> _InjectionResult:
         result: dict[str, Any] = {}
         names_to_remove: set[str] = set()
         exit_stack: list[GeneratorType[Any, Any, Any]] = []
@@ -274,9 +274,9 @@ class DependencyContainer(BaseContainer):
         if names_to_remove:
             self._registry.context.remove_dependencies(fn, names_to_remove)
 
-        return InjectionResult(args=result, exit_stack=exit_stack)
+        return _InjectionResult(args=result, exit_stack=exit_stack)
 
-    def __create_instance(self, klass: type[T], qualifier: Qualifier | None) -> CreationResult | None:
+    def __create_instance(self, klass: type[T], qualifier: Qualifier | None) -> _CreationResult | None:
         if res := self._get_ctor(klass=klass, qualifier=qualifier):
             ctor, resolved_type = res
             injection_result = self.__callable_get_params_to_inject(ctor)
@@ -290,7 +290,7 @@ class DependencyContainer(BaseContainer):
                     self.__exit_stack.append(instance_or_generator)
                     self._initialized_objects[resolved_type, qualifier] = instance
 
-                return CreationResult(
+                return _CreationResult(
                     instance=instance,
                     exit_stack=injection_result.exit_stack
                     if is_singleton
@@ -302,7 +302,7 @@ class DependencyContainer(BaseContainer):
             if is_singleton:
                 self._initialized_objects[resolved_type, qualifier] = instance
 
-            return CreationResult(instance=instance, exit_stack=injection_result.exit_stack)
+            return _CreationResult(instance=instance, exit_stack=injection_result.exit_stack)
 
         return None
 

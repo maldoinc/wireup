@@ -1,5 +1,6 @@
 import timeit
 import unittest
+from collections.abc import Iterator
 from dataclasses import dataclass
 from typing import Optional
 
@@ -32,17 +33,21 @@ class C:
         return self.a.a() * self.b.b()
 
 
+def c_factory(b: B, a: A) -> Iterator[C]:
+    yield C(a=a, b=b)
+
+
 class UnitTestInject(unittest.TestCase):
     def setUp(self):
         self.container = DependencyContainer(ParameterBag())
         self.container.params.put("start", 4)
-        self.container.register(C)
+        self.container.register(c_factory)
         self.container.register(B)
         self.container.register(A)
 
         self.container_optimized = DependencyContainer(ParameterBag())
         self.container_optimized.params.put("start", 4)
-        self.container_optimized.register(C)
+        self.container_optimized.register(c_factory)
         self.container_optimized.register(B)
         self.container_optimized.register(A)
         self.container_optimized.warmup()

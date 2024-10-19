@@ -36,7 +36,34 @@ def test_raises_on_transient_dependency() -> None:
     with pytest.raises(WireupError) as e:
         c.get(Something)
 
-    assert str(e.value) == "Generators are not currently supported with transient-scoped dependencies."
+    assert str(e.value) == "Container.get does not support Transient lifetime service generator factories."
+
+
+def test_injects_transient() -> None:
+    _cleanups: list[str] = []
+    Something = NewType("Something", str)
+    SomethingElse = NewType("SomethingElse", str)
+
+    def f1() -> Iterator[Something]:
+        yield Something("Something")
+        nonlocal _cleanups
+        _cleanups.append("f1")
+
+    def f2(something: Something) -> Iterator[SomethingElse]:
+        yield SomethingElse(f"{something} else")
+        nonlocal _cleanups
+        _cleanups.append("f2")
+
+    c = DependencyContainer(ParameterBag())
+    c.register(f1, lifetime=ServiceLifetime.TRANSIENT)
+    c.register(f2, lifetime=ServiceLifetime.TRANSIENT)
+
+    @c.autowire
+    def target(_: SomethingElse) -> None:
+        pass
+
+    target()
+    assert _cleanups == ["f2", "f1"]
 
 
 def test_cleans_up_in_order() -> None:
