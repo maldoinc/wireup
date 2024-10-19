@@ -47,7 +47,7 @@ class _CreationResult:
 
 @dataclass(frozen=True)
 class _InjectionResult:
-    args: dict[str, Any]
+    kwargs: dict[str, Any]
     exit_stack: list[GeneratorType[Any, Any, Any]]
 
 
@@ -218,7 +218,7 @@ class DependencyContainer(BaseContainer):
             async def async_inner(*args: Any, **kwargs: Any) -> Any:
                 res = self.__callable_get_params_to_inject(fn)
                 try:
-                    return await fn(*args, **{**kwargs, **res.args})
+                    return await fn(*args, **{**kwargs, **res.kwargs})
                 finally:
                     clean_exit_stack(res.exit_stack)
 
@@ -228,7 +228,7 @@ class DependencyContainer(BaseContainer):
         def sync_inner(*args: Any, **kwargs: Any) -> Any:
             res = self.__callable_get_params_to_inject(fn)
             try:
-                return fn(*args, **{**kwargs, **res.args})
+                return fn(*args, **{**kwargs, **res.kwargs})
             finally:
                 clean_exit_stack(res.exit_stack)
 
@@ -274,7 +274,7 @@ class DependencyContainer(BaseContainer):
         if names_to_remove:
             self._registry.context.remove_dependencies(fn, names_to_remove)
 
-        return _InjectionResult(args=result, exit_stack=exit_stack)
+        return _InjectionResult(kwargs=result, exit_stack=exit_stack)
 
     def __create_instance(self, klass: type[T], qualifier: Qualifier | None) -> _CreationResult | None:
         ctor_and_type = self._get_ctor(klass=klass, qualifier=qualifier)
@@ -284,7 +284,7 @@ class DependencyContainer(BaseContainer):
 
         ctor, resolved_type = ctor_and_type
         injection_result = self.__callable_get_params_to_inject(ctor)
-        instance_or_generator = ctor(**injection_result.args)
+        instance_or_generator = ctor(**injection_result.kwargs)
         is_singleton = self._registry.is_impl_singleton(resolved_type)
 
         if inspect.isgenerator(instance_or_generator):

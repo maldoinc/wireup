@@ -68,7 +68,7 @@ class WireupConfig(AppConfig):
                 callback.view_class
             )
 
-            this = callback.view_class(**{**callback.view_initkwargs, **autowired_args.args})
+            this = callback.view_class(**{**callback.view_initkwargs, **autowired_args.kwargs})
             try:
                 this.setup(request, *args, **kwargs)
                 if not hasattr(this, "request"):
