@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 import inspect
+import typing
 from collections import defaultdict
-from inspect import Parameter
 from typing import TYPE_CHECKING, Any, Callable, TypeVar
 
 from wireup.errors import (
@@ -26,6 +26,21 @@ if TYPE_CHECKING:
 
 
 T = TypeVar("T")
+
+
+def _function_get_unwrapped_return_type(fn: Callable[..., Any]) -> type | None:
+    if ret := fn.__annotations__.get("return"):
+        if inspect.isgeneratorfunction(fn):
+            args = typing.get_args(ret)
+
+            if not args:
+                return None
+
+            return args[0]
+
+        return ret
+
+    return None
 
 
 class ServiceRegistry:
@@ -64,9 +79,9 @@ class ServiceRegistry:
     def register_factory(
         self, fn: Callable[..., Any], lifetime: ServiceLifetime, qualifier: Qualifier | None = None
     ) -> None:
-        return_type = inspect.signature(fn).return_annotation
+        return_type = _function_get_unwrapped_return_type(fn)
 
-        if return_type is Parameter.empty:
+        if return_type is None:
             raise FactoryReturnTypeIsEmptyError
 
         if self.is_impl_known_from_factory(return_type, qualifier):

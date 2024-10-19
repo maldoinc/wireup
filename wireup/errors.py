@@ -104,3 +104,11 @@ class UnknownOverrideRequestedError(WireupError):
 
     def __init__(self, klass: type, qualifier: Qualifier | None) -> None:
         super().__init__(f"Cannot override unknown {klass} with qualifier '{qualifier}'.")
+
+
+class ContainerCloseError(WireupError):
+    """Contains a list of exceptions raised while closing the container."""
+
+    def __init__(self, errors: list[Exception]) -> None:
+        self.errors = errors
+        super().__init__(f"The following exceptions were raised while closing the container: {errors}")

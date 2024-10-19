@@ -2,8 +2,10 @@ from __future__ import annotations
 
 import asyncio
 import functools
+import inspect
 import sys
 import warnings
+from types import GeneratorType
 from typing import TYPE_CHECKING, Any, TypeVar, overload
 
 from wireup.ioc.base_container import BaseContainer
@@ -14,6 +16,7 @@ else:
     from graphlib import TopologicalSorter
 
 from wireup.errors import (
+    ContainerCloseError,
     InvalidRegistrationTypeError,
     UnknownServiceRequestedError,
 )
@@ -50,9 +53,12 @@ class DependencyContainer(BaseContainer):
     be located from type alone.
     """
 
+    __slots__ = ("__exit_stack",)
+
     def __init__(self, parameter_bag: ParameterBag) -> None:
         """:param parameter_bag: ParameterBag instance holding parameter information."""
         super().__init__(registry=ServiceRegistry(), parameters=parameter_bag, overrides={})
+        self.__exit_stack: list[GeneratorType[Any, Any, Any]] = []
 
     def get(self, klass: type[T], qualifier: Qualifier | None = None) -> T:
         """Get an instance of the requested type.
@@ -242,7 +248,13 @@ class DependencyContainer(BaseContainer):
     def __create_instance(self, klass: type[T], qualifier: Qualifier | None) -> T | None:
         if res := self._get_ctor(klass=klass, qualifier=qualifier):
             ctor, resolved_type = res
-            instance = ctor(**self.__callable_get_params_to_inject(ctor))
+            instance_or_generator = ctor(**self.__callable_get_params_to_inject(ctor))
+
+            if inspect.isgenerator(instance_or_generator):
+                self.__exit_stack.append(instance_or_generator)
+                instance = next(instance_or_generator)
+            else:
+                instance = instance_or_generator
 
             if self._registry.is_impl_singleton(resolved_type):
                 self._initialized_objects[resolved_type, qualifier] = instance
@@ -250,3 +262,18 @@ class DependencyContainer(BaseContainer):
             return instance
 
         return None
+
+    def close(self) -> None:
+        """Consume generator factories allowing them to properly release resources."""
+        errors: list[Exception] = []
+
+        while self.__exit_stack and (gen := self.__exit_stack.pop()):
+            try:
+                gen.send(None)
+            except StopIteration:  # noqa: PERF203
+                pass
+            except Exception as e:  # noqa: BLE001
+                errors.append(e)
+
+        if errors:
+            raise ContainerCloseError(errors)
