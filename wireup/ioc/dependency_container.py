@@ -5,7 +5,6 @@ import functools
 import inspect
 import sys
 import warnings
-from types import GeneratorType
 from typing import TYPE_CHECKING, Any, TypeVar, overload
 
 from wireup.ioc.base_container import BaseContainer
@@ -31,6 +30,7 @@ from wireup.ioc.types import (
 
 if TYPE_CHECKING:
     from collections.abc import Callable
+    from types import GeneratorType
 
     from wireup.ioc.initialization_context import InitializationContext
     from wireup.ioc.parameter import ParameterBag
@@ -250,13 +250,14 @@ class DependencyContainer(BaseContainer):
         if res := self._get_ctor(klass=klass, qualifier=qualifier):
             ctor, resolved_type = res
             instance_or_generator = ctor(**self.__callable_get_params_to_inject(ctor))
-            is_generator = inspect.isgenerator(instance_or_generator)
 
-            if is_generator:
+            if inspect.isgenerator(instance_or_generator):
                 self.__exit_stack.append(instance_or_generator)
                 instance = next(instance_or_generator)
+                is_generator = True
             else:
                 instance = instance_or_generator
+                is_generator = False
 
             if self._registry.is_impl_singleton(resolved_type):
                 self._initialized_objects[resolved_type, qualifier] = instance

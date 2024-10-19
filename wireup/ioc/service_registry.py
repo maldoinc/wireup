@@ -28,7 +28,7 @@ if TYPE_CHECKING:
 T = TypeVar("T")
 
 
-def _function_get_unwrapped_return_type(fn: Callable[..., Any]) -> type | None:
+def _function_get_unwrapped_return_type(fn: Callable[..., Any]) -> Any | None:
     if ret := fn.__annotations__.get("return"):
         if inspect.isgeneratorfunction(fn):
             args = typing.get_args(ret)

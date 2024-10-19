@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from collections.abc import Callable
 from typing import TYPE_CHECKING, Any, TypeVar
 
 from wireup.errors import (
@@ -15,6 +14,9 @@ from wireup.ioc.types import (
 )
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+    from types import GeneratorType
+
     from wireup import ParameterBag
     from wireup.ioc.service_registry import ServiceRegistry
     from wireup.ioc.types import ContainerObjectIdentifier, Qualifier
@@ -48,7 +50,9 @@ class BaseContainer:
         """Override registered container services with new values."""
         return self._override_mgr
 
-    def _get_ctor(self, klass: type[T], qualifier: Qualifier | None) -> tuple[Callable[..., Any], type[T]] | None:
+    def _get_ctor(
+        self, klass: type[T], qualifier: Qualifier | None
+    ) -> tuple[Callable[..., T | GeneratorType[T, Any, Any]], type[T]] | None:
         if ctor := self._registry.factory_functions.get((klass, qualifier)):
             return ctor, klass
 
