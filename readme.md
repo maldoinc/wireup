@@ -74,6 +74,16 @@ class WeatherService:
         ...
 ```
 
+Use factories if service requires special initialization or needs to perform cleanup.
+
+```python
+@service
+def db_session_factory(db_session: Session) -> Iterator[Session]:
+    with Session() as sess:
+        yield sess
+```
+
+
 **3. Use**
 
 Use the container as a service locator or apply it as a decorator to have it perform injection.
