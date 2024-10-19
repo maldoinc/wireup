@@ -97,7 +97,7 @@ class DependencyContainer(BaseContainer):
                 msg = "Container.get does not support Transient lifetime service generator factories."
                 raise WireupError(msg)
 
-            return res.instance
+            return res.instance  # type: ignore[no-any-return]
 
         raise UnknownServiceRequestedError(klass)
 

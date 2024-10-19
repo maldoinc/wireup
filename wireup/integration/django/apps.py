@@ -11,11 +11,13 @@ from django.urls import URLPattern, URLResolver
 
 import wireup
 from wireup import DependencyContainer
+from wireup.ioc._exit_stack import clean_exit_stack
 
 if TYPE_CHECKING:
     from django.http import HttpRequest
 
     from wireup.integration.django import WireupSettings
+    from wireup.ioc.dependency_container import _InjectionResult
 
 
 class WireupConfig(AppConfig):
@@ -62,16 +64,22 @@ class WireupConfig(AppConfig):
 
         # This is taken from the django .as_view() method.
         def view(request: HttpRequest, *args: Any, **kwargs: Any) -> Any:
-            autowired_args = self.container._DependencyContainer__callable_get_params_to_inject(callback.view_class)  # type: ignore[reportAttributeAccessIssue] # noqa: SLF001
+            autowired_args: _InjectionResult = self.container._DependencyContainer__callable_get_params_to_inject(  # type: ignore[reportAttributeAccessIssue]  # noqa: SLF001
+                callback.view_class
+            )
 
-            this = callback.view_class(**{**callback.view_initkwargs, **autowired_args})
-            this.setup(request, *args, **kwargs)
-            if not hasattr(this, "request"):
-                raise AttributeError(
-                    "{} instance has no 'request' attribute. Did you override "  # noqa: EM103, UP032
-                    "setup() and forget to call super()?".format(callback.view_class.__name__)
-                )
-            return this.dispatch(request, *args, **kwargs)
+            this = callback.view_class(**{**callback.view_initkwargs, **autowired_args.args})
+            try:
+                this.setup(request, *args, **kwargs)
+                if not hasattr(this, "request"):
+                    raise AttributeError(
+                        "{} instance has no 'request' attribute. Did you override "  # noqa: EM103, UP032
+                        "setup() and forget to call super()?".format(callback.view_class.__name__)
+                    )
+                return this.dispatch(request, *args, **kwargs)
+            finally:
+                if autowired_args.exit_stack:
+                    clean_exit_stack(autowired_args.exit_stack)
 
         return view
 
