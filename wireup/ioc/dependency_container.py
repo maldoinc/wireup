@@ -277,34 +277,36 @@ class DependencyContainer(BaseContainer):
         return _InjectionResult(args=result, exit_stack=exit_stack)
 
     def __create_instance(self, klass: type[T], qualifier: Qualifier | None) -> _CreationResult | None:
-        if res := self._get_ctor(klass=klass, qualifier=qualifier):
-            ctor, resolved_type = res
-            injection_result = self.__callable_get_params_to_inject(ctor)
-            instance_or_generator = ctor(**injection_result.args)
-            is_singleton = self._registry.is_impl_singleton(resolved_type)
+        ctor_and_type = self._get_ctor(klass=klass, qualifier=qualifier)
 
-            if inspect.isgenerator(instance_or_generator):
-                instance = next(instance_or_generator)
+        if not ctor_and_type:
+            return None
 
-                if is_singleton:
-                    self.__exit_stack.append(instance_or_generator)
-                    self._initialized_objects[resolved_type, qualifier] = instance
+        ctor, resolved_type = ctor_and_type
+        injection_result = self.__callable_get_params_to_inject(ctor)
+        instance_or_generator = ctor(**injection_result.args)
+        is_singleton = self._registry.is_impl_singleton(resolved_type)
 
-                return _CreationResult(
-                    instance=instance,
-                    exit_stack=injection_result.exit_stack
-                    if is_singleton
-                    else [*injection_result.exit_stack, instance_or_generator],
-                )
-
-            instance = instance_or_generator
+        if inspect.isgenerator(instance_or_generator):
+            instance = next(instance_or_generator)
 
             if is_singleton:
+                self.__exit_stack.append(instance_or_generator)
                 self._initialized_objects[resolved_type, qualifier] = instance
 
-            return _CreationResult(instance=instance, exit_stack=injection_result.exit_stack)
+            return _CreationResult(
+                instance=instance,
+                exit_stack=injection_result.exit_stack
+                if is_singleton
+                else [*injection_result.exit_stack, instance_or_generator],
+            )
 
-        return None
+        instance = instance_or_generator
+
+        if is_singleton:
+            self._initialized_objects[resolved_type, qualifier] = instance
+
+        return _CreationResult(instance=instance, exit_stack=injection_result.exit_stack)
 
     def close(self) -> None:
         """Consume generator factories allowing them to properly release resources."""
