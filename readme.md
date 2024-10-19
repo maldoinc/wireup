@@ -83,6 +83,9 @@ def db_session_factory(db_session: Session) -> Iterator[Session]:
         yield sess
 ```
 
+*Note*: If you use generator factories, call `container.close()` on termination for the necessary
+cleanup to take place.
+
 
 **3. Use**
 
