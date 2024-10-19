@@ -3,7 +3,8 @@ from typing import NewType
 
 import pytest
 from wireup import DependencyContainer, ParameterBag
-from wireup.errors import ContainerCloseError
+from wireup.errors import ContainerCloseError, WireupError
+from wireup.ioc.types import ServiceLifetime
 
 
 def test_cleans_up_on_exit() -> None:
@@ -21,6 +22,21 @@ def test_cleans_up_on_exit() -> None:
     assert c.get(Something) == Something("foo")
     c.close()
     assert _cleanup_performed
+
+
+def test_raises_on_transient_dependency() -> None:
+    Something = NewType("Something", str)
+
+    def some_factory() -> Iterator[Something]:
+        yield Something("foo")
+
+    c = DependencyContainer(ParameterBag())
+    c.register(some_factory, lifetime=ServiceLifetime.TRANSIENT)
+
+    with pytest.raises(WireupError) as e:
+        c.get(Something)
+
+    assert str(e.value) == "Generators are not currently supported with transient-scoped dependencies."
 
 
 def test_cleans_up_in_order() -> None:

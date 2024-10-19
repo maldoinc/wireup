@@ -19,6 +19,7 @@ from wireup.errors import (
     ContainerCloseError,
     InvalidRegistrationTypeError,
     UnknownServiceRequestedError,
+    WireupError,
 )
 from wireup.ioc.service_registry import ServiceRegistry
 from wireup.ioc.types import (
@@ -249,8 +250,9 @@ class DependencyContainer(BaseContainer):
         if res := self._get_ctor(klass=klass, qualifier=qualifier):
             ctor, resolved_type = res
             instance_or_generator = ctor(**self.__callable_get_params_to_inject(ctor))
+            is_generator = inspect.isgenerator(instance_or_generator)
 
-            if inspect.isgenerator(instance_or_generator):
+            if is_generator:
                 self.__exit_stack.append(instance_or_generator)
                 instance = next(instance_or_generator)
             else:
@@ -258,6 +260,9 @@ class DependencyContainer(BaseContainer):
 
             if self._registry.is_impl_singleton(resolved_type):
                 self._initialized_objects[resolved_type, qualifier] = instance
+            elif is_generator:
+                msg = "Generators are not currently supported with transient-scoped dependencies."
+                raise WireupError(msg)
 
             return instance
 
