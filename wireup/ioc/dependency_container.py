@@ -39,13 +39,13 @@ if TYPE_CHECKING:
 T = TypeVar("T")
 
 
-@dataclass(kw_only=True, frozen=True)
+@dataclass(frozen=True)
 class _CreationResult:
     instance: Any
     exit_stack: list[GeneratorType[Any, Any, Any]]
 
 
-@dataclass(kw_only=True, frozen=True)
+@dataclass(frozen=True)
 class _InjectionResult:
     args: dict[str, Any]
     exit_stack: list[GeneratorType[Any, Any, Any]]
