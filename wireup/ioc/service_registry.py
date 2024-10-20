@@ -11,7 +11,6 @@ from wireup.errors import (
     FactoryDuplicateServiceRegistrationError,
     FactoryReturnTypeIsEmptyError,
     UnknownQualifiedServiceRequestedError,
-    UnknownServiceRequestedError,
 )
 from wireup.ioc.initialization_context import InitializationContext
 from wireup.ioc.types import AnnotatedParameter, AutowireTarget, ServiceLifetime
@@ -187,11 +186,6 @@ class ServiceRegistry:
 
     def is_interface_known(self, klass: type) -> bool:
         return klass in self.known_interfaces
-
-    def assert_dependency_exists(self, klass: type, qualifier: Qualifier | None) -> None:
-        """Assert that there exists an impl or interface with that qualifier."""
-        if not self.is_type_with_qualifier_known(klass, qualifier):
-            raise UnknownServiceRequestedError(klass)
 
     def interface_resolve_impl(self, klass: type[T], qualifier: Qualifier | None) -> type[T]:
         """Given an interface and qualifier return the concrete implementation."""
