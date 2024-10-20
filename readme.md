@@ -124,7 +124,7 @@ Many projects have a web application as well as a cli in the same project which
 provides useful commands.
 
 Wireup makes it extremely easy to share the service layer between them without
-code duplication. For Examples refer to [maldoinc/wireup-demo](https://github.com/maldoinc/wireup-demo).
+code duplication. For examples refer to [maldoinc/wireup-demo](https://github.com/maldoinc/wireup-demo).
 
 ## Installation
 
