@@ -88,7 +88,7 @@ class WeatherService:
 
 !!! tip
     Wireup supports factories and generator factories (functions that use `yield` instead of `return`)
-    to perform service construction. [Learn More](factory_functions.md).
+    to perform service construction. [Learn More](factory_functions.md#use-a-generator-function-yield-instead-of-return).
 
     ```python
     @service
