@@ -35,7 +35,7 @@ container = wireup.create_container(
 container.warmup()
 ```
 
-??? note "Read: Global variables"
+??? abstract "Read: Global variables"
     Using this approach means relying on global state, which ties your application to a single container instance. 
     This might be sufficient for you and that's okay but, if you want to avoid global state, it's better to create 
     the container within your application factory and provide a way to access it from the created application instance.
@@ -85,6 +85,20 @@ class WeatherService:
     async def get_forecast(self, lat: float, lon: float) -> WeatherForecast:
         raise NotImplementedError
 ```
+
+!!! tip
+    Wireup supports factories and generator factories (functions that use `yield` instead of `return`)
+    to perform service construction. [Learn More](factory_functions.md).
+
+    ```python
+    @service
+    def db_session_factory() -> Iterator[Session]:
+        db = Session()
+        try:
+            yield db
+        finally:
+            db.close()
+    ```
 
 
 ### 3. Use

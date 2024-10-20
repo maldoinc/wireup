@@ -24,6 +24,28 @@ When the container needs to inject a dependency, it checks known factories to se
 
 ## Examples
 
+
+### Use a generator function (yield instead of return)
+
+Use this when your service needs to perform cleanup.
+
+```python
+@service
+def db_session_factory() -> Iterator[Session]:
+    db = Session()
+    try:
+        yield db
+    finally:
+        db.close()
+```
+
+```python
+@service
+def db_session_factory() -> Iterator[Session]:
+    with contextlib.closing(Session()) as db:
+        yield db
+```
+
 ### Inject a model
 
 Assume in the context of an application a class `User` exists and represents a user of the system.
