@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import asyncio
 import functools
-import inspect
 import sys
 import warnings
 from dataclasses import dataclass
@@ -21,7 +20,7 @@ from wireup.errors import (
     UnknownServiceRequestedError,
     WireupError,
 )
-from wireup.ioc.service_registry import ServiceRegistry
+from wireup.ioc.service_registry import FactoryType, ServiceRegistry
 from wireup.ioc.types import (
     AnyCallable,
     EmptyContainerInjectionRequest,
@@ -282,12 +281,12 @@ class DependencyContainer(BaseContainer):
         if not ctor_and_type:
             return None
 
-        ctor, resolved_type = ctor_and_type
+        ctor, resolved_type, factory_type = ctor_and_type
         injection_result = self.__callable_get_params_to_inject(ctor)
         instance_or_generator = ctor(**injection_result.kwargs)
         is_singleton = self._registry.is_impl_singleton(resolved_type)
 
-        if inspect.isgenerator(instance_or_generator):
+        if factory_type == FactoryType.GENERATOR:
             instance = next(instance_or_generator)
 
             if is_singleton:

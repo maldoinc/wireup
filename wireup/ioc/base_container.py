@@ -7,6 +7,7 @@ from wireup.errors import (
     UsageOfQualifierOnUnknownObjectError,
 )
 from wireup.ioc.override_manager import OverrideManager
+from wireup.ioc.service_registry import FactoryType
 from wireup.ioc.types import (
     AnnotatedParameter,
     ParameterWrapper,
@@ -15,7 +16,6 @@ from wireup.ioc.types import (
 
 if TYPE_CHECKING:
     from collections.abc import Callable
-    from types import GeneratorType
 
     from wireup import ParameterBag
     from wireup.ioc.service_registry import ServiceRegistry
@@ -52,9 +52,9 @@ class BaseContainer:
 
     def _get_ctor(
         self, klass: type[T], qualifier: Qualifier | None
-    ) -> tuple[Callable[..., T | GeneratorType[T, Any, Any]], type[T]] | None:
+    ) -> tuple[Callable[..., Any], type[T], FactoryType] | None:
         if ctor := self._registry.factory_functions.get((klass, qualifier)):
-            return ctor, klass
+            return ctor.factory, klass, ctor.factory_type
 
         if self._registry.is_interface_known(klass):
             concrete_class = self._registry.interface_resolve_impl(klass, qualifier)
@@ -68,7 +68,7 @@ class BaseContainer:
                     self._registry.known_impls[klass],
                 )
 
-            return klass, klass
+            return klass, klass, FactoryType.REGULAR
 
         # Throw if a qualifier is being used on an unknown type.
         if qualifier:

@@ -3,6 +3,8 @@ from __future__ import annotations
 import inspect
 import typing
 from collections import defaultdict
+from dataclasses import dataclass
+from enum import Enum, auto
 from typing import TYPE_CHECKING, Any, Callable, TypeVar
 
 from wireup.errors import (
@@ -27,7 +29,18 @@ if TYPE_CHECKING:
 T = TypeVar("T")
 
 
-def _function_get_unwrapped_return_type(fn: Callable[..., Any]) -> Any | None:
+class FactoryType(Enum):
+    REGULAR = auto()
+    GENERATOR = auto()
+
+
+@dataclass
+class ServiceFactory:
+    factory: Callable[..., Any]
+    factory_type: FactoryType
+
+
+def _function_get_unwrapped_return_type(fn: Callable[..., T]) -> tuple[T, FactoryType] | None:
     if ret := fn.__annotations__.get("return"):
         if inspect.isgeneratorfunction(fn):
             args = typing.get_args(ret)
@@ -35,9 +48,9 @@ def _function_get_unwrapped_return_type(fn: Callable[..., Any]) -> Any | None:
             if not args:
                 return None
 
-            return args[0]
+            return args[0], FactoryType.GENERATOR
 
-        return ret
+        return ret, FactoryType.REGULAR
 
     return None
 
@@ -50,7 +63,7 @@ class ServiceRegistry:
     def __init__(self) -> None:
         self.known_interfaces: dict[type, dict[Qualifier, type]] = {}
         self.known_impls: dict[type, set[Qualifier]] = defaultdict(set)
-        self.factory_functions: dict[tuple[type, Qualifier], Callable[..., Any]] = {}
+        self.factory_functions: dict[tuple[type, Qualifier], ServiceFactory] = {}
 
         self.context = InitializationContext()
 
@@ -78,10 +91,12 @@ class ServiceRegistry:
     def register_factory(
         self, fn: Callable[..., Any], lifetime: ServiceLifetime, qualifier: Qualifier | None = None
     ) -> None:
-        return_type = _function_get_unwrapped_return_type(fn)
+        return_type_result = _function_get_unwrapped_return_type(fn)
 
-        if return_type is None:
+        if return_type_result is None:
             raise FactoryReturnTypeIsEmptyError
+
+        return_type, factory_type = return_type_result
 
         if self.is_impl_known_from_factory(return_type, qualifier):
             raise FactoryDuplicateServiceRegistrationError(return_type)
@@ -90,7 +105,10 @@ class ServiceRegistry:
             raise DuplicateServiceRegistrationError(return_type, qualifier=None)
 
         self.target_init_context(fn, lifetime=lifetime)
-        self.factory_functions[return_type, qualifier] = fn
+        self.factory_functions[return_type, qualifier] = ServiceFactory(
+            factory=fn,
+            factory_type=factory_type,
+        )
         self.known_impls[return_type].add(qualifier)
 
         # The target and its lifetime just needs to be known. No need to check its dependencies
@@ -122,7 +140,10 @@ class ServiceRegistry:
         * Objects depending on interfaces will instead depend on all implementations of that interface.
         * Factories are replaced with the thing they produce.
         """
-        factory_to_type: dict[Callable[..., Any], type[Any]] = {v: k[0] for k, v in self.factory_functions.items()}
+        # handle generators in warmup.
+        factory_to_type: dict[Callable[..., Any], type[Any]] = {
+            v.factory: k[0] for k, v in self.factory_functions.items()
+        }
         types_created_by_factories = set(factory_to_type.values())
         res: dict[type, set[type[Any]]] = {}
 
