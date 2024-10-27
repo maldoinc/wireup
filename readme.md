@@ -74,16 +74,18 @@ class WeatherService:
         ...
 ```
 
-Use factories if service requires special initialization or needs to perform cleanup.
+Use sync or async factories if service requires special initialization or needs to perform cleanup.
 
 ```python
 @service
-def db_connection_factory(db_dsn: Annotated[str, Inject(param="db_dsn")]) -> Iterator[DBConnection]:
-    with DBConnection(db_dsn) as conn:
+async def db_connection_factory(
+    db_dsn: Annotated[str, Inject(param="db_dsn")]
+) -> AsyncIterator[DBConnection]:
+    async with DBConnection(db_dsn) as conn:
         yield conn
 ```
 
-*Note*: If you use generator factories, call `container.close()` on termination for the necessary
+*Note*: If you use generator factories, call `container.{close/aclose}` on termination for the necessary
 cleanup to take place.
 
 

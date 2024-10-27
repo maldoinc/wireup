@@ -46,6 +46,15 @@ def db_session_factory() -> Iterator[Session]:
         yield db
 ```
 
+Async generators are also supported.
+```python
+async def client_session_factory() -> ClientSession:
+    async with ClientSession() as sess:
+        yield sess
+```
+
+Make sure to close the container at the end. Use `container.close()` or `container.aclose()` if you use async generators. For transient dependencies, the container will automatically perform cleanup after the injected method finishes executing.
+
 ### Inject a model
 
 Assume in the context of an application a class `User` exists and represents a user of the system.
