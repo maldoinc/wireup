@@ -74,7 +74,7 @@ class WeatherService:
         ...
 ```
 
-Use sync or async factories if service requires special initialization or needs to perform cleanup.
+Use factories (sync and async) if service requires special initialization or cleanup.
 
 ```python
 @service
@@ -85,8 +85,7 @@ async def db_connection_factory(
         yield conn
 ```
 
-*Note*: If you use generator factories, call `container.{close/aclose}` on termination for the necessary
-cleanup to take place.
+*Note*: If you use generator factories, call `container.{close/aclose}` on termination for the necessary cleanup to take place.
 
 
 **3. Use**
