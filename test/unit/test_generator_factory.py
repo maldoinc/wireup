@@ -1,5 +1,4 @@
-from collections.abc import AsyncIterator
-from typing import Iterator, NewType
+from typing import AsyncIterator, Iterator, NewType
 
 import pytest
 from wireup import DependencyContainer, ParameterBag
