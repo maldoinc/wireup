@@ -83,7 +83,7 @@ async def make_db(dsn: Annotated[str, Inject(param="db_dsn")]) -> AsyncIterator[
         yield conn
 ```
 
-*Note*: If you use generator factories, call `container.{close/aclose}` on termination for the necessary cleanup to take place.
+*Note*: If you use generator factories, call `container.{close,aclose}` on termination for the necessary cleanup to take place.
 
 
 **3. Use**
