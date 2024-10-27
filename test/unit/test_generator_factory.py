@@ -157,6 +157,24 @@ def test_cleans_up_in_order() -> None:
     assert _cleanups == ["f2", "f1"]
 
 
+def test_sync_raises_when_generating_async() -> None:
+    Something = NewType("Something", str)
+
+    async def f1() -> AsyncIterator[Something]:
+        yield Something("Something")
+        raise ValueError("boom")
+
+    c = DependencyContainer(ParameterBag())
+    c.register(f1)
+
+    @c.autowire
+    def target(_: Something) -> None:
+        pass
+
+    with pytest.raises(WireupError, match="Cannot construct async objects fron a non-async context."):
+        target()
+
+
 def test_raises_errors() -> None:
     Something = NewType("Something", str)
 
