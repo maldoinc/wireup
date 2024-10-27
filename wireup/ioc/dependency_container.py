@@ -351,7 +351,7 @@ class DependencyContainer(BaseContainer):
             instance = (
                 next(instance_or_generator)
                 if factory_type == FactoryType.GENERATOR
-                else await anext(instance_or_generator)
+                else await instance_or_generator.__anext__()
             )
         else:
             generator = None
