@@ -45,6 +45,24 @@ async def test_async_cleans_up_on_exit() -> None:
     assert _cleanup_performed
 
 
+async def test_async_raise_close_async() -> None:
+    Something = NewType("Something", str)
+
+    async def some_factory() -> AsyncIterator[Something]:
+        yield Something("foo")
+
+    c = DependencyContainer(ParameterBag())
+    c.register(some_factory)
+
+    @c.autowire
+    async def target(smth: Something):
+        assert smth == Something("foo")
+
+    await target()
+    with pytest.raises(WireupError, match="Async generators need to be closed with container.aclose()"):
+        c.close()
+
+
 def test_raises_on_transient_dependency() -> None:
     Something = NewType("Something", str)
 
