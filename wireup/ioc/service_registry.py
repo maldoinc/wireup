@@ -32,6 +32,10 @@ T = TypeVar("T")
 class FactoryType(Enum):
     REGULAR = auto()
     GENERATOR = auto()
+    ASYNC_GENERATOR = auto()
+
+
+GENERATOR_FACTORY_TYPES = {FactoryType.GENERATOR, FactoryType.ASYNC_GENERATOR}
 
 
 @dataclass
@@ -42,13 +46,14 @@ class ServiceFactory:
 
 def _function_get_unwrapped_return_type(fn: Callable[..., T]) -> tuple[T, FactoryType] | None:
     if ret := fn.__annotations__.get("return"):
-        if inspect.isgeneratorfunction(fn):
+        is_gen = inspect.isgeneratorfunction(fn)
+        if is_gen or inspect.isasyncgenfunction(fn):
             args = typing.get_args(ret)
 
             if not args:
                 return None
 
-            return args[0], FactoryType.GENERATOR
+            return args[0], FactoryType.GENERATOR if is_gen else FactoryType.ASYNC_GENERATOR
 
         return ret, FactoryType.REGULAR
 

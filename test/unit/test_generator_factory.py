@@ -1,3 +1,4 @@
+from collections.abc import AsyncIterator
 from typing import Iterator, NewType
 
 import pytest
@@ -20,6 +21,27 @@ def test_cleans_up_on_exit() -> None:
 
     assert c.get(Something) == Something("foo")
     c.close()
+    assert _cleanup_performed
+
+
+async def test_async_cleans_up_on_exit() -> None:
+    _cleanup_performed = False
+    Something = NewType("Something", str)
+
+    async def some_factory() -> AsyncIterator[Something]:
+        yield Something("foo")
+        nonlocal _cleanup_performed
+        _cleanup_performed = True
+
+    c = DependencyContainer(ParameterBag())
+    c.register(some_factory)
+
+    @c.autowire
+    async def target(smth: Something):
+        assert smth == Something("foo")
+
+    await target()
+    await c.aclose()
     assert _cleanup_performed
 
 
@@ -62,6 +84,33 @@ def test_injects_transient() -> None:
         pass
 
     target()
+    assert _cleanups == ["f2", "f1"]
+
+
+async def test_async_injects_transient_sync_depends_on_async_result() -> None:
+    _cleanups: list[str] = []
+    Something = NewType("Something", str)
+    SomethingElse = NewType("SomethingElse", str)
+
+    async def f1() -> AsyncIterator[Something]:
+        yield Something("Something")
+        nonlocal _cleanups
+        _cleanups.append("f1")
+
+    def f2(something: Something) -> Iterator[SomethingElse]:
+        yield SomethingElse(f"{something} else")
+        nonlocal _cleanups
+        _cleanups.append("f2")
+
+    c = DependencyContainer(ParameterBag())
+    c.register(f1, lifetime=ServiceLifetime.TRANSIENT)
+    c.register(f2, lifetime=ServiceLifetime.TRANSIENT)
+
+    @c.autowire
+    async def target(_: SomethingElse) -> None:
+        pass
+
+    await target()
     assert _cleanups == ["f2", "f1"]
 
 
