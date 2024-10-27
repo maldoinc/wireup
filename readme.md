@@ -78,8 +78,8 @@ Use factories (sync and async) if service requires special initialization or cle
 
 ```python
 @service
-async def make_db(db_dsn: Annotated[str, Inject(param="db_dsn")]) -> AsyncIterator[Connection]:
-    async with DB(db_dsn) as conn:
+async def make_db(dsn: Annotated[str, Inject(param="db_dsn")]) -> AsyncIterator[Connection]:
+    async with DB(dsn) as conn:
         yield conn
 ```
 
