@@ -3,7 +3,6 @@ import uuid
 from dataclasses import dataclass
 from typing import Any, Dict
 
-import anyio
 import anyio.to_thread
 import pytest
 import wireup
