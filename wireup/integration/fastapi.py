@@ -12,8 +12,11 @@ current_request: ContextVar[Request] = ContextVar("wireup_fastapi_request")
 
 
 async def _wireup_request_middleware(request: Request, call_next: Callable[[Request], Awaitable[Response]]) -> Response:
-    current_request.set(request)
-    return await call_next(request)
+    token = current_request.set(request)
+    try:
+        return await call_next(request)
+    finally:
+        current_request.reset(token)
 
 
 def _fastapi_request_factory() -> Request:
