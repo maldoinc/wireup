@@ -1,8 +1,23 @@
-from fastapi import FastAPI
+from contextvars import ContextVar
+from typing import Awaitable, Callable
+
+from fastapi import FastAPI, Request, Response
 from fastapi.routing import APIRoute
 
 from wireup import DependencyContainer
 from wireup.integration.util import is_view_using_container
+from wireup.ioc.types import ServiceLifetime
+
+current_request: ContextVar[Request] = ContextVar("wireup_fastapi_request")
+
+
+async def _wireup_request_middleware(request: Request, call_next: Callable[[Request], Awaitable[Response]]) -> Response:
+    current_request.set(request)
+    return await call_next(request)
+
+
+def _fastapi_request_factory() -> Request:
+    return current_request.get()
 
 
 def _autowire_views(container: DependencyContainer, app: FastAPI) -> None:
@@ -20,6 +35,8 @@ def setup(container: DependencyContainer, app: FastAPI) -> None:
 
     This will automatically inject dependencies on FastAPI routers.
     """
+    container.register(_fastapi_request_factory, lifetime=ServiceLifetime.TRANSIENT)
+    app.middleware("http")(_wireup_request_middleware)
     _autowire_views(container, app)
     app.state.wireup_container = container
 
