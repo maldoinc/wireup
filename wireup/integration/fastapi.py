@@ -5,6 +5,7 @@ from fastapi import FastAPI, Request, Response
 from fastapi.routing import APIRoute
 
 from wireup import DependencyContainer
+from wireup.errors import WireupError
 from wireup.integration.util import is_view_using_container
 from wireup.ioc.types import ServiceLifetime
 
@@ -20,7 +21,11 @@ async def _wireup_request_middleware(request: Request, call_next: Callable[[Requ
 
 
 def _fastapi_request_factory() -> Request:
-    return current_request.get()
+    try:
+        return current_request.get()
+    except LookupError as e:
+        msg = "fastapi.Request in wireup is only available during a request."
+        raise WireupError(msg) from e
 
 
 def _autowire_views(container: DependencyContainer, app: FastAPI) -> None:
