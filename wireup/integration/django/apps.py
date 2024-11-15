@@ -54,10 +54,13 @@ class WireupConfig(AppConfig):
                 return
 
             if isinstance(p, URLPattern) and p.callback:
+                target = p.callback
+
                 if hasattr(p.callback, "view_class") and hasattr(p.callback, "view_initkwargs"):
-                    p.callback = self._autowire_class_based_view(p.callback)
+                    p.callback = self._autowire_class_based_view(target)
                 else:
-                    p.callback = self.container.autowire(p.callback)
+                    p.callback = self.container.autowire(target)
+                    self.container._registry.context.remove_dependency_type(target, HttpRequest)  # type: ignore[reportPrivateUsage]  # noqa: SLF001
 
     def _autowire_class_based_view(self, callback: Any) -> Any:
         self.container.register(callback.view_class)

@@ -9,7 +9,7 @@ from test.integration.django.service.random_service import RandomService
 
 
 def index(
-    _: HttpRequest,
+    _request: HttpRequest,
     example_request_service: CurrentDjangoRequest,
     greeter: GreeterService,
     is_debug: Annotated[bool, Inject(param="DEBUG")],

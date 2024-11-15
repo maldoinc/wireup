@@ -24,9 +24,9 @@ def wireup_middleware(get_response: Callable[[HttpRequest], HttpResponse]) -> Ca
 CurrentHttpRequest = NewType("CurrentHttpRequest", HttpRequest)
 
 
-def django_request_factory() -> CurrentHttpRequest:
+def django_request_factory() -> HttpRequest:
     try:
-        return CurrentHttpRequest(current_request.get())
+        return current_request.get()
     except LookupError as e:
         msg = (
             "django.http.HttpRequest in wireup is only available during a request. "
