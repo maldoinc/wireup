@@ -35,7 +35,9 @@ def _autowire_views(container: DependencyContainer, app: FastAPI) -> None:
             and route.dependant.call
             and is_view_using_container(container, route.dependant.call)
         ):
-            route.dependant.call = container.autowire(route.dependant.call)
+            target = route.dependant.call
+            route.dependant.call = container.autowire(target)
+            container._registry.context.remove_dependency_type(target, Request)  # type: ignore[reportPrivateUsage]  # noqa: SLF001
 
 
 def setup(container: DependencyContainer, app: FastAPI) -> None:

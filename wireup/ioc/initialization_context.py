@@ -64,3 +64,12 @@ class InitializationContext:
         Target must have been already initialized prior to calling this.
         """
         self.__dependencies[target] = {k: v for k, v in self.__dependencies[target].items() if k not in names_to_remove}
+
+    def remove_dependency_type(self, target: AutowireTarget, type_to_remove: type) -> None:
+        """Remove dependencies with the given type from the target.
+
+        Target must have been already initialized prior to calling this.
+        """
+        self.__dependencies[target] = {
+            k: v for k, v in self.__dependencies[target].items() if v.klass != type_to_remove
+        }
