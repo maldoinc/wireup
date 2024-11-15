@@ -57,7 +57,7 @@ def create_app() -> FastAPI:
         return {"msg": "Hello World"}
 
     @app.get("/current-request")
-    async def _(req: Annotated[ServiceUsingFastapiRequest, Inject()]) -> Dict[str, Any]:
+    async def _(_request: Request, req: Annotated[ServiceUsingFastapiRequest, Inject()]) -> Dict[str, Any]:
         return {"foo": req.req.query_params["foo"], "request_id": req.req.headers["X-Request-Id"]}
 
     container = wireup.create_container(service_modules=[], parameters={"foo": "bar"})
