@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 import importlib
 from typing import TYPE_CHECKING, Any
 
@@ -7,15 +5,16 @@ import django
 import django.urls
 from django.apps import AppConfig, apps
 from django.conf import settings
+from django.http import HttpRequest
 from django.urls import URLPattern, URLResolver
 
 import wireup
 from wireup import DependencyContainer
+from wireup.integration.django import django_request_factory
 from wireup.ioc._exit_stack import clean_exit_stack
+from wireup.ioc.types import ServiceLifetime
 
 if TYPE_CHECKING:
-    from django.http import HttpRequest
-
     from wireup.integration.django import WireupSettings
     from wireup.ioc.dependency_container import _InjectionResult
 
@@ -25,7 +24,7 @@ class WireupConfig(AppConfig):
 
     name = "wireup"
 
-    def __init__(self, app_name: str, app_module: Any | None) -> None:
+    def __init__(self, app_name: str, app_module: Any) -> None:
         super().__init__(app_name, app_module)
 
     def ready(self) -> None:
@@ -41,6 +40,7 @@ class WireupConfig(AppConfig):
                 if not entry.startswith("__") and hasattr(settings, entry)
             },
         )
+        self.container.register(django_request_factory, lifetime=ServiceLifetime.TRANSIENT)
 
         if integration_settings.perform_warmup:
             self.container.warmup()
