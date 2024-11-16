@@ -12,7 +12,7 @@ from fastapi import Depends, FastAPI, Request
 from fastapi.testclient import TestClient
 from typing_extensions import Annotated
 from wireup import Inject
-from wireup.errors import UnknownServiceRequestedError
+from wireup.errors import UnknownServiceRequestedError, WireupError
 from wireup.integration.fastapi import get_container
 from wireup.ioc.types import ServiceLifetime
 
@@ -119,3 +119,8 @@ def test_raises_on_unknown_service(client: TestClient):
         match="Cannot wire unknown class <class 'NoneType'>. Use '@service' or '@abstract' to enable autowiring.",
     ):
         client.get("/raise-unknown")
+
+
+def test_raises_request_outside_of_scope(app: FastAPI) -> None:
+    with pytest.raises(WireupError, match="fastapi.Request in wireup is only available during a request."):
+        get_container(app).get(Request)
