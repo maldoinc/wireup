@@ -1,15 +1,27 @@
+import asyncio
+import uuid
+from dataclasses import dataclass
+from typing import Any, Dict
+
+import anyio.to_thread
 import pytest
 import wireup
 import wireup.integration
 import wireup.integration.fastapi
-from fastapi import Depends, FastAPI
+from fastapi import Depends, FastAPI, Request
 from fastapi.testclient import TestClient
 from typing_extensions import Annotated
 from wireup import Inject
-from wireup.errors import UnknownServiceRequestedError
+from wireup.errors import UnknownServiceRequestedError, WireupError
 from wireup.integration.fastapi import get_container
+from wireup.ioc.types import ServiceLifetime
 
 from test.unit.services.no_annotations.random.random_service import RandomService
+
+
+@dataclass
+class ServiceUsingFastapiRequest:
+    req: Request
 
 
 def get_lucky_number() -> int:
@@ -44,8 +56,13 @@ def create_app() -> FastAPI:
     async def _(_unknown_service: Annotated[None, Inject()]):
         return {"msg": "Hello World"}
 
+    @app.get("/current-request")
+    async def _(_request: Request, req: Annotated[ServiceUsingFastapiRequest, Inject()]) -> Dict[str, Any]:
+        return {"foo": req.req.query_params["foo"], "request_id": req.req.headers["X-Request-Id"]}
+
     container = wireup.create_container(service_modules=[], parameters={"foo": "bar"})
     container.register(RandomService)
+    container.register(ServiceUsingFastapiRequest, lifetime=ServiceLifetime.TRANSIENT)
     wireup.integration.fastapi.setup(container, app)
 
     return app
@@ -84,9 +101,26 @@ def test_injects_parameters(client: TestClient):
     assert response.json() == {"foo": "bar", "foo_foo": "bar-bar"}
 
 
+async def test_current_request_service(client: TestClient):
+    async def _make_request():
+        request_id = uuid.uuid4().hex
+        response = await anyio.to_thread.run_sync(
+            lambda: client.get("/current-request", params={"foo": request_id}, headers={"X-Request-Id": request_id})
+        )
+        assert response.status_code == 200
+        assert response.json() == {"foo": request_id, "request_id": request_id}
+
+    await asyncio.gather(*(_make_request() for _ in range(100)))
+
+
 def test_raises_on_unknown_service(client: TestClient):
     with pytest.raises(
         UnknownServiceRequestedError,
         match="Cannot wire unknown class <class 'NoneType'>. Use '@service' or '@abstract' to enable autowiring.",
     ):
         client.get("/raise-unknown")
+
+
+def test_raises_request_outside_of_scope(app: FastAPI) -> None:
+    with pytest.raises(WireupError, match="fastapi.Request in wireup is only available during a request."):
+        get_container(app).get(Request)
