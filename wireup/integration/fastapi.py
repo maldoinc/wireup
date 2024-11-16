@@ -37,6 +37,8 @@ def _autowire_views(container: DependencyContainer, app: FastAPI) -> None:
         ):
             target = route.dependant.call
             route.dependant.call = container.autowire(target)
+            # Remove Request as a dependency from this target.
+            # Let fastapi inject it instead and avoid duplicated work.
             container._registry.context.remove_dependency_type(target, Request)  # type: ignore[reportPrivateUsage]  # noqa: SLF001
 
 
