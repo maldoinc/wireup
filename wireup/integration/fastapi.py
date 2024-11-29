@@ -2,7 +2,7 @@ from contextvars import ContextVar
 from typing import Awaitable, Callable
 
 from fastapi import FastAPI, Request, Response
-from fastapi.routing import APIRoute
+from fastapi.routing import APIRoute, APIWebSocketRoute
 
 from wireup import DependencyContainer
 from wireup.errors import WireupError
@@ -31,7 +31,7 @@ def _fastapi_request_factory() -> Request:
 def _autowire_views(container: DependencyContainer, app: FastAPI) -> None:
     for route in app.routes:
         if (
-            isinstance(route, APIRoute)
+            isinstance(route, (APIRoute, APIWebSocketRoute))
             and route.dependant.call
             and is_view_using_container(container, route.dependant.call)
         ):

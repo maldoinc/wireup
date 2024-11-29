@@ -8,7 +8,7 @@ import pytest
 import wireup
 import wireup.integration
 import wireup.integration.fastapi
-from fastapi import Depends, FastAPI, Request
+from fastapi import Depends, FastAPI, Request, WebSocket
 from fastapi.testclient import TestClient
 from typing_extensions import Annotated
 from wireup import Inject
@@ -35,33 +35,48 @@ def get_lucky_number() -> int:
     return 42
 
 
+class GreeterService:
+    def greet(self, name: str) -> str:
+        return f"Hello {name}"
+
+
 def create_app() -> FastAPI:
     app = FastAPI()
 
     @app.get("/lucky-number")
-    async def _(
+    async def lucky_number_route(
         random_service: Annotated[RandomService, Inject()], lucky_number: Annotated[int, Depends(get_lucky_number)]
     ):
         return {"number": random_service.get_random(), "lucky_number": lucky_number}
 
     @app.get("/rng")
-    async def _(random_service: Annotated[RandomService, Inject()]):
+    async def rng_route(random_service: Annotated[RandomService, Inject()]):
         return {"number": random_service.get_random()}
 
     @app.get("/params")
-    async def _(foo: Annotated[str, Inject(param="foo")], foo_foo: Annotated[str, Inject(expr="${foo}-${foo}")]):
+    async def params_route(
+        foo: Annotated[str, Inject(param="foo")], foo_foo: Annotated[str, Inject(expr="${foo}-${foo}")]
+    ):
         return {"foo": foo, "foo_foo": foo_foo}
 
     @app.get("/raise-unknown")
-    async def _(_unknown_service: Annotated[None, Inject()]):
+    async def raise_unknown(_unknown_service: Annotated[None, Inject()]):
         return {"msg": "Hello World"}
 
     @app.get("/current-request")
-    async def _(_request: Request, req: Annotated[ServiceUsingFastapiRequest, Inject()]) -> Dict[str, Any]:
+    async def curr_request(_request: Request, req: Annotated[ServiceUsingFastapiRequest, Inject()]) -> Dict[str, Any]:
         return {"foo": req.req.query_params["foo"], "request_id": req.req.headers["X-Request-Id"]}
+
+    @app.websocket("/ws")
+    async def websocket_endpoint(websocket: WebSocket, greeter: Annotated[GreeterService, Inject()]):
+        await websocket.accept()
+        data = await websocket.receive_text()
+        await websocket.send_text(greeter.greet(data))
+        await websocket.close()
 
     container = wireup.create_container(service_modules=[], parameters={"foo": "bar"})
     container.register(RandomService)
+    container.register(GreeterService)
     container.register(ServiceUsingFastapiRequest, lifetime=ServiceLifetime.TRANSIENT)
     wireup.integration.fastapi.setup(container, app)
 
@@ -99,6 +114,13 @@ def test_injects_parameters(client: TestClient):
     response = client.get("/params")
     assert response.status_code == 200
     assert response.json() == {"foo": "bar", "foo_foo": "bar-bar"}
+
+
+def test_websocket(client: TestClient):
+    with client.websocket_connect("/ws") as websocket:
+        websocket.send_text("World")
+        data = websocket.receive_text()
+        assert data == "Hello World"
 
 
 async def test_current_request_service(client: TestClient):
