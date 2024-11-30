@@ -146,7 +146,7 @@ A demo flask application is available at [maldoinc/wireup-demo](https://github.c
 ## Limitations
 
 Due to reliance on type hints, `from __future__ import annotations` should not be used on files
-that the container should interact with. This includes files that explicitly use wireup annotations or decorators
-as well injection targets.
+that the container should interact with. This includes files that explicitly use wireup annotations, decorators
+as well as injection targets.
 
 This is expected to be fixed once `typing_extensions` 4.13 lands which includes relevant backports.
