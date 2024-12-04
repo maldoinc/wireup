@@ -21,7 +21,7 @@ if TYPE_CHECKING:
     from collections.abc import Callable
 
 
-def Inject(  # noqa: N802
+def Inject(
     *,
     param: str | None = None,
     expr: str | None = None,

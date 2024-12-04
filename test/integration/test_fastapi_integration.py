@@ -62,7 +62,7 @@ def create_app() -> FastAPI:
         return {"number": random_service.get_random()}
 
     @app.get("/wireup-in-fastapi")
-    async def rng_route(
+    async def wireup_in_fastapi_depends(
         greeting: Annotated[str, Depends(get_greeting)],
         foo_param: Annotated[str, WireupParameter("foo")],
         foo_foo: Annotated[str, WireupExpr("${foo}-${foo}")],

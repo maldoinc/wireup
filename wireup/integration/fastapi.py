@@ -1,13 +1,17 @@
+from __future__ import annotations
+
 from contextvars import ContextVar
-from typing import Any, Awaitable, Callable, Optional, Type, TypeVar
+from typing import TYPE_CHECKING, Any, Awaitable, Callable, TypeVar
 
 from fastapi import Depends, FastAPI, Request, Response
 from fastapi.routing import APIRoute, APIWebSocketRoute
 
-from wireup import DependencyContainer
 from wireup.errors import WireupError
 from wireup.integration.util import is_view_using_container
 from wireup.ioc.types import Qualifier, ServiceLifetime, TemplatedString
+
+if TYPE_CHECKING:
+    from wireup import DependencyContainer
 
 current_request: ContextVar[Request] = ContextVar("wireup_fastapi_request")
 
@@ -15,27 +19,29 @@ T = TypeVar("T")
 
 
 def WireupContainer() -> Callable[[], DependencyContainer]:
+    """Inject the wireup container associated with the current FastAPI instance."""
+
     def _depends(request: Request) -> DependencyContainer:
         return get_container(request.app)
 
     return Depends(_depends)
 
 
-def WireupService(service: Type[T], qualifier: Optional[Qualifier] = None) -> Callable[..., T]:
+def WireupService(service: type[T], qualifier: Qualifier | None = None) -> Callable[..., T]:  # noqa: D103
     def _depends(request: Request) -> T:
         return get_container(request.app).get(service, qualifier)
 
     return Depends(_depends)
 
 
-def WireupParameter(param: str) -> Callable[..., Any]:
+def WireupParameter(param: str) -> Callable[..., Any]:  # noqa: D103
     def _depends(request: Request) -> Any:
         return get_container(request.app).params.get(param)
 
     return Depends(_depends)
 
 
-def WireupExpr(expr: str) -> Callable[..., Any]:
+def WireupExpr(expr: str) -> Callable[..., Any]:  # noqa: D103
     def _depends(request: Request) -> Any:
         return get_container(request.app).params.get(TemplatedString(expr))
 
