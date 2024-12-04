@@ -7,6 +7,7 @@ Dependency injection for FastAPI is available in the `wireup.integration.fastapi
 - [x] Expose `fastapi.Request` as a wireup dependency.
     * Available as a `TRANSIENT` scoped dependency, your services can ask for a fastapi request object.
 - [x] Can: Mix Wireup and FastAPI dependencies in routes.
+- [x] Can: Use Wireup in FastAPI dependencies.
 - [ ] Cannot: Use FastAPI dependencies in Wireup service objects.
 
 ## Getting Started
@@ -39,9 +40,24 @@ container = wireup.create_container(
 wireup.integration.fastapi.setup(container, app)
 ```
 
-Wireup integration performs injection only in fastapi routes. If you're not storing the container in a global variable, 
-you can always get a reference to it wherever you have a fastapi application reference
-by using `wireup.integration.fastapi.get_container`.
+## Use Wireup in FastAPI Depends
+
+To help with migration, it is possible to use Wireup in FastAPI depends
+or anywhere you have a reference to the FastAPI application instance.
+
+
+```python
+async def some_route_or_fastapi_dependency(
+    greeter: Annotated[GreeterService, WireupService(GreeterService)],
+    foo_param: Annotated[str, WireupParameter("foo")],
+    foo_foo: Annotated[str, WireupExpr("${foo}-${foo}")],
+    container: Annotated[DependencyContainer, WireupContainer()],
+): ...
+```
+
+
+If you're not storing the container in a variable somewhere, you can get a reference
+to it by using the `wireup.integration.fastapi.get_container` function.
 
 ```python title="example_middleware.py"
 from wireup.integration.fastapi import get_container
@@ -58,7 +74,7 @@ In the same way, you can get a reference to it in a fastapi dependency.
 ```python
 from wireup.integration.fastapi import get_container
 
-async def example_dependency(request: Request, other_dependency: Depends(...)):
+async def example_dependency(request: Request, other_dependency: Annotated[X, Depends(...)]):
     container = get_container(request.app)
     ...
 ```
