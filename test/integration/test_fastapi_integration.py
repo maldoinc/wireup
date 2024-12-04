@@ -13,7 +13,8 @@ from fastapi.testclient import TestClient
 from typing_extensions import Annotated
 from wireup import Inject
 from wireup.errors import UnknownServiceRequestedError, WireupError
-from wireup.integration.fastapi import get_container
+from wireup.integration.fastapi import WireupContainer, WireupExpr, WireupParameter, WireupService, get_container
+from wireup.ioc.dependency_container import DependencyContainer
 from wireup.ioc.types import ServiceLifetime
 
 from test.unit.services.no_annotations.random.random_service import RandomService
@@ -40,6 +41,13 @@ class GreeterService:
         return f"Hello {name}"
 
 
+def get_greeting(
+    greeter: Annotated[GreeterService, WireupService(GreeterService)],
+    name: str,
+) -> str:
+    return greeter.greet(name)
+
+
 def create_app() -> FastAPI:
     app = FastAPI()
 
@@ -52,6 +60,19 @@ def create_app() -> FastAPI:
     @app.get("/rng")
     async def rng_route(random_service: Annotated[RandomService, Inject()]):
         return {"number": random_service.get_random()}
+
+    @app.get("/wireup-in-fastapi")
+    async def rng_route(
+        greeting: Annotated[str, Depends(get_greeting)],
+        foo_param: Annotated[str, WireupParameter("foo")],
+        foo_foo: Annotated[str, WireupExpr("${foo}-${foo}")],
+        container: Annotated[DependencyContainer, WireupContainer()],
+    ):
+        assert foo_param == "bar"
+        assert foo_foo == "bar-bar"
+        assert isinstance(container, DependencyContainer)
+
+        return {"greeting": greeting}
 
     @app.get("/params")
     async def params_route(
@@ -97,6 +118,12 @@ def test_injects_service(client: TestClient):
     response = client.get("/lucky-number")
     assert response.status_code == 200
     assert response.json() == {"number": 4, "lucky_number": 42}
+
+
+def test_injects_wireup_in_fastapi_depends(client: TestClient):
+    response = client.get("/wireup-in-fastapi", params={"name": "World"})
+    assert response.status_code == 200
+    assert response.json() == {"greeting": "Hello World"}
 
 
 def test_override(app: FastAPI, client: TestClient):

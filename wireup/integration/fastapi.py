@@ -1,15 +1,45 @@
 from contextvars import ContextVar
-from typing import Awaitable, Callable
+from typing import Any, Awaitable, Callable, Optional, Type, TypeVar
 
-from fastapi import FastAPI, Request, Response
+from fastapi import Depends, FastAPI, Request, Response
 from fastapi.routing import APIRoute, APIWebSocketRoute
 
 from wireup import DependencyContainer
 from wireup.errors import WireupError
 from wireup.integration.util import is_view_using_container
-from wireup.ioc.types import ServiceLifetime
+from wireup.ioc.types import Qualifier, ServiceLifetime, TemplatedString
 
 current_request: ContextVar[Request] = ContextVar("wireup_fastapi_request")
+
+T = TypeVar("T")
+
+
+def WireupContainer() -> Callable[[], DependencyContainer]:
+    def _depends(request: Request) -> DependencyContainer:
+        return get_container(request.app)
+
+    return Depends(_depends)
+
+
+def WireupService(service: Type[T], qualifier: Optional[Qualifier] = None) -> Callable[..., T]:
+    def _depends(request: Request) -> T:
+        return get_container(request.app).get(service, qualifier)
+
+    return Depends(_depends)
+
+
+def WireupParameter(param: str) -> Callable[..., Any]:
+    def _depends(request: Request) -> Any:
+        return get_container(request.app).params.get(param)
+
+    return Depends(_depends)
+
+
+def WireupExpr(expr: str) -> Callable[..., Any]:
+    def _depends(request: Request) -> Any:
+        return get_container(request.app).params.get(TemplatedString(expr))
+
+    return Depends(_depends)
 
 
 async def _wireup_request_middleware(request: Request, call_next: Callable[[Request], Awaitable[Response]]) -> Response:
