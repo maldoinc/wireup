@@ -25,6 +25,10 @@ async def target(
     lucky_number: Annotated[int, Depends(get_lucky_number)]
 ): ...
 
+@app.websocket("/ws")
+async def ws(websocket: WebSocket, greeter: Annotated[GreeterService, Inject()]):
+    ...
+
 # Initialize the integration.
 # Must be called after all routers have been added.
 # service_modules is a list of top-level modules with service registrations.
