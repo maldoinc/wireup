@@ -46,7 +46,6 @@ Changelog = "https://github.com/maldoinc/wireup/releases"
 [tool.poetry.dependencies]
 python = "^3.8"
 graphlib2 = { version = "^0.4.7", python = ">=3.8,<3.9" }
-pytest = "^8.3.3"
 
 [tool.poetry.group.dev.dependencies]
 ruff = "0.6.1"
@@ -60,6 +59,7 @@ typing-extensions = "^4.7.1"
 mypy = "1.11.1"
 coverage = "^7.3.2"
 tox = "^4.14.2"
+pytest = "^8.3.3"
 pytest-asyncio = "^0.24.0"
 
 [tool.ruff]
