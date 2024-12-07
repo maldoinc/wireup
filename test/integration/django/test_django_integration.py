@@ -18,6 +18,8 @@ WIREUP = WireupSettings(service_modules=["test.integration.django.service", "tes
 SECRET_KEY = "not_actually_a_secret"  # noqa: S105
 START_NUM = 4
 
+MIDDLEWARE = ["wireup.integration.django.wireup_middleware"]
+
 urlpatterns = [
     path(r"", view.index),
     path(r"classbased", view.RandomNumberView.as_view()),
