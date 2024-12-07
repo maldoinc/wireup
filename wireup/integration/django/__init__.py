@@ -10,7 +10,7 @@ from wireup.errors import WireupError
 current_request: ContextVar[HttpRequest] = ContextVar("wireup_django_request")
 
 
-def wireup_middleware(get_response: Callable[[HttpRequest], HttpResponse]) -> Callable[[HttpRequest], HttpResponse]:
+def wireup_middleware(get_response: Callable[[HttpRequest], HttpResponse]) -> Callable[[HttpRequest], HttpResponse]:  # noqa: D103
     def _inner(request: HttpRequest) -> HttpResponse:
         token = current_request.set(request)
         try:
@@ -24,7 +24,7 @@ def wireup_middleware(get_response: Callable[[HttpRequest], HttpResponse]) -> Ca
 CurrentHttpRequest = NewType("CurrentHttpRequest", HttpRequest)
 
 
-def django_request_factory() -> HttpRequest:
+def django_request_factory() -> HttpRequest:  # noqa: D103
     try:
         return current_request.get()
     except LookupError as e:
