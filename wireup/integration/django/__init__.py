@@ -1,7 +1,7 @@
 from contextvars import ContextVar
 from dataclasses import dataclass
 from types import ModuleType
-from typing import Callable, List, NewType, Union
+from typing import Callable, List, Union
 
 from django.http import HttpRequest, HttpResponse
 
@@ -19,9 +19,6 @@ def wireup_middleware(get_response: Callable[[HttpRequest], HttpResponse]) -> Ca
             current_request.reset(token)
 
     return _inner
-
-
-CurrentHttpRequest = NewType("CurrentHttpRequest", HttpRequest)
 
 
 def django_request_factory() -> HttpRequest:  # noqa: D103
