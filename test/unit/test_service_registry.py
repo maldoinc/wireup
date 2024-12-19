@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import unittest
-from typing import Any, NewType
+from typing import NewType
 
 from typing_extensions import Annotated
 from wireup import Inject, ServiceLifetime
