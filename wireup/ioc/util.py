@@ -3,8 +3,9 @@ from __future__ import annotations
 import typing
 import warnings
 from inspect import Parameter
-from typing import Any
+from typing import Any, TypeVar
 
+from wireup.errors import WireupError
 from wireup.ioc.types import AnnotatedParameter, InjectableType
 
 
@@ -67,3 +68,27 @@ def is_type_autowireable(obj_type: Any) -> bool:
         return False
 
     return not (hasattr(obj_type, "__origin__") and obj_type.__origin__ == typing.Union)
+
+
+T = TypeVar("T")
+
+
+def ensure_is_type(
+    value: type[T] | str, globalns: dict[str, Any] | None = None, localns: dict[str, Any] | None = None
+) -> type[T]:
+    """Ensure the given value represents a type.
+
+    If it is a string it will be evaluated using eval_type_backport.
+    """
+    if isinstance(value, str):
+        try:
+            import eval_type_backport
+
+            return eval_type_backport.eval_type_backport(
+                eval_type_backport.ForwardRef(value), globalns=globalns, localns=localns
+            )
+        except ImportError as e:
+            msg = "Using __future__ annotations in Wireup requires the eval_type_backport package to be installed."
+            raise WireupError(msg) from e
+
+    return value

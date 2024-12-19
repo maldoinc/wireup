@@ -136,6 +136,7 @@ class DependencyContainer(BaseContainer):
         *,
         qualifier: Qualifier | None = None,
         lifetime: ServiceLifetime = ServiceLifetime.SINGLETON,
+        globalns: dict[str, Any] | None = None,
     ) -> T | Callable[[T], T]:
         """Register a dependency in the container. Dependency must be either a class or a factory function.
 
@@ -153,11 +154,11 @@ class DependencyContainer(BaseContainer):
             return decorated
 
         if isinstance(obj, type):
-            self._registry.register_service(obj, qualifier, lifetime)
+            self._registry.register_service(obj, qualifier, lifetime, globalns=globalns)
             return obj
 
         if callable(obj):
-            self._registry.register_factory(obj, qualifier=qualifier, lifetime=lifetime)
+            self._registry.register_factory(obj, qualifier=qualifier, lifetime=lifetime, globalns=globalns)
             return obj
 
         raise InvalidRegistrationTypeError(obj)
