@@ -78,7 +78,7 @@ def warmup_container(dependency_container: DependencyContainer, service_modules:
 
 def _register_services(dependency_container: DependencyContainer, service_modules: list[ModuleType]) -> None:
     abstract_registrations: set[type[Any]] = set()
-    service_registrations: list[tuple[ServiceDeclaration, ModuleType]] = []
+    service_registrations: list[ServiceDeclaration] = []
 
     def _is_valid_wireup_target(obj: Any) -> bool:
         # Check that the hasattr call is only made on user defined functions and classes.
@@ -91,17 +91,15 @@ def _register_services(dependency_container: DependencyContainer, service_module
             reg = getattr(cls, "__wireup_registration__", None)
 
             if isinstance(reg, ServiceDeclaration):
-                service_registrations.append((reg, module))
+                service_registrations.append(reg)
             elif isinstance(reg, AbstractDeclaration):
                 abstract_registrations.add(cls)
 
     for cls in abstract_registrations:
         dependency_container.abstract(cls)
 
-    for svc, module in service_registrations:
-        dependency_container.register(
-            obj=svc.obj, qualifier=svc.qualifier, lifetime=svc.lifetime, globalns=module.__dict__
-        )
+    for svc in service_registrations:
+        dependency_container.register(obj=svc.obj, qualifier=svc.qualifier, lifetime=svc.lifetime)
 
 
 def _find_objects_in_module(
