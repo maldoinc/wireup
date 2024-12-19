@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from typing import AsyncIterator, Iterator, NewType
 
 import pytest
@@ -5,10 +7,12 @@ from wireup import DependencyContainer, ParameterBag
 from wireup.errors import ContainerCloseError, WireupError
 from wireup.ioc.types import ServiceLifetime
 
+Something = NewType("Something", str)
+SomethingElse = NewType("SomethingElse", str)
+
 
 def test_cleans_up_on_exit() -> None:
     _cleanup_performed = False
-    Something = NewType("Something", str)
 
     def some_factory() -> Iterator[Something]:
         yield Something("foo")
@@ -25,7 +29,6 @@ def test_cleans_up_on_exit() -> None:
 
 async def test_async_cleans_up_on_exit() -> None:
     _cleanup_performed = False
-    Something = NewType("Something", str)
 
     async def some_factory() -> AsyncIterator[Something]:
         yield Something("foo")
@@ -45,8 +48,6 @@ async def test_async_cleans_up_on_exit() -> None:
 
 
 async def test_async_raise_close_async() -> None:
-    Something = NewType("Something", str)
-
     async def some_factory() -> AsyncIterator[Something]:
         yield Something("foo")
 
@@ -63,8 +64,6 @@ async def test_async_raise_close_async() -> None:
 
 
 def test_raises_on_transient_dependency() -> None:
-    Something = NewType("Something", str)
-
     def some_factory() -> Iterator[Something]:
         yield Something("foo")
 
@@ -79,8 +78,6 @@ def test_raises_on_transient_dependency() -> None:
 
 def test_injects_transient() -> None:
     _cleanups: list[str] = []
-    Something = NewType("Something", str)
-    SomethingElse = NewType("SomethingElse", str)
 
     def f1() -> Iterator[Something]:
         yield Something("Something")
@@ -106,8 +103,6 @@ def test_injects_transient() -> None:
 
 async def test_async_injects_transient_sync_depends_on_async_result() -> None:
     _cleanups: list[str] = []
-    Something = NewType("Something", str)
-    SomethingElse = NewType("SomethingElse", str)
 
     async def f1() -> AsyncIterator[Something]:
         yield Something("Something")
@@ -133,8 +128,6 @@ async def test_async_injects_transient_sync_depends_on_async_result() -> None:
 
 def test_cleans_up_in_order() -> None:
     _cleanups: list[str] = []
-    Something = NewType("Something", str)
-    SomethingElse = NewType("SomethingElse", str)
 
     def f1() -> Iterator[Something]:
         yield Something("Something")
@@ -157,8 +150,6 @@ def test_cleans_up_in_order() -> None:
 
 
 def test_sync_raises_when_generating_async() -> None:
-    Something = NewType("Something", str)
-
     async def f1() -> AsyncIterator[Something]:
         yield Something("Something")
         raise ValueError("boom")
@@ -175,8 +166,6 @@ def test_sync_raises_when_generating_async() -> None:
 
 
 def test_raises_errors() -> None:
-    Something = NewType("Something", str)
-
     def f1() -> Iterator[Something]:
         yield Something("Something")
         raise ValueError("boom")

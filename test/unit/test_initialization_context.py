@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import unittest
 
 from wireup.ioc.initialization_context import InitializationContext

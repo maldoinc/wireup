@@ -1,8 +1,10 @@
+from __future__ import annotations
+
 import unittest
-from typing import NewType
+from typing import Any, NewType
 
 from typing_extensions import Annotated
-from wireup import Inject, ServiceLifetime, Wire
+from wireup import Inject, ServiceLifetime
 from wireup.errors import (
     DuplicateServiceRegistrationError,
     FactoryDuplicateServiceRegistrationError,
@@ -12,6 +14,17 @@ from wireup.ioc.service_registry import ServiceRegistry
 from wireup.ioc.types import AnnotatedParameter, ParameterWrapper
 
 from test.unit.services.no_annotations.random.random_service import RandomService
+
+
+class X:
+    pass
+
+
+Y = NewType("Y", X)
+
+
+def y_factory() -> Y:
+    return Y(X())
 
 
 class TestServiceRegistry(unittest.TestCase):
@@ -103,11 +116,6 @@ class TestServiceRegistry(unittest.TestCase):
         )
 
     def test_registry_newtypes_class(self) -> None:
-        class X:
-            pass
-
-        Y = NewType("Y", X)
-
         def y_factory() -> Y:
             return Y(X())
 
@@ -116,11 +124,6 @@ class TestServiceRegistry(unittest.TestCase):
         self.assertTrue(self.registry.is_impl_singleton(Y))
 
     def test_registry_newtypes_anything(self) -> None:
-        Y = NewType("Y", str)
-
-        def y_factory() -> Y:
-            return Y("Hi")
-
         self.registry.register_factory(y_factory, lifetime=ServiceLifetime.SINGLETON)
 
         self.assertTrue(self.registry.is_impl_singleton(Y))

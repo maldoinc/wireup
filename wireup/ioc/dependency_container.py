@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import asyncio
 import functools
-import importlib
 import sys
 import warnings
 from dataclasses import dataclass
@@ -154,15 +153,11 @@ class DependencyContainer(BaseContainer):
             return decorated
 
         if isinstance(obj, type):
-            self._registry.register_service(
-                obj, qualifier, lifetime, globalns=importlib.import_module(obj.__module__).__dict__
-            )
+            self._registry.register_service(obj, qualifier, lifetime)
             return obj
 
         if callable(obj):
-            self._registry.register_factory(
-                obj, qualifier=qualifier, lifetime=lifetime, globalns=importlib.import_module(obj.__module__).__dict__
-            )
+            self._registry.register_factory(obj, qualifier=qualifier, lifetime=lifetime)
             return obj
 
         raise InvalidRegistrationTypeError(obj)
@@ -215,7 +210,7 @@ class DependencyContainer(BaseContainer):
         * When injecting an interface for which there are multiple implementations you need to supply a qualifier
           using annotations.
         """
-        self._registry.target_init_context(fn, globalns=importlib.import_module(fn.__module__).__dict__)
+        self._registry.target_init_context(fn)
 
         if asyncio.iscoroutinefunction(fn):
 

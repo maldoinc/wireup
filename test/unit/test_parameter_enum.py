@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from unittest import TestCase
 
 from wireup import DependencyContainer, ParameterBag, ParameterEnum

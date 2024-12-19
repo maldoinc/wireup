@@ -16,7 +16,7 @@ from wireup.errors import (
 )
 from wireup.ioc.initialization_context import InitializationContext
 from wireup.ioc.types import AnnotatedParameter, AutowireTarget, ServiceLifetime
-from wireup.ioc.util import ensure_is_type, is_type_autowireable, param_get_annotation
+from wireup.ioc.util import _get_globals, ensure_is_type, is_type_autowireable, param_get_annotation
 
 if TYPE_CHECKING:
     from collections.abc import Iterable
@@ -44,11 +44,9 @@ class ServiceFactory:
     factory_type: FactoryType
 
 
-def _function_get_unwrapped_return_type(
-    fn: Callable[..., T], globalns: dict[str, Any] | None = None, localns: dict[str, Any] | None = None
-) -> tuple[T, FactoryType] | None:
+def _function_get_unwrapped_return_type(fn: Callable[..., T]) -> tuple[T, FactoryType] | None:
     if ret := fn.__annotations__.get("return"):
-        ret = ensure_is_type(ret, globalns=globalns, localns=localns)
+        ret = ensure_is_type(ret, globalns=_get_globals(fn))
 
         is_gen = inspect.isgeneratorfunction(fn)
         if is_gen or inspect.isasyncgenfunction(fn):
@@ -81,8 +79,6 @@ class ServiceRegistry:
         klass: type,
         qualifier: Qualifier | None,
         lifetime: ServiceLifetime,
-        globalns: dict[str, Any] | None = None,
-        localns: dict[str, Any] | None = None,
     ) -> None:
         if self.is_type_with_qualifier_known(klass, qualifier):
             raise DuplicateServiceRegistrationError(klass, qualifier)
@@ -94,7 +90,7 @@ class ServiceRegistry:
             self.known_interfaces[klass.__base__][qualifier] = klass
 
         self.known_impls[klass].add(qualifier)
-        self.target_init_context(klass, lifetime, globalns=globalns, localns=localns)
+        self.target_init_context(klass, lifetime)
 
     def register_abstract(self, klass: type) -> None:
         self.known_interfaces[klass] = defaultdict()
@@ -104,10 +100,8 @@ class ServiceRegistry:
         fn: Callable[..., Any],
         lifetime: ServiceLifetime,
         qualifier: Qualifier | None = None,
-        globalns: dict[str, Any] | None = None,
-        localns: dict[str, Any] | None = None,
     ) -> None:
-        return_type_result = _function_get_unwrapped_return_type(fn, globalns=globalns, localns=localns)
+        return_type_result = _function_get_unwrapped_return_type(fn)
 
         if return_type_result is None:
             raise FactoryReturnTypeIsEmptyError
@@ -120,7 +114,7 @@ class ServiceRegistry:
         if self.is_type_with_qualifier_known(return_type, qualifier):
             raise DuplicateServiceRegistrationError(return_type, qualifier=None)
 
-        self.target_init_context(fn, lifetime=lifetime, globalns=globalns, localns=localns)
+        self.target_init_context(fn, lifetime=lifetime)
         self.factory_functions[return_type, qualifier] = ServiceFactory(
             factory=fn,
             factory_type=factory_type,
@@ -135,17 +129,13 @@ class ServiceRegistry:
         self,
         target: AutowireTarget,
         lifetime: ServiceLifetime | None = None,
-        globalns: dict[str, Any] | None = None,
-        localns: dict[str, Any] | None = None,
     ) -> None:
         """Init and collect all the necessary dependencies to initialize the specified target."""
         if not self.context.init_target(target, lifetime):
             return
 
         for name, parameter in inspect.signature(target).parameters.items():
-            annotated_param = param_get_annotation(parameter)
-            if annotated_param and annotated_param.klass:
-                annotated_param.klass = ensure_is_type(annotated_param.klass, globalns=globalns, localns=localns)
+            annotated_param = param_get_annotation(parameter, globalns=_get_globals(target))
 
             if not annotated_param:
                 continue

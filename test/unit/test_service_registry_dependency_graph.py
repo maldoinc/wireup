@@ -1,7 +1,44 @@
+from __future__ import annotations
+
 import unittest
 
 from wireup import ServiceLifetime
 from wireup.ioc.service_registry import ServiceRegistry
+
+
+class DependencyA:
+    pass
+
+
+class DependencyB:
+    pass
+
+
+class ServiceWithDependencies:
+    def __init__(self, a: DependencyA, b: DependencyB):
+        self.a = a
+        self.b = b
+
+
+class MyInterface:
+    pass
+
+
+class ImplementationA(MyInterface):
+    pass
+
+
+class ImplementationB(MyInterface):
+    pass
+
+
+class ServiceWithInterface:
+    def __init__(self, iface: MyInterface):
+        self.iface = iface
+
+
+class MyService:
+    pass
 
 
 class TestServiceRegistry(unittest.TestCase):
@@ -32,17 +69,6 @@ class TestServiceRegistry(unittest.TestCase):
         self.assertEqual(graph, {})
 
     def test_dependency_graph_with_dependencies(self):
-        class DependencyA:
-            pass
-
-        class DependencyB:
-            pass
-
-        class ServiceWithDependencies:
-            def __init__(self, a: DependencyA, b: DependencyB):
-                self.a = a
-                self.b = b
-
         self.registry.register_service(DependencyA, qualifier=None, lifetime=ServiceLifetime.SINGLETON)
         self.registry.register_service(DependencyB, qualifier=None, lifetime=ServiceLifetime.SINGLETON)
         self.registry.register_service(ServiceWithDependencies, qualifier=None, lifetime=ServiceLifetime.SINGLETON)
@@ -53,19 +79,6 @@ class TestServiceRegistry(unittest.TestCase):
         )
 
     def test_dependency_graph_with_interface(self):
-        class MyInterface:
-            pass
-
-        class ImplementationA(MyInterface):
-            pass
-
-        class ImplementationB(MyInterface):
-            pass
-
-        class ServiceWithInterface:
-            def __init__(self, iface: MyInterface):
-                self.iface = iface
-
         self.registry.register_abstract(MyInterface)
         self.registry.register_service(ImplementationA, qualifier="A", lifetime=ServiceLifetime.SINGLETON)
         self.registry.register_service(ImplementationB, qualifier="B", lifetime=ServiceLifetime.SINGLETON)
@@ -100,9 +113,6 @@ class TestServiceRegistry(unittest.TestCase):
         self.assertEqual(graph, {ServiceWithInterface: set()})
 
     def test_dependency_graph_with_factory(self):
-        class MyService:
-            pass
-
         def create_my_service() -> MyService:
             return MyService()
 

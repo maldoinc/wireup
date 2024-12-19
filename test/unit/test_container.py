@@ -1,8 +1,9 @@
-import datetime
+from __future__ import annotations
+
 import functools
 import unittest
 from dataclasses import dataclass
-from typing import NewType, Optional
+from typing import TYPE_CHECKING, Optional
 from unittest.mock import Mock, patch
 
 from typing_extensions import Annotated
@@ -23,6 +24,17 @@ from test.fixtures import Counter, FooBar, FooBase, FooBaz
 from test.unit import services
 from test.unit.services.no_annotations.random.random_service import RandomService
 from test.unit.services.no_annotations.random.truly_random_service import TrulyRandomService
+
+if TYPE_CHECKING:
+    import datetime
+
+
+class SomeClass: ...
+
+
+@dataclass
+class RegisterWithQualifierClass:
+    foo = "bar"
 
 
 class TestContainer(unittest.IsolatedAsyncioTestCase):
@@ -343,8 +355,7 @@ class TestContainer(unittest.IsolatedAsyncioTestCase):
         )
 
     def test_register_with_qualifier_fails_when_invoked_without(self):
-        @self.container.register(qualifier=__name__)
-        class RegisterWithQualifierClass: ...
+        self.container.register(RegisterWithQualifierClass, qualifier=__name__)
 
         @self.container.autowire
         def inner(_foo: RegisterWithQualifierClass): ...
@@ -359,10 +370,7 @@ class TestContainer(unittest.IsolatedAsyncioTestCase):
         )
 
     def test_register_with_qualifier_injects_based_on_qualifier(self):
-        @self.container.register(qualifier=__name__)
-        @dataclass
-        class RegisterWithQualifierClass:
-            foo = "bar"
+        self.container.register(RegisterWithQualifierClass, qualifier=__name__)
 
         @self.container.autowire
         def inner(foo: RegisterWithQualifierClass = Inject(qualifier=__name__)):
@@ -511,9 +519,6 @@ class TestContainer(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(4, first.get_random())
 
     def test_shrinks_context_on_autowire(self):
-        class SomeClass:
-            pass
-
         def provide_b(fn):
             @functools.wraps(fn)
             def __inner(*args, **kwargs):

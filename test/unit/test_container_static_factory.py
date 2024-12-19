@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from unittest import TestCase
 
 from wireup import DependencyContainer, Inject, ParameterBag, ServiceLifetime, warmup_container
@@ -14,6 +16,11 @@ from test.unit.services.no_annotations.random.random_service import RandomServic
 class ThingToBeCreated:
     def __init__(self, val: str):
         self.val = val
+
+
+class FooGenerator:
+    def get_foo(self) -> FooBar:
+        return FooBar()
 
 
 class TestContainerStaticFactory(TestCase):
@@ -128,10 +135,7 @@ class TestContainerStaticFactory(TestCase):
         )
 
     def test_factory_as_property_accessor(self):
-        @self.container.register
-        class FooGenerator:
-            def get_foo(self) -> FooBar:
-                return FooBar()
+        self.container.register(FooGenerator)
 
         @self.container.autowire
         def inner(foobar: FooBar):

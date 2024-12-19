@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import unittest
 from dataclasses import dataclass
 
@@ -12,6 +14,26 @@ from test.unit.services.no_annotations.random.random_service import RandomServic
 class SomeService:
     start: Annotated[int, Inject(param="start")]
     random: RandomService
+
+
+@dataclass
+class Thing:
+    foo: FooBase
+
+
+@dataclass
+class Thing2:
+    thing: Thing
+
+
+@dataclass
+class Thing3:
+    foo: Annotated[FooBase, Inject(qualifier="bar")]
+
+
+@dataclass
+class Thing4:
+    thing: Thing3
 
 
 class TestContainerCompiled(unittest.TestCase):
@@ -54,40 +76,24 @@ class TestContainerCompiled(unittest.TestCase):
         target()
 
     def test_compiled_works_with_interfaces_and_qualifiers_on_dependencies(self):
-        @self.container.register
-        @dataclass
-        class Thing:
-            foo: Annotated[FooBase, Inject(qualifier="bar")]
-
-        @self.container.register
-        @dataclass
-        class Thing2:
-            thing: Thing
-
         self.container.abstract(FooBase)
         self.container.register(FooBar, qualifier="bar")
         self.container.register(FooBaz, qualifier="baz")
+        self.container.register(Thing3)
+        self.container.register(Thing4)
         self.container.warmup()
 
         @self.container.autowire
-        def target(thing2: Thing2):
+        def target(thing2: Thing4):
             self.assertEqual(thing2.thing.foo.foo, "bar")
 
         target()
 
     def test_compiled_injecting_interface_injects_real_instantiated_impl_object(self):
-        @self.container.register
-        @dataclass
-        class Thing:
-            foo: FooBase
-
-        @self.container.register
-        @dataclass
-        class Thing2:
-            thing: Thing
-
         self.container.abstract(FooBase)
         self.container.register(FooBar)
+        self.container.register(Thing)
+        self.container.register(Thing2)
         self.container.warmup()
 
         @self.container.autowire

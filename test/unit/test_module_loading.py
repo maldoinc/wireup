@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import unittest
 
 from wireup import DependencyContainer, ParameterBag, initialize_container, register_all_in_module, warmup_container
