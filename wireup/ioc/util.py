@@ -95,9 +95,9 @@ def ensure_is_type(value: type[T] | str, globalns: dict[str, Any] | None = None)
         try:
             import eval_type_backport
 
-            return eval_type_backport.eval_type_backport(
+            return eval_type_backport.eval_type_backport(  # type:ignore[no-any-return]
                 eval_type_backport.ForwardRef(value), globalns=globalns, try_default=False
-            )  # type:ignore[no-any-return]
+            )
         except NameError:
             return None
         except ImportError as e:
