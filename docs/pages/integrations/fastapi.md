@@ -46,16 +46,6 @@ To help with migration, it is possible to use Wireup in FastAPI depends
 or anywhere you have a reference to the FastAPI application instance.
 
 
-```python
-async def some_route_or_fastapi_dependency(
-    greeter: Annotated[GreeterService, WireupService(GreeterService)],
-    foo_param: Annotated[str, WireupParameter("foo")],
-    foo_foo: Annotated[str, WireupExpr("${foo}-${foo}")],
-    container: Annotated[DependencyContainer, WireupContainer()],
-): ...
-```
-
-
 If you're not storing the container in a variable somewhere, you can get a reference
 to it by using the `wireup.integration.fastapi.get_container` function.
 
@@ -77,6 +67,18 @@ from wireup.integration.fastapi import get_container
 async def example_dependency(request: Request, other_dependency: Annotated[X, Depends(...)]):
     container = get_container(request.app)
     ...
+```
+
+The integration also provides some FastAPI Depends functions you can use directly that perform some operation
+with the container.
+
+```python
+async def some_fastapi_dependency(
+    greeter: Annotated[GreeterService, WireupService(GreeterService)],
+    foo_param: Annotated[str, WireupParameter("foo")],
+    foo_foo: Annotated[str, WireupExpr("${foo}-${foo}")],
+    container: Annotated[DependencyContainer, WireupContainer()],
+): ...
 ```
 
 ### FastAPI request
