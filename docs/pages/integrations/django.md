@@ -1,8 +1,17 @@
 Dependency injection for Django is available via the provided integration in `wireup.integration.django`.
 
+
+**Features:**
+
+- [x] Inject dependencies in Django views.
+    * Supports functions and class-based views.
+    * Eliminates the need for `@container.autowire`.
+- [x] Expose `django.http.HttpRequest` as a wireup dependency.
+    * Available as a `TRANSIENT` scoped dependency, your services can ask for a django request object.
+
 ## Installation
 
-To install the integration, add `wireup.integration.django` to `INSTALLED_APPS` and define a new `WIREUP` setting.
+To install the integration, add `wireup.integration.django` to `INSTALLED_APPS`, define a new `WIREUP` setting and add the wireup middleware.
 
 ```python title="settings.py"
 import os
@@ -12,6 +21,8 @@ INSTALLED_APPS = [
     ...,
     "wireup.integration.django"
 ]
+
+MIDDLEWARE = ["wireup.integration.django.wireup_middleware"]
 
 WIREUP = WireupSettings(
     # This is a list of top-level modules containing service registrations.

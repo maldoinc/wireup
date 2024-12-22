@@ -29,13 +29,28 @@ class TestUtilityFunctions(unittest.TestCase):
         ): ...
 
         params = inspect.signature(inner)
-        self.assertEqual(param_get_annotation(params.parameters["_a"]), AnnotatedParameter(str, None))
-        self.assertEqual(param_get_annotation(params.parameters["_b"]), None)
-        self.assertEqual(param_get_annotation(params.parameters["_c"]), AnnotatedParameter(str, None))
-        self.assertEqual(param_get_annotation(params.parameters["_d"]), AnnotatedParameter(str, ParameterWrapper("d")))
-        self.assertEqual(param_get_annotation(params.parameters["_e"]), AnnotatedParameter(str, ParameterWrapper("e")))
-        self.assertEqual(param_get_annotation(params.parameters["_f"]), AnnotatedParameter(None, ParameterWrapper("f")))
-        self.assertEqual(param_get_annotation(params.parameters["_g"]), AnnotatedParameter(None, d2))
+        self.assertEqual(
+            param_get_annotation(params.parameters["_a"], globalns=globals()), AnnotatedParameter(str, None)
+        )
+        self.assertEqual(param_get_annotation(params.parameters["_b"], globalns=globals()), None)
+        self.assertEqual(
+            param_get_annotation(params.parameters["_c"], globalns=globals()), AnnotatedParameter(str, None)
+        )
+        self.assertEqual(
+            param_get_annotation(params.parameters["_d"], globalns=globals()),
+            AnnotatedParameter(str, ParameterWrapper("d")),
+        )
+        self.assertEqual(
+            param_get_annotation(params.parameters["_e"], globalns=globals()),
+            AnnotatedParameter(str, ParameterWrapper("e")),
+        )
+        self.assertEqual(
+            param_get_annotation(params.parameters["_f"], globalns=globals()),
+            AnnotatedParameter(None, ParameterWrapper("f")),
+        )
+        self.assertEqual(
+            param_get_annotation(params.parameters["_g"], globalns=globals()), AnnotatedParameter(None, d2)
+        )
 
     def test_is_type_autowireable_basic_types(self):
         self.assertFalse(is_type_autowireable(int))

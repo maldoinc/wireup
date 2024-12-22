@@ -16,7 +16,7 @@ from wireup.errors import (
 )
 from wireup.ioc.initialization_context import InitializationContext
 from wireup.ioc.types import AnnotatedParameter, AutowireTarget, ServiceLifetime
-from wireup.ioc.util import is_type_autowireable, param_get_annotation
+from wireup.ioc.util import _get_globals, ensure_is_type, is_type_autowireable, param_get_annotation
 
 if TYPE_CHECKING:
     from collections.abc import Iterable
@@ -44,8 +44,12 @@ class ServiceFactory:
     factory_type: FactoryType
 
 
-def _function_get_unwrapped_return_type(fn: Callable[..., T]) -> tuple[T, FactoryType] | None:
+def _function_get_unwrapped_return_type(fn: Callable[..., T]) -> tuple[type[T], FactoryType] | None:
     if ret := fn.__annotations__.get("return"):
+        ret = ensure_is_type(ret, globalns=_get_globals(fn))
+        if not ret:
+            return None
+
         is_gen = inspect.isgeneratorfunction(fn)
         if is_gen or inspect.isasyncgenfunction(fn):
             args = typing.get_args(ret)
@@ -94,7 +98,10 @@ class ServiceRegistry:
         self.known_interfaces[klass] = defaultdict()
 
     def register_factory(
-        self, fn: Callable[..., Any], lifetime: ServiceLifetime, qualifier: Qualifier | None = None
+        self,
+        fn: Callable[..., Any],
+        lifetime: ServiceLifetime,
+        qualifier: Qualifier | None = None,
     ) -> None:
         return_type_result = _function_get_unwrapped_return_type(fn)
 
@@ -120,13 +127,17 @@ class ServiceRegistry:
         # as the factory will be the one to create it.
         self.context.init_target(return_type, lifetime)
 
-    def target_init_context(self, target: AutowireTarget, lifetime: ServiceLifetime | None = None) -> None:
+    def target_init_context(
+        self,
+        target: AutowireTarget,
+        lifetime: ServiceLifetime | None = None,
+    ) -> None:
         """Init and collect all the necessary dependencies to initialize the specified target."""
         if not self.context.init_target(target, lifetime):
             return
 
         for name, parameter in inspect.signature(target).parameters.items():
-            annotated_param = param_get_annotation(parameter)
+            annotated_param = param_get_annotation(parameter, globalns=_get_globals(target))
 
             if not annotated_param:
                 continue
