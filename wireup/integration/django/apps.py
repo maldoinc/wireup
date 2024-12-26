@@ -51,7 +51,7 @@ class WireupConfig(AppConfig):
         for p in resolver.url_patterns:
             if isinstance(p, URLResolver):
                 self._autowire(p)
-                return
+                continue
 
             if isinstance(p, URLPattern) and p.callback:
                 target = p.callback
