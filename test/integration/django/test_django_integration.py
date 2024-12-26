@@ -4,14 +4,18 @@ import sys
 import django
 import pytest
 from django.test import Client
-from django.urls import path, include
+from django.urls import include, path
 from wireup.integration.django import WireupSettings
 from wireup.integration.django.apps import get_container
 
 from test.integration.django import view
 from test.integration.django.service.greeter_interface import GreeterService
 
-INSTALLED_APPS = ["wireup.integration.django", "test.integration.django.apps.app_1", "test.integration.django.apps.app_2"]
+INSTALLED_APPS = [
+    "wireup.integration.django",
+    "test.integration.django.apps.app_1",
+    "test.integration.django.apps.app_2",
+]
 DEBUG = True
 ROOT_URLCONF = sys.modules[__name__]
 WIREUP = WireupSettings(service_modules=["test.integration.django.service", "test.integration.django.factory"])
@@ -63,6 +67,7 @@ def test_override(client: Client):
 
     assert res.status_code == 200
     assert res.content.decode("utf8") == "Bad day to you, Test! Debug = True. Your lucky number is 4"
+
 
 def test_multiple_apps(client: Client):
     app_1_response = client.get("/app_1/?name=World")
