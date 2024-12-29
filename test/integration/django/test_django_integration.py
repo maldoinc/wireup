@@ -1,10 +1,12 @@
 import os
 import sys
+from pathlib import Path
 
 import django
 import pytest
 from django.test import Client
 from django.urls import include, path
+from django.views.generic import TemplateView
 from wireup.integration.django import WireupSettings
 from wireup.integration.django.apps import get_container
 
@@ -24,9 +26,18 @@ START_NUM = 4
 
 MIDDLEWARE = ["wireup.integration.django.wireup_middleware"]
 
+TEMPLATES = [
+    {
+        "BACKEND": "django.template.backends.django.DjangoTemplates",
+        "DIRS": [Path(__file__).parent / "templates/"],
+    },
+]
+
 urlpatterns = [
-    path(r"", view.index),
-    path(r"classbased", view.RandomNumberView.as_view()),
+    path("", view.index),
+    path("classbased", view.RandomNumberView.as_view()),
+    path("template_view/foo", TemplateView.as_view(template_name="foo.html")),
+    path("template_view/bar", TemplateView.as_view(template_name="bar.html")),
     path("app_1", include("test.integration.django.apps.app_1.urls")),
     path("app_2", include("test.integration.django.apps.app_2.urls")),
 ]
@@ -55,6 +66,14 @@ def test_get_random(client: Client):
 
     assert res.status_code == 200
     assert res.content.decode("utf8") == "Hello Test! Debug = True. Your lucky number is 4"
+
+
+@pytest.mark.parametrize("path", ("foo", "bar"))
+def test_get_templated_views(client: Client, path: str):
+    res = client.get(f"/template_view/{path}")
+
+    assert res.status_code == 200
+    assert res.content.decode("utf8") == path
 
 
 def test_override(client: Client):

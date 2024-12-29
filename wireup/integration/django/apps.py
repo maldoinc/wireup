@@ -63,12 +63,16 @@ class WireupConfig(AppConfig):
                     self.container._registry.context.remove_dependency_type(target, HttpRequest)  # type: ignore[reportPrivateUsage]  # noqa: SLF001
 
     def _autowire_class_based_view(self, callback: Any) -> Any:
-        self.container.register(callback.view_class)
+        # It is possible in django for one class to serve multiple routes,
+        # so this needs to create a new type to disambiguate.
+        # see: https://github.com/maldoinc/wireup/issues/53
+        wrapped_type = type(f"WireupWrapped{callback.view_class.__name__}", (callback.view_class,), {})
+        self.container.register(wrapped_type)
 
         # This is taken from the django .as_view() method.
         def view(request: HttpRequest, *args: Any, **kwargs: Any) -> Any:
             autowired_args: _InjectionResult = self.container._DependencyContainer__callable_get_params_to_inject(  # type: ignore[reportAttributeAccessIssue]  # noqa: SLF001
-                callback.view_class
+                wrapped_type
             )
 
             this = callback.view_class(**{**callback.view_initkwargs, **autowired_args.kwargs})
