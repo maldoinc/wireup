@@ -13,7 +13,7 @@ from fastapi.testclient import TestClient
 from typing_extensions import Annotated
 from wireup import Inject
 from wireup.errors import UnknownServiceRequestedError, WireupError
-from wireup.integration.fastapi import get_container, resource
+from wireup.integration.fastapi import controller, get_container
 from wireup.ioc.types import ServiceLifetime
 
 from test.unit.services.no_annotations.random.random_service import RandomService
@@ -43,8 +43,8 @@ class GreeterService:
 router = APIRouter()
 
 
-@resource(router)
-class MyClassBasedRoute:
+@controller(router)
+class MyController:
     def __init__(self, random_service: RandomService) -> None:
         self.rng = random_service
         self.counter = 0
@@ -93,7 +93,7 @@ def create_app() -> FastAPI:
     container.register(RandomService)
     container.register(GreeterService)
     container.register(ServiceUsingFastapiRequest, lifetime=ServiceLifetime.TRANSIENT)
-    wireup.integration.fastapi.setup(container, app, class_routes=[MyClassBasedRoute])
+    wireup.integration.fastapi.setup(container, app, class_routes=[MyController])
 
     return app
 

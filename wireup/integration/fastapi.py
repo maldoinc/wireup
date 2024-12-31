@@ -15,7 +15,7 @@ current_request: ContextVar[Request] = ContextVar("wireup_fastapi_request")
 T = TypeVar("T")
 
 
-def resource(router: APIRouter) -> Callable[[T], T]:
+def controller(router: APIRouter) -> Callable[[T], T]:
     """Mark this class as a Class-Based route provider for fastapi powered by Wireup Dependencies."""
 
     def decorator(cls: T) -> T:
