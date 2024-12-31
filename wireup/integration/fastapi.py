@@ -1,8 +1,10 @@
+import contextlib
 from contextvars import ContextVar
-from typing import Awaitable, Callable
+from typing import Any, AsyncIterator, Awaitable, Callable, List, Optional, Type, TypeVar
 
-from fastapi import FastAPI, Request, Response
+from fastapi import APIRouter, FastAPI, Request, Response
 from fastapi.routing import APIRoute, APIWebSocketRoute
+from starlette.routing import BaseRoute
 
 from wireup import DependencyContainer
 from wireup.errors import WireupError
@@ -10,6 +12,17 @@ from wireup.integration.util import is_view_using_container
 from wireup.ioc.types import ServiceLifetime
 
 current_request: ContextVar[Request] = ContextVar("wireup_fastapi_request")
+T = TypeVar("T")
+
+
+def resource(router: APIRouter) -> Callable[[T], T]:
+    """Mark this class as a Class-Based route provider for fastapi powered by Wireup Dependencies."""
+
+    def decorator(cls: T) -> T:
+        cls.__router__ = router  # type:ignore[reportAttributeAccessIssue]
+        return cls
+
+    return decorator
 
 
 async def _wireup_request_middleware(request: Request, call_next: Callable[[Request], Awaitable[Response]]) -> Response:
@@ -28,8 +41,8 @@ def _fastapi_request_factory() -> Request:
         raise WireupError(msg) from e
 
 
-def _autowire_views(container: DependencyContainer, app: FastAPI) -> None:
-    for route in app.routes:
+def _autowire_views(container: DependencyContainer, routes: List[BaseRoute]) -> None:
+    for route in routes:
         if (
             isinstance(route, (APIRoute, APIWebSocketRoute))
             and route.dependant.call
@@ -42,14 +55,38 @@ def _autowire_views(container: DependencyContainer, app: FastAPI) -> None:
             container._registry.context.remove_dependency_type(target, Request)  # type: ignore[reportPrivateUsage]  # noqa: SLF001
 
 
-def setup(container: DependencyContainer, app: FastAPI) -> None:
+def _register_class_based_routes(app: FastAPI, container: DependencyContainer, cls: Type[Any]) -> None:
+    container.register(cls)
+    r: APIRouter = cls.__router__  # type: ignore[reportUnknownMemberType]
+    instance = container.get(cls)
+
+    for route in r.routes:
+        if isinstance(route, (APIRoute, APIWebSocketRoute)):
+            route.endpoint = getattr(instance, route.endpoint.__name__)
+
+    app.include_router(r)
+    _autowire_views(container, r.routes)
+
+
+def setup(container: DependencyContainer, app: FastAPI, *, class_routes: Optional[List[type]] = None) -> None:
     """Integrate Wireup with FastAPI.
 
     This will automatically inject dependencies on FastAPI routers.
     """
+    current_lifespan = app.router.lifespan_context
+
+    @contextlib.asynccontextmanager
+    async def _lifespan_wrapper(app: FastAPI) -> AsyncIterator[Any]:
+        for route in class_routes or []:
+            _register_class_based_routes(app, container, route)
+
+        async with current_lifespan(app) as cl:
+            yield cl
+
+    app.router.lifespan_context = _lifespan_wrapper
     container.register(_fastapi_request_factory, lifetime=ServiceLifetime.TRANSIENT)
     app.middleware("http")(_wireup_request_middleware)
-    _autowire_views(container, app)
+    _autowire_views(container, app.routes)
     app.state.wireup_container = container
 
 

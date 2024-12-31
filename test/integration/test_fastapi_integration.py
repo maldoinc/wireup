@@ -1,19 +1,19 @@
 import asyncio
 import uuid
 from dataclasses import dataclass
-from typing import Any, Dict
+from typing import Any, Dict, Iterator
 
 import anyio.to_thread
 import pytest
 import wireup
 import wireup.integration
 import wireup.integration.fastapi
-from fastapi import Depends, FastAPI, Request, WebSocket
+from fastapi import APIRouter, Depends, FastAPI, Request, WebSocket
 from fastapi.testclient import TestClient
 from typing_extensions import Annotated
 from wireup import Inject
 from wireup.errors import UnknownServiceRequestedError, WireupError
-from wireup.integration.fastapi import get_container
+from wireup.integration.fastapi import get_container, resource
 from wireup.ioc.types import ServiceLifetime
 
 from test.unit.services.no_annotations.random.random_service import RandomService
@@ -38,6 +38,21 @@ def get_lucky_number() -> int:
 class GreeterService:
     def greet(self, name: str) -> str:
         return f"Hello {name}"
+
+
+router = APIRouter()
+
+
+@resource(router)
+class MyClassBasedRoute:
+    def __init__(self, random_service: RandomService) -> None:
+        self.rng = random_service
+        self.counter = 0
+
+    @router.get("/cbr")
+    def get_cbr(self) -> Dict[str, Any]:
+        self.counter += 1
+        return {"counter": self.counter, "random": self.rng.get_random()}
 
 
 def create_app() -> FastAPI:
@@ -78,7 +93,7 @@ def create_app() -> FastAPI:
     container.register(RandomService)
     container.register(GreeterService)
     container.register(ServiceUsingFastapiRequest, lifetime=ServiceLifetime.TRANSIENT)
-    wireup.integration.fastapi.setup(container, app)
+    wireup.integration.fastapi.setup(container, app, class_routes=[MyClassBasedRoute])
 
     return app
 
@@ -89,14 +104,25 @@ def app() -> FastAPI:
 
 
 @pytest.fixture()
-def client(app: FastAPI) -> TestClient:
-    return TestClient(app)
+def client(app: FastAPI) -> Iterator[TestClient]:
+    with TestClient(app) as client:
+        yield client
 
 
 def test_injects_service(client: TestClient):
     response = client.get("/lucky-number")
     assert response.status_code == 200
     assert response.json() == {"number": 4, "lucky_number": 42}
+
+
+def test_class_based_routes(client: TestClient):
+    response = client.get("/cbr")
+    assert response.status_code == 200
+    assert response.json() == {"counter": 1, "random": 4}
+
+    response = client.get("/cbr")
+    assert response.status_code == 200
+    assert response.json() == {"counter": 2, "random": 4}
 
 
 def test_override(app: FastAPI, client: TestClient):
