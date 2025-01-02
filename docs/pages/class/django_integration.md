@@ -1,2 +1,2 @@
-::: wireup.integration.django.apps
+::: wireup.integration.django
 

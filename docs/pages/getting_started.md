@@ -1,11 +1,30 @@
-Wireup can be used standalone as a DI container/service locator
+Wireup is a Performant, concise, and easy-to-use dependency injection container for Python 3.8+.
+
+It can be used standalone as a DI container/service locator
 or it can be integrated with common frameworks for simplified usage.
 
-This guide will show you how to use the basics of the container
-and will include links to the various integrations at the end.
+## Overview
 
+To showcase the basics of Wireup, we will create a container able to inject the following:
 
-## Guide
+* A `WeatherService` that queries a fictional weather api, needs an api key and a `KeyValueStore` to cache request data.
+* `KeyValueStore` itself needs a `redis_url` denoting the server it will connect to to query/store data.
+
+These services will then be retrieved in a `/weather/forecast` endpoint that requires `WeatherService` to provide weather information.
+
+``` mermaid
+graph LR
+    A --> C
+    B --> D
+    C --> D
+    D --> E
+
+    A[⚙️ redis_url]
+    B[⚙️ weather_api_key]
+    C[🐍 KeyValueStore]
+    D[🐍 WeatherService]
+    E[🌎 /weather/forecast]
+```
 
 ### 1. Setup
 
@@ -24,15 +43,12 @@ container = wireup.create_container(
     # Parameters serve as application/service configuration.
     parameters={
         "redis_url": os.environ["APP_REDIS_URL"],
-        "weather_api_key": os.environ["APP_WEATHER_API_KEY"]
+        "weather_api_key": os.environ["APP_WEATHER_API_KEY"],
     },
-    # Top-level modules containing service registrations.
+    # Let the container know where service registrations are located.
+    # More on this in a bit.
     service_modules=[services]
 )
-
-# Services are created on first use.
-# If you want to create them ahead of time you can do so by using the warmup method.
-container.warmup()
 ```
 
 ??? abstract "Read: Global variables"
@@ -43,18 +59,20 @@ container.warmup()
     With the available integrations, global state is neither necessary nor recommended.
 
 
-### 2. Declare services
+### 2. Define services
 
-The container uses configuration metadata from decorators and annotations 
-to define services and the dependencies between them. 
+The container uses configuration metadata from annotations and types to define services and the dependencies between them.
 This means that the service declaration is self-contained and does not require additional setup for most use cases.
 
 
-!!! tip "Use Wireup the way you prefer"
-    The container can be configured through annotations or programmatically.
-    It was designed with annotations in mind but all features are available with either approach. [Learn more](configuration.md).
+??? abstract "Read: Use Wireup without annotations"
+    If using annotations is not suitable for your project, it is possible to use functions called factories to
+    create your service objects.
 
+    This lets you keep service definitions devoid of Wireup references. [Learn more](factory_functions.md)
 
+!!! tip ""
+    Click on the :material-plus-circle: symbols in the code blocks to learn more about that particular line.
 
 ```python title="services/key_value_store.py" hl_lines="4 6"
 from wireup import service, Inject
@@ -64,9 +82,6 @@ from typing_extensions import Annotated
 class KeyValueStore:
     def __init__(self, dsn: Annotated[str, Inject(param="redis_url")]) -> None:  #(2)!
         self.client = redis.from_url(dsn)
-
-    def get(self, key: str) -> Any: ...
-    def set(self, key: str, value: Any): ...
 ```
 
 
@@ -75,50 +90,76 @@ class KeyValueStore:
 2. Parameters must be annotated with the `Inject(param=name)` syntax. This tells the container which parameter to inject.
 
 
-```python title="services/weather_service.py" hl_lines="4 5"
+```python title="services/weather_service.py" hl_lines="1 5 6"
 @service
-@dataclass # Use alongside dataclasses to simplify init code.
 class WeatherService:
-    api_key: Annotated[str, Inject(param="weather_api_key")]
-    kv_store: KeyValueStore
-
-    async def get_forecast(self, lat: float, lon: float) -> WeatherForecast:
-        raise NotImplementedError
+    def __init(
+        self,
+        api_key: Annotated[str, Inject(param="weather_api_key")], #(1)!
+        kv_store: KeyValueStore, #(2)!
+    ) -> None:
+        self.api_key = api_key
+        self.kv_store = kv_store
 ```
 
-!!! tip
-    Wireup supports factories and generator factories (functions that use `yield` instead of `return`)
-    to perform service construction. [Learn more](factory_functions.md#use-a-generator-function-yield-instead-of-return).
+1. Same as above, weather api key needs the parameter name for the container to inject it.
+2. `KeyValueStore` can be injected only by type and requires no additional configuration.
 
-    ```python
+
+
+!!! tip "Good to know"
+    Use factories when creating a service requires additional initialization or cleanup.
+    Wireup also supports generators (functions that yield instead of return).
+    [Learn more](factory_functions.md#use-a-generator-function-yield-instead-of-return).
+
+    ```python title="factories.py"
     @service
-    def db_session_factory() -> Iterator[Session]:
-        db = Session()
-        try:
-            yield db
-        finally:
-            db.close()
+    def db_factory(dsn: Annotated[str, Inject(param="db_dsn")]) -> Iterator[Connection]:
+        with Connection(dsn) as conn:
+            yield conn
     ```
-
 
 ### 3. Use
 
-Now you can use the container as a service locator or apply it as a decorator.
+Use the container as a service locator or apply it as a decorator.
 
-```python
-weather_service = container.get(WeatherService)
-```
+=== "Injection via decorator"
 
-```python title="views/posts.py"
-@app.get("/weather/forecast")
-@container.autowire
-async def get_forecast_view(weather_service: WeatherService):
-    return await weather_service.get_forecast(...)
-```
+    The container instance provides an `autowire` method that when applied
+    to a function will cause the container to pass the dependencies
+    when the function is called.
+
+    ```python title="views/posts.py"  hl_lines="2 3"
+    @app.get("/weather/forecast")
+    @container.autowire
+    async def get_forecast_view(weather_service: WeatherService):
+        return await weather_service.get_forecast(...)
+    ```
+
+=== "Service Locator"
+
+    Alternatively you can use the container's ability to function as a
+
+    ```python title="views/posts.py"  hl_lines="3"
+    @app.get("/weather/forecast")
+    async def get_forecast_view():
+        weather_service = container.get(WeatherService)
+        return await weather_service.get_forecast(...)
+    ```
+
+
+
+#### 3.5 Integrate
+
+While Wireup is framework-agnostic, usage can be simplified when used with the following frameworks:
+
+- [Django](integrations/django.md)
+- [FastAPI](integrations/fastapi.md)
+- [Flask](integrations/flask.md)
 
 ### 4. Test
 
-Wireup does not patch your services which means they can be instantiated and tested independently of the container.
+Wireup does not patch your services, which means they can be instantiated and tested independently of the container.
 
 To substitute dependencies on autowired targets such as views in a web application you can override dependencies with new ones on the fly.
 
@@ -135,7 +176,7 @@ will result in `test_weather_service` being injected instead.
 
 This concludes the "Getting Started" walkthrough, covering the most common dependency injection use cases.
 
-!!! info "Good to know"
+!!! info
     * The `@container.autowire` decorator is not needed for services.
     * When using the provided integrations,
     decorating views with `@container.autowire` is no longer required.
@@ -143,15 +184,6 @@ This concludes the "Getting Started" walkthrough, covering the most common depen
     * Every container you create is separate from the rest and has its own state.
 
 ## Next Steps
-
-While Wireup is framework-agnostic, usage can be simplified when used with the following frameworks:
-
-- [Django](integrations/django.md)
-- [FastAPI](integrations/fastapi.md)
-- [Flask](integrations/flask.md)
-
-
-## Links
 
 * [Services](services.md)
 * [Configuration](configuration.md)
