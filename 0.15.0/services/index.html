@@ -553,6 +553,39 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Lifetime">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#singleton-default" class="md-nav__link">
+    <span class="md-ellipsis">
+      Singleton (default)
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#transient" class="md-nav__link">
+    <span class="md-ellipsis">
+      Transient
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#scoped" class="md-nav__link">
+    <span class="md-ellipsis">
+      Scoped
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
         
       </ul>
@@ -767,6 +800,27 @@
   
   <span class="md-ellipsis">
     Multiple registrations
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../scopes/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Use container scopes
   </span>
   
 
@@ -1313,6 +1367,39 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Lifetime">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#singleton-default" class="md-nav__link">
+    <span class="md-ellipsis">
+      Singleton (default)
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#transient" class="md-nav__link">
+    <span class="md-ellipsis">
+      Transient
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#scoped" class="md-nav__link">
+    <span class="md-ellipsis">
+      Scoped
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
         
       </ul>
@@ -1354,9 +1441,19 @@
 <p>Wireup does not enforce a code structure. Services may live anywhere, but must be registered with the container. </p>
 <p>To register a class as a service you can decorate it with <code>@service</code> or <code>@abstract</code>.</p>
 <h3 id="lifetime">Lifetime</h3>
-<p>By default, the container will keep in memory only a single copy of each service. 
-If you need to generate fresh instances every time a service is injected, 
-then it needs to be registered with the <code>lifetime</code> parameter set to <code>TRANSIENT</code>.</p>
+<p>Services can have three different kinds of lifetimes. The lifetime of a service is configured
+via the <code>lifetime</code> parameter in the <code>@service</code> decorator.</p>
+<h4 id="singleton-default">Singleton (default)</h4>
+<p>The container will create only one copy of this service. Every time you request it,
+you will get the same instance. Useful for cases where the class holds state or is expensive
+to create.</p>
+<h4 id="transient">Transient</h4>
+<p>Every time you request a transient service, you will receive a new instance.
+This is useful for classes where the functionality provided requires a clean state.</p>
+<h4 id="scoped">Scoped</h4>
+<p>The container will create only one copy of this service for each scope.
+For example: In a web application, each request can have it's own scope, and as such services
+in the same scope will share the same instance. Scoped services can depend on singletons and transient services alike.</p>
 <h2 id="injection">Injection</h2>
 <p>Injection will be performed based on type hints. Most of the time no manual configuration is needed.</p>
 <div class="admonition tip">

@@ -508,6 +508,15 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#35-integrate" class="md-nav__link">
+    <span class="md-ellipsis">
+      3.5 Integrate
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#4-test" class="md-nav__link">
     <span class="md-ellipsis">
       4. Test
@@ -525,15 +534,6 @@
   <a href="#conclusion" class="md-nav__link">
     <span class="md-ellipsis">
       Conclusion
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#next-steps" class="md-nav__link">
-    <span class="md-ellipsis">
-      Next Steps
     </span>
   </a>
   
@@ -810,6 +810,27 @@
   
   <span class="md-ellipsis">
     Multiple registrations
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../scopes/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Use container scopes
   </span>
   
 
@@ -1377,6 +1398,15 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#35-integrate" class="md-nav__link">
+    <span class="md-ellipsis">
+      3.5 Integrate
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#4-test" class="md-nav__link">
     <span class="md-ellipsis">
       4. Test
@@ -1394,15 +1424,6 @@
   <a href="#conclusion" class="md-nav__link">
     <span class="md-ellipsis">
       Conclusion
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#next-steps" class="md-nav__link">
-    <span class="md-ellipsis">
-      Next Steps
     </span>
   </a>
   
@@ -1437,7 +1458,10 @@
 
   <h1>Getting started</h1>
 
-<p>Wireup can be used standalone as a DI container/service locator
+<p>Wireup is a modern dependency injection container for Python 3.8+.
+that simplifies injection and lifecycle management of service objects
+so that you can focus on writing your application.</p>
+<p>It can be used standalone as a DI container/service locator
 or it can be integrated with common frameworks for simplified usage.</p>
 <p>This guide will show you how to use the basics of the container
 and will include links to the various integrations at the end.</p>
@@ -1467,8 +1491,7 @@ and will include links to the various integrations at the end.</p>
 <summary>Read: Global variables</summary>
 <p>Using this approach means relying on global state, which ties your application to a single container instance. 
 This might be sufficient for you and that's okay but, if you want to avoid global state, it's better to create 
-the container within your application factory and provide a way to access it from the created application instance.</p>
-<p>With the available integrations, global state is neither necessary nor recommended.</p>
+the container within your application factory and store it in your application's state instead.</p>
 </details>
 <h3 id="2-declare-services">2. Declare services</h3>
 <p>The container uses configuration metadata from decorators and annotations 
@@ -1486,9 +1509,6 @@ It was designed with annotations in mind but all features are available with eit
 </span><span class="k">class</span> <span class="nc">KeyValueStore</span><span class="p">:</span>
 <span class="hll">    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dsn</span><span class="p">:</span> <span class="n">Annotated</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Inject</span><span class="p">(</span><span class="n">param</span><span class="o">=</span><span class="s2">&quot;redis_url&quot;</span><span class="p">)])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>  <span class="c1">#(2)!</span>
 </span>        <span class="bp">self</span><span class="o">.</span><span class="n">client</span> <span class="o">=</span> <span class="n">redis</span><span class="o">.</span><span class="n">from_url</span><span class="p">(</span><span class="n">dsn</span><span class="p">)</span>
-
-    <span class="k">def</span> <span class="nf">get</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span> <span class="o">...</span>
-    <span class="k">def</span> <span class="nf">set</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="n">Any</span><span class="p">):</span> <span class="o">...</span>
 </code></pre></div>
 <ol>
 <li>Decorators are used to collect metadata. 
@@ -1500,10 +1520,7 @@ It was designed with annotations in mind but all features are available with eit
 <span class="k">class</span> <span class="nc">WeatherService</span><span class="p">:</span>
 <span class="hll">    <span class="n">api_key</span><span class="p">:</span> <span class="n">Annotated</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Inject</span><span class="p">(</span><span class="n">param</span><span class="o">=</span><span class="s2">&quot;weather_api_key&quot;</span><span class="p">)]</span>
 </span><span class="hll">    <span class="n">kv_store</span><span class="p">:</span> <span class="n">KeyValueStore</span>
-</span>
-    <span class="k">async</span> <span class="k">def</span> <span class="nf">get_forecast</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">lat</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">lon</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">WeatherForecast</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">NotImplementedError</span>
-</code></pre></div>
+</span></code></pre></div>
 <div class="admonition tip">
 <p class="admonition-title">Tip</p>
 <p>Wireup supports factories and generator factories (functions that use <code>yield</code> instead of <code>return</code>)
@@ -1519,13 +1536,33 @@ to perform service construction. <a href="../factory_functions/#use-a-generator-
 </div>
 <h3 id="3-use">3. Use</h3>
 <p>Now you can use the container as a service locator or apply it as a decorator.</p>
-<div class="highlight"><pre><span></span><code><span class="n">weather_service</span> <span class="o">=</span> <span class="n">container</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">WeatherService</span><span class="p">)</span>
-</code></pre></div>
-<div class="highlight"><span class="filename">views/posts.py</span><pre><span></span><code><span class="nd">@app</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;/weather/forecast&quot;</span><span class="p">)</span>
+<div class="highlight"><pre><span></span><code><span class="c1"># Get a service from the container.</span>
+<span class="n">weather_service</span> <span class="o">=</span> <span class="n">container</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">WeatherService</span><span class="p">)</span>
+
+<span class="c1"># Get a parameter.</span>
+<span class="n">api_key</span> <span class="o">=</span> <span class="n">container</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;api_key&quot;</span><span class="p">)</span>
+
+<span class="c1"># Perform injection on the decorated function.</span>
+<span class="nd">@app</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;/weather/forecast&quot;</span><span class="p">)</span>
 <span class="nd">@container</span><span class="o">.</span><span class="n">autowire</span>
 <span class="k">async</span> <span class="k">def</span> <span class="nf">get_forecast_view</span><span class="p">(</span><span class="n">weather_service</span><span class="p">:</span> <span class="n">WeatherService</span><span class="p">):</span>
     <span class="k">return</span> <span class="k">await</span> <span class="n">weather_service</span><span class="o">.</span><span class="n">get_forecast</span><span class="p">(</span><span class="o">...</span><span class="p">)</span>
+
+
+<span class="c1"># Enter scopes</span>
+<span class="k">with</span> <span class="n">enter_scope</span><span class="p">(</span><span class="n">container</span><span class="p">)</span> <span class="k">as</span> <span class="n">scoped_container</span><span class="p">:</span>
+    <span class="o">...</span>
+
+<span class="k">async</span> <span class="k">with</span> <span class="n">enter_async_scope</span><span class="p">(</span><span class="n">container</span><span class="p">)</span> <span class="k">as</span> <span class="n">scoped_container</span><span class="p">:</span>
+    <span class="o">...</span>
 </code></pre></div>
+<h3 id="35-integrate">3.5 Integrate</h3>
+<p>Wireup provides the following first-party integrations that greatly simplify usage with the framework:</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled checked/><span class="task-list-indicator"></span></label> <a href="django.md">Django</a></li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled checked/><span class="task-list-indicator"></span></label> <a href="fastapi.md">FastAPI</a></li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled checked/><span class="task-list-indicator"></span></label> <a href="flask.md">Flask</a></li>
+</ul>
 <h3 id="4-test">4. Test</h3>
 <p>Wireup does not patch your services which means they can be instantiated and tested independently of the container.</p>
 <p>To substitute dependencies on autowired targets such as views in a web application you can override dependencies with new ones on the fly.</p>
@@ -1546,13 +1583,6 @@ decorating views with <code>@container.autowire</code> is no longer required.</l
 <li>Every container you create is separate from the rest and has its own state.</li>
 </ul>
 </div>
-<h2 id="next-steps">Next Steps</h2>
-<p>While Wireup is framework-agnostic, usage can be simplified when used with the following frameworks:</p>
-<ul>
-<li><a href="../integrations/django/">Django</a></li>
-<li><a href="../integrations/fastapi/">FastAPI</a></li>
-<li><a href="../integrations/flask/">Flask</a></li>
-</ul>
 <h2 id="links">Links</h2>
 <ul>
 <li><a href="../services/">Services</a></li>
