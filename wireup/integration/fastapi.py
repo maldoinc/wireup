@@ -1,4 +1,6 @@
 import contextlib
+import functools
+import inspect
 from contextvars import ContextVar
 from typing import Any, AsyncIterator, Awaitable, Callable, List, Optional, Type, TypeVar
 
@@ -55,6 +57,15 @@ def _autowire_views(container: DependencyContainer, routes: List[BaseRoute]) -> 
             container._registry.context.remove_dependency_type(target, Request)  # type: ignore[reportPrivateUsage]  # noqa: SLF001
 
 
+def _with_self(instance: Any, fn: Callable[..., Any]) -> Callable[..., Any]:
+    res = functools.wraps(fn)(functools.partial(fn, self=instance))
+    sig = inspect.signature(res)
+    res.__signature__ = sig.replace(parameters=[p for p in sig.parameters.values() if p.name != "self"])  # type: ignore[reportAttributeAccessIssue]
+    res.__annotations__ = {k: v for k, v in res.__annotations__.items() if k != "self"}
+
+    return res
+
+
 def _register_class_based_routes(app: FastAPI, container: DependencyContainer, cls: Type[Any]) -> None:
     container.register(cls)
     r: APIRouter = cls.__router__  # type: ignore[reportUnknownMemberType]
@@ -62,7 +73,13 @@ def _register_class_based_routes(app: FastAPI, container: DependencyContainer, c
 
     for route in r.routes:
         if isinstance(route, (APIRoute, APIWebSocketRoute)):
-            route.endpoint = getattr(instance, route.endpoint.__name__)
+            method_name = route.endpoint.__name__
+            unbound_method = getattr(cls, method_name)
+
+            if route.endpoint is unbound_method:
+                route.endpoint = getattr(instance, method_name)
+            else:
+                route.endpoint = _with_self(instance, route.endpoint)
 
     app.include_router(r)
     _autowire_views(container, r.routes)
