@@ -1,3 +1,4 @@
+import functools
 import importlib
 from typing import TYPE_CHECKING, Any
 
@@ -70,6 +71,7 @@ class WireupConfig(AppConfig):
         self.container.register(wrapped_type)
 
         # This is taken from the django .as_view() method.
+        @functools.wraps(callback)
         def view(request: HttpRequest, *args: Any, **kwargs: Any) -> Any:
             autowired_args: _InjectionResult = self.container._DependencyContainer__callable_get_params_to_inject(  # type: ignore[reportAttributeAccessIssue]  # noqa: SLF001
                 wrapped_type
