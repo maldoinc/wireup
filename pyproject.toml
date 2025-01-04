@@ -38,7 +38,7 @@ classifiers = [
     "Topic :: Software Development :: Libraries :: Python Modules",
 ]
 
-[project.urls]
+[tool.poetry.urls]
 Repository = "https://github.com/maldoinc/wireup"
 Documentation = "https://maldoinc.github.io/wireup/"
 Changelog = "https://github.com/maldoinc/wireup/releases"
