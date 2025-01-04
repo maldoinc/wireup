@@ -4,16 +4,21 @@
 
 [![GitHub](https://img.shields.io/github/license/maldoinc/wireup)](https://github.com/maldoinc/wireup)
 [![GitHub Workflow Status (with event)](https://img.shields.io/github/actions/workflow/status/maldoinc/wireup/run_all.yml)](https://github.com/maldoinc/wireup)
-[![Code Climate maintainability](https://img.shields.io/codeclimate/maintainability/maldoinc/wireup?label=Code+Climate)](https://codeclimate.com/github/maldoinc/wireup)
 [![Coverage](https://img.shields.io/codeclimate/coverage/maldoinc/wireup?label=Coverage)](https://codeclimate.com/github/maldoinc/wireup)
 [![PyPI - Python Version](https://img.shields.io/pypi/pyversions/wireup)](https://pypi.org/project/wireup/)
 [![PyPI - Version](https://img.shields.io/pypi/v/wireup)](https://pypi.org/project/wireup/)
 
-<p>Wireup is a performant, concise, and easy-to-use dependency injection container for Python 3.8+.</p>
+<p>Wireup is a Performant, concise, and easy-to-use Dependency Injection container for Python 3.8+.</p>
 <p><a target="_blank" href="https://maldoinc.github.io/wireup">📚 Documentation</a> | <a target="_blank" href="https://github.com/maldoinc/wireup-demo">🎮 Demo Application</a></p>
 </div>
 
 ---
+
+Dependency Injection (DI) is a design pattern where objects receive their dependencies externally instead of creating them.
+Wireup manages the creation, injection, and lifecycle management of dependencies. It uses typing to automatically
+resolve dependencies where required, reducing boilerplate and supports modern Python features such as async and generators.
+
+It can function standalone as a DI container or service locator and also integrates with popular frameworks such as Django, FastAPI and Flask.
 
 ## ⚡ Key Features
 * Inject services and configuration.
@@ -26,11 +31,43 @@
 * Simplified use with [Django](https://maldoinc.github.io/wireup/latest/integrations/django/),
 [Flask](https://maldoinc.github.io/wireup/latest/integrations/flask/), and 
 [FastAPI](https://maldoinc.github.io/wireup/latest/integrations/fastapi/).
-* Share service layer between cli and api.
 
 ## 📋 Quickstart
 
+To showcase the basics of Wireup, we will create a container able to inject the following:
+
+* A `WeatherService` that queries a fictional weather api, needs an api key and, a `KeyValueStore` to cache request data and an async http client
+* `KeyValueStore` itself needs a `redis_url` denoting the server it will connect to to query/store data.
+
+These services will then be retrieved in a `/weather/forecast` endpoint that requires `WeatherService` to provide weather information.
+
+``` mermaid
+graph LR
+    A --> C
+    B --> D
+    C --> D
+    D --> E
+    F --> D
+
+    A[⚙️ redis_url]
+    B[⚙️ weather_api_key]
+    C[🐍 KeyValueStore]
+    D[🐍 WeatherService]
+    E[🌎 /weather/forecast]
+    F[🏭 HttpClient]
+```
+
 **1. Set up**
+
+### 1. Setup
+
+Install wireup using pip or your favorite package manager.
+
+```shell
+$ pip install wireup
+```
+
+The first step is to create a container.
 
 ```python
 import wireup
@@ -39,75 +76,121 @@ container = wireup.create_container(
     # Parameters serve as application/service configuration.
     parameters={
         "redis_url": os.environ["APP_REDIS_URL"],
-        "weather_api_key": os.environ["APP_WEATHER_API_KEY"]
+        "weather_api_key": os.environ["APP_WEATHER_API_KEY"],
     },
-    # Top-level modules containing service registrations.
+    # Let the container know where service registrations are located.
     service_modules=[services]
 )
 ```
 
-**2. Declare services**
+Parameters are configuration your application needs. Such as an api key, database url, or other settings.
+Service modules is a list of top-level python modules containing service definitions this container needs to know about.
 
-Use a declarative syntax to describe services, and let the container handle the rest.
+
+### 2. Define services
+
+The container uses configuration metadata from annotations and types to define services and the dependencies between them.
+This means that the service declaration is self-contained and does not require additional setup for most use cases.
+
+
+#### 🐍 `KeyValueStore`
+To create `KeyValueStore`, all we need is the `redis_url` parameter.
+The `@service` decorator tells Wireup this is a service, and we simply need to tell the container via annotated types
+to fetch the value of the `redis_url` parameter for `dsn`. 
+
 
 ```python
 from wireup import service, Inject
+from typing_extensions import Annotated
 
-@service # ⬅️ Decorator tells the container this is a service.
+@service
 class KeyValueStore:
-    # Inject the value of the parameter during creation. ⬇️ 
-    def __init__(self, dsn: Annotated[str, Inject(param="redis_url")]):
+    def __init__(self, dsn: Annotated[str, Inject(param="redis_url")]) -> None:
         self.client = redis.from_url(dsn)
+```
 
-    def get(self, key: str) -> Any: ...
-    def set(self, key: str, value: Any): ...
+#### 🐍 `WeatherService`
+Creating `WeatherService` is also straightforward. The `@service` decorator is used to let Wireup know this is a service
+and we use the same syntax as above for the `api_key`. Class dependencies do not need additional annotations in this case.
 
-
+```python
 @service
-@dataclass # Can be used alongside dataclasses to simplify init boilerplate.
 class WeatherService:
-    # Inject the value of the parameter to this field. ⬇️
-    api_key: Annotated[str, Inject(param="weather_api_key")]
-    kv_store: KeyValueStore # ⬅️ This will be injected automatically.
-
-    def get_forecast(self, lat: float, lon: float) -> WeatherForecast:
-        ...
+    def __init(
+        self,
+        api_key: Annotated[str, Inject(param="weather_api_key")],
+        kv_store: KeyValueStore,
+        client: aiohttp.ClientSession,
+    ) -> None:
+        self.api_key = api_key
+        self.kv_store = kv_store
 ```
 
-Use factories (sync and async) if service requires special initialization or cleanup.
+#### 🏭 `aiohttp.ClientSession`
 
-```python
+The http client making requests cannot be instantiated directly as we need to enter an async context manager.
+To accomodate such cases, Wireup allows you to use functions to create dependencies. 
+These can be sync/async as well as regular or generator functions if cleanup needs to take place.
+
+Factories can define their dependencies in the function's signature.
+
+**Note:** When using generator factories make sure to call `container.close` (or `container.aclose()` for async generators)
+when the application is terminating for the necessary cleanup to take place.
+
+```python title="services/factories.py"
 @service
-async def make_db(dsn: Annotated[str, Inject(param="db_dsn")]) -> AsyncIterator[Connection]:
-    async with Connection(dsn) as conn:
-        yield conn
+async def make_http_client() -> AsyncIterator[aiohttp.ClientSession]:
+    async with aiohttp.ClientSession() as client:
+        yield client
 ```
 
-*Note*: If you use generator factories, call `container.{close,aclose}` on termination for the necessary cleanup to take place.
+> [!TIP] 
+> If using annotations is not suitable for your project, you can use factories as shown above to create all dependencies.
+> This lets you keep service definitions devoid of Wireup references.
 
+### 3. Use
 
-**3. Use**
+Use the container as a service locator or apply it as a decorator.
 
-Use the container as a service locator or apply it as a decorator to have it perform injection.
+The container instance provides an `autowire` method that when applied
+to a function will cause the container to pass the dependencies
+when the function is called.
 
-```python
-weather_service = container.get(WeatherService)
-```
-
-```python
+```python title="views/posts.py"  hl_lines="2 3"
 @app.get("/weather/forecast")
-# ⬇️ Decorate functions to perform Dependency Injection.
-# No longer required when using the provided integrations.
 @container.autowire
-def get_weather_forecast_view(weather_service: WeatherService, request):
-    return weather_service.get_forecast(request.lat, request.lon)
+async def get_forecast_view(weather_service: WeatherService):
+    return await weather_service.get_forecast(...)
 ```
 
-**4. Test**
+Alternatively you can use the container's ability to function as a service locator.
+Simply call `.get` on the container instance with the type you wish to retrieve.
 
-Wireup does not patch your services which means they can be instantiated and tested independently of the container.
+```python title="views/posts.py"  hl_lines="3"
+@app.get("/weather/forecast")
+async def get_forecast_view():
+    weather_service = container.get(WeatherService)
+    return await weather_service.get_forecast(...)
+```
+
+#### 3.5 Integrate
+
+While Wireup is framework-agnostic, usage can be simplified when using it alongside one of the integrations.
+A key benefit of the integrations, is removing the need to have a global container variable
+and the need to decorate injection targets in the frameworks.
+
+Each integration also comes with additional goodies specific to that framework.
+
+- [Django](integrations/django.md)
+- [FastAPI](integrations/fastapi.md)
+- [Flask](integrations/flask.md)
+
+### 4. Test
+
+Wireup does not patch your services, which means they can be instantiated and tested independently of the container.
 
 To substitute dependencies on autowired targets such as views in a web application you can override dependencies with new ones on the fly.
+
 
 ```python
 with container.override.service(WeatherService, new=test_weather_service):
@@ -116,24 +199,6 @@ with container.override.service(WeatherService, new=test_weather_service):
 
 Requests to inject `WeatherService` during the lifetime of the context manager 
 will result in `test_weather_service` being injected instead.
-
-## Share service layer betwen app/api and cli
-
-Many projects have a web application as well as a cli in the same project which
-provides useful commands.
-
-Wireup makes it extremely easy to share the service layer between them without
-code duplication. For examples refer to [maldoinc/wireup-demo](https://github.com/maldoinc/wireup-demo).
-
-## Installation
-
-```bash
-# Install using poetry:
-poetry add wireup
-
-# Install using pip:
-pip install wireup
-```
 
 ## 📚 Documentation
 
