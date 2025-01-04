@@ -54,8 +54,6 @@ graph LR
     F[🏭 HttpClient]
 ```
 
-**1. Set up**
-
 ### 1. Setup
 
 Install wireup using pip or your favorite package manager.
