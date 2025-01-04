@@ -27,7 +27,7 @@ T = TypeVar("T")
 class BaseContainer:
     """Base Container class providing core functionality."""
 
-    __slots__ = ("_initialized_objects", "_registry", "_params", "_override_mgr", "_overrides")
+    __slots__ = ("_initialized_objects", "_override_mgr", "_overrides", "_params", "_registry")
 
     def __init__(
         self,
