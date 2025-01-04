@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import importlib
-from collections.abc import Iterator  # noqa: TCH003
+from collections.abc import Iterator  # noqa: TC003
 from dataclasses import dataclass
 
 import wireup
