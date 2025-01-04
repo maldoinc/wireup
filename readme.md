@@ -28,9 +28,6 @@ It can function standalone as a DI container or service locator and also integra
 * Framework-agnostic.
 * Apply the container as a decorator.
 * Service Locator.
-* Simplified use with [Django](https://maldoinc.github.io/wireup/latest/integrations/django/),
-[Flask](https://maldoinc.github.io/wireup/latest/integrations/flask/), and 
-[FastAPI](https://maldoinc.github.io/wireup/latest/integrations/fastapi/).
 
 ## 📋 Quickstart
 
