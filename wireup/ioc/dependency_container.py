@@ -101,6 +101,33 @@ class DependencyContainer(BaseContainer):
 
         raise UnknownServiceRequestedError(klass)
 
+    async def aget(self, klass: type[T], qualifier: Qualifier | None = None) -> T:
+        """Get an instance of the requested type.
+
+        Use this to locate services by their type but strongly prefer using injection instead.
+
+        :param qualifier: Qualifier for the class if it was registered with one.
+        :param klass: Class of the dependency already registered in the container.
+        :return: An instance of the requested object. Always returns an existing instance when one is available.
+        """
+        if res := self._overrides.get((klass, qualifier)):
+            return res  # type: ignore[no-any-return]
+
+        if self._registry.is_interface_known(klass):
+            klass = self._registry.interface_resolve_impl(klass, qualifier)
+
+        if instance := self._initialized_objects.get((klass, qualifier)):
+            return instance  # type: ignore[no-any-return]
+
+        if res := await self.__async_create_instance(klass, qualifier):
+            if res.exit_stack:
+                msg = "Container.get does not support Transient lifetime service generator factories."
+                raise WireupError(msg)
+
+            return res.instance  # type: ignore[no-any-return]
+
+        raise UnknownServiceRequestedError(klass)
+
     def abstract(self, klass: type[T]) -> type[T]:
         """Register a type as an interface.
 
@@ -343,7 +370,11 @@ class DependencyContainer(BaseContainer):
 
         ctor, resolved_type, factory_type = ctor_and_type
         injection_result = await self.__async_callable_get_params_to_inject(ctor)
-        instance_or_generator = ctor(**injection_result.kwargs)
+        instance_or_generator = (
+            await ctor(**injection_result.kwargs)
+            if factory_type == FactoryType.COROUTINE_FN
+            else ctor(**injection_result.kwargs)
+        )
         object_identifier = resolved_type, qualifier
 
         if factory_type in GENERATOR_FACTORY_TYPES:

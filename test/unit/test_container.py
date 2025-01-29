@@ -2,7 +2,7 @@ import datetime
 import functools
 import unittest
 from dataclasses import dataclass
-from typing import NewType, Optional
+from typing import Optional
 from unittest.mock import Mock, patch
 
 from typing_extensions import Annotated
@@ -612,3 +612,15 @@ class TestContainer(unittest.IsolatedAsyncioTestCase):
 
         self.assertTrue(foo() is foo())
         self.assertIsInstance(foo(), FooBar)
+
+
+async def async_foo_factory() -> FooBar:
+    return FooBar()
+
+
+async def test_container_aget_returns_instance() -> None:
+    container = DependencyContainer(ParameterBag())
+    container.register(async_foo_factory, qualifier="foo")
+
+    obj = await container.aget(FooBar, qualifier="foo")
+    assert isinstance(obj, FooBar)
