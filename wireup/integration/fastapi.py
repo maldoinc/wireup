@@ -66,10 +66,10 @@ def _with_self(instance: Any, fn: Callable[..., Any]) -> Callable[..., Any]:
     return res
 
 
-def _register_class_based_routes(app: FastAPI, container: DependencyContainer, cls: Type[Any]) -> None:
+async def _register_class_based_routes(app: FastAPI, container: DependencyContainer, cls: Type[Any]) -> None:
     container.register(cls)
     r: APIRouter = cls.__router__  # type: ignore[reportUnknownMemberType]
-    instance = container.get(cls)
+    instance = await container.aget(cls)
 
     for route in r.routes:
         if isinstance(route, (APIRoute, APIWebSocketRoute)):
@@ -95,7 +95,7 @@ def setup(container: DependencyContainer, app: FastAPI, *, class_routes: Optiona
     @contextlib.asynccontextmanager
     async def _lifespan_wrapper(app: FastAPI) -> AsyncIterator[Any]:
         for route in class_routes or []:
-            _register_class_based_routes(app, container, route)
+            await _register_class_based_routes(app, container, route)
 
         async with current_lifespan(app) as cl:
             yield cl
