@@ -10,7 +10,7 @@ To specify custom behavior for tests, provide a custom implementation
 or a subclass that returns test data as a dependency instead of mocks.
 
 It is also possible to use the container to build a part of your dependencies by
-calling `container.get(T)` which will return an instance of `T`.
+calling `container.get(T)` (or `container.aget` for async resources) which will return an instance of `T`.
 
 ## Overriding
 

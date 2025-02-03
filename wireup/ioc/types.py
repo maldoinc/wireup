@@ -79,7 +79,7 @@ class ServiceLifetime(Enum):
 class AnnotatedParameter:
     """Represent an annotated dependency parameter."""
 
-    __slots__ = ("klass", "annotation", "qualifier_value", "is_parameter")
+    __slots__ = ("annotation", "is_parameter", "klass", "qualifier_value")
 
     def __init__(
         self,

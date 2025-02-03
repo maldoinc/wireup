@@ -29,11 +29,11 @@ __all__ = [
     "Wire",
     "abstract",
     "create_container",
+    "initialize_container",
     "load_module",
     "register_all_in_module",
     "service",
     "warmup_container",
-    "initialize_container",
     "wire",
 ]
 

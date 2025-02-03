@@ -31,6 +31,7 @@ T = TypeVar("T")
 
 class FactoryType(Enum):
     REGULAR = auto()
+    COROUTINE_FN = auto()
     GENERATOR = auto()
     ASYNC_GENERATOR = auto()
 
@@ -59,7 +60,7 @@ def _function_get_unwrapped_return_type(fn: Callable[..., T]) -> tuple[type[T], 
 
             return args[0], FactoryType.GENERATOR if is_gen else FactoryType.ASYNC_GENERATOR
 
-        return ret, FactoryType.REGULAR
+        return ret, FactoryType.COROUTINE_FN if inspect.iscoroutinefunction(fn) else FactoryType.REGULAR
 
     return None
 
@@ -67,7 +68,7 @@ def _function_get_unwrapped_return_type(fn: Callable[..., T]) -> tuple[type[T], 
 class ServiceRegistry:
     """Container class holding service registration info and dependencies among them."""
 
-    __slots__ = ("known_interfaces", "known_impls", "factory_functions", "context")
+    __slots__ = ("context", "factory_functions", "known_impls", "known_interfaces")
 
     def __init__(self) -> None:
         self.known_interfaces: dict[type, dict[Qualifier, type]] = {}

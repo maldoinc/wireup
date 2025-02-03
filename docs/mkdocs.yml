@@ -29,9 +29,10 @@ nav:
       - ParameterBag: class/parameter_bag.md
       - ParameterEnum: class/parameter_enum.md
       - InitializationContext: class/initialization_context.md
-      - django_integration: class/django_integration.md
-      - flask_integration: class/flask_integration.md
-      - fastapi_integration: class/fastapi_integration.md
+      - Integrations:
+        - Django: class/django_integration.md
+        - FastAPI: class/fastapi_integration.md
+        - Flask: class/flask_integration.md
 repo_url: https://github.com/maldoinc/wireup
 repo_name: maldoinc/wireup
 theme:
@@ -86,6 +87,11 @@ markdown_extensions:
         kwds:
           case: lower
       alternate_style: true
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
 plugins:
   - mike
   - search
