@@ -164,7 +164,7 @@ Simply call `.get` on the container instance with the type you wish to retrieve.
 ```python title="views/posts.py"  hl_lines="3"
 @app.get("/weather/forecast")
 async def get_forecast_view():
-    weather_service = container.get(WeatherService)
+    weather_service = container.aget(WeatherService)
     return await weather_service.get_forecast(...)
 ```
 
@@ -176,9 +176,9 @@ and the need to decorate injection targets in the frameworks.
 
 Each integration also comes with additional goodies specific to that framework.
 
-- [Django](integrations/django.md)
-- [FastAPI](integrations/fastapi.md)
-- [Flask](integrations/flask.md)
+- [Django](https://maldoinc.github.io/wireup/latest/integrations/django/)
+- [FastAPI](https://maldoinc.github.io/wireup/latest/integrations/fastapi/)
+- [Flask](https://maldoinc.github.io/wireup/latest/integrations/flask)
 
 ### 4. Test
 
