@@ -101,7 +101,10 @@ def ensure_is_type(value: type[T] | str, globalns: dict[str, Any] | None = None)
         except NameError:
             return None
         except ImportError as e:
-            msg = "Using __future__ annotations in Wireup requires the eval_type_backport package to be installed."
+            msg = (
+                "Using __future__ annotations in Wireup requires the eval_type_backport package to be installed. "
+                "See: https://maldoinc.github.io/wireup/latest/future_annotations/"
+            )
             raise WireupError(msg) from e
 
     return value

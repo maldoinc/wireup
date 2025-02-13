@@ -340,8 +340,12 @@ class DependencyContainer(BaseContainer):
 
         ctor, resolved_type, factory_type = ctor_and_type
 
-        if factory_type == FactoryType.ASYNC_GENERATOR:
-            msg = "Cannot construct async objects fron a non-async context."
+        if factory_type in {FactoryType.ASYNC_GENERATOR, FactoryType.COROUTINE_FN}:
+            msg = (
+                f"{klass} is an async dependency and it cannot be created in a blocking context. "
+                f"You likely used `container.get({klass.__module__}.{klass.__name__})` or called `get` on a dependent. "
+                "Use `await container.aget` instead of `container.get`."
+            )
             raise WireupError(msg)
 
         injection_result = self.__callable_get_params_to_inject(ctor)

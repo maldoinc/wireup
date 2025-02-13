@@ -1,3 +1,4 @@
+import re
 from typing import AsyncIterator, Iterator, NewType
 
 import pytest
@@ -58,7 +59,13 @@ async def test_async_raise_close_async() -> None:
         assert smth == Something("foo")
 
     await target()
-    with pytest.raises(WireupError, match="Async generators need to be closed with container.aclose()"):
+    msg = re.escape(
+        "The following generators are async factories and closing the container with `container.close()`"
+        " is not possible. Replace the `container.close()` call with `await container.aclose()`. "
+        "If you used `wireup.enter_scope`, you should use `wireup.enter_async_scope` instead. "
+        "List of async factories:"
+    )
+    with pytest.raises(WireupError, match=msg):
         c.close()
 
 
@@ -170,7 +177,14 @@ def test_sync_raises_when_generating_async() -> None:
     def target(_: Something) -> None:
         pass
 
-    with pytest.raises(WireupError, match="Cannot construct async objects fron a non-async context."):
+    with pytest.raises(
+        WireupError,
+        match=re.escape(
+            f"{Something} is an async dependency and it cannot be created in a blocking context. "
+            f"You likely used `container.get({Something.__module__}.{Something.__name__})` or called `get` on a dependent. "  # noqa: E501
+            "Use `await container.aget` instead of `container.get`."
+        ),
+    ):
         target()
 
 

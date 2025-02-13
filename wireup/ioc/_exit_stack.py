@@ -12,8 +12,13 @@ if TYPE_CHECKING:
 def clean_exit_stack(exit_stack: list[GeneratorType[Any, Any, Any] | AsyncGeneratorType[Any, Any]]) -> None:
     errors: list[Exception] = []
 
-    if any(inspect.isasyncgen(gen) for gen in exit_stack):
-        msg = "Async generators need to be closed with container.aclose()"
+    if async_gen := [gen for gen in exit_stack if inspect.isasyncgen(gen)]:
+        msg = (
+            "The following generators are async factories and closing the container with `container.close()`"
+            f" is not possible. Replace the `container.close()` call with `await container.aclose()`. "
+            f"If you used `wireup.enter_scope`, you should use `wireup.enter_async_scope` instead. "
+            f"List of async factories: {async_gen}."
+        )
         raise WireupError(msg)
 
     while exit_stack and (gen := exit_stack.pop()):

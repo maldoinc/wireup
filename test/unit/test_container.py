@@ -207,7 +207,7 @@ class TestContainer(unittest.IsolatedAsyncioTestCase):
             self.container.get(Counter)
 
         self.assertEqual(
-            f"Cannot instantiate concrete class for {Counter} as qualifier 'None' is unknown. "
+            f"Cannot create {Counter} as qualifier 'None' is unknown. "
             "Available qualifiers: ['foo_qualified', 'foo_qualified2'].",
             str(context.exception),
         )
@@ -308,8 +308,7 @@ class TestContainer(unittest.IsolatedAsyncioTestCase):
             inner()
 
         self.assertIn(
-            "Cannot instantiate concrete class for <class 'test.fixtures.FooBase'> "
-            "as qualifier 'sub1' is unknown. Available qualifiers: []",
+            "Cannot create <class 'test.fixtures.FooBase'> " "as qualifier 'sub1' is unknown. Available qualifiers: []",
             str(context.exception),
         )
 
@@ -323,8 +322,7 @@ class TestContainer(unittest.IsolatedAsyncioTestCase):
             inner()
 
         self.assertEqual(
-            f"Cannot instantiate concrete class for {FooBase} as qualifier 'None' is unknown. "
-            "Available qualifiers: ['foobar'].",
+            f"Cannot create {FooBase} as qualifier 'None' is unknown. " "Available qualifiers: ['foobar'].",
             str(context.exception),
         )
 
@@ -337,8 +335,7 @@ class TestContainer(unittest.IsolatedAsyncioTestCase):
             inner()
 
         self.assertEqual(
-            f"Cannot instantiate concrete class for {FooBase} as qualifier 'None' is unknown. "
-            "Available qualifiers: [].",
+            f"Cannot create {FooBase} as qualifier 'None' is unknown. " "Available qualifiers: [].",
             str(context.exception),
         )
 
@@ -353,7 +350,7 @@ class TestContainer(unittest.IsolatedAsyncioTestCase):
             inner()
 
         self.assertIn(
-            f"Cannot instantiate concrete class for {RegisterWithQualifierClass} "
+            f"Cannot create {RegisterWithQualifierClass} "
             f"as qualifier 'None' is unknown. Available qualifiers: ['{__name__}'].",
             str(context.exception),
         )
