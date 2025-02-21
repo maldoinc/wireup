@@ -3,9 +3,12 @@ import warnings
 from wireup.annotation import Inject, ParameterEnum, Wire, abstract, service, wire
 from wireup.ioc.dependency_container import DependencyContainer
 from wireup.ioc.parameter import ParameterBag
+from wireup.ioc.scoped_container import ScopedContainer, enter_async_scope, enter_scope
 from wireup.ioc.types import ParameterReference, ServiceLifetime, ServiceOverride
 from wireup.util import (
+    create_async_container,
     create_container,
+    create_sync_container,
     initialize_container,
     load_module,
     register_all_in_module,
@@ -24,11 +27,16 @@ __all__ = [
     "ParameterBag",
     "ParameterEnum",
     "ParameterReference",
+    "ScopedContainer",
     "ServiceLifetime",
     "ServiceOverride",
     "Wire",
     "abstract",
+    "create_async_container",
     "create_container",
+    "create_sync_container",
+    "enter_async_scope",
+    "enter_scope",
     "initialize_container",
     "load_module",
     "register_all_in_module",

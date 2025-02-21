@@ -1,11 +1,11 @@
 import inspect
 from typing import Any, Callable
 
-from wireup import DependencyContainer
+from wireup.ioc.base_container import BaseContainer
 from wireup.ioc.util import _get_globals, param_get_annotation
 
 
-def is_view_using_container(dependency_container: DependencyContainer, view: Callable[..., Any]) -> bool:
+def is_view_using_container(dependency_container: BaseContainer, view: Callable[..., Any]) -> bool:
     """Determine whether the view is using the given dependency container."""
     for dep in inspect.signature(view).parameters.values():
         if param := param_get_annotation(dep, globalns=_get_globals(view)):

@@ -5,12 +5,13 @@ import wireup.integration.flask
 from flask import Flask
 from flask.testing import FlaskClient
 from typing_extensions import Annotated
-from wireup import Inject, create_container
+from wireup import Inject
 from wireup.integration.flask import get_container
+from wireup.util import create_sync_container
 
 from test.fixtures import FooBase
 from test.integration.flask import services
-from test.integration.flask.services.foo import IsTestService
+from test.integration.flask.services.foo import IsTestService, ScopedService, ScopedServiceDependency
 from test.unit.services.no_annotations.random.random_service import RandomService
 
 
@@ -34,13 +35,19 @@ def create_app() -> Flask:
     def _intf(foo: FooBase):
         return foo.foo
 
+    @app.get("/scoped")
+    def _scoped(s1: ScopedService, s2: ScopedServiceDependency, s3: ScopedServiceDependency):
+        assert s1.other is s2
+        assert s3 is s2
+
+        return {}
+
     @app.get("/foo")
     def _foo(foo: IsTestService):
         return {"test": foo.is_test}
 
-    wireup.integration.flask.setup(
-        create_container(service_modules=[services], parameters={"custom_params": True}), app, import_flask_config=True
-    )
+    container = create_sync_container(service_modules=[services], parameters={"custom_params": True})
+    wireup.integration.flask.setup(container, app, import_flask_config=True)
 
     return app
 
@@ -65,6 +72,12 @@ def test_get_env_injects_from_params(client: FlaskClient) -> None:
     res = client.get("/env")
     assert res.status_code == 200
     assert res.json == {"debug": False, "test": True}
+
+
+def test_scoped_depenencies(client: FlaskClient) -> None:
+    res = client.get("/scoped")
+    assert res.status_code == 200
+    assert res.json == {}
 
 
 def test_will_not_autowire_when_no_injections_requested(client: FlaskClient) -> None:

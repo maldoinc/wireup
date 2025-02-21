@@ -80,8 +80,8 @@ class ServiceRegistry:
     def register_service(
         self,
         klass: type,
-        qualifier: Qualifier | None,
-        lifetime: ServiceLifetime,
+        qualifier: Qualifier | None = None,
+        lifetime: ServiceLifetime = ServiceLifetime.SINGLETON,
     ) -> None:
         if self.is_type_with_qualifier_known(klass, qualifier):
             raise DuplicateServiceRegistrationError(klass, qualifier)
@@ -101,8 +101,8 @@ class ServiceRegistry:
     def register_factory(
         self,
         fn: Callable[..., Any],
-        lifetime: ServiceLifetime,
         qualifier: Qualifier | None = None,
+        lifetime: ServiceLifetime = ServiceLifetime.SINGLETON,
     ) -> None:
         return_type_result = _function_get_unwrapped_return_type(fn)
 

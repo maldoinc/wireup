@@ -1,0 +1,2006 @@
+diff --git a/docs/mkdocs.yml b/docs/mkdocs.yml
+index f103b3b..347f5a5 100644
+--- a/docs/mkdocs.yml
++++ b/docs/mkdocs.yml
+@@ -7,6 +7,7 @@ nav:
+         - Services: services.md
+         - Configuration: configuration.md
+         - Annotations: annotations.md
++        - Lifetimes: lifetimes.md
+         - Interfaces: interfaces.md
+         - Factory functions: factory_functions.md
+         - Testing: testing.md
+diff --git a/docs/pages/getting_started.md b/docs/pages/getting_started.md
+index abac190..8e8fb08 100644
+--- a/docs/pages/getting_started.md
++++ b/docs/pages/getting_started.md
+@@ -62,9 +62,7 @@ Service modules is a list of top-level python modules containing service definit
+ ??? abstract "Read: Global variables"
+     Using this approach means relying on global state, which ties your application to a single container instance. 
+     This might be sufficient for you and that's okay but, if you want to avoid global state, it's better to create 
+-    the container within your application factory and provide a way to access it from the created application instance.
+-
+-    With the available integrations, global state is neither necessary nor recommended.
++    the container within your application factory and store it in your application's state instead.
+ 
+ 
+ ### 2. Define services
+@@ -89,7 +87,6 @@ class KeyValueStore:
+         self.client = redis.from_url(dsn)
+ ```
+ 
+-
+ 1. Decorators are used to collect metadata. 
+     This makes testing simpler, as you can still instantiate this like a regular class in your tests.
+ 2. Parameters must be annotated with the `Inject(param=name)` syntax. This tells the container which parameter to inject.
+@@ -182,6 +179,14 @@ Each integration also comes with additional goodies specific to that framework.
+ - [FastAPI](integrations/fastapi.md)
+ - [Flask](integrations/flask.md)
+ 
++### 3.5 Integrate
++
++Wireup provides the following first-party integrations that greatly simplify usage with the framework:
++
++- [x] [Django](django.md)
++- [x] [FastAPI](fastapi.md)
++- [x] [Flask](flask.md)
++
+ ### 4. Test
+ 
+ Wireup does not patch your services, which means they can be instantiated and tested independently of the container.
+diff --git a/docs/pages/guides/direct_use_async.md b/docs/pages/guides/direct_use_async.md
+new file mode 100644
+index 0000000..e69de29
+diff --git a/docs/pages/guides/direct_use_sync.md b/docs/pages/guides/direct_use_sync.md
+new file mode 100644
+index 0000000..e69de29
+diff --git a/docs/pages/lifetimes.md b/docs/pages/lifetimes.md
+new file mode 100644
+index 0000000..3806c54
+--- /dev/null
++++ b/docs/pages/lifetimes.md
+@@ -0,0 +1,74 @@
++Wireup supports three different lifetimes: Singletons, Scoped and Transient.
++
++This dictates how long each service instance will live. The lifetime of a service is configured
++via the `lifetime` parameter in the `@service` decorator.
++
++## Lifetimes by example
++
++Take the following services.
++
++```python
++@service
++class SingletonService: ...
++
++@service(lifetime=ServiceLifetime.TRANSIENT)
++class TransientService: ...
++
++@service(lifetime=ServiceLifetime.SCOPED)
++class ScopedService: ...
++```
++
++### Singleton (default)
++The container will create only one copy of this service. Every time you request it,
++you will get the same instance. Useful for cases where the class holds state or is expensive
++to create.
++
++```python
++s1 = container.get(SingletonService)
++s2 = container.get(SingletonService)
++
++# As this is a singleton all calls resolve to the same instance.
++assert s1 is s2
++```
++
++### Transient 
++Every time you request a transient service, you will receive a new instance.
++This is useful for classes where the functionality provided requires a clean state.
++
++```python
++t1 = container.get(TransientService)
++t2 = container.get(TransientService)
++
++# T1 and T2 are different since transient services will always return a fresh instance.
++assert t1 is not t2
++```
++
++
++### Scoped
++The container will create only one copy of this service for each scope and the services will live as long as the scope does.
++
++```python
++with wireup.enter_scope(container) as scoped:
++    s1 = container.get(SingletonService)
++    s2 = scoped.get(SingletonService)
++
++    # The scoped container will also return the same instance of a singleton.
++    assert s1 is s2
++
++    sc1 = scoped.get(ScopedService)
++    sc2 = scoped.get(ScopedService)
++
++    # The scoped container will reuse the same instance for the duration of the scope.
++    assert sc1 is sc2
++```
++
++Assume two concurrent scoped containers are in operation (e.g.: One for each http request).
++
++```python
++with wireup.enter_scope(container) as scoped_a, wireup.enter_scope(container) as scoped_b:
++    sc_a = scoped_a.get(ScopedService)
++    sc_b = scoped_b.get(ScopedService)
++
++    # Each scoped container will have its own instance of the ScopedService.
++    assert sc_a is not sc_b
++```
+\ No newline at end of file
+diff --git a/docs/pages/scopes.md b/docs/pages/scopes.md
+new file mode 100644
+index 0000000..f43381a
+--- /dev/null
++++ b/docs/pages/scopes.md
+@@ -0,0 +1,64 @@
++
++## Lifetime Examples
++
++Assume a container with the following services
++
++```python
++@service
++class GreeterService: ...
++
++@service(lifetime=ServiceLifetime.SCOPED)
++class TransactionManager: ...
++
++@service(lifetime=ServiceLifetime.TRANSIENT)
++class Transaction: ...
++```
++
++=== "Synchronous"
++
++    ```python title="greeter_service.py"
++    g1 = container.get(GreeterService)
++
++
++    with wireup.enter_scope(container) as scoped:
++        g2 = container.get(GreeterService)
++        g3 = container.get(GreeterService)
++    ```
++
++=== "Async"
++    Here we cannot use the regular `container.get` method as one of the underlying dependencies is async.
++
++    ```python title="di/factories.py"
++    from wireup import service
++
++    @service
++    async def make_http_client() -> AsyncIterator[aiohttp.ClientSession]:
++        async with aiohttp.ClientSession() as client:
++            yield client
++    ```
++
++    ```python title="services/weather_service.py"
++    @service
++    class WeatherService:
++        def __init(
++            self,
++            api_key: Annotated[str, Inject(param="weather_api_key")],
++            kv_store: KeyValueStore,
++            client: aiohttp.ClientSession,
++        ) -> None:
++            self.api_key = api_key
++            self.kv_store = kv_store
++            self.client = client
++    ```
++
++    ```python
++    weather_service = await container.aget(WeatherService)
++    ```
++
++
++```mermaid
++graph TD
++    Base[wireup.container instance] --> ScopedA[Request A]
++    Base --> ReqB[Request B]
++    Base --> ReqC[Request C]
++```
+diff --git a/docs/pages/services.md b/docs/pages/services.md
+index 1057eb1..1a1f976 100644
+--- a/docs/pages/services.md
++++ b/docs/pages/services.md
+@@ -11,11 +11,6 @@ where services reside must be passed to the `service_modules` parameter in the `
+     as the container will perform a recursive scan.
+ 
+ 
+-### Lifetime
+-By default, the container will keep in memory only a single copy of each service. 
+-If you need to generate fresh instances every time a service is injected, 
+-then it needs to be registered with the `lifetime` parameter set to `TRANSIENT`.
+-
+ ## Injection
+ To request a service in another serivce simply set the type in the init method.
+ The name of the argument does not matter, only the type is used to detect dependencies.
+diff --git a/pyproject.toml b/pyproject.toml
+index d84e1b5..2d3e490 100644
+--- a/pyproject.toml
++++ b/pyproject.toml
+@@ -82,6 +82,7 @@ lint.ignore = [
+     "D213",   # Disable "Summary must go into next line"
+     "D107",   # Disable required docs for __init. Can be redundant if class also has them.
+     "A003",   # Disable "shadows builtin". OverrideManager.set was flagged by this
++    "SLF001", # Allow usage of _fields.
+     "FA100",  # Don't recommend __future__ annotations.
+     # Disable as they may cause conflicts with ruff formatter
+     "COM812",
+diff --git a/readme.md b/readme.md
+index 62ea277..00a43bd 100644
+--- a/readme.md
++++ b/readme.md
+@@ -24,7 +24,7 @@ It can function standalone as a DI container or service locator and also integra
+ * Inject services and configuration.
+ * Interfaces and abstract classes.
+ * Factory pattern.
+-* Singleton and transient dependencies.
++* Singleton,transient and scoped dependencies.
+ * Framework-agnostic.
+ * Apply the container as a decorator.
+ * Service Locator.
+@@ -119,6 +119,7 @@ class WeatherService:
+     ) -> None:
+         self.api_key = api_key
+         self.kv_store = kv_store
++        self.client = client
+ ```
+ 
+ #### 🏭 `aiohttp.ClientSession`
+diff --git a/test/integration/flask/services/foo.py b/test/integration/flask/services/foo.py
+index 26a3d14..3405fc8 100644
+--- a/test/integration/flask/services/foo.py
++++ b/test/integration/flask/services/foo.py
+@@ -2,9 +2,20 @@ from dataclasses import dataclass
+ 
+ from typing_extensions import Annotated
+ from wireup import Inject, service
++from wireup.ioc.types import ServiceLifetime
+ 
+ 
+ @service
+ @dataclass
+ class IsTestService:
+     is_test: Annotated[bool, Inject(param="TESTING")]
++
++
++@service(lifetime=ServiceLifetime.SCOPED)
++class ScopedServiceDependency: ...
++
++
++@service(lifetime=ServiceLifetime.SCOPED)
++@dataclass
++class ScopedService:
++    other: ScopedServiceDependency
+diff --git a/test/integration/flask/test_flask_integration.py b/test/integration/flask/test_flask_integration.py
+index 89a4579..ea9f14d 100644
+--- a/test/integration/flask/test_flask_integration.py
++++ b/test/integration/flask/test_flask_integration.py
+@@ -5,12 +5,13 @@ import wireup.integration.flask
+ from flask import Flask
+ from flask.testing import FlaskClient
+ from typing_extensions import Annotated
+-from wireup import Inject, create_container
++from wireup import Inject
+ from wireup.integration.flask import get_container
++from wireup.util import create_sync_container
+ 
+ from test.fixtures import FooBase
+ from test.integration.flask import services
+-from test.integration.flask.services.foo import IsTestService
++from test.integration.flask.services.foo import IsTestService, ScopedService, ScopedServiceDependency
+ from test.unit.services.no_annotations.random.random_service import RandomService
+ 
+ 
+@@ -34,13 +35,19 @@ def create_app() -> Flask:
+     def _intf(foo: FooBase):
+         return foo.foo
+ 
++    @app.get("/scoped")
++    def _scoped(s1: ScopedService, s2: ScopedServiceDependency, s3: ScopedServiceDependency):
++        assert s1.other is s2
++        assert s3 is s2
++
++        return {}
++
+     @app.get("/foo")
+     def _foo(foo: IsTestService):
+         return {"test": foo.is_test}
+ 
+-    wireup.integration.flask.setup(
+-        create_container(service_modules=[services], parameters={"custom_params": True}), app, import_flask_config=True
+-    )
++    container = create_sync_container(service_modules=[services], parameters={"custom_params": True})
++    wireup.integration.flask.setup(container, app, import_flask_config=True)
+ 
+     return app
+ 
+@@ -67,6 +74,12 @@ def test_get_env_injects_from_params(client: FlaskClient) -> None:
+     assert res.json == {"debug": False, "test": True}
+ 
+ 
++def test_scoped_depenencies(client: FlaskClient) -> None:
++    res = client.get("/scoped")
++    assert res.status_code == 200
++    assert res.json == {}
++
++
+ def test_will_not_autowire_when_no_injections_requested(client: FlaskClient) -> None:
+     res = client.get("/not-autowired")
+     assert res.data.decode() == "not autowired"
+diff --git a/test/integration/test_fastapi_integration.py b/test/integration/test_fastapi_integration.py
+index 2035f19..71d3ce8 100644
+--- a/test/integration/test_fastapi_integration.py
++++ b/test/integration/test_fastapi_integration.py
+@@ -35,6 +35,14 @@ def get_lucky_number() -> int:
+     return 42
+ 
+ 
++class ScopedServiceDependency: ...
++
++
++@dataclass
++class ScopedService:
++    other: ScopedServiceDependency
++
++
+ class GreeterService:
+     def greet(self, name: str) -> str:
+         return f"Hello {name}"
+@@ -68,16 +76,36 @@ def create_app() -> FastAPI:
+         return {"foo": req.req.query_params["foo"], "request_id": req.req.headers["X-Request-Id"]}
+ 
+     @app.websocket("/ws")
+-    async def websocket_endpoint(websocket: WebSocket, greeter: Annotated[GreeterService, Inject()]):
++    async def websocket_endpoint(
++        websocket: WebSocket,
++        greeter: Annotated[GreeterService, Inject()],
++        scoped_service: Annotated[ScopedService, Inject()],
++        scoped_service2: Annotated[ScopedService, Inject()],
++        scoped_service_dependency: Annotated[ScopedServiceDependency, Inject()],
++    ):
++        assert scoped_service is scoped_service2
++        assert scoped_service.other is scoped_service_dependency
++
+         await websocket.accept()
+         data = await websocket.receive_text()
+         await websocket.send_text(greeter.greet(data))
+         await websocket.close()
+ 
+-    container = wireup.create_container(service_modules=[], parameters={"foo": "bar"})
+-    container.register(RandomService)
+-    container.register(GreeterService)
+-    container.register(ServiceUsingFastapiRequest, lifetime=ServiceLifetime.TRANSIENT)
++    @app.get("/scoped")
++    async def scoped_route(
++        scoped_service: Annotated[ScopedService, Inject()],
++        scoped_service2: Annotated[ScopedService, Inject()],
++        scoped_service_dependency: Annotated[ScopedServiceDependency, Inject()],
++    ):
++        assert scoped_service is scoped_service2
++        assert scoped_service.other is scoped_service_dependency
++
++    container = wireup.create_async_container(service_modules=[], parameters={"foo": "bar"})
++    container._registry.register_service(RandomService)
++    container._registry.register_service(GreeterService)
++    container._registry.register_service(ScopedService, lifetime=ServiceLifetime.SCOPED)
++    container._registry.register_service(ScopedServiceDependency, lifetime=ServiceLifetime.SCOPED)
++    container._registry.register_service(ServiceUsingFastapiRequest, lifetime=ServiceLifetime.TRANSIENT)
+     wireup.integration.fastapi.setup(container, app)
+ 
+     return app
+@@ -99,6 +127,11 @@ def test_injects_service(client: TestClient):
+     assert response.json() == {"number": 4, "lucky_number": 42}
+ 
+ 
++def test_scoped(client: TestClient):
++    response = client.get("/scoped")
++    assert response.status_code == 200
++
++
+ def test_override(app: FastAPI, client: TestClient):
+     class RealRandom(RandomService):
+         def get_random(self) -> int:
+@@ -143,6 +176,7 @@ def test_raises_on_unknown_service(client: TestClient):
+         client.get("/raise-unknown")
+ 
+ 
+-def test_raises_request_outside_of_scope(app: FastAPI) -> None:
++async def test_raises_request_outside_of_scope(app: FastAPI) -> None:
+     with pytest.raises(WireupError, match="fastapi.Request in wireup is only available during a request."):
+-        get_container(app).get(Request)
++        async with wireup.enter_async_scope(get_container(app)) as scoped:
++            await scoped.get(Request)
+diff --git a/test/unit/test_scoped_container.py b/test/unit/test_scoped_container.py
+new file mode 100644
+index 0000000..2c59d08
+--- /dev/null
++++ b/test/unit/test_scoped_container.py
+@@ -0,0 +1,93 @@
++from typing import Iterator
++
++import wireup
++from wireup.ioc.scoped_container import enter_async_scope, enter_scope
++from wireup.ioc.types import ServiceLifetime
++
++
++class SingletonService: ...
++
++
++class ScopedService: ...
++
++
++def test_scoped_exit_does_not_close_singleton_scopes() -> None:
++    singleton_service_factory_exited = False
++
++    def singleton_service_factory() -> Iterator[SingletonService]:
++        yield SingletonService()
++        nonlocal singleton_service_factory_exited
++        singleton_service_factory_exited = True
++
++    c = wireup.create_sync_container()
++    c._registry.register_factory(singleton_service_factory)
++
++    with enter_scope(c) as scoped:
++        scoped.get(SingletonService)
++
++    assert not singleton_service_factory_exited
++
++
++async def test_scoped_exit_does_not_close_singleton_scopes_async() -> None:
++    singleton_service_factory_exited = False
++
++    def singleton_service_factory() -> Iterator[SingletonService]:
++        yield SingletonService()
++        nonlocal singleton_service_factory_exited
++        singleton_service_factory_exited = True
++
++    c = wireup.create_async_container()
++    c._registry.register_factory(singleton_service_factory)
++
++    async with enter_async_scope(c) as scoped:
++        await scoped.get(SingletonService)
++
++    assert not singleton_service_factory_exited
++
++
++def test_scoped_container_singleton_in_scope() -> None:
++    c = wireup.create_sync_container()
++    c._registry.register_service(SingletonService)
++
++    singleton1 = c.get(SingletonService)
++
++    with enter_scope(c) as scoped:
++        assert scoped.get(SingletonService) is singleton1
++
++
++def test_scoped_container_reuses_instance_container_get() -> None:
++    c = wireup.create_sync_container()
++    c._registry.register_service(ScopedService, lifetime=ServiceLifetime.SCOPED)
++
++    with enter_scope(c) as scoped:
++        assert scoped.get(ScopedService) is scoped.get(ScopedService)
++
++
++def test_scoped_container_multiple_scopes() -> None:
++    c = wireup.create_sync_container()
++    c._registry.register_service(ScopedService, lifetime=ServiceLifetime.SCOPED)
++
++    with enter_scope(c) as scoped1, enter_scope(c) as scoped2:
++        assert scoped1 is not scoped2
++        assert scoped1.get(ScopedService) is scoped1.get(ScopedService)
++        assert scoped2.get(ScopedService) is scoped2.get(ScopedService)
++        assert scoped1.get(ScopedService) is not scoped2.get(ScopedService)
++
++
++def test_scoped_container_cleansup_container_get() -> None:
++    class SomeService: ...
++
++    done = False
++
++    def factory() -> Iterator[SomeService]:
++        yield SomeService()
++        nonlocal done
++        done = True
++
++    c = wireup.create_sync_container()
++    c._registry.register_factory(factory, lifetime=ServiceLifetime.TRANSIENT)
++
++    with enter_scope(c) as scoped:
++        assert scoped.get(SomeService)
++
++    assert done
+diff --git a/wireup/__init__.py b/wireup/__init__.py
+index 705b394..bf71340 100644
+--- a/wireup/__init__.py
++++ b/wireup/__init__.py
+@@ -3,9 +3,12 @@ import warnings
+ from wireup.annotation import Inject, ParameterEnum, Wire, abstract, service, wire
+ from wireup.ioc.dependency_container import DependencyContainer
+ from wireup.ioc.parameter import ParameterBag
++from wireup.ioc.scoped_container import ScopedContainer, enter_async_scope, enter_scope
+ from wireup.ioc.types import ParameterReference, ServiceLifetime, ServiceOverride
+ from wireup.util import (
++    create_async_container,
+     create_container,
++    create_sync_container,
+     initialize_container,
+     load_module,
+     register_all_in_module,
+@@ -24,11 +27,16 @@ __all__ = [
+     "ParameterBag",
+     "ParameterEnum",
+     "ParameterReference",
++    "ScopedContainer",
+     "ServiceLifetime",
+     "ServiceOverride",
+     "Wire",
+     "abstract",
++    "create_async_container",
+     "create_container",
++    "create_sync_container",
++    "enter_async_scope",
++    "enter_scope",
+     "initialize_container",
+     "load_module",
+     "register_all_in_module",
+diff --git a/wireup/decorators.py b/wireup/decorators.py
+new file mode 100644
+index 0000000..5f3da8e
+--- /dev/null
++++ b/wireup/decorators.py
+@@ -0,0 +1,57 @@
++from __future__ import annotations
++
++import asyncio
++import functools
++from typing import TYPE_CHECKING, Any
++
++from wireup.ioc._exit_stack import async_clean_exit_stack, clean_exit_stack
++
++if TYPE_CHECKING:
++    from collections.abc import Callable
++
++    from wireup.ioc.base_container import BaseContainer
++    from wireup.ioc.scoped_container import ScopedAsyncContainer, ScopedContainer
++
++
++def make_inject_decorator(
++    container: BaseContainer,
++    scoped_container_supplier: Callable[[], ScopedContainer | ScopedAsyncContainer] | None = None,
++) -> Callable[..., Any]:
++    """Provide known dependencies to the applied function.
++
++    :param container: The base container instance. This is what you created via `wireup.create_container`.
++    :param scoped_container_supplier: A callable with no arguments that returns the current scoped container
++    instance. Setting this will enable the container to inject scoped dependencies otno the target.
++    """
++
++    # Exit stack needs to be cleaned in case the container handling injection is not a scoped one.
++    def _decorator(target: Callable[..., Any]) -> Callable[..., Any]:
++        container._registry.target_init_context(target)
++
++        if asyncio.iscoroutinefunction(target):
++
++            @functools.wraps(target)
++            async def _inject_async_target(*args: Any, **kwargs: Any) -> Any:
++                c = scoped_container_supplier() if scoped_container_supplier else container
++                res = await c._async_callable_get_params_to_inject(target)
++                try:
++                    return await target(*args, **{**kwargs, **res.kwargs})
++                finally:
++                    if res.exit_stack:
++                        await async_clean_exit_stack(res.exit_stack)
++
++            return _inject_async_target
++
++        @functools.wraps(target)
++        def _inject_target(*args: Any, **kwargs: Any) -> Any:
++            c = scoped_container_supplier() if scoped_container_supplier else container
++            res = c._callable_get_params_to_inject(target)
++            try:
++                return target(*args, **{**kwargs, **res.kwargs})
++            finally:
++                if res.exit_stack:
++                    clean_exit_stack(res.exit_stack)
++
++        return _inject_target
++
++    return _decorator
+diff --git a/wireup/integration/django/__init__.py b/wireup/integration/django/__init__.py
+index 3cca305..2ca1da5 100644
+--- a/wireup/integration/django/__init__.py
++++ b/wireup/integration/django/__init__.py
+@@ -1,46 +1,3 @@
+-from contextvars import ContextVar
+-from dataclasses import dataclass
+-from types import ModuleType
+-from typing import Callable, List, Union
++from wireup.integration.django.apps import WireupSettings, get_container, wireup_middleware
+ 
+-from django.http import HttpRequest, HttpResponse
+-
+-from wireup.errors import WireupError
+-
+-current_request: ContextVar[HttpRequest] = ContextVar("wireup_django_request")
+-
+-
+-def wireup_middleware(get_response: Callable[[HttpRequest], HttpResponse]) -> Callable[[HttpRequest], HttpResponse]:  # noqa: D103
+-    def _inner(request: HttpRequest) -> HttpResponse:
+-        token = current_request.set(request)
+-        try:
+-            return get_response(request)
+-        finally:
+-            current_request.reset(token)
+-
+-    return _inner
+-
+-
+-def django_request_factory() -> HttpRequest:  # noqa: D103
+-    try:
+-        return current_request.get()
+-    except LookupError as e:
+-        msg = (
+-            "django.http.HttpRequest in wireup is only available during a request. "
+-            "Did you forget to add 'wireup.integration.django.wireup_middleware' to your list of middlewares?"
+-        )
+-        raise WireupError(msg) from e
+-
+-
+-@dataclass(frozen=True)
+-class WireupSettings:
+-    """Class containing Wireup settings specific to Django."""
+-
+-    service_modules: List[Union[str, ModuleType]]
+-    """List of modules containing wireup service registrations."""
+-
+-    perform_warmup: bool = True
+-    """Setting this to true will cause the container to create
+-    instances of services at application startup.
+-    When set to false, services are created on first use.
+-    """
++__all__ = ["WireupSettings", "get_container", "wireup_middleware"]
+diff --git a/wireup/integration/django/apps.py b/wireup/integration/django/apps.py
+index 2f832fe..6e40f74 100644
+--- a/wireup/integration/django/apps.py
++++ b/wireup/integration/django/apps.py
+@@ -1,23 +1,100 @@
++from __future__ import annotations
++
++import asyncio
+ import functools
+ import importlib
+-from typing import TYPE_CHECKING, Any
++from contextvars import ContextVar
++from dataclasses import dataclass
++from typing import TYPE_CHECKING, Any, Awaitable, Callable
+ 
+ import django
+ import django.urls
+ from django.apps import AppConfig, apps
+ from django.conf import settings
+-from django.http import HttpRequest
++from django.http import HttpRequest, HttpResponse
+ from django.urls import URLPattern, URLResolver
++from django.utils.decorators import sync_and_async_middleware
+ 
+ import wireup
+-from wireup import DependencyContainer
+-from wireup.integration.django import django_request_factory
+-from wireup.ioc._exit_stack import clean_exit_stack
+-from wireup.ioc.types import ServiceLifetime
++from wireup import (
++    ServiceLifetime,
++    enter_async_scope,
++    enter_scope,
++)
++from wireup.decorators import make_inject_decorator
++from wireup.errors import WireupError
+ 
+ if TYPE_CHECKING:
++    from types import ModuleType
++
+     from wireup.integration.django import WireupSettings
+-    from wireup.ioc.dependency_container import _InjectionResult
++    from wireup.ioc.async_container import AsyncContainer
++    from wireup.ioc.scoped_container import ScopedAsyncContainer, ScopedContainer
++    from wireup.ioc.types import InjectionResult
++
++
++current_request: ContextVar[HttpRequest] = ContextVar("wireup_django_request")
++async_view_request_container: ContextVar[ScopedAsyncContainer] = ContextVar("wireup_async_view_request_container")
++sync_view_request_container: ContextVar[ScopedContainer] = ContextVar("wireup_sync_view_request_container")
++
++
++@sync_and_async_middleware
++def wireup_middleware(  # noqa: D103
++    get_response: Callable[[HttpRequest], HttpResponse],
++) -> Callable[[HttpRequest], HttpResponse | Awaitable[HttpResponse]]:
++    container = _get_base_container()
++
++    if asyncio.iscoroutinefunction(get_response):
++
++        async def async_inner(request: HttpRequest) -> HttpResponse:
++            async with enter_async_scope(container) as scoped:
++                container_token = async_view_request_container.set(scoped)
++                request_token = current_request.set(request)
++                try:
++                    return await get_response(request)
++                finally:
++                    current_request.reset(request_token)
++                    async_view_request_container.reset(container_token)
++
++        return async_inner
++
++    def sync_inner(request: HttpRequest) -> HttpResponse:
++        with enter_scope(container) as scoped:
++            container_token = sync_view_request_container.set(scoped)
++            request_token = current_request.set(request)
++            try:
++                return get_response(request)
++            finally:
++                current_request.reset(request_token)
++                sync_view_request_container.reset(container_token)
++
++    return sync_inner
++
++
++def _django_request_factory() -> HttpRequest:
++    try:
++        return current_request.get()
++    except LookupError as e:
++        msg = (
++            "django.http.HttpRequest in wireup is only available during a request. "
++            "Did you forget to add 'wireup.integration.django.wireup_middleware' to your list of middlewares?"
++        )
++        raise WireupError(msg) from e
++
++
++def get_container() -> ScopedContainer | ScopedAsyncContainer | AsyncContainer:
++    """Return the container instance associated with the current django application."""
++    try:
++        return async_view_request_container.get()
++    except LookupError:
++        try:
++            return sync_view_request_container.get()
++        except LookupError:
++            return _get_base_container()
++
++
++def _get_base_container() -> AsyncContainer:
++    return apps.get_app_config(WireupConfig.name).container  # type: ignore[reportAttributeAccessIssue]
+ 
+ 
+ class WireupConfig(AppConfig):
+@@ -31,7 +108,7 @@ class WireupConfig(AppConfig):
+     def ready(self) -> None:
+         integration_settings: WireupSettings = settings.WIREUP
+ 
+-        self.container = wireup.create_container(
++        self.container = wireup.create_async_container(
+             service_modules=[
+                 importlib.import_module(m) if isinstance(m, str) else m for m in integration_settings.service_modules
+             ],
+@@ -41,10 +118,11 @@ class WireupConfig(AppConfig):
+                 if not entry.startswith("__") and hasattr(settings, entry)
+             },
+         )
+-        self.container.register(django_request_factory, lifetime=ServiceLifetime.TRANSIENT)
++        self.container._registry.register_factory(_django_request_factory, lifetime=ServiceLifetime.SCOPED)
++        self.inject_scoped = make_inject_decorator(self.container, get_container)
+ 
+         if integration_settings.perform_warmup:
+-            self.container.warmup()
++            """fix warmup."""
+ 
+         self._autowire(django.urls.get_resolver())
+ 
+@@ -54,45 +132,48 @@ class WireupConfig(AppConfig):
+                 self._autowire(p)
+                 continue
+ 
+-            if isinstance(p, URLPattern) and p.callback:
++            if isinstance(p, URLPattern) and p.callback:  # type: ignore[reportUnnecessaryComparison]
+                 target = p.callback
+ 
+                 if hasattr(p.callback, "view_class") and hasattr(p.callback, "view_initkwargs"):
+                     p.callback = self._autowire_class_based_view(target)
+                 else:
+-                    p.callback = self.container.autowire(target)
+-                    self.container._registry.context.remove_dependency_type(target, HttpRequest)  # type: ignore[reportPrivateUsage]  # noqa: SLF001
++                    p.callback = self.inject_scoped(p.callback)
++                    self.container._registry.context.remove_dependency_type(target, HttpRequest)
+ 
+     def _autowire_class_based_view(self, callback: Any) -> Any:
+         # It is possible in django for one class to serve multiple routes,
+         # so this needs to create a new type to disambiguate.
+         # see: https://github.com/maldoinc/wireup/issues/53
+         wrapped_type = type(f"WireupWrapped{callback.view_class.__name__}", (callback.view_class,), {})
+-        self.container.register(wrapped_type)
++        self.container._registry.register_service(wrapped_type)
+ 
+         # This is taken from the django .as_view() method.
+         @functools.wraps(callback)
+         def view(request: HttpRequest, *args: Any, **kwargs: Any) -> Any:
+-            autowired_args: _InjectionResult = self.container._DependencyContainer__callable_get_params_to_inject(  # type: ignore[reportAttributeAccessIssue]  # noqa: SLF001
+-                wrapped_type
+-            )
++            autowired_args: InjectionResult = get_container()._callable_get_params_to_inject(wrapped_type)
+ 
+             this = callback.view_class(**{**callback.view_initkwargs, **autowired_args.kwargs})
+-            try:
+-                this.setup(request, *args, **kwargs)
+-                if not hasattr(this, "request"):
+-                    raise AttributeError(
+-                        "{} instance has no 'request' attribute. Did you override "  # noqa: EM103, UP032
+-                        "setup() and forget to call super()?".format(callback.view_class.__name__)
+-                    )
+-                return this.dispatch(request, *args, **kwargs)
+-            finally:
+-                if autowired_args.exit_stack:
+-                    clean_exit_stack(autowired_args.exit_stack)
++            this.setup(request, *args, **kwargs)
++            if not hasattr(this, "request"):
++                raise AttributeError(
++                    "{} instance has no 'request' attribute. Did you override "  # noqa: EM103, UP032
++                    "setup() and forget to call super()?".format(callback.view_class.__name__)
++                )
++            return this.dispatch(request, *args, **kwargs)
+ 
+         return view
+ 
+ 
+-def get_container() -> DependencyContainer:
+-    """Return the container instance associated with the current django application."""
+-    return apps.get_app_config(WireupConfig.name).container  # type: ignore[reportAttributeAccessIssue]
++@dataclass(frozen=True)
++class WireupSettings:
++    """Class containing Wireup settings specific to Django."""
++
++    service_modules: list[str | ModuleType]
++    """List of modules containing wireup service registrations."""
++
++    perform_warmup: bool = True
++    """Setting this to true will cause the container to create
++    instances of services at application startup.
++    When set to false, services are created on first use.
++    """
+diff --git a/wireup/integration/fastapi.py b/wireup/integration/fastapi.py
+index 3588093..f02cfc0 100644
+--- a/wireup/integration/fastapi.py
++++ b/wireup/integration/fastapi.py
+@@ -1,21 +1,27 @@
++import functools
+ from contextvars import ContextVar
+-from typing import Awaitable, Callable
++from typing import Any, Awaitable, Callable
+ 
+ from fastapi import FastAPI, Request, Response
+ from fastapi.routing import APIRoute, APIWebSocketRoute
+ 
+-from wireup import DependencyContainer
++from wireup import ServiceLifetime
++from wireup.decorators import make_inject_decorator
+ from wireup.errors import WireupError
+ from wireup.integration.util import is_view_using_container
+-from wireup.ioc.types import ServiceLifetime
++from wireup.ioc.async_container import AsyncContainer
++from wireup.ioc.scoped_container import ScopedAsyncContainer, enter_async_scope
+ 
+ current_request: ContextVar[Request] = ContextVar("wireup_fastapi_request")
++current_ws_container: ContextVar[ScopedAsyncContainer] = ContextVar("wireup_fastapi_container")
+ 
+ 
+ async def _wireup_request_middleware(request: Request, call_next: Callable[[Request], Awaitable[Response]]) -> Response:
+     token = current_request.set(request)
+     try:
+-        return await call_next(request)
++        async with enter_async_scope(request.app.state.wireup_container) as scoped_container:
++            request.state.wireup_container = scoped_container
++            return await call_next(request)
+     finally:
+         current_request.reset(token)
+ 
+@@ -28,7 +34,26 @@ def _fastapi_request_factory() -> Request:
+         raise WireupError(msg) from e
+ 
+ 
+-def _autowire_views(container: DependencyContainer, app: FastAPI) -> None:
++# We need to inject websocket routes separately as the regular fastapi middlewares work only for http.
++def _inject_websocket_route(container: AsyncContainer, target: Callable[..., Any]) -> Callable[..., Any]:
++    container._registry.target_init_context(target)
++
++    @functools.wraps(target)
++    async def _inner(*args: Any, **kwargs: Any) -> Any:
++        async with enter_async_scope(container) as scoped_container:
++            token = current_ws_container.set(scoped_container)
++            res = await scoped_container._async_callable_get_params_to_inject(target)
++            try:
++                return await target(*args, **{**kwargs, **res.kwargs})
++            finally:
++                current_ws_container.reset(token)
++
++    return _inner
++
++
++def _autowire_views(container: AsyncContainer, app: FastAPI) -> None:
++    inject_scoped = make_inject_decorator(container, get_request_container)
++
+     for route in app.routes:
+         if (
+             isinstance(route, (APIRoute, APIWebSocketRoute))
+@@ -36,23 +61,33 @@ def _autowire_views(container: DependencyContainer, app: FastAPI) -> None:
+             and is_view_using_container(container, route.dependant.call)
+         ):
+             target = route.dependant.call
+-            route.dependant.call = container.autowire(target)
++            route.dependant.call = (
++                inject_scoped(target) if isinstance(route, APIRoute) else _inject_websocket_route(container, target)
++            )
+             # Remove Request as a dependency from this target.
+             # Let fastapi inject it instead and avoid duplicated work.
+-            container._registry.context.remove_dependency_type(target, Request)  # type: ignore[reportPrivateUsage]  # noqa: SLF001
++            container._registry.context.remove_dependency_type(target, Request)
+ 
+ 
+-def setup(container: DependencyContainer, app: FastAPI) -> None:
++def setup(container: AsyncContainer, app: FastAPI) -> None:
+     """Integrate Wireup with FastAPI.
+ 
+     This will automatically inject dependencies on FastAPI routers.
+     """
+-    container.register(_fastapi_request_factory, lifetime=ServiceLifetime.TRANSIENT)
++    container._registry.register_factory(_fastapi_request_factory, lifetime=ServiceLifetime.SCOPED)
+     app.middleware("http")(_wireup_request_middleware)
+     _autowire_views(container, app)
+     app.state.wireup_container = container
+ 
+ 
+-def get_container(app: FastAPI) -> DependencyContainer:
++def get_container(app: FastAPI) -> AsyncContainer:
+     """Return the container associated with the given application."""
+     return app.state.wireup_container
++
++
++def get_request_container() -> ScopedAsyncContainer:
++    """Return the container associated with the current request/websocket."""
++    try:
++        return current_request.get().state.wireup_container
++    except LookupError:
++        return current_ws_container.get()
+diff --git a/wireup/integration/flask.py b/wireup/integration/flask.py
+index 0c0da38..d4312f8 100644
+--- a/wireup/integration/flask.py
++++ b/wireup/integration/flask.py
+@@ -1,17 +1,21 @@
+-from flask import Flask
++from flask import Flask, Response, g
+ 
+-from wireup import DependencyContainer
++from wireup import enter_scope
++from wireup.decorators import make_inject_decorator
+ from wireup.integration.util import is_view_using_container
++from wireup.ioc.sync_container import SyncContainer
+ 
+ 
+-def _autowire_views(container: DependencyContainer, app: Flask) -> None:
++def _autowire_views(container: SyncContainer, app: Flask) -> None:
++    inject_scoped = make_inject_decorator(container, lambda: g.wireup_container)
++
+     app.view_functions = {
+-        name: container.autowire(view) if is_view_using_container(container, view) else view
++        name: inject_scoped(view) if is_view_using_container(container, view) else view
+         for name, view in app.view_functions.items()
+     }
+ 
+ 
+-def setup(container: DependencyContainer, app: Flask, *, import_flask_config: bool = False) -> None:
++def setup(container: SyncContainer, app: Flask, *, import_flask_config: bool = False) -> None:
+     """Integrate Wireup with Flask.
+ 
+     This can import Flask config in the container and will automatically inject dependencies in views.
+@@ -19,10 +23,26 @@ def setup(container: DependencyContainer, app: Flask, *, import_flask_config: bo
+     if import_flask_config:
+         container.params.update(dict(app.config.items()))  # type: ignore[reportArgumentType]
+ 
++    def _before_request() -> None:
++        ctx = enter_scope(container)
++        g.wireup_container_ctx = ctx
++        g.wireup_container = ctx.__enter__()
++
++    def _after_request(response: Response) -> Response:
++        g.wireup_container_ctx.__exit__(None, None, None)
++
++        return response
++
++    app.before_request(_before_request)
++    app.after_request(_after_request)
++
+     _autowire_views(container, app)
+     app.wireup_container = container  # type: ignore[reportAttributeAccessIssue]
+ 
+ 
+-def get_container(app: Flask) -> DependencyContainer:
++def get_container(app: Flask) -> SyncContainer:
+     """Return the container associated with the given application."""
+-    return app.wireup_container  # type: ignore[reportAttributeAccessIssue]
++    try:
++        return g.wireup_container
++    except RuntimeError:
++        return app.wireup_container  # type: ignore[reportAttributeAccessIssue]
+diff --git a/wireup/integration/util.py b/wireup/integration/util.py
+index 8734a53..81df1f6 100644
+--- a/wireup/integration/util.py
++++ b/wireup/integration/util.py
+@@ -1,11 +1,11 @@
+ import inspect
+ from typing import Any, Callable
+ 
+-from wireup import DependencyContainer
++from wireup.ioc.base_container import BaseContainer
+ from wireup.ioc.util import _get_globals, param_get_annotation
+ 
+ 
+-def is_view_using_container(dependency_container: DependencyContainer, view: Callable[..., Any]) -> bool:
++def is_view_using_container(dependency_container: BaseContainer, view: Callable[..., Any]) -> bool:
+     """Determine whether the view is using the given dependency container."""
+     for dep in inspect.signature(view).parameters.values():
+         if param := param_get_annotation(dep, globalns=_get_globals(view)):
+diff --git a/wireup/ioc/async_container.py b/wireup/ioc/async_container.py
+new file mode 100644
+index 0000000..ed0e8ba
+--- /dev/null
++++ b/wireup/ioc/async_container.py
+@@ -0,0 +1,12 @@
++from __future__ import annotations
++
++from wireup.ioc._exit_stack import async_clean_exit_stack
++from wireup.ioc.base_container import BaseContainer
++
++
++class AsyncContainer(BaseContainer):
++    get = BaseContainer._async_get
++    get_dependency_sync = BaseContainer._get
++
++    async def close(self) -> None:
++        await async_clean_exit_stack(self._global_scope.exit_stack)
+diff --git a/wireup/ioc/base_container.py b/wireup/ioc/base_container.py
+index bc072a0..d1a2386 100644
+--- a/wireup/ioc/base_container.py
++++ b/wireup/ioc/base_container.py
+@@ -1,45 +1,72 @@
+ from __future__ import annotations
+ 
++import logging
+ from typing import TYPE_CHECKING, Any, TypeVar
+ 
+ from wireup.errors import (
+     UnknownQualifiedServiceRequestedError,
++    UnknownServiceRequestedError,
+     UsageOfQualifierOnUnknownObjectError,
++    WireupError,
+ )
+ from wireup.ioc.override_manager import OverrideManager
+-from wireup.ioc.service_registry import FactoryType
++from wireup.ioc.service_registry import GENERATOR_FACTORY_TYPES, FactoryType
+ from wireup.ioc.types import (
+     AnnotatedParameter,
++    AnyCallable,
++    ContainerScope,
++    CreationResult,
++    EmptyContainerInjectionRequest,
++    InjectionResult,
+     ParameterWrapper,
+     Qualifier,
++    ServiceLifetime,
++    ServiceQualifier,
+ )
+ 
+ if TYPE_CHECKING:
+     from collections.abc import Callable
++    from types import AsyncGeneratorType, GeneratorType
+ 
+     from wireup import ParameterBag
+     from wireup.ioc.service_registry import ServiceRegistry
+     from wireup.ioc.types import ContainerObjectIdentifier, Qualifier
+ 
+ T = TypeVar("T")
++logger = logging.getLogger(__name__)
+ 
+ 
+ class BaseContainer:
+     """Base Container class providing core functionality."""
+ 
+-    __slots__ = ("_initialized_objects", "_override_mgr", "_overrides", "_params", "_registry")
++    __slots__ = (
++        "_current_scope",
++        "_global_scope",
++        "_override_mgr",
++        "_overrides",
++        "_params",
++        "_registry",
++    )
+ 
+     def __init__(
+         self,
+         registry: ServiceRegistry,
+         parameters: ParameterBag,
+         overrides: dict[ContainerObjectIdentifier, Any],
++        global_scope: ContainerScope,
++        current_scope: ContainerScope | None = None,
+     ) -> None:
+         self._registry = registry
+         self._params = parameters
+         self._overrides = overrides
+         self._override_mgr = OverrideManager(overrides, self._registry.is_type_with_qualifier_known)
+-        self._initialized_objects: dict[ContainerObjectIdentifier, Any] = {}
++        self._global_scope = global_scope
++        self._current_scope = current_scope
++
++    @property
++    def params(self) -> ParameterBag:
++        """Parameter bag associated with this container."""
++        return self._params
+ 
+     def is_type_known(self, klass: type) -> bool:
+         """Given a class type return True if's registered in the container as a service or interface."""
+@@ -87,10 +114,232 @@ class BaseContainer:
+                 resolved_type = self._registry.interface_resolve_impl(param.klass, param.qualifier_value)
+                 obj_id = resolved_type, param.qualifier_value
+ 
+-            if res := self._initialized_objects.get(obj_id):
++            if res := self._global_scope.objects.get(obj_id):
++                return res, True
++
++            if self._current_scope is not None and (res := self._current_scope.objects.get(obj_id)):
+                 return res, True
+ 
+         if isinstance(param.annotation, ParameterWrapper):
+             return self._params.get(param.annotation.param), True
+ 
+         return None, False
++
++    def _callable_get_params_to_inject(self, fn: AnyCallable) -> InjectionResult:
++        result: dict[str, Any] = {}
++        names_to_remove: set[str] = set()
++        exit_stack: list[GeneratorType[Any, Any, Any] | AsyncGeneratorType[Any, Any]] = []
++
++        for name, param in self._registry.context.dependencies[fn].items():
++            obj, value_found = self._try_get_existing_value(param)
++
++            if value_found:
++                result[name] = obj
++            elif param.klass and (creation := self._create_instance(param.klass, param.qualifier_value)):
++                if creation.exit_stack:
++                    exit_stack.extend(creation.exit_stack)
++                result[name] = creation.instance
++            else:
++                # Normally the container won't throw if it encounters a type it doesn't know about
++                # But if it's explicitly marked as to be injected then we need to throw.
++                if param.klass and isinstance(param.annotation, EmptyContainerInjectionRequest):
++                    raise UnknownServiceRequestedError(param.klass)
++
++                names_to_remove.add(name)
++
++        # If autowiring, the container is assumed to be final, so unnecessary entries can be removed
++        # from the context in order to speed up the autowiring process.
++        if names_to_remove:
++            self._registry.context.remove_dependencies(fn, names_to_remove)
++
++        return InjectionResult(kwargs=result, exit_stack=exit_stack)
++
++    async def _async_callable_get_params_to_inject(self, fn: AnyCallable) -> InjectionResult:
++        result: dict[str, Any] = {}
++        names_to_remove: set[str] = set()
++        exit_stack: list[GeneratorType[Any, Any, Any] | AsyncGeneratorType[Any, Any]] = []
++
++        for name, param in self._registry.context.dependencies[fn].items():
++            obj, value_found = self._try_get_existing_value(param)
++
++            if value_found:
++                result[name] = obj
++            elif param.klass and (creation := await self._async_create_instance(param.klass, param.qualifier_value)):
++                if creation.exit_stack:
++                    exit_stack.extend(creation.exit_stack)
++                result[name] = creation.instance
++            else:
++                # Normally the container won't throw if it encounters a type it doesn't know about
++                # But if it's explicitly marked as to be injected then we need to throw.
++                if param.klass and isinstance(param.annotation, EmptyContainerInjectionRequest):
++                    raise UnknownServiceRequestedError(param.klass)
++
++                names_to_remove.add(name)
++
++        # If autowiring, the container is assumed to be final, so unnecessary entries can be removed
++        # from the context in order to speed up the autowiring process.
++        if names_to_remove:
++            self._registry.context.remove_dependencies(fn, names_to_remove)
++
++        return InjectionResult(kwargs=result, exit_stack=exit_stack)
++
++    def _create_instance(self, klass: type[T], qualifier: Qualifier | None) -> CreationResult | None:
++        ctor_and_type = self._get_ctor(klass=klass, qualifier=qualifier)
++
++        if not ctor_and_type:
++            return None
++
++        ctor, resolved_type, factory_type = ctor_and_type
++
++        if factory_type in {FactoryType.ASYNC_GENERATOR, FactoryType.COROUTINE_FN}:
++            msg = (
++                f"{klass} is an async dependency and it cannot be created in a blocking context. "
++                f"You likely used `container.get({klass.__module__}.{klass.__name__})` or called `get` on a dependent. "
++                "Use `await container.aget` instead of `container.get`."
++            )
++            raise WireupError(msg)
++
++        self._assert_lifetime_is_valid(self._registry.context.lifetime[resolved_type])
++
++        injection_result = self._callable_get_params_to_inject(ctor)
++        instance_or_generator = ctor(**injection_result.kwargs)
++        object_identifier = resolved_type, qualifier
++
++        if factory_type == FactoryType.GENERATOR:
++            generator = instance_or_generator
++            instance = next(instance_or_generator)
++        else:
++            instance = instance_or_generator
++            generator = None
++
++        return self._wrap_result(
++            generator=generator,
++            instance=instance,
++            object_identifier=object_identifier,
++            injection_result=injection_result,
++        )
++
++    async def _async_create_instance(self, klass: type[T], qualifier: Qualifier | None) -> CreationResult | None:
++        ctor_and_type = self._get_ctor(klass=klass, qualifier=qualifier)
++
++        if not ctor_and_type:
++            return None
++
++        ctor, resolved_type, factory_type = ctor_and_type
++        self._assert_lifetime_is_valid(self._registry.context.lifetime[resolved_type])
++        injection_result = await self._async_callable_get_params_to_inject(ctor)
++        instance_or_generator = (
++            await ctor(**injection_result.kwargs)
++            if factory_type == FactoryType.COROUTINE_FN
++            else ctor(**injection_result.kwargs)
++        )
++        object_identifier = resolved_type, qualifier
++
++        if factory_type in GENERATOR_FACTORY_TYPES:
++            generator = instance_or_generator
++            instance = (
++                next(instance_or_generator)
++                if factory_type == FactoryType.GENERATOR
++                else await instance_or_generator.__anext__()
++            )
++        else:
++            generator = None
++            instance = instance_or_generator
++
++        return self._wrap_result(
++            generator=generator,
++            instance=instance,
++            object_identifier=object_identifier,
++            injection_result=injection_result,
++        )
++
++    def _wrap_result(
++        self,
++        *,
++        generator: Any | None,
++        instance: Any,
++        object_identifier: ContainerObjectIdentifier,
++        injection_result: InjectionResult,
++    ) -> CreationResult:
++        lifetime = self._registry.context.lifetime.get(object_identifier[0])
++        is_singleton = lifetime == ServiceLifetime.SINGLETON
++
++        if is_singleton:
++            self._global_scope.objects[object_identifier] = instance
++        elif self._current_scope is not None and lifetime == ServiceLifetime.SCOPED:
++            self._current_scope.objects[object_identifier] = instance
++
++        if generator:
++            result_exit_stack = injection_result.exit_stack
++            if is_singleton:
++                self._global_scope.exit_stack.append(generator)
++                result_exit_stack = []
++            elif self._current_scope is not None:
++                self._current_scope.exit_stack.append(generator)
++                result_exit_stack = []
++            else:
++                result_exit_stack.append(generator)
++
++            return CreationResult(instance=instance, exit_stack=result_exit_stack)
++
++        return CreationResult(instance=instance, exit_stack=injection_result.exit_stack)
++
++    def _assert_lifetime_is_valid(self, lifetime: ServiceLifetime) -> None:
++        if lifetime is not ServiceLifetime.SINGLETON and self._current_scope is None:
++            msg = (
++                "Creating transient or scoped objects from the base container is deprecated. "
++                "Please enter a scope using wireup.enter_scope or wireup.enter_async_scope."
++            )
++            logger.warning(msg)
++
++    def _get(self, klass: type[T], qualifier: Qualifier | None = None) -> T:
++        """Get an instance of the requested type.
++
++        Use this to locate services by their type but strongly prefer using injection instead.
++
++        :param qualifier: Qualifier for the class if it was registered with one.
++        :param klass: Class of the dependency already registered in the container.
++        :return: An instance of the requested object. Always returns an existing instance when one is available.
++        """
++        res, found = self._try_get_existing_value(
++            AnnotatedParameter(klass=klass, annotation=ServiceQualifier(qualifier))
++        )
++
++        if found:
++            return res  # type: ignore[no-any-return]
++
++        if res := self._create_instance(klass, qualifier):
++            if res.exit_stack:
++                msg = "Container.get does not support Transient lifetime service generator factories."
++                raise WireupError(msg)
++
++            return res.instance  # type: ignore[no-any-return]
++
++        raise UnknownServiceRequestedError(klass)
++
++    async def _async_get(self, klass: type[T], qualifier: Qualifier | None = None) -> T:
++        """Get an instance of the requested type.
++
++        Use this to locate services by their type but strongly prefer using injection instead.
++
++        :param qualifier: Qualifier for the class if it was registered with one.
++        :param klass: Class of the dependency already registered in the container.
++        :return: An instance of the requested object. Always returns an existing instance when one is available.
++        """
++        if res := self._overrides.get((klass, qualifier)):
++            return res  # type: ignore[no-any-return]
++
++        if self._registry.is_interface_known(klass):
++            klass = self._registry.interface_resolve_impl(klass, qualifier)
++
++        if instance := self._global_scope.objects.get((klass, qualifier)):
++            return instance  # type: ignore[no-any-return]
++
++        if res := await self._async_create_instance(klass, qualifier):
++            if res.exit_stack:
++                msg = "Container.get does not support Transient lifetime service generator factories."
++                raise WireupError(msg)
++
++            return res.instance  # type: ignore[no-any-return]
++
++        raise UnknownServiceRequestedError(klass)
+diff --git a/wireup/ioc/dependency_container.py b/wireup/ioc/dependency_container.py
+index b240638..4253b00 100644
+--- a/wireup/ioc/dependency_container.py
++++ b/wireup/ioc/dependency_container.py
+@@ -1,14 +1,13 @@
+ from __future__ import annotations
+ 
+-import asyncio
+-import functools
+ import sys
+ import warnings
+-from dataclasses import dataclass
+ from typing import TYPE_CHECKING, Any, TypeVar, overload
+ 
++from wireup.decorators import make_inject_decorator
+ from wireup.ioc._exit_stack import async_clean_exit_stack, clean_exit_stack
+ from wireup.ioc.base_container import BaseContainer
++from wireup.ioc.service_registry import ServiceRegistry
+ 
+ if sys.version_info < (3, 9):
+     from graphlib2 import TopologicalSorter
+@@ -17,21 +16,17 @@ else:
+ 
+ from wireup.errors import (
+     InvalidRegistrationTypeError,
+-    UnknownServiceRequestedError,
+-    WireupError,
+ )
+-from wireup.ioc.service_registry import GENERATOR_FACTORY_TYPES, FactoryType, ServiceRegistry
+ from wireup.ioc.types import (
+     AnyCallable,
+     ContainerObjectIdentifier,
+-    EmptyContainerInjectionRequest,
++    ContainerScope,
+     Qualifier,
+     ServiceLifetime,
+ )
+ 
+ if TYPE_CHECKING:
+     from collections.abc import Callable
+-    from types import AsyncGeneratorType, GeneratorType
+ 
+     from wireup.ioc.initialization_context import InitializationContext
+     from wireup.ioc.parameter import ParameterBag
+@@ -39,18 +34,6 @@ if TYPE_CHECKING:
+ T = TypeVar("T")
+ 
+ 
+-@dataclass(frozen=True)
+-class _CreationResult:
+-    instance: Any
+-    exit_stack: list[GeneratorType[Any, Any, Any] | AsyncGeneratorType[Any, Any]]
+-
+-
+-@dataclass(frozen=True)
+-class _InjectionResult:
+-    kwargs: dict[str, Any]
+-    exit_stack: list[GeneratorType[Any, Any, Any] | AsyncGeneratorType[Any, Any]]
+-
+-
+ class DependencyContainer(BaseContainer):
+     """Dependency Injection and Service Locator container registry.
+ 
+@@ -67,66 +50,28 @@ class DependencyContainer(BaseContainer):
+     be located from type alone.
+     """
+ 
+-    __slots__ = ("__exit_stack",)
++    __slots__ = ("_autowire",)
+ 
+-    def __init__(self, parameter_bag: ParameterBag) -> None:
++    def __init__(
++        self,
++        parameter_bag: ParameterBag,
++        registry: ServiceRegistry | None = None,
++        overrides: dict[ContainerObjectIdentifier, Any] | None = None,
++        global_scope: ContainerScope | None = None,
++        current_scope: ContainerScope | None = None,
++    ) -> None:
+         """:param parameter_bag: ParameterBag instance holding parameter information."""
+-        super().__init__(registry=ServiceRegistry(), parameters=parameter_bag, overrides={})
+-        self.__exit_stack: list[GeneratorType[Any, Any, Any] | AsyncGeneratorType[Any, Any]] = []
+-
+-    def get(self, klass: type[T], qualifier: Qualifier | None = None) -> T:
+-        """Get an instance of the requested type.
+-
+-        Use this to locate services by their type but strongly prefer using injection instead.
+-
+-        :param qualifier: Qualifier for the class if it was registered with one.
+-        :param klass: Class of the dependency already registered in the container.
+-        :return: An instance of the requested object. Always returns an existing instance when one is available.
+-        """
+-        if res := self._overrides.get((klass, qualifier)):
+-            return res  # type: ignore[no-any-return]
+-
+-        if self._registry.is_interface_known(klass):
+-            klass = self._registry.interface_resolve_impl(klass, qualifier)
+-
+-        if instance := self._initialized_objects.get((klass, qualifier)):
+-            return instance  # type: ignore[no-any-return]
+-
+-        if res := self.__create_instance(klass, qualifier):
+-            if res.exit_stack:
+-                msg = "Container.get does not support Transient lifetime service generator factories."
+-                raise WireupError(msg)
+-
+-            return res.instance  # type: ignore[no-any-return]
+-
+-        raise UnknownServiceRequestedError(klass)
+-
+-    async def aget(self, klass: type[T], qualifier: Qualifier | None = None) -> T:
+-        """Get an instance of the requested type.
+-
+-        Use this to locate services by their type but strongly prefer using injection instead.
+-
+-        :param qualifier: Qualifier for the class if it was registered with one.
+-        :param klass: Class of the dependency already registered in the container.
+-        :return: An instance of the requested object. Always returns an existing instance when one is available.
+-        """
+-        if res := self._overrides.get((klass, qualifier)):
+-            return res  # type: ignore[no-any-return]
+-
+-        if self._registry.is_interface_known(klass):
+-            klass = self._registry.interface_resolve_impl(klass, qualifier)
+-
+-        if instance := self._initialized_objects.get((klass, qualifier)):
+-            return instance  # type: ignore[no-any-return]
+-
+-        if res := await self.__async_create_instance(klass, qualifier):
+-            if res.exit_stack:
+-                msg = "Container.get does not support Transient lifetime service generator factories."
+-                raise WireupError(msg)
+-
+-            return res.instance  # type: ignore[no-any-return]
++        super().__init__(
++            registry=registry or ServiceRegistry(),
++            parameters=parameter_bag,
++            overrides={} if overrides is None else overrides,
++            global_scope=global_scope or ContainerScope(),
++            current_scope=current_scope,
++        )
++        self._autowire = make_inject_decorator(self)
+ 
+-        raise UnknownServiceRequestedError(klass)
++    get = BaseContainer._get
++    aget = BaseContainer._async_get
+ 
+     def abstract(self, klass: type[T]) -> type[T]:
+         """Register a type as an interface.
+@@ -201,11 +146,6 @@ class DependencyContainer(BaseContainer):
+         )
+         return self._registry.context
+ 
+-    @property
+-    def params(self) -> ParameterBag:
+-        """Parameter bag associated with this container."""
+-        return self._params
+-
+     def clear_initialized_objects(self) -> None:
+         """Drop references to initialized singleton objects.
+ 
+@@ -223,7 +163,7 @@ class DependencyContainer(BaseContainer):
+             DeprecationWarning,
+             stacklevel=2,
+         )
+-        self._initialized_objects.clear()
++        self._global_scope.objects.clear()
+ 
+     def autowire(self, fn: AnyCallable) -> AnyCallable:
+         """Automatically inject resources from the container to the decorated methods.
+@@ -237,29 +177,7 @@ class DependencyContainer(BaseContainer):
+         * When injecting an interface for which there are multiple implementations you need to supply a qualifier
+           using annotations.
+         """
+-        self._registry.target_init_context(fn)
+-
+-        if asyncio.iscoroutinefunction(fn):
+-
+-            @functools.wraps(fn)
+-            async def async_inner(*args: Any, **kwargs: Any) -> Any:
+-                res = await self.__async_callable_get_params_to_inject(fn)
+-                try:
+-                    return await fn(*args, **{**kwargs, **res.kwargs})
+-                finally:
+-                    await async_clean_exit_stack(res.exit_stack)
+-
+-            return async_inner
+-
+-        @functools.wraps(fn)
+-        def sync_inner(*args: Any, **kwargs: Any) -> Any:
+-            res = self.__callable_get_params_to_inject(fn)
+-            try:
+-                return fn(*args, **{**kwargs, **res.kwargs})
+-            finally:
+-                clean_exit_stack(res.exit_stack)
+-
+-        return sync_inner
++        return self._autowire(fn)  # type: ignore[no-any-return]
+ 
+     def warmup(self) -> None:
+         """Initialize all singleton dependencies registered in the container.
+@@ -271,163 +189,13 @@ class DependencyContainer(BaseContainer):
+ 
+         for klass in sorter.static_order():
+             for qualifier in self._registry.known_impls[klass]:
+-                if (klass, qualifier) not in self._initialized_objects:
++                if (klass, qualifier) not in self._global_scope.objects:
+                     self.get(klass, qualifier)
+ 
+-    def __callable_get_params_to_inject(self, fn: AnyCallable) -> _InjectionResult:
+-        result: dict[str, Any] = {}
+-        names_to_remove: set[str] = set()
+-        exit_stack: list[GeneratorType[Any, Any, Any] | AsyncGeneratorType[Any, Any]] = []
+-
+-        for name, param in self._registry.context.dependencies[fn].items():
+-            obj, value_found = self._try_get_existing_value(param)
+-
+-            if value_found:
+-                result[name] = obj
+-            elif param.klass and (creation := self.__create_instance(param.klass, param.qualifier_value)):
+-                if creation.exit_stack:
+-                    exit_stack.extend(creation.exit_stack)
+-                result[name] = creation.instance
+-            else:
+-                # Normally the container won't throw if it encounters a type it doesn't know about
+-                # But if it's explicitly marked as to be injected then we need to throw.
+-                if param.klass and isinstance(param.annotation, EmptyContainerInjectionRequest):
+-                    raise UnknownServiceRequestedError(param.klass)
+-
+-                names_to_remove.add(name)
+-
+-        # If autowiring, the container is assumed to be final, so unnecessary entries can be removed
+-        # from the context in order to speed up the autowiring process.
+-        if names_to_remove:
+-            self._registry.context.remove_dependencies(fn, names_to_remove)
+-
+-        return _InjectionResult(kwargs=result, exit_stack=exit_stack)
+-
+-    async def __async_callable_get_params_to_inject(self, fn: AnyCallable) -> _InjectionResult:
+-        result: dict[str, Any] = {}
+-        names_to_remove: set[str] = set()
+-        exit_stack: list[GeneratorType[Any, Any, Any] | AsyncGeneratorType[Any, Any]] = []
+-
+-        for name, param in self._registry.context.dependencies[fn].items():
+-            obj, value_found = self._try_get_existing_value(param)
+-
+-            if value_found:
+-                result[name] = obj
+-            elif param.klass and (creation := await self.__async_create_instance(param.klass, param.qualifier_value)):
+-                if creation.exit_stack:
+-                    exit_stack.extend(creation.exit_stack)
+-                result[name] = creation.instance
+-            else:
+-                # Normally the container won't throw if it encounters a type it doesn't know about
+-                # But if it's explicitly marked as to be injected then we need to throw.
+-                if param.klass and isinstance(param.annotation, EmptyContainerInjectionRequest):
+-                    raise UnknownServiceRequestedError(param.klass)
+-
+-                names_to_remove.add(name)
+-
+-        # If autowiring, the container is assumed to be final, so unnecessary entries can be removed
+-        # from the context in order to speed up the autowiring process.
+-        if names_to_remove:
+-            self._registry.context.remove_dependencies(fn, names_to_remove)
+-
+-        return _InjectionResult(kwargs=result, exit_stack=exit_stack)
+-
+-    def __create_instance(self, klass: type[T], qualifier: Qualifier | None) -> _CreationResult | None:
+-        ctor_and_type = self._get_ctor(klass=klass, qualifier=qualifier)
+-
+-        if not ctor_and_type:
+-            return None
+-
+-        ctor, resolved_type, factory_type = ctor_and_type
+-
+-        if factory_type in {FactoryType.ASYNC_GENERATOR, FactoryType.COROUTINE_FN}:
+-            msg = (
+-                f"{klass} is an async dependency and it cannot be created in a blocking context. "
+-                f"You likely used `container.get({klass.__module__}.{klass.__name__})` or called `get` on a dependent. "
+-                "Use `await container.aget` instead of `container.get`."
+-            )
+-            raise WireupError(msg)
+-
+-        injection_result = self.__callable_get_params_to_inject(ctor)
+-        instance_or_generator = ctor(**injection_result.kwargs)
+-        object_identifier = resolved_type, qualifier
+-
+-        if factory_type == FactoryType.GENERATOR:
+-            generator = instance_or_generator
+-            instance = next(instance_or_generator)
+-        else:
+-            instance = instance_or_generator
+-            generator = None
+-
+-        return self.__wrap_result(
+-            generator=generator,
+-            instance=instance,
+-            object_identifier=object_identifier,
+-            injection_result=injection_result,
+-        )
+-
+-    async def __async_create_instance(self, klass: type[T], qualifier: Qualifier | None) -> _CreationResult | None:
+-        ctor_and_type = self._get_ctor(klass=klass, qualifier=qualifier)
+-
+-        if not ctor_and_type:
+-            return None
+-
+-        ctor, resolved_type, factory_type = ctor_and_type
+-        injection_result = await self.__async_callable_get_params_to_inject(ctor)
+-        instance_or_generator = (
+-            await ctor(**injection_result.kwargs)
+-            if factory_type == FactoryType.COROUTINE_FN
+-            else ctor(**injection_result.kwargs)
+-        )
+-        object_identifier = resolved_type, qualifier
+-
+-        if factory_type in GENERATOR_FACTORY_TYPES:
+-            generator = instance_or_generator
+-            instance = (
+-                next(instance_or_generator)
+-                if factory_type == FactoryType.GENERATOR
+-                else await instance_or_generator.__anext__()
+-            )
+-        else:
+-            generator = None
+-            instance = instance_or_generator
+-
+-        return self.__wrap_result(
+-            generator=generator,
+-            instance=instance,
+-            object_identifier=object_identifier,
+-            injection_result=injection_result,
+-        )
+-
+-    def __wrap_result(
+-        self,
+-        *,
+-        generator: Any | None,
+-        instance: Any,
+-        object_identifier: ContainerObjectIdentifier,
+-        injection_result: _InjectionResult,
+-    ) -> _CreationResult:
+-        is_singleton = self._registry.is_impl_singleton(object_identifier[0])
+-
+-        if generator:
+-            if is_singleton:
+-                self.__exit_stack.append(generator)
+-                self._initialized_objects[object_identifier] = instance
+-
+-            return _CreationResult(
+-                instance=instance,
+-                exit_stack=injection_result.exit_stack if is_singleton else [*injection_result.exit_stack, generator],
+-            )
+-
+-        if is_singleton:
+-            self._initialized_objects[object_identifier] = instance
+-
+-        return _CreationResult(instance=instance, exit_stack=injection_result.exit_stack)
+-
+     def close(self) -> None:
+         """Consume generator factories allowing them to properly release resources."""
+-        clean_exit_stack(self.__exit_stack)
++        clean_exit_stack(self._global_scope.exit_stack)
+ 
+     async def aclose(self) -> None:
+         """Consume generator factories allowing them to properly release resources."""
+-        await async_clean_exit_stack(self.__exit_stack)
++        await async_clean_exit_stack(self._global_scope.exit_stack)
+diff --git a/wireup/ioc/scoped_container.py b/wireup/ioc/scoped_container.py
+new file mode 100644
+index 0000000..bf07a4b
+--- /dev/null
++++ b/wireup/ioc/scoped_container.py
+@@ -0,0 +1,49 @@
++from __future__ import annotations
++
++import contextlib
++from typing import AsyncIterator, Iterator
++
++from wireup.ioc._exit_stack import async_clean_exit_stack, clean_exit_stack
++from wireup.ioc.async_container import AsyncContainer
++from wireup.ioc.sync_container import SyncContainer
++from wireup.ioc.types import ContainerScope
++
++
++class ScopedContainer(SyncContainer): ...
++
++
++class ScopedAsyncContainer(AsyncContainer): ...
++
++
++@contextlib.contextmanager
++def enter_scope(container: SyncContainer | AsyncContainer) -> Iterator[ScopedContainer]:
++    """Create a new scoped container from the base container provided."""
++    scope = ContainerScope()
++    scoped_container = ScopedContainer(
++        registry=container._registry,
++        parameters=container._params,
++        overrides=container._overrides,
++        global_scope=container._global_scope,
++        current_scope=scope,
++    )
++    try:
++        yield scoped_container
++    finally:
++        clean_exit_stack(scope.exit_stack)
++
++
++@contextlib.asynccontextmanager
++async def enter_async_scope(container: AsyncContainer) -> AsyncIterator[ScopedAsyncContainer]:
++    """Create a new scoped container from the base container provided."""
++    scope = ContainerScope()
++    scoped_container = ScopedAsyncContainer(
++        registry=container._registry,
++        parameters=container._params,
++        overrides=container._overrides,
++        global_scope=container._global_scope,
++        current_scope=scope,
++    )
++    try:
++        yield scoped_container
++    finally:
++        await async_clean_exit_stack(scope.exit_stack)
+diff --git a/wireup/ioc/service_registry.py b/wireup/ioc/service_registry.py
+index 4821bf3..156bcc0 100644
+--- a/wireup/ioc/service_registry.py
++++ b/wireup/ioc/service_registry.py
+@@ -80,8 +80,8 @@ class ServiceRegistry:
+     def register_service(
+         self,
+         klass: type,
+-        qualifier: Qualifier | None,
+-        lifetime: ServiceLifetime,
++        qualifier: Qualifier | None = None,
++        lifetime: ServiceLifetime = ServiceLifetime.SINGLETON,
+     ) -> None:
+         if self.is_type_with_qualifier_known(klass, qualifier):
+             raise DuplicateServiceRegistrationError(klass, qualifier)
+@@ -101,8 +101,8 @@ class ServiceRegistry:
+     def register_factory(
+         self,
+         fn: Callable[..., Any],
+-        lifetime: ServiceLifetime,
+         qualifier: Qualifier | None = None,
++        lifetime: ServiceLifetime = ServiceLifetime.SINGLETON,
+     ) -> None:
+         return_type_result = _function_get_unwrapped_return_type(fn)
+ 
+diff --git a/wireup/ioc/sync_container.py b/wireup/ioc/sync_container.py
+new file mode 100644
+index 0000000..976c3cc
+--- /dev/null
++++ b/wireup/ioc/sync_container.py
+@@ -0,0 +1,11 @@
++from __future__ import annotations
++
++from wireup.ioc._exit_stack import clean_exit_stack
++from wireup.ioc.base_container import BaseContainer
++
++
++class SyncContainer(BaseContainer):
++    get = BaseContainer._get
++
++    def close(self) -> None:
++        clean_exit_stack(self._global_scope.exit_stack)
+diff --git a/wireup/ioc/types.py b/wireup/ioc/types.py
+index d65991a..243e012 100644
+--- a/wireup/ioc/types.py
++++ b/wireup/ioc/types.py
+@@ -1,9 +1,12 @@
+ from __future__ import annotations
+ 
+ from collections.abc import Hashable
+-from dataclasses import dataclass
++from dataclasses import dataclass, field
+ from enum import Enum, auto
+-from typing import Any, Callable, Optional, Tuple, Union
++from typing import TYPE_CHECKING, Any, Callable, Optional, Tuple, Union
++
++if TYPE_CHECKING:
++    from types import AsyncGeneratorType, GeneratorType
+ 
+ AnyCallable = Callable[..., Any]
+ AutowireTarget = Union[AnyCallable, type]
+@@ -72,6 +75,12 @@ class ServiceLifetime(Enum):
+     SINGLETON = auto()
+     """Singleton services are initialized once and reused throughout the lifetime of the container."""
+ 
++    SCOPED = auto()
++    """Scoped objects live for the duration of the scope.
++
++    When not in a scoped container, these will be treated as transient services.
++    """
++
+     TRANSIENT = auto()
+     """Transient services will have a fresh instance initialized on every injection."""
+ 
+@@ -120,3 +129,21 @@ class ServiceOverride:
+     target: type[Any]
+     qualifier: Qualifier | None
+     new: Any
++
++
++@dataclass(frozen=True)
++class CreationResult:
++    instance: Any
++    exit_stack: list[GeneratorType[Any, Any, Any] | AsyncGeneratorType[Any, Any]]
++
++
++@dataclass(frozen=True)
++class InjectionResult:
++    kwargs: dict[str, Any]
++    exit_stack: list[GeneratorType[Any, Any, Any] | AsyncGeneratorType[Any, Any]]
++
++
++@dataclass(frozen=True)
++class ContainerScope:
++    objects: dict[ContainerObjectIdentifier, Any] = field(default_factory=dict)
++    exit_stack: list[GeneratorType[Any, Any, Any] | AsyncGeneratorType[Any, Any]] = field(default_factory=list)
+diff --git a/wireup/util.py b/wireup/util.py
+index 16d1e31..e5d5bab 100644
+--- a/wireup/util.py
++++ b/wireup/util.py
+@@ -10,8 +10,12 @@ from pathlib import Path
+ from typing import TYPE_CHECKING, Any
+ 
+ from wireup.annotation import AbstractDeclaration, ServiceDeclaration
++from wireup.ioc.async_container import AsyncContainer
+ from wireup.ioc.dependency_container import DependencyContainer
+ from wireup.ioc.parameter import ParameterBag
++from wireup.ioc.service_registry import ServiceRegistry
++from wireup.ioc.sync_container import SyncContainer
++from wireup.ioc.types import ContainerScope
+ 
+ if TYPE_CHECKING:
+     from collections.abc import Callable
+@@ -27,7 +31,47 @@ def create_container(
+         bag.update(parameters)
+     container = DependencyContainer(bag)
+     if service_modules:
+-        _register_services(container, service_modules)
++        _register_services(container._registry, service_modules)
++
++    return container
++
++
++def create_sync_container(
++    *, service_modules: list[ModuleType] | None = None, parameters: dict[str, Any] | None = None
++) -> SyncContainer:
++    """Create a container with the given parameters and register all services found in service modules."""
++    bag = ParameterBag()
++    registry = ServiceRegistry()
++    if parameters:
++        bag.update(parameters)
++    container = SyncContainer(
++        registry=registry,
++        parameters=bag,
++        global_scope=ContainerScope(),
++        overrides={},
++    )
++    if service_modules:
++        _register_services(registry, service_modules)
++
++    return container
++
++
++def create_async_container(
++    *, service_modules: list[ModuleType] | None = None, parameters: dict[str, Any] | None = None
++) -> AsyncContainer:
++    """Create a container with the given parameters and register all services found in service modules."""
++    bag = ParameterBag()
++    registry = ServiceRegistry()
++    if parameters:
++        bag.update(parameters)
++    container = AsyncContainer(
++        registry=registry,
++        parameters=bag,
++        global_scope=ContainerScope(),
++        overrides={},
++    )
++    if service_modules:
++        _register_services(registry, service_modules)
+ 
+     return container
+ 
+@@ -58,7 +102,7 @@ def initialize_container(
+     if parameters:
+         dependency_container.params.update(parameters)
+ 
+-    _register_services(dependency_container, service_modules)
++    _register_services(dependency_container._registry, service_modules)
+     dependency_container.warmup()
+ 
+ 
+@@ -76,7 +120,7 @@ def warmup_container(dependency_container: DependencyContainer, service_modules:
+     initialize_container(dependency_container, service_modules=service_modules)
+ 
+ 
+-def _register_services(dependency_container: DependencyContainer, service_modules: list[ModuleType]) -> None:
++def _register_services(registry: ServiceRegistry, service_modules: list[ModuleType]) -> None:
+     abstract_registrations: set[type[Any]] = set()
+     service_registrations: list[ServiceDeclaration] = []
+ 
+@@ -96,10 +140,13 @@ def _register_services(dependency_container: DependencyContainer, service_module
+                 abstract_registrations.add(cls)
+ 
+     for cls in abstract_registrations:
+-        dependency_container.abstract(cls)
++        registry.register_abstract(cls)
+ 
+     for svc in service_registrations:
+-        dependency_container.register(obj=svc.obj, qualifier=svc.qualifier, lifetime=svc.lifetime)
++        if isinstance(svc.obj, type):
++            registry.register_service(klass=svc.obj, qualifier=svc.qualifier, lifetime=svc.lifetime)
++        elif callable(svc.obj):
++            registry.register_factory(fn=svc.obj, qualifier=svc.qualifier, lifetime=svc.lifetime)
+ 
+ 
+ def _find_objects_in_module(

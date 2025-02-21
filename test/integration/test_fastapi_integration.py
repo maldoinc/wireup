@@ -35,6 +35,14 @@ def get_lucky_number() -> int:
     return 42
 
 
+class ScopedServiceDependency: ...
+
+
+@dataclass
+class ScopedService:
+    other: ScopedServiceDependency
+
+
 class GreeterService:
     def greet(self, name: str) -> str:
         return f"Hello {name}"
@@ -68,16 +76,36 @@ def create_app() -> FastAPI:
         return {"foo": req.req.query_params["foo"], "request_id": req.req.headers["X-Request-Id"]}
 
     @app.websocket("/ws")
-    async def websocket_endpoint(websocket: WebSocket, greeter: Annotated[GreeterService, Inject()]):
+    async def websocket_endpoint(
+        websocket: WebSocket,
+        greeter: Annotated[GreeterService, Inject()],
+        scoped_service: Annotated[ScopedService, Inject()],
+        scoped_service2: Annotated[ScopedService, Inject()],
+        scoped_service_dependency: Annotated[ScopedServiceDependency, Inject()],
+    ):
+        assert scoped_service is scoped_service2
+        assert scoped_service.other is scoped_service_dependency
+
         await websocket.accept()
         data = await websocket.receive_text()
         await websocket.send_text(greeter.greet(data))
         await websocket.close()
 
-    container = wireup.create_container(service_modules=[], parameters={"foo": "bar"})
-    container.register(RandomService)
-    container.register(GreeterService)
-    container.register(ServiceUsingFastapiRequest, lifetime=ServiceLifetime.TRANSIENT)
+    @app.get("/scoped")
+    async def scoped_route(
+        scoped_service: Annotated[ScopedService, Inject()],
+        scoped_service2: Annotated[ScopedService, Inject()],
+        scoped_service_dependency: Annotated[ScopedServiceDependency, Inject()],
+    ):
+        assert scoped_service is scoped_service2
+        assert scoped_service.other is scoped_service_dependency
+
+    container = wireup.create_async_container(service_modules=[], parameters={"foo": "bar"})
+    container._registry.register_service(RandomService)
+    container._registry.register_service(GreeterService)
+    container._registry.register_service(ScopedService, lifetime=ServiceLifetime.SCOPED)
+    container._registry.register_service(ScopedServiceDependency, lifetime=ServiceLifetime.SCOPED)
+    container._registry.register_service(ServiceUsingFastapiRequest, lifetime=ServiceLifetime.TRANSIENT)
     wireup.integration.fastapi.setup(container, app)
 
     return app
@@ -97,6 +125,11 @@ def test_injects_service(client: TestClient):
     response = client.get("/lucky-number")
     assert response.status_code == 200
     assert response.json() == {"number": 4, "lucky_number": 42}
+
+
+def test_scoped(client: TestClient):
+    response = client.get("/scoped")
+    assert response.status_code == 200
 
 
 def test_override(app: FastAPI, client: TestClient):
@@ -143,6 +176,7 @@ def test_raises_on_unknown_service(client: TestClient):
         client.get("/raise-unknown")
 
 
-def test_raises_request_outside_of_scope(app: FastAPI) -> None:
+async def test_raises_request_outside_of_scope(app: FastAPI) -> None:
     with pytest.raises(WireupError, match="fastapi.Request in wireup is only available during a request."):
-        get_container(app).get(Request)
+        async with wireup.enter_async_scope(get_container(app)) as scoped:
+            await scoped.get(Request)

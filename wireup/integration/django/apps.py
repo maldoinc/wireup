@@ -1,23 +1,100 @@
+from __future__ import annotations
+
+import asyncio
 import functools
 import importlib
-from typing import TYPE_CHECKING, Any
+from contextvars import ContextVar
+from dataclasses import dataclass
+from typing import TYPE_CHECKING, Any, Awaitable, Callable
 
 import django
 import django.urls
 from django.apps import AppConfig, apps
 from django.conf import settings
-from django.http import HttpRequest
+from django.http import HttpRequest, HttpResponse
 from django.urls import URLPattern, URLResolver
+from django.utils.decorators import sync_and_async_middleware
 
 import wireup
-from wireup import DependencyContainer
-from wireup.integration.django import django_request_factory
-from wireup.ioc._exit_stack import clean_exit_stack
-from wireup.ioc.types import ServiceLifetime
+from wireup import (
+    ServiceLifetime,
+    enter_async_scope,
+    enter_scope,
+)
+from wireup.decorators import make_inject_decorator
+from wireup.errors import WireupError
 
 if TYPE_CHECKING:
+    from types import ModuleType
+
     from wireup.integration.django import WireupSettings
-    from wireup.ioc.dependency_container import _InjectionResult
+    from wireup.ioc.async_container import AsyncContainer
+    from wireup.ioc.scoped_container import ScopedAsyncContainer, ScopedContainer
+    from wireup.ioc.types import InjectionResult
+
+
+current_request: ContextVar[HttpRequest] = ContextVar("wireup_django_request")
+async_view_request_container: ContextVar[ScopedAsyncContainer] = ContextVar("wireup_async_view_request_container")
+sync_view_request_container: ContextVar[ScopedContainer] = ContextVar("wireup_sync_view_request_container")
+
+
+@sync_and_async_middleware
+def wireup_middleware(  # noqa: D103
+    get_response: Callable[[HttpRequest], HttpResponse],
+) -> Callable[[HttpRequest], HttpResponse | Awaitable[HttpResponse]]:
+    container = _get_base_container()
+
+    if asyncio.iscoroutinefunction(get_response):
+
+        async def async_inner(request: HttpRequest) -> HttpResponse:
+            async with enter_async_scope(container) as scoped:
+                container_token = async_view_request_container.set(scoped)
+                request_token = current_request.set(request)
+                try:
+                    return await get_response(request)
+                finally:
+                    current_request.reset(request_token)
+                    async_view_request_container.reset(container_token)
+
+        return async_inner
+
+    def sync_inner(request: HttpRequest) -> HttpResponse:
+        with enter_scope(container) as scoped:
+            container_token = sync_view_request_container.set(scoped)
+            request_token = current_request.set(request)
+            try:
+                return get_response(request)
+            finally:
+                current_request.reset(request_token)
+                sync_view_request_container.reset(container_token)
+
+    return sync_inner
+
+
+def _django_request_factory() -> HttpRequest:
+    try:
+        return current_request.get()
+    except LookupError as e:
+        msg = (
+            "django.http.HttpRequest in wireup is only available during a request. "
+            "Did you forget to add 'wireup.integration.django.wireup_middleware' to your list of middlewares?"
+        )
+        raise WireupError(msg) from e
+
+
+def get_container() -> ScopedContainer | ScopedAsyncContainer | AsyncContainer:
+    """Return the container instance associated with the current django application."""
+    try:
+        return async_view_request_container.get()
+    except LookupError:
+        try:
+            return sync_view_request_container.get()
+        except LookupError:
+            return _get_base_container()
+
+
+def _get_base_container() -> AsyncContainer:
+    return apps.get_app_config(WireupConfig.name).container  # type: ignore[reportAttributeAccessIssue]
 
 
 class WireupConfig(AppConfig):
@@ -31,7 +108,7 @@ class WireupConfig(AppConfig):
     def ready(self) -> None:
         integration_settings: WireupSettings = settings.WIREUP
 
-        self.container = wireup.create_container(
+        self.container = wireup.create_async_container(
             service_modules=[
                 importlib.import_module(m) if isinstance(m, str) else m for m in integration_settings.service_modules
             ],
@@ -41,10 +118,11 @@ class WireupConfig(AppConfig):
                 if not entry.startswith("__") and hasattr(settings, entry)
             },
         )
-        self.container.register(django_request_factory, lifetime=ServiceLifetime.TRANSIENT)
+        self.container._registry.register_factory(_django_request_factory, lifetime=ServiceLifetime.SCOPED)
+        self.inject_scoped = make_inject_decorator(self.container, get_container)
 
         if integration_settings.perform_warmup:
-            self.container.warmup()
+            """fix warmup."""
 
         self._autowire(django.urls.get_resolver())
 
@@ -54,45 +132,48 @@ class WireupConfig(AppConfig):
                 self._autowire(p)
                 continue
 
-            if isinstance(p, URLPattern) and p.callback:
+            if isinstance(p, URLPattern) and p.callback:  # type: ignore[reportUnnecessaryComparison]
                 target = p.callback
 
                 if hasattr(p.callback, "view_class") and hasattr(p.callback, "view_initkwargs"):
                     p.callback = self._autowire_class_based_view(target)
                 else:
-                    p.callback = self.container.autowire(target)
-                    self.container._registry.context.remove_dependency_type(target, HttpRequest)  # type: ignore[reportPrivateUsage]  # noqa: SLF001
+                    p.callback = self.inject_scoped(p.callback)
+                    self.container._registry.context.remove_dependency_type(target, HttpRequest)
 
     def _autowire_class_based_view(self, callback: Any) -> Any:
         # It is possible in django for one class to serve multiple routes,
         # so this needs to create a new type to disambiguate.
         # see: https://github.com/maldoinc/wireup/issues/53
         wrapped_type = type(f"WireupWrapped{callback.view_class.__name__}", (callback.view_class,), {})
-        self.container.register(wrapped_type)
+        self.container._registry.register_service(wrapped_type)
 
         # This is taken from the django .as_view() method.
         @functools.wraps(callback)
         def view(request: HttpRequest, *args: Any, **kwargs: Any) -> Any:
-            autowired_args: _InjectionResult = self.container._DependencyContainer__callable_get_params_to_inject(  # type: ignore[reportAttributeAccessIssue]  # noqa: SLF001
-                wrapped_type
-            )
+            autowired_args: InjectionResult = get_container()._callable_get_params_to_inject(wrapped_type)
 
             this = callback.view_class(**{**callback.view_initkwargs, **autowired_args.kwargs})
-            try:
-                this.setup(request, *args, **kwargs)
-                if not hasattr(this, "request"):
-                    raise AttributeError(
-                        "{} instance has no 'request' attribute. Did you override "  # noqa: EM103, UP032
-                        "setup() and forget to call super()?".format(callback.view_class.__name__)
-                    )
-                return this.dispatch(request, *args, **kwargs)
-            finally:
-                if autowired_args.exit_stack:
-                    clean_exit_stack(autowired_args.exit_stack)
+            this.setup(request, *args, **kwargs)
+            if not hasattr(this, "request"):
+                raise AttributeError(
+                    "{} instance has no 'request' attribute. Did you override "  # noqa: EM103, UP032
+                    "setup() and forget to call super()?".format(callback.view_class.__name__)
+                )
+            return this.dispatch(request, *args, **kwargs)
 
         return view
 
 
-def get_container() -> DependencyContainer:
-    """Return the container instance associated with the current django application."""
-    return apps.get_app_config(WireupConfig.name).container  # type: ignore[reportAttributeAccessIssue]
+@dataclass(frozen=True)
+class WireupSettings:
+    """Class containing Wireup settings specific to Django."""
+
+    service_modules: list[str | ModuleType]
+    """List of modules containing wireup service registrations."""
+
+    perform_warmup: bool = True
+    """Setting this to true will cause the container to create
+    instances of services at application startup.
+    When set to false, services are created on first use.
+    """

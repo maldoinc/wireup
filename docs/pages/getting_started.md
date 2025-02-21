@@ -62,9 +62,7 @@ Service modules is a list of top-level python modules containing service definit
 ??? abstract "Read: Global variables"
     Using this approach means relying on global state, which ties your application to a single container instance. 
     This might be sufficient for you and that's okay but, if you want to avoid global state, it's better to create 
-    the container within your application factory and provide a way to access it from the created application instance.
-
-    With the available integrations, global state is neither necessary nor recommended.
+    the container within your application factory and store it in your application's state instead.
 
 
 ### 2. Define services
@@ -88,7 +86,6 @@ class KeyValueStore:
     def __init__(self, dsn: Annotated[str, Inject(param="redis_url")]) -> None:  #(2)!
         self.client = redis.from_url(dsn)
 ```
-
 
 1. Decorators are used to collect metadata. 
     This makes testing simpler, as you can still instantiate this like a regular class in your tests.
@@ -181,6 +178,14 @@ Each integration also comes with additional goodies specific to that framework.
 - [Django](integrations/django.md)
 - [FastAPI](integrations/fastapi.md)
 - [Flask](integrations/flask.md)
+
+### 3.5 Integrate
+
+Wireup provides the following first-party integrations that greatly simplify usage with the framework:
+
+- [x] [Django](django.md)
+- [x] [FastAPI](fastapi.md)
+- [x] [Flask](flask.md)
 
 ### 4. Test
 

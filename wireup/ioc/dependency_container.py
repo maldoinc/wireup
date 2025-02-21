@@ -1,14 +1,13 @@
 from __future__ import annotations
 
-import asyncio
-import functools
 import sys
 import warnings
-from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, TypeVar, overload
 
+from wireup.decorators import make_inject_decorator
 from wireup.ioc._exit_stack import async_clean_exit_stack, clean_exit_stack
 from wireup.ioc.base_container import BaseContainer
+from wireup.ioc.service_registry import ServiceRegistry
 
 if sys.version_info < (3, 9):
     from graphlib2 import TopologicalSorter
@@ -17,38 +16,22 @@ else:
 
 from wireup.errors import (
     InvalidRegistrationTypeError,
-    UnknownServiceRequestedError,
-    WireupError,
 )
-from wireup.ioc.service_registry import GENERATOR_FACTORY_TYPES, FactoryType, ServiceRegistry
 from wireup.ioc.types import (
     AnyCallable,
     ContainerObjectIdentifier,
-    EmptyContainerInjectionRequest,
+    ContainerScope,
     Qualifier,
     ServiceLifetime,
 )
 
 if TYPE_CHECKING:
     from collections.abc import Callable
-    from types import AsyncGeneratorType, GeneratorType
 
     from wireup.ioc.initialization_context import InitializationContext
     from wireup.ioc.parameter import ParameterBag
 
 T = TypeVar("T")
-
-
-@dataclass(frozen=True)
-class _CreationResult:
-    instance: Any
-    exit_stack: list[GeneratorType[Any, Any, Any] | AsyncGeneratorType[Any, Any]]
-
-
-@dataclass(frozen=True)
-class _InjectionResult:
-    kwargs: dict[str, Any]
-    exit_stack: list[GeneratorType[Any, Any, Any] | AsyncGeneratorType[Any, Any]]
 
 
 class DependencyContainer(BaseContainer):
@@ -67,66 +50,28 @@ class DependencyContainer(BaseContainer):
     be located from type alone.
     """
 
-    __slots__ = ("__exit_stack",)
+    __slots__ = ("_autowire",)
 
-    def __init__(self, parameter_bag: ParameterBag) -> None:
+    def __init__(
+        self,
+        parameter_bag: ParameterBag,
+        registry: ServiceRegistry | None = None,
+        overrides: dict[ContainerObjectIdentifier, Any] | None = None,
+        global_scope: ContainerScope | None = None,
+        current_scope: ContainerScope | None = None,
+    ) -> None:
         """:param parameter_bag: ParameterBag instance holding parameter information."""
-        super().__init__(registry=ServiceRegistry(), parameters=parameter_bag, overrides={})
-        self.__exit_stack: list[GeneratorType[Any, Any, Any] | AsyncGeneratorType[Any, Any]] = []
+        super().__init__(
+            registry=registry or ServiceRegistry(),
+            parameters=parameter_bag,
+            overrides={} if overrides is None else overrides,
+            global_scope=global_scope or ContainerScope(),
+            current_scope=current_scope,
+        )
+        self._autowire = make_inject_decorator(self)
 
-    def get(self, klass: type[T], qualifier: Qualifier | None = None) -> T:
-        """Get an instance of the requested type.
-
-        Use this to locate services by their type but strongly prefer using injection instead.
-
-        :param qualifier: Qualifier for the class if it was registered with one.
-        :param klass: Class of the dependency already registered in the container.
-        :return: An instance of the requested object. Always returns an existing instance when one is available.
-        """
-        if res := self._overrides.get((klass, qualifier)):
-            return res  # type: ignore[no-any-return]
-
-        if self._registry.is_interface_known(klass):
-            klass = self._registry.interface_resolve_impl(klass, qualifier)
-
-        if instance := self._initialized_objects.get((klass, qualifier)):
-            return instance  # type: ignore[no-any-return]
-
-        if res := self.__create_instance(klass, qualifier):
-            if res.exit_stack:
-                msg = "Container.get does not support Transient lifetime service generator factories."
-                raise WireupError(msg)
-
-            return res.instance  # type: ignore[no-any-return]
-
-        raise UnknownServiceRequestedError(klass)
-
-    async def aget(self, klass: type[T], qualifier: Qualifier | None = None) -> T:
-        """Get an instance of the requested type.
-
-        Use this to locate services by their type but strongly prefer using injection instead.
-
-        :param qualifier: Qualifier for the class if it was registered with one.
-        :param klass: Class of the dependency already registered in the container.
-        :return: An instance of the requested object. Always returns an existing instance when one is available.
-        """
-        if res := self._overrides.get((klass, qualifier)):
-            return res  # type: ignore[no-any-return]
-
-        if self._registry.is_interface_known(klass):
-            klass = self._registry.interface_resolve_impl(klass, qualifier)
-
-        if instance := self._initialized_objects.get((klass, qualifier)):
-            return instance  # type: ignore[no-any-return]
-
-        if res := await self.__async_create_instance(klass, qualifier):
-            if res.exit_stack:
-                msg = "Container.get does not support Transient lifetime service generator factories."
-                raise WireupError(msg)
-
-            return res.instance  # type: ignore[no-any-return]
-
-        raise UnknownServiceRequestedError(klass)
+    get = BaseContainer._get
+    aget = BaseContainer._async_get
 
     def abstract(self, klass: type[T]) -> type[T]:
         """Register a type as an interface.
@@ -201,11 +146,6 @@ class DependencyContainer(BaseContainer):
         )
         return self._registry.context
 
-    @property
-    def params(self) -> ParameterBag:
-        """Parameter bag associated with this container."""
-        return self._params
-
     def clear_initialized_objects(self) -> None:
         """Drop references to initialized singleton objects.
 
@@ -223,7 +163,7 @@ class DependencyContainer(BaseContainer):
             DeprecationWarning,
             stacklevel=2,
         )
-        self._initialized_objects.clear()
+        self._global_scope.objects.clear()
 
     def autowire(self, fn: AnyCallable) -> AnyCallable:
         """Automatically inject resources from the container to the decorated methods.
@@ -237,29 +177,7 @@ class DependencyContainer(BaseContainer):
         * When injecting an interface for which there are multiple implementations you need to supply a qualifier
           using annotations.
         """
-        self._registry.target_init_context(fn)
-
-        if asyncio.iscoroutinefunction(fn):
-
-            @functools.wraps(fn)
-            async def async_inner(*args: Any, **kwargs: Any) -> Any:
-                res = await self.__async_callable_get_params_to_inject(fn)
-                try:
-                    return await fn(*args, **{**kwargs, **res.kwargs})
-                finally:
-                    await async_clean_exit_stack(res.exit_stack)
-
-            return async_inner
-
-        @functools.wraps(fn)
-        def sync_inner(*args: Any, **kwargs: Any) -> Any:
-            res = self.__callable_get_params_to_inject(fn)
-            try:
-                return fn(*args, **{**kwargs, **res.kwargs})
-            finally:
-                clean_exit_stack(res.exit_stack)
-
-        return sync_inner
+        return self._autowire(fn)  # type: ignore[no-any-return]
 
     def warmup(self) -> None:
         """Initialize all singleton dependencies registered in the container.
@@ -271,163 +189,13 @@ class DependencyContainer(BaseContainer):
 
         for klass in sorter.static_order():
             for qualifier in self._registry.known_impls[klass]:
-                if (klass, qualifier) not in self._initialized_objects:
+                if (klass, qualifier) not in self._global_scope.objects:
                     self.get(klass, qualifier)
-
-    def __callable_get_params_to_inject(self, fn: AnyCallable) -> _InjectionResult:
-        result: dict[str, Any] = {}
-        names_to_remove: set[str] = set()
-        exit_stack: list[GeneratorType[Any, Any, Any] | AsyncGeneratorType[Any, Any]] = []
-
-        for name, param in self._registry.context.dependencies[fn].items():
-            obj, value_found = self._try_get_existing_value(param)
-
-            if value_found:
-                result[name] = obj
-            elif param.klass and (creation := self.__create_instance(param.klass, param.qualifier_value)):
-                if creation.exit_stack:
-                    exit_stack.extend(creation.exit_stack)
-                result[name] = creation.instance
-            else:
-                # Normally the container won't throw if it encounters a type it doesn't know about
-                # But if it's explicitly marked as to be injected then we need to throw.
-                if param.klass and isinstance(param.annotation, EmptyContainerInjectionRequest):
-                    raise UnknownServiceRequestedError(param.klass)
-
-                names_to_remove.add(name)
-
-        # If autowiring, the container is assumed to be final, so unnecessary entries can be removed
-        # from the context in order to speed up the autowiring process.
-        if names_to_remove:
-            self._registry.context.remove_dependencies(fn, names_to_remove)
-
-        return _InjectionResult(kwargs=result, exit_stack=exit_stack)
-
-    async def __async_callable_get_params_to_inject(self, fn: AnyCallable) -> _InjectionResult:
-        result: dict[str, Any] = {}
-        names_to_remove: set[str] = set()
-        exit_stack: list[GeneratorType[Any, Any, Any] | AsyncGeneratorType[Any, Any]] = []
-
-        for name, param in self._registry.context.dependencies[fn].items():
-            obj, value_found = self._try_get_existing_value(param)
-
-            if value_found:
-                result[name] = obj
-            elif param.klass and (creation := await self.__async_create_instance(param.klass, param.qualifier_value)):
-                if creation.exit_stack:
-                    exit_stack.extend(creation.exit_stack)
-                result[name] = creation.instance
-            else:
-                # Normally the container won't throw if it encounters a type it doesn't know about
-                # But if it's explicitly marked as to be injected then we need to throw.
-                if param.klass and isinstance(param.annotation, EmptyContainerInjectionRequest):
-                    raise UnknownServiceRequestedError(param.klass)
-
-                names_to_remove.add(name)
-
-        # If autowiring, the container is assumed to be final, so unnecessary entries can be removed
-        # from the context in order to speed up the autowiring process.
-        if names_to_remove:
-            self._registry.context.remove_dependencies(fn, names_to_remove)
-
-        return _InjectionResult(kwargs=result, exit_stack=exit_stack)
-
-    def __create_instance(self, klass: type[T], qualifier: Qualifier | None) -> _CreationResult | None:
-        ctor_and_type = self._get_ctor(klass=klass, qualifier=qualifier)
-
-        if not ctor_and_type:
-            return None
-
-        ctor, resolved_type, factory_type = ctor_and_type
-
-        if factory_type in {FactoryType.ASYNC_GENERATOR, FactoryType.COROUTINE_FN}:
-            msg = (
-                f"{klass} is an async dependency and it cannot be created in a blocking context. "
-                f"You likely used `container.get({klass.__module__}.{klass.__name__})` or called `get` on a dependent. "
-                "Use `await container.aget` instead of `container.get`."
-            )
-            raise WireupError(msg)
-
-        injection_result = self.__callable_get_params_to_inject(ctor)
-        instance_or_generator = ctor(**injection_result.kwargs)
-        object_identifier = resolved_type, qualifier
-
-        if factory_type == FactoryType.GENERATOR:
-            generator = instance_or_generator
-            instance = next(instance_or_generator)
-        else:
-            instance = instance_or_generator
-            generator = None
-
-        return self.__wrap_result(
-            generator=generator,
-            instance=instance,
-            object_identifier=object_identifier,
-            injection_result=injection_result,
-        )
-
-    async def __async_create_instance(self, klass: type[T], qualifier: Qualifier | None) -> _CreationResult | None:
-        ctor_and_type = self._get_ctor(klass=klass, qualifier=qualifier)
-
-        if not ctor_and_type:
-            return None
-
-        ctor, resolved_type, factory_type = ctor_and_type
-        injection_result = await self.__async_callable_get_params_to_inject(ctor)
-        instance_or_generator = (
-            await ctor(**injection_result.kwargs)
-            if factory_type == FactoryType.COROUTINE_FN
-            else ctor(**injection_result.kwargs)
-        )
-        object_identifier = resolved_type, qualifier
-
-        if factory_type in GENERATOR_FACTORY_TYPES:
-            generator = instance_or_generator
-            instance = (
-                next(instance_or_generator)
-                if factory_type == FactoryType.GENERATOR
-                else await instance_or_generator.__anext__()
-            )
-        else:
-            generator = None
-            instance = instance_or_generator
-
-        return self.__wrap_result(
-            generator=generator,
-            instance=instance,
-            object_identifier=object_identifier,
-            injection_result=injection_result,
-        )
-
-    def __wrap_result(
-        self,
-        *,
-        generator: Any | None,
-        instance: Any,
-        object_identifier: ContainerObjectIdentifier,
-        injection_result: _InjectionResult,
-    ) -> _CreationResult:
-        is_singleton = self._registry.is_impl_singleton(object_identifier[0])
-
-        if generator:
-            if is_singleton:
-                self.__exit_stack.append(generator)
-                self._initialized_objects[object_identifier] = instance
-
-            return _CreationResult(
-                instance=instance,
-                exit_stack=injection_result.exit_stack if is_singleton else [*injection_result.exit_stack, generator],
-            )
-
-        if is_singleton:
-            self._initialized_objects[object_identifier] = instance
-
-        return _CreationResult(instance=instance, exit_stack=injection_result.exit_stack)
 
     def close(self) -> None:
         """Consume generator factories allowing them to properly release resources."""
-        clean_exit_stack(self.__exit_stack)
+        clean_exit_stack(self._global_scope.exit_stack)
 
     async def aclose(self) -> None:
         """Consume generator factories allowing them to properly release resources."""
-        await async_clean_exit_stack(self.__exit_stack)
+        await async_clean_exit_stack(self._global_scope.exit_stack)

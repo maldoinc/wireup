@@ -82,6 +82,7 @@ lint.ignore = [
     "D213",   # Disable "Summary must go into next line"
     "D107",   # Disable required docs for __init. Can be redundant if class also has them.
     "A003",   # Disable "shadows builtin". OverrideManager.set was flagged by this
+    "SLF001", # Allow usage of _fields.
     "FA100",  # Don't recommend __future__ annotations.
     # Disable as they may cause conflicts with ruff formatter
     "COM812",

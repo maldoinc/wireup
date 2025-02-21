@@ -10,8 +10,12 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 from wireup.annotation import AbstractDeclaration, ServiceDeclaration
+from wireup.ioc.async_container import AsyncContainer
 from wireup.ioc.dependency_container import DependencyContainer
 from wireup.ioc.parameter import ParameterBag
+from wireup.ioc.service_registry import ServiceRegistry
+from wireup.ioc.sync_container import SyncContainer
+from wireup.ioc.types import ContainerScope
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -27,7 +31,47 @@ def create_container(
         bag.update(parameters)
     container = DependencyContainer(bag)
     if service_modules:
-        _register_services(container, service_modules)
+        _register_services(container._registry, service_modules)
+
+    return container
+
+
+def create_sync_container(
+    *, service_modules: list[ModuleType] | None = None, parameters: dict[str, Any] | None = None
+) -> SyncContainer:
+    """Create a container with the given parameters and register all services found in service modules."""
+    bag = ParameterBag()
+    registry = ServiceRegistry()
+    if parameters:
+        bag.update(parameters)
+    container = SyncContainer(
+        registry=registry,
+        parameters=bag,
+        global_scope=ContainerScope(),
+        overrides={},
+    )
+    if service_modules:
+        _register_services(registry, service_modules)
+
+    return container
+
+
+def create_async_container(
+    *, service_modules: list[ModuleType] | None = None, parameters: dict[str, Any] | None = None
+) -> AsyncContainer:
+    """Create a container with the given parameters and register all services found in service modules."""
+    bag = ParameterBag()
+    registry = ServiceRegistry()
+    if parameters:
+        bag.update(parameters)
+    container = AsyncContainer(
+        registry=registry,
+        parameters=bag,
+        global_scope=ContainerScope(),
+        overrides={},
+    )
+    if service_modules:
+        _register_services(registry, service_modules)
 
     return container
 
@@ -58,7 +102,7 @@ def initialize_container(
     if parameters:
         dependency_container.params.update(parameters)
 
-    _register_services(dependency_container, service_modules)
+    _register_services(dependency_container._registry, service_modules)
     dependency_container.warmup()
 
 
@@ -76,7 +120,7 @@ def warmup_container(dependency_container: DependencyContainer, service_modules:
     initialize_container(dependency_container, service_modules=service_modules)
 
 
-def _register_services(dependency_container: DependencyContainer, service_modules: list[ModuleType]) -> None:
+def _register_services(registry: ServiceRegistry, service_modules: list[ModuleType]) -> None:
     abstract_registrations: set[type[Any]] = set()
     service_registrations: list[ServiceDeclaration] = []
 
@@ -96,10 +140,13 @@ def _register_services(dependency_container: DependencyContainer, service_module
                 abstract_registrations.add(cls)
 
     for cls in abstract_registrations:
-        dependency_container.abstract(cls)
+        registry.register_abstract(cls)
 
     for svc in service_registrations:
-        dependency_container.register(obj=svc.obj, qualifier=svc.qualifier, lifetime=svc.lifetime)
+        if isinstance(svc.obj, type):
+            registry.register_service(klass=svc.obj, qualifier=svc.qualifier, lifetime=svc.lifetime)
+        elif callable(svc.obj):
+            registry.register_factory(fn=svc.obj, qualifier=svc.qualifier, lifetime=svc.lifetime)
 
 
 def _find_objects_in_module(

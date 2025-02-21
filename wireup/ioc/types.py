@@ -1,9 +1,12 @@
 from __future__ import annotations
 
 from collections.abc import Hashable
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from enum import Enum, auto
-from typing import Any, Callable, Optional, Tuple, Union
+from typing import TYPE_CHECKING, Any, Callable, Optional, Tuple, Union
+
+if TYPE_CHECKING:
+    from types import AsyncGeneratorType, GeneratorType
 
 AnyCallable = Callable[..., Any]
 AutowireTarget = Union[AnyCallable, type]
@@ -72,6 +75,12 @@ class ServiceLifetime(Enum):
     SINGLETON = auto()
     """Singleton services are initialized once and reused throughout the lifetime of the container."""
 
+    SCOPED = auto()
+    """Scoped objects live for the duration of the scope.
+
+    When not in a scoped container, these will be treated as transient services.
+    """
+
     TRANSIENT = auto()
     """Transient services will have a fresh instance initialized on every injection."""
 
@@ -120,3 +129,21 @@ class ServiceOverride:
     target: type[Any]
     qualifier: Qualifier | None
     new: Any
+
+
+@dataclass(frozen=True)
+class CreationResult:
+    instance: Any
+    exit_stack: list[GeneratorType[Any, Any, Any] | AsyncGeneratorType[Any, Any]]
+
+
+@dataclass(frozen=True)
+class InjectionResult:
+    kwargs: dict[str, Any]
+    exit_stack: list[GeneratorType[Any, Any, Any] | AsyncGeneratorType[Any, Any]]
+
+
+@dataclass(frozen=True)
+class ContainerScope:
+    objects: dict[ContainerObjectIdentifier, Any] = field(default_factory=dict)
+    exit_stack: list[GeneratorType[Any, Any, Any] | AsyncGeneratorType[Any, Any]] = field(default_factory=list)

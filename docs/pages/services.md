@@ -11,11 +11,6 @@ where services reside must be passed to the `service_modules` parameter in the `
     as the container will perform a recursive scan.
 
 
-### Lifetime
-By default, the container will keep in memory only a single copy of each service. 
-If you need to generate fresh instances every time a service is injected, 
-then it needs to be registered with the `lifetime` parameter set to `TRANSIENT`.
-
 ## Injection
 To request a service in another serivce simply set the type in the init method.
 The name of the argument does not matter, only the type is used to detect dependencies.

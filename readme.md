@@ -24,7 +24,7 @@ It can function standalone as a DI container or service locator and also integra
 * Inject services and configuration.
 * Interfaces and abstract classes.
 * Factory pattern.
-* Singleton and transient dependencies.
+* Singleton,transient and scoped dependencies.
 * Framework-agnostic.
 * Apply the container as a decorator.
 * Service Locator.
@@ -119,6 +119,7 @@ class WeatherService:
     ) -> None:
         self.api_key = api_key
         self.kv_store = kv_store
+        self.client = client
 ```
 
 #### 🏭 `aiohttp.ClientSession`

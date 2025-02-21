@@ -7,6 +7,7 @@ nav:
         - Services: services.md
         - Configuration: configuration.md
         - Annotations: annotations.md
+        - Lifetimes: lifetimes.md
         - Interfaces: interfaces.md
         - Factory functions: factory_functions.md
         - Testing: testing.md

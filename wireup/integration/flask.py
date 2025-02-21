@@ -1,17 +1,21 @@
-from flask import Flask
+from flask import Flask, Response, g
 
-from wireup import DependencyContainer
+from wireup import enter_scope
+from wireup.decorators import make_inject_decorator
 from wireup.integration.util import is_view_using_container
+from wireup.ioc.sync_container import SyncContainer
 
 
-def _autowire_views(container: DependencyContainer, app: Flask) -> None:
+def _autowire_views(container: SyncContainer, app: Flask) -> None:
+    inject_scoped = make_inject_decorator(container, lambda: g.wireup_container)
+
     app.view_functions = {
-        name: container.autowire(view) if is_view_using_container(container, view) else view
+        name: inject_scoped(view) if is_view_using_container(container, view) else view
         for name, view in app.view_functions.items()
     }
 
 
-def setup(container: DependencyContainer, app: Flask, *, import_flask_config: bool = False) -> None:
+def setup(container: SyncContainer, app: Flask, *, import_flask_config: bool = False) -> None:
     """Integrate Wireup with Flask.
 
     This can import Flask config in the container and will automatically inject dependencies in views.
@@ -19,10 +23,26 @@ def setup(container: DependencyContainer, app: Flask, *, import_flask_config: bo
     if import_flask_config:
         container.params.update(dict(app.config.items()))  # type: ignore[reportArgumentType]
 
+    def _before_request() -> None:
+        ctx = enter_scope(container)
+        g.wireup_container_ctx = ctx
+        g.wireup_container = ctx.__enter__()
+
+    def _after_request(response: Response) -> Response:
+        g.wireup_container_ctx.__exit__(None, None, None)
+
+        return response
+
+    app.before_request(_before_request)
+    app.after_request(_after_request)
+
     _autowire_views(container, app)
     app.wireup_container = container  # type: ignore[reportAttributeAccessIssue]
 
 
-def get_container(app: Flask) -> DependencyContainer:
+def get_container(app: Flask) -> SyncContainer:
     """Return the container associated with the given application."""
-    return app.wireup_container  # type: ignore[reportAttributeAccessIssue]
+    try:
+        return g.wireup_container
+    except RuntimeError:
+        return app.wireup_container  # type: ignore[reportAttributeAccessIssue]
