@@ -10,3 +10,8 @@ Using `foo: str = Inject(...)` is now no longer supported and the container will
 ### Removed ParameterEnum
 
 `ParameterEnum` has been completely removed. Instead you can use type definitions to store parameters. `AppNameParameter = Annotated[str, Inject(name="app_name")]`
+
+
+### Removed `Wire`, `wire`
+
+Instead of `Wire` or `wire` use `Inject` which is a drop-in replacement.

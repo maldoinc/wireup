@@ -6,7 +6,7 @@ from typing import Optional
 from unittest.mock import Mock, patch
 
 from typing_extensions import Annotated
-from wireup import Inject, ServiceLifetime, Wire, register_all_in_module, wire
+from wireup import Inject, ServiceLifetime, register_all_in_module
 from wireup.errors import (
     DuplicateQualifierForInterfaceError,
     DuplicateServiceRegistrationError,
@@ -556,9 +556,6 @@ class TestContainer(unittest.IsolatedAsyncioTestCase):
         sync_inner(name="Ignored")
         await async_inner(name="Ignored")
 
-    def test_inject_aliases(self) -> None:
-        self.assertEqual(wire, Wire)
-
     def test_inject_alias_wire_same_behavior(self) -> None:
         container = DependencyContainer(ParameterBag())
         container.params.put("foo", "Foo")
@@ -566,9 +563,9 @@ class TestContainer(unittest.IsolatedAsyncioTestCase):
 
         @container.autowire
         def inner(
-            foo: Annotated[str, Wire(param="foo")],
-            foo_foo: Annotated[str, Wire(expr="${foo}-${foo}")],
-            rand_service: Annotated[RandomService, Wire(qualifier="foo")],
+            foo: Annotated[str, Inject(param="foo")],
+            foo_foo: Annotated[str, Inject(expr="${foo}-${foo}")],
+            rand_service: Annotated[RandomService, Inject(qualifier="foo")],
         ):
             self.assertEqual(foo, "Foo")
             self.assertEqual(foo_foo, "Foo-Foo")

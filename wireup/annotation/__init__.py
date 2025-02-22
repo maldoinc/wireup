@@ -78,8 +78,6 @@ def wire(
     return Inject(param=param, expr=expr, qualifier=qualifier)
 
 
-Wire = wire
-
 T = TypeVar("T")
 
 
@@ -153,10 +151,7 @@ def abstract(cls: type[T]) -> type[T]:
 __all__ = [
     "AbstractDeclaration",
     "Inject",
-    "ParameterEnum",
     "ServiceDeclaration",
-    "Wire",
     "abstract",
     "service",
-    "wire",
 ]

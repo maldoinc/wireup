@@ -2,7 +2,7 @@ import unittest
 from typing import NewType
 
 from typing_extensions import Annotated
-from wireup import Inject, ServiceLifetime, Wire
+from wireup import Inject, ServiceLifetime
 from wireup.errors import (
     DuplicateServiceRegistrationError,
     FactoryDuplicateServiceRegistrationError,

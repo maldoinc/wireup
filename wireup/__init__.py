@@ -1,6 +1,6 @@
 import warnings
 
-from wireup.annotation import Inject, Wire, abstract, service, wire
+from wireup.annotation import Inject, abstract, service
 from wireup.ioc.async_container import AsyncContainer
 from wireup.ioc.dependency_container import DependencyContainer
 from wireup.ioc.parameter import ParameterBag
@@ -33,7 +33,6 @@ __all__ = [
     "ServiceLifetime",
     "ServiceOverride",
     "SyncContainer",
-    "Wire",
     "abstract",
     "create_async_container",
     "create_container",
@@ -45,7 +44,6 @@ __all__ = [
     "register_all_in_module",
     "service",
     "warmup_container",
-    "wire",
 ]
 
 
