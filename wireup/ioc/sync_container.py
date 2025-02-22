@@ -5,7 +5,7 @@ from wireup.ioc.base_container import BaseContainer
 
 
 class SyncContainer(BaseContainer):
-    get = BaseContainer._get
+    get = BaseContainer._synchronous_get
 
     def close(self) -> None:
         clean_exit_stack(self._global_scope.exit_stack)

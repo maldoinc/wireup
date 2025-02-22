@@ -6,7 +6,7 @@ from wireup.ioc.base_container import BaseContainer
 
 class AsyncContainer(BaseContainer):
     get = BaseContainer._async_get
-    get_dependency_sync = BaseContainer._get
+    get_dependency_sync = BaseContainer._synchronous_get
 
     async def close(self) -> None:
         await async_clean_exit_stack(self._global_scope.exit_stack)

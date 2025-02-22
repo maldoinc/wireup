@@ -292,7 +292,7 @@ class BaseContainer:
             )
             logger.warning(msg)
 
-    def _get(self, klass: type[T], qualifier: Qualifier | None = None) -> T:
+    def _synchronous_get(self, klass: type[T], qualifier: Qualifier | None = None) -> T:
         """Get an instance of the requested type.
 
         Use this to locate services by their type but strongly prefer using injection instead.
