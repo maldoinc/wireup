@@ -1,9 +1,11 @@
 import warnings
 
 from wireup.annotation import Inject, ParameterEnum, Wire, abstract, service, wire
+from wireup.ioc.async_container import AsyncContainer
 from wireup.ioc.dependency_container import DependencyContainer
 from wireup.ioc.parameter import ParameterBag
 from wireup.ioc.scoped_container import ScopedContainer, enter_async_scope, enter_scope
+from wireup.ioc.sync_container import SyncContainer
 from wireup.ioc.types import ParameterReference, ServiceLifetime, ServiceOverride
 from wireup.util import (
     create_async_container,
@@ -22,6 +24,7 @@ Use when your application only needs one container.
 """
 
 __all__ = [
+    "AsyncContainer",
     "DependencyContainer",
     "Inject",
     "ParameterBag",
@@ -30,6 +33,7 @@ __all__ = [
     "ScopedContainer",
     "ServiceLifetime",
     "ServiceOverride",
+    "SyncContainer",
     "Wire",
     "abstract",
     "create_async_container",
