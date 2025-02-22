@@ -1,15 +1,17 @@
 from __future__ import annotations
 
 import fnmatch
+import functools
 import importlib
 import inspect
 import re
 import types
 from pathlib import Path
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, TypeVar
 
 from wireup.annotation import AbstractDeclaration, ServiceDeclaration
 from wireup.ioc.async_container import AsyncContainer
+from wireup.ioc.base_container import BaseContainer
 from wireup.ioc.parameter import ParameterBag
 from wireup.ioc.service_registry import ServiceRegistry
 from wireup.ioc.sync_container import SyncContainer
@@ -19,16 +21,21 @@ if TYPE_CHECKING:
     from collections.abc import Callable
     from types import ModuleType
 
+_ContainerT = TypeVar("_ContainerT", bound=BaseContainer)
 
-def create_sync_container(
-    *, service_modules: list[ModuleType] | None = None, parameters: dict[str, Any] | None = None
-) -> SyncContainer:
+
+def _create_container(
+    klass: type[_ContainerT],
+    *,
+    service_modules: list[ModuleType] | None = None,
+    parameters: dict[str, Any] | None = None,
+) -> _ContainerT:
     """Create a container with the given parameters and register all services found in service modules."""
     bag = ParameterBag()
     registry = ServiceRegistry()
     if parameters:
         bag.update(parameters)
-    container = SyncContainer(
+    container = klass(
         registry=registry,
         parameters=bag,
         global_scope=ContainerScope(),
@@ -40,24 +47,8 @@ def create_sync_container(
     return container
 
 
-def create_async_container(
-    *, service_modules: list[ModuleType] | None = None, parameters: dict[str, Any] | None = None
-) -> AsyncContainer:
-    """Create a container with the given parameters and register all services found in service modules."""
-    bag = ParameterBag()
-    registry = ServiceRegistry()
-    if parameters:
-        bag.update(parameters)
-    container = AsyncContainer(
-        registry=registry,
-        parameters=bag,
-        global_scope=ContainerScope(),
-        overrides={},
-    )
-    if service_modules:
-        _register_services(registry, service_modules)
-
-    return container
+create_sync_container = functools.partial(_create_container, SyncContainer)
+create_async_container = functools.partial(_create_container, AsyncContainer)
 
 
 def _register_services(registry: ServiceRegistry, service_modules: list[ModuleType]) -> None:
