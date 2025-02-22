@@ -42,15 +42,12 @@ class TestUtilityFunctions(unittest.TestCase):
         )
         self.assertEqual(
             param_get_annotation(params.parameters["_e"], globalns=globals()),
-            AnnotatedParameter(str, ParameterWrapper("e")),
+            AnnotatedParameter(str),
         )
-        self.assertEqual(
+        self.assertIsNone(
             param_get_annotation(params.parameters["_f"], globalns=globals()),
-            AnnotatedParameter(None, ParameterWrapper("f")),
         )
-        self.assertEqual(
-            param_get_annotation(params.parameters["_g"], globalns=globals()), AnnotatedParameter(None, d2)
-        )
+        self.assertEqual(param_get_annotation(params.parameters["_g"], globalns=globals()), None)
 
     def test_is_type_autowireable_basic_types(self):
         self.assertFalse(is_type_autowireable(int))

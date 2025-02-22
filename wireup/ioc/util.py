@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import importlib
 import typing
-import warnings
 from inspect import Parameter
 from typing import Any, TypeVar
 
@@ -34,38 +33,13 @@ def param_get_annotation(parameter: Parameter, *, globalns: dict[str, Any]) -> A
     if resolved_type is Parameter.empty:
         resolved_type = None
 
-    def _get_metadata_from_default_value(parameter: Parameter) -> AnnotatedParameter | None:
-        annotation = None if parameter.default is Parameter.empty else _get_injectable_type(parameter.default)
+    if resolved_type and hasattr(resolved_type, "__metadata__") and hasattr(resolved_type, "__args__"):
+        klass = resolved_type.__args__[0]
+        annotation = next(_get_injectable_type(ann) for ann in resolved_type.__metadata__)
 
-        if annotation:
-            warnings.warn(
-                "Relying on default values for annotations is deprecated. "
-                "Please use Annotated types instead. "
-                "E.g.: Annotated[Foo, Inject(...)]. "
-                "See: https://maldoinc.github.io/wireup/latest/annotations/",
-                DeprecationWarning,
-                stacklevel=2,
-            )
+        return AnnotatedParameter(klass, annotation)
 
-        return (
-            None
-            if resolved_type is None and annotation is None
-            else AnnotatedParameter(klass=resolved_type, annotation=annotation)
-        )
-
-    def _get_metadata_from_annotated_type() -> AnnotatedParameter | None:
-        if resolved_type and hasattr(resolved_type, "__metadata__") and hasattr(resolved_type, "__args__"):
-            klass = resolved_type.__args__[0]
-            annotation = next(_get_injectable_type(ann) for ann in resolved_type.__metadata__)
-
-            return AnnotatedParameter(klass, annotation)
-
-        return None
-
-    if res := _get_metadata_from_annotated_type():
-        return res
-
-    return _get_metadata_from_default_value(parameter)
+    return None if not resolved_type else AnnotatedParameter(klass=resolved_type)
 
 
 def is_type_autowireable(obj_type: Any) -> bool:
