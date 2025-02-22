@@ -145,31 +145,6 @@ def _find_objects_in_module(
     return classes
 
 
-def register_all_in_module(
-    container: DependencyContainer, module: ModuleType, pattern: str | re.Pattern[str] = "*"
-) -> None:
-    """Register all modules inside a given module.
-
-    Useful when your services reside in one place, and you'd like to avoid having to `@container.register` each of them.
-    Alternatively this can be used if you want to use the library without having to rely on decorators.
-
-    See Also: `DependencyContainer.context` to manually wire dependencies without having to use annotations.
-
-    :param container: Dependency container to register services in.
-    :param module: The package name to recursively search for classes.
-    :param pattern: A string representing a fnmatch pattern or a regular expression compiled with re.compile.
-    """
-    warnings.warn(
-        "Using register_all_in_module is deprecated. "
-        "Use @service or factories in conjunction with initialize_container to register services.",
-        DeprecationWarning,
-        stacklevel=2,
-    )
-    klass: type[Any]
-    for klass in _find_objects_in_module(module, predicate=lambda obj: isinstance(obj, type), pattern=pattern):
-        container.register(klass)
-
-
 def load_module(module: ModuleType) -> None:
     """Recursively load a given module.
 

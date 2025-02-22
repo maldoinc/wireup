@@ -30,3 +30,7 @@ The same for `wireup.integrations.fastapi_integration` has been removed in favor
 ### Removed `initialize_container`
 
 Removed old utility function. Create your own container instance instead via `wireup.create_sync_container` or `wireup.create_async_container`.
+
+### Removed `register_all_in_module`
+
+Removed old utility function. Register services by passing `service_modules` to `wireup.create_*_container`.

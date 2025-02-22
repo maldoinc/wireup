@@ -2,11 +2,12 @@ import datetime
 import functools
 import unittest
 from dataclasses import dataclass
-from typing import Optional
+from typing import Any, Optional
 from unittest.mock import Mock, patch
 
+import wireup
 from typing_extensions import Annotated
-from wireup import Inject, ServiceLifetime, register_all_in_module
+from wireup import Inject, ServiceLifetime
 from wireup.errors import (
     DuplicateQualifierForInterfaceError,
     DuplicateServiceRegistrationError,
@@ -17,7 +18,7 @@ from wireup.errors import (
 )
 from wireup.ioc.dependency_container import DependencyContainer
 from wireup.ioc.parameter import ParameterBag, TemplatedString
-from wireup.ioc.types import AnnotatedParameter, ParameterWrapper
+from wireup.ioc.types import AnnotatedParameter, AnyCallable, ParameterWrapper
 
 from test.fixtures import Counter, FooBar, FooBase, FooBaz
 from test.unit import services
@@ -27,8 +28,7 @@ from test.unit.services.no_annotations.random.truly_random_service import TrulyR
 
 class TestContainer(unittest.IsolatedAsyncioTestCase):
     def setUp(self) -> None:
-        self.container = DependencyContainer(ParameterBag())
-        register_all_in_module(self.container, services)
+        self.container = wireup.create_container(service_modules=[services])
 
     def test_raises_on_unknown_dependency(self):
         class UnknownDep: ...
@@ -43,7 +43,7 @@ class TestContainer(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(c1.count, self.container.get(Counter).count)
 
     def test_works_simple_get_instance_with_other_service_injected(self):
-        truly_random = self.container.get(TrulyRandomService)
+        truly_random = self.container.get(TrulyRandomService, qualifier="foo")
 
         self.assertIsInstance(truly_random, TrulyRandomService)
         self.assertEqual(truly_random.get_truly_random(), 5)
@@ -73,13 +73,6 @@ class TestContainer(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(result, mock_import_module.return_value.Depends.return_value)
         mock_import_module.assert_called_once_with("fastapi")
 
-    def test_inject_using_annotated_empty_wire(self):
-        @self.container.autowire
-        def inner(random: Annotated[RandomService, Inject()]):
-            self.assertEqual(random.get_random(), 4)
-
-        inner()
-
     def test_inject_using_annotated_empty_wire_fails_to_inject_unknown(self):
         @self.container.autowire
         def inner(_random: Annotated[unittest.TestCase, Inject()]): ...
@@ -91,16 +84,6 @@ class TestContainer(unittest.IsolatedAsyncioTestCase):
             f"Cannot wire unknown class {unittest.TestCase}. Use '@service' or '@abstract' to enable autowiring.",
             str(context.exception),
         )
-
-    @patch("importlib.import_module")
-    def test_injection_works_annotated(self, mock_import_module):
-        mock_import_module.return_value = Mock(Depends=Mock())
-
-        @self.container.autowire
-        def inner(rand: Annotated[RandomService, Inject()]):
-            self.assertEqual(rand.get_random(), 4)
-
-        inner()
 
     def test_register_known_class(self):
         class TestRegisterKnown:
@@ -118,7 +101,9 @@ class TestContainer(unittest.IsolatedAsyncioTestCase):
     def test_autowire_sync(self):
         self.container.params.put("env", "test")
 
-        def test_function(random: TrulyRandomService, env: Annotated[str, Inject(param="env")]) -> int:
+        def test_function(
+            random: Annotated[TrulyRandomService, Inject(qualifier="foo")], env: Annotated[str, Inject(param="env")]
+        ) -> int:
             self.assertEqual(env, "test")
             return random.get_truly_random()
 
@@ -129,7 +114,9 @@ class TestContainer(unittest.IsolatedAsyncioTestCase):
     async def test_autowire_async(self):
         self.container.params.put("env", "test")
 
-        async def test_function(random: RandomService, env: Annotated[str, Inject(param="env")]) -> int:
+        async def test_function(
+            random: Annotated[RandomService, Inject(qualifier="foo")], env: Annotated[str, Inject(param="env")]
+        ) -> int:
             self.assertEqual(env, "test")
             return random.get_random()
 
@@ -480,7 +467,11 @@ class TestContainer(unittest.IsolatedAsyncioTestCase):
     def test_injects_ctor(self):
         class Dummy:
             @self.container.autowire
-            def __init__(self, rand_service: RandomService, env: Annotated[str, Inject(param="env")]):
+            def __init__(
+                self,
+                rand_service: Annotated[RandomService, Inject(qualifier="foo")],
+                env: Annotated[str, Inject(param="env")],
+            ):
                 self.env = env
                 self.rand_service = rand_service
 
@@ -492,28 +483,21 @@ class TestContainer(unittest.IsolatedAsyncioTestCase):
         dummy = Dummy()
         self.assertEqual(dummy.do_thing(), "Running in test with a result of 4")
 
-    def test_get_returns_same_container_proxy_not_instantiated(self):
-        self.assertEqual(self.container.get(RandomService), self.container.get(RandomService))
-
-    def test_get_returns_real_instance(self):
-        first = self.container.get(RandomService)
-        self.assertIsInstance(first, RandomService)
-
-        self.assertEqual(4, first.get_random())
-
     def test_shrinks_context_on_autowire(self):
         class SomeClass:
             pass
 
-        def provide_b(fn):
+        def provide_b(fn: AnyCallable) -> AnyCallable:
             @functools.wraps(fn)
-            def __inner(*args, **kwargs):
+            def __inner(*args: Any, **kwargs: Any):
                 return fn(*args, **kwargs, b=SomeClass())
 
             return __inner
 
         @provide_b
-        def target(a: RandomService, b: SomeClass, _c: Optional[datetime.datetime] = None):
+        def target(
+            a: Annotated[RandomService, Inject(qualifier="foo")], b: SomeClass, _c: Optional[datetime.datetime] = None
+        ):
             self.assertEqual(a.get_random(), 4)
             self.assertIsInstance(b, SomeClass)
 
