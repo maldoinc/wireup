@@ -2,7 +2,8 @@ import re
 from typing import AsyncIterator, Iterator, NewType
 
 import pytest
-from wireup import DependencyContainer, ParameterBag
+import wireup
+from wireup.decorators import make_inject_decorator
 from wireup.errors import ContainerCloseError, WireupError
 from wireup.ioc.types import ServiceLifetime
 
@@ -16,8 +17,8 @@ def test_cleans_up_on_exit() -> None:
         nonlocal _cleanup_performed
         _cleanup_performed = True
 
-    c = DependencyContainer(ParameterBag())
-    c.register(some_factory)
+    c = wireup.create_sync_container()
+    c._registry.register_factory(some_factory)
 
     assert c.get(Something) == Something("foo")
     c.close()
@@ -33,15 +34,15 @@ async def test_async_cleans_up_on_exit() -> None:
         nonlocal _cleanup_performed
         _cleanup_performed = True
 
-    c = DependencyContainer(ParameterBag())
-    c.register(some_factory)
+    c = wireup.create_async_container()
+    c._registry.register_factory(some_factory)
 
-    @c.autowire
+    @make_inject_decorator(c)
     async def target(smth: Something):
         assert smth == Something("foo")
 
     await target()
-    await c.aclose()
+    await c.close()
     assert _cleanup_performed
 
 
@@ -51,10 +52,10 @@ async def test_async_raise_close_async() -> None:
     async def some_factory() -> AsyncIterator[Something]:
         yield Something("foo")
 
-    c = DependencyContainer(ParameterBag())
-    c.register(some_factory)
+    c = wireup.create_sync_container()
+    c._registry.register_factory(some_factory)
 
-    @c.autowire
+    @make_inject_decorator(c)
     async def target(smth: Something):
         assert smth == Something("foo")
 
@@ -75,8 +76,8 @@ def test_raises_on_transient_dependency() -> None:
     def some_factory() -> Iterator[Something]:
         yield Something("foo")
 
-    c = DependencyContainer(ParameterBag())
-    c.register(some_factory, lifetime=ServiceLifetime.TRANSIENT)
+    c = wireup.create_sync_container()
+    c._registry.register_factory(some_factory, lifetime=ServiceLifetime.TRANSIENT)
 
     with pytest.raises(WireupError) as e:
         c.get(Something)
@@ -99,11 +100,11 @@ def test_injects_transient() -> None:
         nonlocal _cleanups
         _cleanups.append("f2")
 
-    c = DependencyContainer(ParameterBag())
-    c.register(f1, lifetime=ServiceLifetime.TRANSIENT)
-    c.register(f2, lifetime=ServiceLifetime.TRANSIENT)
+    c = wireup.create_sync_container()
+    c._registry.register_factory(f1, lifetime=ServiceLifetime.TRANSIENT)
+    c._registry.register_factory(f2, lifetime=ServiceLifetime.TRANSIENT)
 
-    @c.autowire
+    @make_inject_decorator(c)
     def target(_: SomethingElse) -> None:
         pass
 
@@ -126,11 +127,11 @@ async def test_async_injects_transient_sync_depends_on_async_result() -> None:
         nonlocal _cleanups
         _cleanups.append("f2")
 
-    c = DependencyContainer(ParameterBag())
-    c.register(f1, lifetime=ServiceLifetime.TRANSIENT)
-    c.register(f2, lifetime=ServiceLifetime.TRANSIENT)
+    c = wireup.create_sync_container()
+    c._registry.register_factory(f1, lifetime=ServiceLifetime.TRANSIENT)
+    c._registry.register_factory(f2, lifetime=ServiceLifetime.TRANSIENT)
 
-    @c.autowire
+    @make_inject_decorator(c)
     async def target(_: SomethingElse) -> None:
         pass
 
@@ -153,9 +154,9 @@ def test_cleans_up_in_order() -> None:
         nonlocal _cleanups
         _cleanups.append("f2")
 
-    c = DependencyContainer(ParameterBag())
-    c.register(f1)
-    c.register(f2)
+    c = wireup.create_sync_container()
+    c._registry.register_factory(f1)
+    c._registry.register_factory(f2)
 
     assert c.get(Something) == Something("Something")
     assert c.get(SomethingElse) == SomethingElse("Something else")
@@ -170,10 +171,10 @@ def test_sync_raises_when_generating_async() -> None:
         yield Something("Something")
         raise ValueError("boom")
 
-    c = DependencyContainer(ParameterBag())
-    c.register(f1)
+    c = wireup.create_sync_container()
+    c._registry.register_factory(f1)
 
-    @c.autowire
+    @make_inject_decorator(c)
     def target(_: Something) -> None:
         pass
 
@@ -195,8 +196,8 @@ def test_raises_errors() -> None:
         yield Something("Something")
         raise ValueError("boom")
 
-    c = DependencyContainer(ParameterBag())
-    c.register(f1)
+    c = wireup.create_sync_container()
+    c._registry.register_factory(f1)
 
     assert c.get(Something) == Something("Something")
     with pytest.raises(ContainerCloseError) as e:

@@ -28,8 +28,13 @@ class TestServiceRegistry(unittest.TestCase):
         self.assertTrue(self.registry.is_impl_singleton(MyService))
 
         # Test registering a duplicate service
-        with self.assertRaises(DuplicateServiceRegistrationError):
+        with self.assertRaises(DuplicateServiceRegistrationError) as context:
             self.registry.register_service(MyService, qualifier="default", lifetime=ServiceLifetime.SINGLETON)
+
+        self.assertIn(
+            f"Cannot register type {MyService} with qualifier 'default' as it already exists.",
+            str(context.exception),
+        )
 
     def test_register_abstract(self):
         self.registry.register_abstract(MyInterface)

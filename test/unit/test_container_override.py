@@ -1,11 +1,14 @@
 import unittest
+from typing import Any
 from unittest.mock import MagicMock, patch
 
+import wireup
 from typing_extensions import Annotated
-from wireup import DependencyContainer, Inject, ParameterBag
+from wireup import Inject
+from wireup.decorators import make_inject_decorator
 from wireup.errors import UnknownOverrideRequestedError
 from wireup.ioc.override_manager import OverrideManager
-from wireup.ioc.types import ServiceOverride
+from wireup.ioc.types import Qualifier, ServiceOverride
 
 from test.fixtures import FooBar, FooBase, FooBaz
 from test.unit.services.no_annotations.random.random_service import RandomService
@@ -13,10 +16,10 @@ from test.unit.services.no_annotations.random.random_service import RandomServic
 
 class TestContainerOverride(unittest.TestCase):
     def setUp(self) -> None:
-        self.container = DependencyContainer(ParameterBag())
+        self.container = wireup.create_sync_container()
 
     def test_container_overrides_deps_service_locator(self):
-        self.container.register(RandomService)
+        self.container._registry.register_service(RandomService)
 
         random_mock = MagicMock()
         random_mock.get_random.return_value = 5
@@ -29,8 +32,8 @@ class TestContainerOverride(unittest.TestCase):
         self.assertEqual(self.container.get(RandomService).get_random(), 4)
 
     def test_container_overrides_deps_service_locator_interface(self):
-        self.container.abstract(FooBase)
-        self.container.register(FooBar)
+        self.container._registry.register_abstract(FooBase)
+        self.container._registry.register_service(FooBar)
 
         foo_mock = MagicMock()
         foo_mock.foo = "mock"
@@ -40,10 +43,10 @@ class TestContainerOverride(unittest.TestCase):
             self.assertEqual(svc.foo, "mock")
 
     def test_container_override_many_with_qualifier(self):
-        self.container.register(RandomService, qualifier="Rand1")
-        self.container.register(RandomService, qualifier="Rand2")
+        self.container._registry.register_service(RandomService, qualifier="Rand1")
+        self.container._registry.register_service(RandomService, qualifier="Rand2")
 
-        @self.container.autowire
+        @make_inject_decorator(self.container)
         def target(
             rand1: Annotated[RandomService, Inject(qualifier="Rand1")],
             rand2: Annotated[RandomService, Inject(qualifier="Rand2")],
@@ -71,10 +74,10 @@ class TestContainerOverride(unittest.TestCase):
         rand2_mock.get_random.assert_called_once()
 
     def test_container_override_with_interface(self):
-        self.container.abstract(FooBase)
-        self.container.register(FooBar)
+        self.container._registry.register_abstract(FooBase)
+        self.container._registry.register_service(FooBar)
 
-        @self.container.autowire
+        @make_inject_decorator(self.container)
         def target(foo: FooBase):
             self.assertEqual(foo.foo, "mock")
             self.assertIsInstance(foo, MagicMock)
@@ -89,7 +92,7 @@ class TestContainerOverride(unittest.TestCase):
                 target()
 
     def test_clear_services_removes_all(self):
-        overrides = {}
+        overrides: dict[tuple[type, Qualifier], Any] = {}
         mock1 = MagicMock()
         override_mgr = OverrideManager(overrides, lambda _klass, _qualifier: True)
         override_mgr.set(RandomService, new=mock1)
@@ -108,8 +111,8 @@ class TestContainerOverride(unittest.TestCase):
         )
 
     def test_override_interface_works_with_service_locator(self):
-        self.container.abstract(FooBase)
-        self.container.register(FooBar)
+        self.container._registry.register_abstract(FooBase)
+        self.container._registry.register_service(FooBar)
 
         foobaz = FooBaz()
 

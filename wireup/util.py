@@ -10,7 +10,6 @@ from typing import TYPE_CHECKING, Any
 
 from wireup.annotation import AbstractDeclaration, ServiceDeclaration
 from wireup.ioc.async_container import AsyncContainer
-from wireup.ioc.dependency_container import DependencyContainer
 from wireup.ioc.parameter import ParameterBag
 from wireup.ioc.service_registry import ServiceRegistry
 from wireup.ioc.sync_container import SyncContainer
@@ -19,20 +18,6 @@ from wireup.ioc.types import ContainerScope
 if TYPE_CHECKING:
     from collections.abc import Callable
     from types import ModuleType
-
-
-def create_container(
-    *, service_modules: list[ModuleType] | None = None, parameters: dict[str, Any] | None = None
-) -> DependencyContainer:
-    """Create a container with the given parameters and register all services found in service modules."""
-    bag = ParameterBag()
-    if parameters:
-        bag.update(parameters)
-    container = DependencyContainer(bag)
-    if service_modules:
-        _register_services(container._registry, service_modules)
-
-    return container
 
 
 def create_sync_container(

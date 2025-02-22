@@ -3,21 +3,20 @@ import functools
 import unittest
 from dataclasses import dataclass
 from typing import Any, Optional
-from unittest.mock import Mock, patch
+from unittest.mock import MagicMock, Mock, patch
 
 import wireup
 from typing_extensions import Annotated
 from wireup import Inject, ServiceLifetime
+from wireup.decorators import make_inject_decorator
 from wireup.errors import (
     DuplicateQualifierForInterfaceError,
     DuplicateServiceRegistrationError,
-    InvalidRegistrationTypeError,
     UnknownQualifiedServiceRequestedError,
     UnknownServiceRequestedError,
     UsageOfQualifierOnUnknownObjectError,
 )
-from wireup.ioc.dependency_container import DependencyContainer
-from wireup.ioc.parameter import ParameterBag, TemplatedString
+from wireup.ioc.parameter import TemplatedString
 from wireup.ioc.types import AnnotatedParameter, AnyCallable, ParameterWrapper
 
 from test.fixtures import Counter, FooBar, FooBase, FooBaz
@@ -28,7 +27,7 @@ from test.unit.services.no_annotations.random.truly_random_service import TrulyR
 
 class TestContainer(unittest.IsolatedAsyncioTestCase):
     def setUp(self) -> None:
-        self.container = wireup.create_container(service_modules=[services])
+        self.container = wireup.create_sync_container(service_modules=[services])
 
     def test_raises_on_unknown_dependency(self):
         class UnknownDep: ...
@@ -36,7 +35,7 @@ class TestContainer(unittest.IsolatedAsyncioTestCase):
         self.assertRaises(UnknownServiceRequestedError, lambda: self.container.get(UnknownDep))
 
     def test_container_returns_singletons(self):
-        self.container.register(Counter)
+        self.container._registry.register_service(Counter)
         c1 = self.container.get(Counter)
         c1.inc()
 
@@ -49,7 +48,6 @@ class TestContainer(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(truly_random.get_truly_random(), 5)
 
     def test_get_class_with_param_bindings(self) -> None:
-        @self.container.register
         class ServiceWithParams:
             def __init__(
                 self,
@@ -59,6 +57,7 @@ class TestContainer(unittest.IsolatedAsyncioTestCase):
                 self.connection_str = connection_str
                 self.cache_dir = cache_dir
 
+        self.container._registry.register_service(ServiceWithParams)
         self.container.params.put("connection_str", "sqlite://memory")
         self.container.params.put("cache_dir", "/var/cache")
         svc = self.container.get(ServiceWithParams)
@@ -67,14 +66,14 @@ class TestContainer(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(svc.cache_dir, "/var/cache/etc")
 
     @patch("importlib.import_module")
-    def test_inject_fastapi_dep(self, mock_import_module):
+    def test_inject_fastapi_dep(self, mock_import_module: MagicMock):
         mock_import_module.return_value = Mock(Depends=Mock())
         result = Inject()
         self.assertEqual(result, mock_import_module.return_value.Depends.return_value)
         mock_import_module.assert_called_once_with("fastapi")
 
     def test_inject_using_annotated_empty_wire_fails_to_inject_unknown(self):
-        @self.container.autowire
+        @make_inject_decorator(self.container)
         def inner(_random: Annotated[unittest.TestCase, Inject()]): ...
 
         with self.assertRaises(UnknownServiceRequestedError) as context:
@@ -82,19 +81,6 @@ class TestContainer(unittest.IsolatedAsyncioTestCase):
 
         self.assertEqual(
             f"Cannot wire unknown class {unittest.TestCase}. Use '@service' or '@abstract' to enable autowiring.",
-            str(context.exception),
-        )
-
-    def test_register_known_class(self):
-        class TestRegisterKnown:
-            pass
-
-        self.container.register(TestRegisterKnown)
-        with self.assertRaises(DuplicateServiceRegistrationError) as context:
-            self.container.register(TestRegisterKnown)
-
-        self.assertIn(
-            f"Cannot register type {TestRegisterKnown} " "with qualifier 'None' as it already exists.",
             str(context.exception),
         )
 
@@ -107,7 +93,7 @@ class TestContainer(unittest.IsolatedAsyncioTestCase):
             self.assertEqual(env, "test")
             return random.get_truly_random()
 
-        autowired_fn = self.container.autowire(test_function)
+        autowired_fn = make_inject_decorator(self.container)(test_function)
         self.assertTrue(callable(autowired_fn))
         self.assertEqual(autowired_fn(), 5)
 
@@ -120,7 +106,7 @@ class TestContainer(unittest.IsolatedAsyncioTestCase):
             self.assertEqual(env, "test")
             return random.get_random()
 
-        autowired_fn = self.container.autowire(test_function)
+        autowired_fn = make_inject_decorator(self.container)(test_function)
         self.assertTrue(callable(autowired_fn))
         self.assertEqual(await autowired_fn(), 4)
 
@@ -143,17 +129,19 @@ class TestContainer(unittest.IsolatedAsyncioTestCase):
             env: str
             mambo_number: int
 
-        self.container.register(NoHints)
+        self.container._registry.register_service(NoHints)
 
-        self.container.context.add_dependency(
+        self.container._registry.context.add_dependency(
             NoHints,
             "interpolated",
             AnnotatedParameter(annotation=ParameterWrapper(TemplatedString("${first}-${second}"))),
         )
-        self.container.context.add_dependency(
+        self.container._registry.context.add_dependency(
             NoHints, "mambo_number", AnnotatedParameter(annotation=ParameterWrapper("mambo_number"))
         )
-        self.container.context.add_dependency(NoHints, "env", AnnotatedParameter(annotation=ParameterWrapper("env")))
+        self.container._registry.context.add_dependency(
+            NoHints, "env", AnnotatedParameter(annotation=ParameterWrapper("env"))
+        )
 
         self.container.params.update({"first": "foo", "second": "bar", "env": "test", "mambo_number": 5})
         obj = self.container.get(NoHints)
@@ -168,8 +156,8 @@ class TestContainer(unittest.IsolatedAsyncioTestCase):
             connection_str: Annotated[str, Inject(param="connection_str")]
             cache_dir: Annotated[str, Inject(expr="${cache_dir}/${auth.user}/db")]
 
-        self.container = DependencyContainer(ParameterBag())
-        self.container.register(MyDbService)
+        self.container = wireup.create_sync_container()
+        self.container._registry.register_service(MyDbService)
         self.container.params.update(
             {"cache_dir": "/var/cache", "connection_str": "sqlite://memory", "auth.user": "anon"},
         )
@@ -180,15 +168,15 @@ class TestContainer(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(db.connection_str, "sqlite://memory")
 
     def test_locates_service_with_qualifier(self):
-        self.container.register(Counter, qualifier=999)
+        self.container._registry.register_service(Counter, qualifier=999)
         resolved = self.container.get(Counter, qualifier=999)
         self.assertEqual(resolved.count, 0)
         resolved.inc()
         self.assertEqual(resolved.count, 1)
 
     def test_raises_when_not_supplying_qualifier_registered_multiple(self):
-        self.container.register(Counter, qualifier="foo_qualified")
-        self.container.register(Counter, qualifier="foo_qualified2")
+        self.container._registry.register_service(Counter, qualifier="foo_qualified")
+        self.container._registry.register_service(Counter, qualifier="foo_qualified2")
 
         with self.assertRaises(UnknownQualifiedServiceRequestedError) as context:
             self.container.get(Counter)
@@ -200,7 +188,7 @@ class TestContainer(unittest.IsolatedAsyncioTestCase):
         )
 
     def test_raises_on_unknown_service(self):
-        container = DependencyContainer(ParameterBag())
+        container = wireup.create_sync_container()
         with self.assertRaises(UnknownServiceRequestedError) as context:
             container.get(Counter)
 
@@ -210,64 +198,64 @@ class TestContainer(unittest.IsolatedAsyncioTestCase):
         )
 
     def test_two_qualifiers_are_injected(self):
-        @self.container.autowire
+        @make_inject_decorator(self.container)
         def inner(
             sub1: Annotated[FooBase, Inject(qualifier="sub1")], sub2: Annotated[FooBase, Inject(qualifier="sub2")]
         ):
             self.assertEqual(sub1.foo, "bar")
             self.assertEqual(sub2.foo, "baz")
 
-        self.container.abstract(FooBase)
-        self.container.register(FooBar, qualifier="sub1")
-        self.container.register(FooBaz, qualifier="sub2")
+        self.container._registry.register_abstract(FooBase)
+        self.container._registry.register_service(FooBar, qualifier="sub1")
+        self.container._registry.register_service(FooBaz, qualifier="sub2")
         inner()
 
     def test_default_impl_is_injected(self):
-        @self.container.autowire
+        @make_inject_decorator(self.container)
         def inner(sub1: FooBase, sub2: Annotated[FooBase, Inject(qualifier="baz")]):
             self.assertEqual(sub1.foo, "bar")
             self.assertEqual(sub2.foo, "baz")
 
-        self.container.abstract(FooBase)
-        self.container.register(FooBar)
-        self.container.register(FooBaz, qualifier="baz")
+        self.container._registry.register_abstract(FooBase)
+        self.container._registry.register_service(FooBar)
+        self.container._registry.register_service(FooBaz, qualifier="baz")
         inner()
 
     def test_two_qualifiers_are_injected_annotated(self):
-        @self.container.autowire
+        @make_inject_decorator(self.container)
         def inner(
             sub1: Annotated[FooBase, Inject(qualifier="sub1")], sub2: Annotated[FooBase, Inject(qualifier="sub2")]
         ):
             self.assertEqual(sub1.foo, "bar")
             self.assertEqual(sub2.foo, "baz")
 
-        self.container.abstract(FooBase)
-        self.container.register(FooBar, qualifier="sub1")
-        self.container.register(FooBaz, qualifier="sub2")
+        self.container._registry.register_abstract(FooBase)
+        self.container._registry.register_service(FooBar, qualifier="sub1")
+        self.container._registry.register_service(FooBaz, qualifier="sub2")
         inner()
 
     def test_interface_with_single_implementation_no_qualifier_gets_autowired(self):
-        @self.container.autowire
+        @make_inject_decorator(self.container)
         def inner(foo: FooBase):
             self.assertEqual(foo.foo, "bar")
 
-        self.container.abstract(FooBase)
-        self.container.register(FooBar)
+        self.container._registry.register_abstract(FooBase)
+        self.container._registry.register_service(FooBar)
         inner()
 
     def test_get_with_interface_and_qualifier(self):
-        self.container.abstract(FooBase)
-        self.container.register(FooBar, qualifier="sub1")
+        self.container._registry.register_abstract(FooBase)
+        self.container._registry.register_service(FooBar, qualifier="sub1")
 
         foo = self.container.get(FooBase, qualifier="sub1")
         self.assertEqual(foo.foo, "bar")
 
     def test_register_twice_should_raise(self):
-        self.container.abstract(FooBase)
-        self.container.register(FooBar, qualifier="foo")
+        self.container._registry.register_abstract(FooBase)
+        self.container._registry.register_service(FooBar, qualifier="foo")
 
         with self.assertRaises(DuplicateServiceRegistrationError) as context:
-            self.container.register(FooBar, qualifier="foo")
+            self.container._registry.register_service(FooBar, qualifier="foo")
 
         self.assertIn(
             f"Cannot register type {FooBar} with qualifier 'foo' as it already exists.",
@@ -275,11 +263,11 @@ class TestContainer(unittest.IsolatedAsyncioTestCase):
         )
 
     def test_register_same_qualifier_should_raise(self):
-        self.container.abstract(FooBase)
-        self.container.register(FooBar, qualifier="foo")
+        self.container._registry.register_abstract(FooBase)
+        self.container._registry.register_service(FooBar, qualifier="foo")
 
         with self.assertRaises(DuplicateQualifierForInterfaceError) as context:
-            self.container.register(FooBaz, qualifier="foo")
+            self.container._registry.register_service(FooBaz, qualifier="foo")
 
         self.assertIn(
             "Cannot register implementation class "
@@ -289,10 +277,10 @@ class TestContainer(unittest.IsolatedAsyncioTestCase):
         )
 
     def test_qualifier_raises_wire_called_on_unknown_type(self):
-        @self.container.autowire
+        @make_inject_decorator(self.container)
         def inner(_sub1: Annotated[FooBase, Inject(qualifier="sub1")]): ...
 
-        self.container.abstract(FooBase)
+        self.container._registry.register_abstract(FooBase)
         with self.assertRaises(UnknownQualifiedServiceRequestedError) as context:
             inner()
 
@@ -302,11 +290,11 @@ class TestContainer(unittest.IsolatedAsyncioTestCase):
         )
 
     def test_inject_abstract_directly_raises(self):
-        @self.container.autowire
+        @make_inject_decorator(self.container)
         def inner(_sub1: FooBase): ...
 
-        self.container.abstract(FooBase)
-        self.container.register(FooBar, qualifier="foobar")
+        self.container._registry.register_abstract(FooBase)
+        self.container._registry.register_service(FooBar, qualifier="foobar")
         with self.assertRaises(Exception) as context:
             inner()
 
@@ -316,10 +304,10 @@ class TestContainer(unittest.IsolatedAsyncioTestCase):
         )
 
     def test_inject_abstract_directly_with_no_impls_raises(self):
-        @self.container.autowire
+        @make_inject_decorator(self.container)
         def inner(_sub1: FooBase): ...
 
-        self.container.abstract(FooBase)
+        self.container._registry.register_abstract(FooBase)
         with self.assertRaises(Exception) as context:
             inner()
 
@@ -329,10 +317,11 @@ class TestContainer(unittest.IsolatedAsyncioTestCase):
         )
 
     def test_register_with_qualifier_fails_when_invoked_without(self):
-        @self.container.register(qualifier=__name__)
         class RegisterWithQualifierClass: ...
 
-        @self.container.autowire
+        self.container._registry.register_service(RegisterWithQualifierClass, qualifier=__name__)
+
+        @make_inject_decorator(self.container)
         def inner(_foo: RegisterWithQualifierClass): ...
 
         with self.assertRaises(UnknownQualifiedServiceRequestedError) as context:
@@ -345,12 +334,13 @@ class TestContainer(unittest.IsolatedAsyncioTestCase):
         )
 
     def test_register_with_qualifier_injects_based_on_qualifier(self):
-        @self.container.register(qualifier=__name__)
         @dataclass
         class RegisterWithQualifierClass:
             foo = "bar"
 
-        @self.container.autowire
+        self.container._registry.register_service(RegisterWithQualifierClass, qualifier=__name__)
+
+        @make_inject_decorator(self.container)
         def inner(foo: Annotated[RegisterWithQualifierClass, Inject(qualifier=__name__)]):
             self.assertEqual(foo.foo, "bar")
 
@@ -359,7 +349,7 @@ class TestContainer(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(foo.foo, "bar")
 
     def test_inject_qualifier_on_unknown_type(self):
-        @self.container.autowire
+        @make_inject_decorator(self.container)
         def inner(_foo: Annotated[str, Inject(qualifier=__name__)]): ...
 
         with self.assertRaises(UsageOfQualifierOnUnknownObjectError) as context:
@@ -371,11 +361,11 @@ class TestContainer(unittest.IsolatedAsyncioTestCase):
         )
 
     def test_register_supports_multiple_containers(self):
-        c1 = DependencyContainer(ParameterBag())
-        c2 = DependencyContainer(ParameterBag())
+        c1 = wireup.create_sync_container()
+        c2 = wireup.create_sync_container()
 
-        c1.register(Counter)
-        c2.register(Counter)
+        c1._registry.register_service(Counter)
+        c2._registry.register_service(Counter)
 
         c1.get(Counter).inc()
         self.assertEqual(c1.get(Counter).count, 1)
@@ -384,32 +374,32 @@ class TestContainer(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(c2.get(Counter).count, 1)
 
     def test_autowire_supports_multiple_containers(self):
-        c1 = DependencyContainer(ParameterBag())
-        c2 = DependencyContainer(ParameterBag())
+        c1 = wireup.create_sync_container()
+        c2 = wireup.create_sync_container()
 
         c1.params.put("param1", "param_value")
         c2.params.put("param1", "param_value")
 
-        c1.register(Counter)
-        c2.register(Counter)
+        c1._registry.register_service(Counter)
+        c2._registry.register_service(Counter)
 
         def inner(counter: Counter, p1: Annotated[str, Inject(param="param1")]):
             counter.inc()
             self.assertEqual(counter.count, 1)
             self.assertEqual(p1, "param_value")
 
-        c1.autowire(inner)()
-        c2.autowire(inner)()
+        make_inject_decorator(c1)(inner)()
+        make_inject_decorator(c2)(inner)()
 
     def test_container_get_with_interface_returns_impl(self):
-        self.container.abstract(FooBase)
-        self.container.register(FooBar)
+        self.container._registry.register_abstract(FooBase)
+        self.container._registry.register_service(FooBar)
 
         foo_bar = self.container.get(FooBase)
         self.assertEqual(foo_bar.foo, "bar")
 
     def test_wire_from_annotation(self):
-        @self.container.autowire
+        @make_inject_decorator(self.container)
         def inner(
             name: Annotated[str, Inject(param="name")],
             env: Annotated[str, Inject(param="env")],
@@ -426,7 +416,7 @@ class TestContainer(unittest.IsolatedAsyncioTestCase):
     def test_container_wires_none_values_from_parameter_bag(self):
         self.container.params.put("foo", None)
 
-        @self.container.autowire
+        @make_inject_decorator(self.container)
         def inner(name: Annotated[str, Inject(param="foo")], name2: Annotated[str, Inject(param="foo")]):
             self.assertIsNone(name)
             self.assertIsNone(name2)
@@ -434,7 +424,7 @@ class TestContainer(unittest.IsolatedAsyncioTestCase):
         inner()
 
     def test_container_register_transient(self):
-        self.container.register(Counter, lifetime=ServiceLifetime.TRANSIENT)
+        self.container._registry.register_service(Counter, lifetime=ServiceLifetime.TRANSIENT)
         c1 = self.container.get(Counter)
         c2 = self.container.get(Counter)
 
@@ -443,10 +433,10 @@ class TestContainer(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(c2.count, 0)
 
     def test_container_register_transient_nested(self):
-        c = DependencyContainer(ParameterBag())
+        c = wireup.create_sync_container()
 
-        c.register(TrulyRandomService, lifetime=ServiceLifetime.TRANSIENT)
-        c.register(RandomService, lifetime=ServiceLifetime.TRANSIENT)
+        c._registry.register_service(TrulyRandomService, lifetime=ServiceLifetime.TRANSIENT)
+        c._registry.register_service(RandomService, lifetime=ServiceLifetime.TRANSIENT)
         c1 = c.get(TrulyRandomService)
         c2 = c.get(TrulyRandomService)
 
@@ -454,10 +444,10 @@ class TestContainer(unittest.IsolatedAsyncioTestCase):
         self.assertNotEqual(c1.random_service, c2.random_service)
 
     def test_container_register_transient_nested_singletons(self):
-        c = DependencyContainer(ParameterBag())
+        c = wireup.create_sync_container()
 
-        c.register(TrulyRandomService, lifetime=ServiceLifetime.TRANSIENT)
-        c.register(RandomService, lifetime=ServiceLifetime.SINGLETON)
+        c._registry.register_service(TrulyRandomService, lifetime=ServiceLifetime.TRANSIENT)
+        c._registry.register_service(RandomService, lifetime=ServiceLifetime.SINGLETON)
         c1 = c.get(TrulyRandomService)
         c2 = c.get(TrulyRandomService)
 
@@ -466,7 +456,7 @@ class TestContainer(unittest.IsolatedAsyncioTestCase):
 
     def test_injects_ctor(self):
         class Dummy:
-            @self.container.autowire
+            @make_inject_decorator(self.container)
             def __init__(
                 self,
                 rand_service: Annotated[RandomService, Inject(qualifier="foo")],
@@ -501,27 +491,18 @@ class TestContainer(unittest.IsolatedAsyncioTestCase):
             self.assertEqual(a.get_random(), 4)
             self.assertIsInstance(b, SomeClass)
 
-        autowired = self.container.autowire(target)
-        self.assertEqual(self.container.context.dependencies[target].keys(), {"a", "b"})
+        autowired = make_inject_decorator(self.container)(target)
+        self.assertEqual(self.container._registry.context.dependencies[target].keys(), {"a", "b"})
         # On the second call, container will drop b from dependencies as it is an unknown object.
         autowired()
-        self.assertEqual(self.container.context.dependencies[target].keys(), {"a"})
-
-    def test_raises_when_injecting_invalid_types(self):
-        with self.assertRaises(InvalidRegistrationTypeError) as err:
-            self.container.register(services)
-
-        self.assertEqual(
-            str(err.exception),
-            f"Cannot register {services} with the container. " f"Allowed types are callables and types",
-        )
+        self.assertEqual(self.container._registry.context.dependencies[target].keys(), {"a"})
 
     def test_returns_real_instances_on_second_build(self):
         class Foo:
             def bar(self):
                 pass
 
-        self.container.register(Foo, lifetime=ServiceLifetime.TRANSIENT)
+        self.container._registry.register_service(Foo, lifetime=ServiceLifetime.TRANSIENT)
         self.container.get(Foo).bar()
 
         self.assertIsInstance(self.container.get(Foo), Foo)
@@ -529,11 +510,11 @@ class TestContainer(unittest.IsolatedAsyncioTestCase):
     async def test_container_overrides_already_passed_keyword_args(self):
         self.container.params.put("foo", "Foo")
 
-        @self.container.autowire
+        @make_inject_decorator(self.container)
         def sync_inner(name: Annotated[str, Inject(param="foo")]):
             self.assertEqual(name, "Foo")
 
-        @self.container.autowire
+        @make_inject_decorator(self.container)
         async def async_inner(name: Annotated[str, Inject(param="foo")]):
             self.assertEqual(name, "Foo")
 
@@ -541,11 +522,11 @@ class TestContainer(unittest.IsolatedAsyncioTestCase):
         await async_inner(name="Ignored")
 
     def test_inject_alias_wire_same_behavior(self) -> None:
-        container = DependencyContainer(ParameterBag())
+        container = wireup.create_sync_container()
         container.params.put("foo", "Foo")
-        container.register(RandomService, qualifier="foo")
+        container._registry.register_service(RandomService, qualifier="foo")
 
-        @container.autowire
+        @make_inject_decorator(container)
         def inner(
             foo: Annotated[str, Inject(param="foo")],
             foo_foo: Annotated[str, Inject(expr="${foo}-${foo}")],
@@ -558,16 +539,16 @@ class TestContainer(unittest.IsolatedAsyncioTestCase):
         inner()
 
     def test_container_resolves_existing_instance_from_interface_service_locator(self) -> None:
-        self.container.abstract(FooBase)
-        self.container.register(FooBar)
+        self.container._registry.register_abstract(FooBase)
+        self.container._registry.register_service(FooBar)
 
         self.assertTrue(self.container.get(FooBase) is self.container.get(FooBase))
 
     def test_container_resolves_existing_instance_from_interface_autowire(self) -> None:
-        self.container.abstract(FooBase)
-        self.container.register(FooBar)
+        self.container._registry.register_abstract(FooBase)
+        self.container._registry.register_service(FooBar)
 
-        @self.container.autowire
+        @make_inject_decorator(self.container)
         def foo(x: FooBase) -> FooBase:
             return x
 
@@ -575,10 +556,10 @@ class TestContainer(unittest.IsolatedAsyncioTestCase):
         self.assertIsInstance(foo(), FooBar)
 
     def test_container_resolves_existing_instance_from_interface_with_qualifier(self) -> None:
-        self.container.abstract(FooBase)
-        self.container.register(FooBar, qualifier="bar")
+        self.container._registry.register_abstract(FooBase)
+        self.container._registry.register_service(FooBar, qualifier="bar")
 
-        @self.container.autowire
+        @make_inject_decorator(self.container)
         def foo(x: Annotated[FooBase, Inject(qualifier="bar")]) -> FooBase:
             return x
 
@@ -591,8 +572,8 @@ async def async_foo_factory() -> FooBar:
 
 
 async def test_container_aget_returns_instance() -> None:
-    container = DependencyContainer(ParameterBag())
-    container.register(async_foo_factory, qualifier="foo")
+    container = wireup.create_async_container()
+    container._registry.register_factory(async_foo_factory, qualifier="foo")
 
-    obj = await container.aget(FooBar, qualifier="foo")
+    obj = await container.get(FooBar, qualifier="foo")
     assert isinstance(obj, FooBar)

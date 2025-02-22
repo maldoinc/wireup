@@ -6,6 +6,7 @@ from dataclasses import dataclass
 
 import wireup
 from typing_extensions import Annotated
+from wireup.decorators import make_inject_decorator
 
 
 @wireup.service
@@ -30,9 +31,11 @@ def c_factory(b: B) -> Iterator[C]:
 
 
 def test_eval_type_evaluates_strings() -> None:
-    container = wireup.create_container(parameters={"foo": "bar"}, service_modules=[importlib.import_module(__name__)])
+    container = wireup.create_sync_container(
+        parameters={"foo": "bar"}, service_modules=[importlib.import_module(__name__)]
+    )
 
-    @container.autowire
+    @make_inject_decorator(container)
     def test(a: A, b: B, c: C, foo: Annotated[str, wireup.Inject(param="foo")], _: int = 1):
         assert isinstance(a, A)
         assert isinstance(b, B)

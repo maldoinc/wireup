@@ -2,6 +2,22 @@
 
 As the api is now stable, deprecated functionality has been removed. Please refer to the deprecation notices for an upgrade path.
 
+### Removed `wireup.DependencyContainer`
+
+The current container was doing too much and was a result of initial attempts to provide a simple api. It has now been split in two: `wireup.SyncContainer` and `wireup.AsyncContainer`.
+
+If you need to create async dependencies anywhere in your application then you should use the async version of the container.
+As it will be able to create both sync and async resources.
+
+As a result of this, the following has changed:
+
+* `@container.register`
+    * If you were manually registering services with the container, that has now been removed. You should instead use `@service` on services or factories and point the container to then at creation time when calling `wireup.create_sync_container` or `wireup.create_async_container`.
+* `@container.abstract`
+    * Same as above except use `@abstract` decorator.
+* `@container.autowire`
+    * This has also been removed. Refer to the relevant docs for an upgrade path: [Apply the container as a decorator](apply_container_as_decorator.md).
+
 #### Removed support for default values
 
 Using `foo: str = Inject(...)` is now no longer supported and the container will ignore the default value. Instead use annotated types. `foo: Annotated[str, Inject(...)]`.
@@ -39,3 +55,4 @@ Removed old utility function. Register services by passing `service_modules` to 
 #### Removed `load_module`
 
 No direct replacement is offered. Create your own container instance instead via `wireup.create_sync_container` or `wireup.create_async_container`.
+
