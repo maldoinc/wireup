@@ -15,3 +15,8 @@ Using `foo: str = Inject(...)` is now no longer supported and the container will
 ### Removed `Wire`, `wire`
 
 Instead of `Wire` or `wire` use `Inject` which is a drop-in replacement.
+
+
+## Removed `wireup.container` global
+
+The `wireup.container` global has been removed. Create your own container instance instead via `wireup.create_sync_container` or `wireup.create_async_container`.

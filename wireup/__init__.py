@@ -17,12 +17,6 @@ from wireup.util import (
     warmup_container,
 )
 
-_deprecated_container = DependencyContainer(ParameterBag())
-"""Singleton DI container instance.
-
-Use when your application only needs one container.
-"""
-
 __all__ = [
     "AsyncContainer",
     "DependencyContainer",
@@ -45,18 +39,3 @@ __all__ = [
     "service",
     "warmup_container",
 ]
-
-
-def __getattr__(name: str) -> DependencyContainer:
-    if name == "container":
-        warnings.warn(
-            "Using the wireup.container singleton is deprecated. "
-            "Create your own instance of the container using wireup.create_container. "
-            "See: https://maldoinc.github.io/wireup/latest/getting_started/",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-        return _deprecated_container
-
-    msg = f"module {__name__} has no attribute {name}"
-    raise AttributeError(msg)
