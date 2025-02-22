@@ -3,7 +3,7 @@ from flask import Flask, Response, g
 from wireup import enter_scope
 from wireup.decorators import make_inject_decorator
 from wireup.integration.util import is_view_using_container
-from wireup.ioc.sync_container import SyncContainer
+from wireup.ioc.container.sync_container import SyncContainer
 
 
 def _autowire_views(container: SyncContainer, app: Flask) -> None:

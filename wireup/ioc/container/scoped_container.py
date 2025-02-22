@@ -4,8 +4,8 @@ import contextlib
 from typing import AsyncIterator, Iterator
 
 from wireup.ioc._exit_stack import async_clean_exit_stack, clean_exit_stack
-from wireup.ioc.async_container import AsyncContainer
-from wireup.ioc.sync_container import SyncContainer
+from wireup.ioc.container.async_container import AsyncContainer
+from wireup.ioc.container.sync_container import SyncContainer
 from wireup.ioc.types import ContainerScope
 
 

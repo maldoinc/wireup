@@ -1,7 +1,7 @@
 import inspect
 from typing import Any, Callable
 
-from wireup.ioc.base_container import BaseContainer
+from wireup.ioc.container.base_container import BaseContainer
 from wireup.ioc.util import _get_globals, param_get_annotation
 
 

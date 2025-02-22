@@ -28,8 +28,8 @@ if TYPE_CHECKING:
     from types import ModuleType
 
     from wireup.integration.django import WireupSettings
-    from wireup.ioc.async_container import AsyncContainer
-    from wireup.ioc.scoped_container import ScopedAsyncContainer, ScopedContainer
+    from wireup.ioc.container.async_container import AsyncContainer
+    from wireup.ioc.container.scoped_container import ScopedAsyncContainer, ScopedContainer
     from wireup.ioc.types import InjectionResult
 
 

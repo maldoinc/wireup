@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from wireup.ioc._exit_stack import async_clean_exit_stack
-from wireup.ioc.base_container import BaseContainer
+from wireup.ioc.container.base_container import BaseContainer
 
 
 class AsyncContainer(BaseContainer):

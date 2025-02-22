@@ -9,8 +9,8 @@ from wireup.ioc._exit_stack import async_clean_exit_stack, clean_exit_stack
 if TYPE_CHECKING:
     from collections.abc import Callable
 
-    from wireup.ioc.base_container import BaseContainer
-    from wireup.ioc.scoped_container import ScopedAsyncContainer, ScopedContainer
+    from wireup.ioc.container.base_container import BaseContainer
+    from wireup.ioc.container.scoped_container import ScopedAsyncContainer, ScopedContainer
 
 
 def make_inject_decorator(

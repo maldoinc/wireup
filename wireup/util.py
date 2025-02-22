@@ -10,11 +10,11 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any, TypeVar
 
 from wireup.annotation import AbstractDeclaration, ServiceDeclaration
-from wireup.ioc.async_container import AsyncContainer
-from wireup.ioc.base_container import BaseContainer
+from wireup.ioc.container.async_container import AsyncContainer
+from wireup.ioc.container.base_container import BaseContainer
+from wireup.ioc.container.sync_container import SyncContainer
 from wireup.ioc.parameter import ParameterBag
 from wireup.ioc.service_registry import ServiceRegistry
-from wireup.ioc.sync_container import SyncContainer
 from wireup.ioc.types import ContainerScope
 
 if TYPE_CHECKING:

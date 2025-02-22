@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from wireup.ioc._exit_stack import clean_exit_stack
-from wireup.ioc.base_container import BaseContainer
+from wireup.ioc.container.base_container import BaseContainer
 
 
 class SyncContainer(BaseContainer):
