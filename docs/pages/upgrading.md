@@ -22,7 +22,11 @@ The `wireup.container` global has been removed. Create your own container instan
 
 Removed old utility function. Create your own container instance instead via `wireup.create_sync_container` or `wireup.create_async_container`.
 
-## Removed old integrations
+### Removed old integrations
 
 `wireup.integrations.flask_integration` has been removed in favor of `wireup.integrations.flask`.
 The same for `wireup.integrations.fastapi_integration` has been removed in favor of `wireup.integrations.fastapi`.
+
+### Removed `initialize_container`
+
+Removed old utility function. Create your own container instance instead via `wireup.create_sync_container` or `wireup.create_async_container`.

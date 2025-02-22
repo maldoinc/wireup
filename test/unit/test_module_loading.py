@@ -1,7 +1,7 @@
 import unittest
 
 import wireup
-from wireup import DependencyContainer, ParameterBag, initialize_container, register_all_in_module
+from wireup import DependencyContainer, ParameterBag, register_all_in_module
 
 from test.unit.services import no_annotations, with_annotations
 from test.unit.services.no_annotations.random.random_service import RandomService
@@ -31,9 +31,7 @@ class ModuleLoadingTest(unittest.TestCase):
 
     def test_loads_module_is_file(self):
         # Assert that loading works when the module is a file instead of the entire module
-        container = DependencyContainer(ParameterBag())
-        container.params.put("env_name", "dev")
-        initialize_container(container, service_modules=[services])
+        container = wireup.create_sync_container(parameters={"env_name": "dev"}, service_modules=[services])
 
         self.assertEqual("foo", container.get(services.IFoo).get_foo())
         self.assertEqual(4, container.get(RandomService, qualifier="foo").get_random())
