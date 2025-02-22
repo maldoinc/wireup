@@ -106,20 +106,6 @@ def initialize_container(
     dependency_container.warmup()
 
 
-def warmup_container(dependency_container: DependencyContainer, service_modules: list[ModuleType]) -> None:
-    """Trigger service registrations in `service_modules` and initialize registered singleton services.
-
-    !!! note
-        For long-lived processes this should be executed once at startup.
-    """
-    warnings.warn(
-        "Using warmup_container is deprecated. Use 'initialize_container' instead",
-        DeprecationWarning,
-        stacklevel=2,
-    )
-    initialize_container(dependency_container, service_modules=service_modules)
-
-
 def _register_services(registry: ServiceRegistry, service_modules: list[ModuleType]) -> None:
     abstract_registrations: set[type[Any]] = set()
     service_registrations: list[ServiceDeclaration] = []

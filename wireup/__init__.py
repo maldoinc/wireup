@@ -1,5 +1,3 @@
-import warnings
-
 from wireup.annotation import Inject, abstract, service
 from wireup.ioc.async_container import AsyncContainer
 from wireup.ioc.dependency_container import DependencyContainer
@@ -14,7 +12,6 @@ from wireup.util import (
     initialize_container,
     load_module,
     register_all_in_module,
-    warmup_container,
 )
 
 __all__ = [
@@ -37,5 +34,4 @@ __all__ = [
     "load_module",
     "register_all_in_module",
     "service",
-    "warmup_container",
 ]

@@ -1,6 +1,7 @@
 import unittest
 
-from wireup import DependencyContainer, ParameterBag, initialize_container, register_all_in_module, warmup_container
+import wireup
+from wireup import DependencyContainer, ParameterBag, initialize_container, register_all_in_module
 
 from test.unit.services import no_annotations, with_annotations
 from test.unit.services.no_annotations.random.random_service import RandomService
@@ -21,9 +22,7 @@ class ModuleLoadingTest(unittest.TestCase):
         )
 
     def test_warmup_loads_all_in_module_with_annotations(self):
-        container = DependencyContainer(ParameterBag())
-        container.params.put("env_name", "dev")
-        warmup_container(container, service_modules=[with_annotations])
+        container = wireup.create_sync_container(service_modules=[with_annotations], parameters={"env_name": "dev"})
 
         self.assertEqual("dev", container.get(EnvService).env_name)
         self.assertEqual("foo", container.get(IFoo).get_foo())
