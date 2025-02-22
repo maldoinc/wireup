@@ -18,6 +18,7 @@ nav:
     - Misc:
       - Demo application: demo_app.md
       - Versioning: versioning.md
+      - Upgrading: upgrading.md
   - Integrations:
     - Integrations: integrations/index.md
     - Django: integrations/django.md
@@ -28,7 +29,6 @@ nav:
       - DependencyContainer: class/dependency_container.md
       - OverrideManager: class/override_manager.md
       - ParameterBag: class/parameter_bag.md
-      - ParameterEnum: class/parameter_enum.md
       - InitializationContext: class/initialization_context.md
       - Integrations:
         - Django: class/django_integration.md
