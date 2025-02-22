@@ -4,7 +4,6 @@ import contextlib
 import importlib
 import warnings
 from dataclasses import dataclass
-from enum import Enum
 from typing import TYPE_CHECKING, Any, TypeVar, overload
 
 from wireup.ioc.types import (
@@ -80,32 +79,6 @@ def wire(
 
 
 Wire = wire
-
-
-class ParameterEnum(Enum):
-    """Enum with a `.wire` method allowing easy injection of members.
-
-    Allows you to add application parameters as enum members and their names as values.
-    When you need to inject a parameter instead of referencing it by name you can
-    annotate the parameter with the wire function call or set that as the default value.
-
-    This will inject a parameter by name and won't work with expressions.
-    """
-
-    def wire(self) -> InjectableType | Callable[[], InjectableType]:
-        """Inject the parameter this enumeration member represents.
-
-        Equivalent of `Inject(param=EnumParam.enum_member.value)`
-        """
-        warnings.warn(
-            "ParameterEnum is deprecated. Please use type aliases instead. "
-            "E.g.: SomeParam = Annotated[str, Inject(..)]",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-
-        return Inject(param=self.value)
-
 
 T = TypeVar("T")
 

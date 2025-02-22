@@ -1,6 +1,6 @@
 import warnings
 
-from wireup.annotation import Inject, ParameterEnum, Wire, abstract, service, wire
+from wireup.annotation import Inject, Wire, abstract, service, wire
 from wireup.ioc.async_container import AsyncContainer
 from wireup.ioc.dependency_container import DependencyContainer
 from wireup.ioc.parameter import ParameterBag
@@ -28,7 +28,6 @@ __all__ = [
     "DependencyContainer",
     "Inject",
     "ParameterBag",
-    "ParameterEnum",
     "ParameterReference",
     "ScopedContainer",
     "ServiceLifetime",

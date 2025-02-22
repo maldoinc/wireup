@@ -1,3 +1,4 @@
+from typing import Annotated
 from unittest import TestCase
 
 from wireup import DependencyContainer, Inject, ParameterBag, ServiceLifetime, warmup_container
@@ -25,7 +26,7 @@ class TestContainerStaticFactory(TestCase):
         self.container.params.put("dummy_val", "foo")
 
         @self.container.register
-        def create_thing(val=Inject(param="dummy_val")) -> ThingToBeCreated:
+        def create_thing(val: Annotated[str, Inject(param="dummy_val")]) -> ThingToBeCreated:
             return ThingToBeCreated(val=val)
 
         @self.container.autowire
@@ -40,7 +41,7 @@ class TestContainerStaticFactory(TestCase):
         self.container.params.put("start", 5)
 
         @self.container.register
-        def create_thing(start=Inject(param="start")) -> Counter:
+        def create_thing(start: Annotated[int, Inject(param="start")]) -> Counter:
             return Counter(count=start)
 
         @self.container.autowire
@@ -56,7 +57,7 @@ class TestContainerStaticFactory(TestCase):
         self.container.params.put("start", 5)
 
         @self.container.register(lifetime=ServiceLifetime.TRANSIENT)
-        def create_thing(start=Inject(param="start")) -> Counter:
+        def create_thing(start: Annotated[int, Inject(param="start")]) -> Counter:
             return Counter(count=start)
 
         @self.container.autowire
