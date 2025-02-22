@@ -9,7 +9,6 @@ from wireup.util import (
     create_async_container,
     create_container,
     create_sync_container,
-    load_module,
 )
 
 __all__ = [
@@ -28,6 +27,5 @@ __all__ = [
     "create_sync_container",
     "enter_async_scope",
     "enter_scope",
-    "load_module",
     "service",
 ]

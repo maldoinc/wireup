@@ -5,7 +5,6 @@ import importlib
 import inspect
 import re
 import types
-import warnings
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
@@ -143,17 +142,3 @@ def _find_objects_in_module(
             classes.update(_module_get_objects(module))
 
     return classes
-
-
-def load_module(module: ModuleType) -> None:
-    """Recursively load a given module.
-
-    This can be useful to import them module and trigger any container registrations.
-    """
-    warnings.warn(
-        "Using load_module is deprecated. "
-        "Use @service or factories in conjunction with initialize_container to register services.",
-        DeprecationWarning,
-        stacklevel=2,
-    )
-    _find_objects_in_module(module, lambda _: True)

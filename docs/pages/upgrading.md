@@ -34,3 +34,8 @@ Removed old utility function. Create your own container instance instead via `wi
 ### Removed `register_all_in_module`
 
 Removed old utility function. Register services by passing `service_modules` to `wireup.create_*_container`.
+
+
+### Removed `load_module`
+
+No direct replacement is offered. Create your own container instance instead via `wireup.create_sync_container` or `wireup.create_async_container`.
