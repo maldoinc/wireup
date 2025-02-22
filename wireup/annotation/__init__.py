@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import contextlib
 import importlib
-import warnings
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, TypeVar, overload
 
@@ -61,21 +60,6 @@ def Inject(  # noqa: N802
         return importlib.import_module("fastapi").Depends(_inner)  # type: ignore[no-any-return]
 
     return res
-
-
-def wire(
-    *,
-    param: str | None = None,
-    expr: str | None = None,
-    qualifier: Qualifier | None = None,
-) -> InjectableType | Callable[[], InjectableType]:
-    """Inject resources from the container to autowired method arguments."""
-    warnings.warn(
-        "Using Wire/wire aliases is deprecated. Prefer using Inject instead",
-        DeprecationWarning,
-        stacklevel=2,
-    )
-    return Inject(param=param, expr=expr, qualifier=qualifier)
 
 
 T = TypeVar("T")
