@@ -1,14 +1,17 @@
 import re
-from typing import AsyncIterator, Iterator, NewType
+from typing import AsyncIterator, Iterator, NewType, Union
 
 import pytest
 import wireup
+from wireup import AsyncContainer, SyncContainer
 from wireup.decorators import make_inject_decorator
 from wireup.errors import ContainerCloseError, WireupError
 from wireup.ioc.types import ServiceLifetime
 
+from test.unit.util import run
 
-def test_cleans_up_on_exit() -> None:
+
+async def test_cleans_up_on_exit(container: Union[SyncContainer, AsyncContainer]) -> None:
     _cleanup_performed = False
     Something = NewType("Something", str)
 
@@ -17,11 +20,10 @@ def test_cleans_up_on_exit() -> None:
         nonlocal _cleanup_performed
         _cleanup_performed = True
 
-    c = wireup.create_sync_container()
-    c._registry.register_factory(some_factory)
+    container._registry.register_factory(some_factory)
 
-    assert c.get(Something) == Something("foo")
-    c.close()
+    assert await run(container.get(Something)) == Something("foo")
+    await run(container.close())
     assert _cleanup_performed
 
 
@@ -34,15 +36,15 @@ async def test_async_cleans_up_on_exit() -> None:
         nonlocal _cleanup_performed
         _cleanup_performed = True
 
-    c = wireup.create_async_container()
-    c._registry.register_factory(some_factory)
+    container = wireup.create_async_container()
+    container._registry.register_factory(some_factory)
 
-    @make_inject_decorator(c)
+    @make_inject_decorator(container)
     async def target(smth: Something):
         assert smth == Something("foo")
 
     await target()
-    await c.close()
+    await container.close()
     assert _cleanup_performed
 
 
@@ -52,10 +54,10 @@ async def test_async_raise_close_async() -> None:
     async def some_factory() -> AsyncIterator[Something]:
         yield Something("foo")
 
-    c = wireup.create_sync_container()
-    c._registry.register_factory(some_factory)
+    container = wireup.create_sync_container()
+    container._registry.register_factory(some_factory)
 
-    @make_inject_decorator(c)
+    @make_inject_decorator(container)
     async def target(smth: Something):
         assert smth == Something("foo")
 
@@ -67,25 +69,24 @@ async def test_async_raise_close_async() -> None:
         "List of async factories:"
     )
     with pytest.raises(WireupError, match=msg):
-        c.close()
+        container.close()
 
 
-def test_raises_on_transient_dependency() -> None:
+async def test_raises_on_transient_dependency(container: Union[SyncContainer, AsyncContainer]) -> None:
     Something = NewType("Something", str)
 
     def some_factory() -> Iterator[Something]:
         yield Something("foo")
 
-    c = wireup.create_sync_container()
-    c._registry.register_factory(some_factory, lifetime=ServiceLifetime.TRANSIENT)
+    container._registry.register_factory(some_factory, lifetime=ServiceLifetime.TRANSIENT)
 
     with pytest.raises(WireupError) as e:
-        c.get(Something)
+        await run(container.get(Something))
 
     assert str(e.value) == "Container.get does not support Transient lifetime service generator factories."
 
 
-def test_injects_transient() -> None:
+def test_injects_transient(container: Union[SyncContainer, AsyncContainer]) -> None:
     _cleanups: list[str] = []
     Something = NewType("Something", str)
     SomethingElse = NewType("SomethingElse", str)
@@ -100,11 +101,10 @@ def test_injects_transient() -> None:
         nonlocal _cleanups
         _cleanups.append("f2")
 
-    c = wireup.create_sync_container()
-    c._registry.register_factory(f1, lifetime=ServiceLifetime.TRANSIENT)
-    c._registry.register_factory(f2, lifetime=ServiceLifetime.TRANSIENT)
+    container._registry.register_factory(f1, lifetime=ServiceLifetime.TRANSIENT)
+    container._registry.register_factory(f2, lifetime=ServiceLifetime.TRANSIENT)
 
-    @make_inject_decorator(c)
+    @make_inject_decorator(container)
     def target(_: SomethingElse) -> None:
         pass
 
@@ -127,19 +127,16 @@ async def test_async_injects_transient_sync_depends_on_async_result() -> None:
         nonlocal _cleanups
         _cleanups.append("f2")
 
-    c = wireup.create_sync_container()
-    c._registry.register_factory(f1, lifetime=ServiceLifetime.TRANSIENT)
-    c._registry.register_factory(f2, lifetime=ServiceLifetime.TRANSIENT)
+    container = wireup.create_async_container()
+    container._registry.register_factory(f1, lifetime=ServiceLifetime.TRANSIENT)
+    container._registry.register_factory(f2, lifetime=ServiceLifetime.TRANSIENT)
 
-    @make_inject_decorator(c)
-    async def target(_: SomethingElse) -> None:
-        pass
-
-    await target()
+    async with wireup.enter_async_scope(container) as scoped:
+        await scoped.get(SomethingElse)
     assert _cleanups == ["f2", "f1"]
 
 
-def test_cleans_up_in_order() -> None:
+async def test_cleans_up_in_order(container: Union[SyncContainer, AsyncContainer]) -> None:
     _cleanups: list[str] = []
     Something = NewType("Something", str)
     SomethingElse = NewType("SomethingElse", str)
@@ -154,13 +151,12 @@ def test_cleans_up_in_order() -> None:
         nonlocal _cleanups
         _cleanups.append("f2")
 
-    c = wireup.create_sync_container()
-    c._registry.register_factory(f1)
-    c._registry.register_factory(f2)
+    container._registry.register_factory(f1)
+    container._registry.register_factory(f2)
 
-    assert c.get(Something) == Something("Something")
-    assert c.get(SomethingElse) == SomethingElse("Something else")
-    c.close()
+    assert await run(container.get(Something)) == Something("Something")
+    assert await run(container.get(SomethingElse)) == SomethingElse("Something else")
+    await run(container.close())
     assert _cleanups == ["f2", "f1"]
 
 
