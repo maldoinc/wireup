@@ -86,11 +86,16 @@ class ServiceRegistry:
         if self.is_type_with_qualifier_known(klass, qualifier):
             raise DuplicateServiceRegistrationError(klass, qualifier)
 
-        if klass.__base__ and self.is_interface_known(klass.__base__):
-            if qualifier in self.known_interfaces[klass.__base__]:
-                raise DuplicateQualifierForInterfaceError(klass, qualifier)
+        def discover_interfaces(bases: tuple[type, ...]) -> None:
+            for base in bases:
+                if base and self.is_interface_known(base):
+                    if qualifier in self.known_interfaces[base]:
+                        raise DuplicateQualifierForInterfaceError(klass, qualifier)
 
-            self.known_interfaces[klass.__base__][qualifier] = klass
+                    self.known_interfaces[base][qualifier] = klass
+                discover_interfaces(base.__bases__)
+
+        discover_interfaces(klass.__bases__)
 
         self.known_impls[klass].add(qualifier)
         self.target_init_context(klass, lifetime)

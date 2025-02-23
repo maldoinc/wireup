@@ -19,7 +19,7 @@ from wireup.ioc.dependency_container import DependencyContainer
 from wireup.ioc.parameter import ParameterBag, TemplatedString
 from wireup.ioc.types import AnnotatedParameter, ParameterWrapper
 
-from test.fixtures import Counter, FooBar, FooBase, FooBaz
+from test.fixtures import Counter, FooBar, FooBarChild, FooBarMultipleBases, FooBase, FooBaseAnother, FooBaz
 from test.unit import services
 from test.unit.services.no_annotations.random.random_service import RandomService
 from test.unit.services.no_annotations.random.truly_random_service import TrulyRandomService
@@ -341,6 +341,44 @@ class TestContainer(unittest.IsolatedAsyncioTestCase):
             "Available qualifiers: [].",
             str(context.exception),
         )
+
+    def test_inherited_services_from_same_base_are_injected(self):
+        @self.container.autowire
+        def inner(parent: FooBase = Inject(qualifier="parent"), child: FooBase = Inject(qualifier="child")):
+            self.assertEqual(parent.foo, "bar")
+            self.assertEqual(child.foo, "bar_child")
+
+        self.container.abstract(FooBase)
+        self.container.register(FooBar, qualifier="parent")
+        self.container.register(FooBarChild, qualifier="child")
+        inner()
+
+        parent = self.container.get(FooBase, qualifier="parent")
+        self.assertEqual(parent.foo, "bar")
+
+        child = self.container.get(FooBase, qualifier="child")
+        self.assertEqual(child.foo, "bar_child")
+
+    def test_services_from_multiple_bases_are_injected(self):
+        @self.container.autowire
+        def inner(sub: FooBase):
+            self.assertEqual(sub.foo, "bar_multiple_bases")
+
+        @self.container.autowire
+        def inner_another(sub: FooBaseAnother):
+            self.assertEqual(sub.foo, "bar_multiple_bases")
+
+        self.container.abstract(FooBase)
+        self.container.abstract(FooBaseAnother)
+        self.container.register(FooBarMultipleBases)
+        inner()
+        inner_another()
+
+        foo = self.container.get(FooBase)
+        self.assertEqual(foo.foo, "bar_multiple_bases")
+
+        foo_another = self.container.get(FooBaseAnother)
+        self.assertEqual(foo_another.foo, "bar_multiple_bases")
 
     def test_register_with_qualifier_fails_when_invoked_without(self):
         @self.container.register(qualifier=__name__)
