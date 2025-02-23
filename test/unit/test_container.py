@@ -19,7 +19,7 @@ from wireup.ioc.dependency_container import DependencyContainer
 from wireup.ioc.parameter import ParameterBag, TemplatedString
 from wireup.ioc.types import AnnotatedParameter, ParameterWrapper
 
-from test.fixtures import Counter, FooBar, FooBase, FooBaz
+from test.fixtures import Counter, FooBar, FooBase, FooBaz, FooBaseAnother, FooBarMultipleBases, FooBarChild
 from test.unit import services
 from test.unit.services.no_annotations.random.random_service import RandomService
 from test.unit.services.no_annotations.random.truly_random_service import TrulyRandomService
