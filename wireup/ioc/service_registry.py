@@ -88,24 +88,30 @@ class ServiceRegistry:
         if return_type_result is None:
             raise FactoryReturnTypeIsEmptyError
 
-        return_type, factory_type = return_type_result
+        klass, factory_type = return_type_result
 
-        if self.is_type_with_qualifier_known(return_type, qualifier):
-            raise DuplicateServiceRegistrationError(return_type, qualifier=qualifier)
+        if self.is_type_with_qualifier_known(klass, qualifier):
+            raise DuplicateServiceRegistrationError(klass, qualifier=qualifier)
 
-        if hasattr(return_type, "__base__") and return_type.__base__ and self.is_interface_known(return_type.__base__):
-            if qualifier in self.interfaces[return_type.__base__]:
-                raise DuplicateQualifierForInterfaceError(return_type, qualifier)
+        def discover_interfaces(bases: tuple[type, ...]) -> None:
+            for base in bases:
+                if base and self.is_interface_known(base):
+                    if qualifier in self.interfaces[base]:
+                        raise DuplicateQualifierForInterfaceError(klass, qualifier)
 
-            self.interfaces[return_type.__base__][qualifier] = return_type
+                    self.interfaces[base][qualifier] = klass
+                discover_interfaces(base.__bases__)
+
+        if hasattr(klass, "__bases__"):
+            discover_interfaces(klass.__bases__)
 
         self.target_init_context(obj, lifetime=lifetime)
-        self.factories[return_type, qualifier] = ServiceFactory(
+        self.factories[klass, qualifier] = ServiceFactory(
             factory=obj,
             factory_type=factory_type,
         )
-        self.impls[return_type].add(qualifier)
-        self.context.init_target(return_type, lifetime)
+        self.impls[klass].add(qualifier)
+        self.context.init_target(klass, lifetime)
 
     def register_abstract(self, klass: type) -> None:
         self.interfaces[klass] = defaultdict()
