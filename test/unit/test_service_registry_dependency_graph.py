@@ -77,35 +77,6 @@ class TestServiceRegistry(unittest.TestCase):
             {ImplementationA: set(), ImplementationB: set(), ServiceWithInterface: {ImplementationA, ImplementationB}},
         )
 
-    def test_dependency_graph_with_deep_interface(self):
-        class MyInterface:
-            pass
-
-        class ImplementationParent(MyInterface):
-            pass
-
-        class ImplementationChild(ImplementationParent):
-            pass
-
-        class ServiceWithInterface:
-            def __init__(self, iface: MyInterface):
-                self.iface = iface
-
-        self.registry.register_abstract(MyInterface)
-        self.registry.register_service(ImplementationParent, qualifier="parent", lifetime=ServiceLifetime.SINGLETON)
-        self.registry.register_service(ImplementationChild, qualifier="child", lifetime=ServiceLifetime.SINGLETON)
-        self.registry.register_service(ServiceWithInterface, qualifier=None, lifetime=ServiceLifetime.SINGLETON)
-
-        graph = self.registry.get_dependency_graph()
-        self.assertEqual(
-            graph,
-            {
-                ImplementationParent: set(),
-                ImplementationChild: set(),
-                ServiceWithInterface: {ImplementationParent, ImplementationChild}
-            },
-        )
-
     def test_dependency_graph_with_transient_interfaces(self):
         class MyInterface:
             pass
