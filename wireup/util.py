@@ -31,18 +31,14 @@ def _create_container(
     parameters: dict[str, Any] | None = None,
 ) -> _ContainerT:
     """Create a container with the given parameters and register all services found in service modules."""
-    bag = ParameterBag()
-    registry = ServiceRegistry()
-    if parameters:
-        bag.update(parameters)
     container = klass(
-        registry=registry,
-        parameters=bag,
+        registry=ServiceRegistry(),
+        parameters=ParameterBag(parameters),
         global_scope=ContainerScope(),
         overrides={},
     )
     if service_modules:
-        _register_services(registry, service_modules)
+        _register_services(container._registry, service_modules)
 
     return container
 

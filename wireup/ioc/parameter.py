@@ -19,7 +19,7 @@ class ParameterBag:
 
     __slots__ = ("__bag", "__cache", "__param_cache")
 
-    def __init__(self) -> None:
+    def __init__(self, values: dict[str, Any] | None = None) -> None:
         """Initialize an empty ParameterBag.
 
         ParameterBag holds a flat key-value store of parameter values.
@@ -32,6 +32,8 @@ class ParameterBag:
         # __param_cache is used to invalidate cache entries related to specific parameters.
         # It maps parameter names to the set of cache entry keys that involve that parameter.
         self.__param_cache: dict[str, set[str]] = defaultdict(set)
+        if values:
+            self.update(values)
 
     def put(self, name: str, val: Any) -> None:
         """Put a parameter value into the bag. This overwrites any previous values.
