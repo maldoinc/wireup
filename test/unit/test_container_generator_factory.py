@@ -1,17 +1,17 @@
 import re
-from typing import AsyncIterator, Iterator, NewType, Union
+from typing import AsyncIterator, Iterator, NewType
 
 import pytest
 import wireup
-from wireup import AsyncContainer, SyncContainer
 from wireup.decorators import make_inject_decorator
 from wireup.errors import ContainerCloseError, WireupError
 from wireup.ioc.types import ServiceLifetime
 
+from test.conftest import Container
 from test.unit.util import run
 
 
-async def test_cleans_up_on_exit(container: Union[SyncContainer, AsyncContainer]) -> None:
+async def test_cleans_up_on_exit(container: Container) -> None:
     _cleanup_performed = False
     Something = NewType("Something", str)
 
@@ -72,7 +72,7 @@ async def test_async_raise_close_async() -> None:
         container.close()
 
 
-async def test_raises_on_transient_dependency(container: Union[SyncContainer, AsyncContainer]) -> None:
+async def test_raises_on_transient_dependency(container: Container) -> None:
     Something = NewType("Something", str)
 
     def some_factory() -> Iterator[Something]:
@@ -86,7 +86,7 @@ async def test_raises_on_transient_dependency(container: Union[SyncContainer, As
     assert str(e.value) == "Container.get does not support Transient lifetime service generator factories."
 
 
-def test_injects_transient(container: Union[SyncContainer, AsyncContainer]) -> None:
+def test_injects_transient(container: Container) -> None:
     _cleanups: list[str] = []
     Something = NewType("Something", str)
     SomethingElse = NewType("SomethingElse", str)
@@ -136,7 +136,7 @@ async def test_async_injects_transient_sync_depends_on_async_result() -> None:
     assert _cleanups == ["f2", "f1"]
 
 
-async def test_cleans_up_in_order(container: Union[SyncContainer, AsyncContainer]) -> None:
+async def test_cleans_up_in_order(container: Container) -> None:
     _cleanups: list[str] = []
     Something = NewType("Something", str)
     SomethingElse = NewType("SomethingElse", str)
