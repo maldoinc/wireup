@@ -21,7 +21,7 @@ class TestServiceRegistry(unittest.TestCase):
         self.registry.register(MyService, qualifier="default", lifetime=ServiceLifetime.SINGLETON)
 
         # Check if the service is registered correctly
-        self.assertTrue(self.registry.is_impl_known(MyService))
+        self.assertIn(MyService, self.registry.impls)
         self.assertTrue(self.registry.is_impl_with_qualifier_known(MyService, "default"))
         self.assertTrue(self.registry.is_type_with_qualifier_known(MyService, "default"))
         self.assertEqual(self.registry.context.lifetime[MyService], ServiceLifetime.SINGLETON)
@@ -55,10 +55,10 @@ class TestServiceRegistry(unittest.TestCase):
             self.registry.register(random_service_factory, lifetime=ServiceLifetime.SINGLETON)
 
     def test_is_impl_known(self):
-        self.assertFalse(self.registry.is_impl_known(MyService))
+        self.assertNotIn(MyService, self.registry.impls)
 
         self.registry.register(MyService, qualifier="default", lifetime=ServiceLifetime.SINGLETON)
-        self.assertTrue(self.registry.is_impl_known(MyService))
+        self.assertIn(MyService, self.registry.impls)
 
     def test_is_impl_with_qualifier_known(self):
         self.assertFalse(self.registry.is_impl_with_qualifier_known(MyService, "default"))

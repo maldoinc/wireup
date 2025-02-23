@@ -70,7 +70,7 @@ class BaseContainer:
 
     def is_type_known(self, klass: type) -> bool:
         """Given a class type return True if's registered in the container as a service or interface."""
-        return self._registry.is_impl_known(klass) or self._registry.is_interface_known(klass)
+        return klass in self._registry.impls or klass in self._registry.interfaces
 
     @property
     def override(self) -> OverrideManager:
@@ -87,7 +87,7 @@ class BaseContainer:
             return ctor.factory, klass, ctor.factory_type
 
         # Raise if the current impl is known but not necessarily with this qualifier.
-        if self._registry.is_impl_known(klass):
+        if klass in self._registry.impls:
             if not self._registry.is_impl_with_qualifier_known(klass, qualifier):
                 raise UnknownQualifiedServiceRequestedError(
                     klass,
