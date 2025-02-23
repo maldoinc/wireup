@@ -342,6 +342,17 @@ class TestContainer(unittest.IsolatedAsyncioTestCase):
             str(context.exception),
         )
 
+    def test_inherited_services_from_same_base_are_injected(self):
+        @self.container.autowire
+        def inner(parent: FooBase = Inject(qualifier="parent"), child: FooBase = Inject(qualifier="child")):
+            self.assertEqual(parent.foo, "bar")
+            self.assertEqual(child.foo, "bar_child")
+
+        self.container.abstract(FooBase)
+        self.container.register(FooBar, qualifier="parent")
+        self.container.register(FooBarChild, qualifier="child")
+        inner()
+
     def test_register_with_qualifier_fails_when_invoked_without(self):
         @self.container.register(qualifier=__name__)
         class RegisterWithQualifierClass: ...
