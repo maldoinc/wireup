@@ -19,10 +19,10 @@ import wireup
 from wireup import (
     ServiceLifetime,
     enter_async_scope,
-    enter_scope,
 )
 from wireup.decorators import make_inject_decorator
 from wireup.errors import WireupError
+from wireup.ioc.container.scoped_container import async_container_force_sync_scope
 
 if TYPE_CHECKING:
     from types import ModuleType
@@ -59,7 +59,7 @@ def wireup_middleware(  # noqa: D103
         return async_inner
 
     def sync_inner(request: HttpRequest) -> HttpResponse:
-        with enter_scope(container) as scoped:
+        with async_container_force_sync_scope(container) as scoped:
             container_token = sync_view_request_container.set(scoped)
             request_token = current_request.set(request)
             try:
