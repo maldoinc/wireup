@@ -56,3 +56,6 @@ Removed old utility function. Register services by passing `service_modules` to 
 
 No direct replacement is offered. Create your own container instance instead via `wireup.create_sync_container` or `wireup.create_async_container`.
 
+#### Removed `FactoryDuplicateServiceRegistrationError`
+
+Use `DuplicateServiceRegistrationError` instead.

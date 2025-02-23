@@ -46,17 +46,6 @@ class FactoryReturnTypeIsEmptyError(WireupError):
         super().__init__("Factory functions must specify a return type denoting the type of dependency it can create.")
 
 
-class FactoryDuplicateServiceRegistrationError(WireupError):
-    """Raised when a factory function declares that it produces a type which is already known."""
-
-    def __init__(self, return_type: type[Any], qualifier: Qualifier | None = None) -> None:
-        self.return_type = return_type
-        super().__init__(
-            f"A function is already registered as a factory for dependency type {return_type} "
-            f"with qualifier {qualifier}."
-        )
-
-
 class UnknownQualifiedServiceRequestedError(WireupError):
     """Raised when requesting a type which exists but using an unknown qualifier."""
 
