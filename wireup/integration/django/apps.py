@@ -29,13 +29,13 @@ if TYPE_CHECKING:
 
     from wireup.integration.django import WireupSettings
     from wireup.ioc.container.async_container import AsyncContainer
-    from wireup.ioc.container.scoped_container import ScopedAsyncContainer, ScopedContainer
+    from wireup.ioc.container.scoped_container import ScopedAsyncContainer, ScopedSyncContainer
     from wireup.ioc.types import InjectionResult
 
 
 current_request: ContextVar[HttpRequest] = ContextVar("wireup_django_request")
 async_view_request_container: ContextVar[ScopedAsyncContainer] = ContextVar("wireup_async_view_request_container")
-sync_view_request_container: ContextVar[ScopedContainer] = ContextVar("wireup_sync_view_request_container")
+sync_view_request_container: ContextVar[ScopedSyncContainer] = ContextVar("wireup_sync_view_request_container")
 
 
 @sync_and_async_middleware
@@ -82,7 +82,7 @@ def _django_request_factory() -> HttpRequest:
         raise WireupError(msg) from e
 
 
-def get_container() -> ScopedContainer | ScopedAsyncContainer | AsyncContainer:
+def get_container() -> ScopedSyncContainer | ScopedAsyncContainer | AsyncContainer:
     """Return the container instance associated with the current django application."""
     try:
         return async_view_request_container.get()

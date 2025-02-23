@@ -10,12 +10,12 @@ if TYPE_CHECKING:
     from collections.abc import Callable
 
     from wireup.ioc.container.base_container import BaseContainer
-    from wireup.ioc.container.scoped_container import ScopedAsyncContainer, ScopedContainer
+    from wireup.ioc.container.scoped_container import ScopedAsyncContainer, ScopedSyncContainer
 
 
 def make_inject_decorator(
     container: BaseContainer,
-    scoped_container_supplier: Callable[[], ScopedContainer | ScopedAsyncContainer] | None = None,
+    scoped_container_supplier: Callable[[], ScopedSyncContainer | ScopedAsyncContainer] | None = None,
 ) -> Callable[..., Any]:
     """Provide known dependencies to the applied function.
 

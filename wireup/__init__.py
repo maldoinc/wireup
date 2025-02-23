@@ -1,6 +1,6 @@
 from wireup.annotation import Inject, abstract, service
 from wireup.ioc.container.async_container import AsyncContainer
-from wireup.ioc.container.scoped_container import ScopedContainer, enter_async_scope, enter_scope
+from wireup.ioc.container.scoped_container import ScopedSyncContainer, enter_async_scope, enter_scope
 from wireup.ioc.container.sync_container import SyncContainer
 from wireup.ioc.parameter import ParameterBag
 from wireup.ioc.types import ParameterReference, ServiceLifetime, ServiceOverride
@@ -14,7 +14,7 @@ __all__ = [
     "Inject",
     "ParameterBag",
     "ParameterReference",
-    "ScopedContainer",
+    "ScopedSyncContainer",
     "ServiceLifetime",
     "ServiceOverride",
     "SyncContainer",

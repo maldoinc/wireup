@@ -9,17 +9,17 @@ from wireup.ioc.container.sync_container import SyncContainer
 from wireup.ioc.types import ContainerScope
 
 
-class ScopedContainer(SyncContainer): ...
+class ScopedSyncContainer(SyncContainer): ...
 
 
 class ScopedAsyncContainer(AsyncContainer): ...
 
 
 @contextlib.contextmanager
-def enter_scope(container: SyncContainer | AsyncContainer) -> Iterator[ScopedContainer]:
+def enter_scope(container: SyncContainer | AsyncContainer) -> Iterator[ScopedSyncContainer]:
     """Create a new scoped container from the base container provided."""
     scope = ContainerScope()
-    scoped_container = ScopedContainer(
+    scoped_container = ScopedSyncContainer(
         registry=container._registry,
         parameters=container._params,
         overrides=container._overrides,
