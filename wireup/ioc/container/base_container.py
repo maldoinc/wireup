@@ -80,13 +80,13 @@ class BaseContainer:
     def _get_ctor(
         self, klass: type[T], qualifier: Qualifier | None
     ) -> tuple[Callable[..., Any], type[T], FactoryType] | None:
+        if self._registry.is_interface_known(klass):
+            klass = self._registry.interface_resolve_impl(klass, qualifier)
+
         if ctor := self._registry.factories.get((klass, qualifier)):
             return ctor.factory, klass, ctor.factory_type
 
-        if self._registry.is_interface_known(klass):
-            concrete_class = self._registry.interface_resolve_impl(klass, qualifier)
-            return self._get_ctor(concrete_class, qualifier)
-
+        # Raise if the current impl is known but not necessarily with this qualifier.
         if self._registry.is_impl_known(klass):
             if not self._registry.is_impl_with_qualifier_known(klass, qualifier):
                 raise UnknownQualifiedServiceRequestedError(
