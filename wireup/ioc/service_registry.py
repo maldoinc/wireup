@@ -14,12 +14,10 @@ from wireup.errors import (
     UnknownQualifiedServiceRequestedError,
 )
 from wireup.ioc.initialization_context import InitializationContext
-from wireup.ioc.types import AnnotatedParameter, AutowireTarget, ServiceLifetime
+from wireup.ioc.types import AutowireTarget, ServiceLifetime
 from wireup.ioc.util import _get_globals, ensure_is_type, is_type_autowireable, param_get_annotation
 
 if TYPE_CHECKING:
-    from collections.abc import Iterable
-
     from wireup.ioc.types import (
         Qualifier,
     )
@@ -132,50 +130,6 @@ class ServiceRegistry:
             # This is the case for services which are only typed and do not require an annotation.
             if annotated_param.annotation or is_type_autowireable(annotated_param.klass):
                 self.context.add_dependency(target, name, annotated_param)
-
-    def get_dependency_graph(self) -> dict[type, set[type]]:
-        """Return a dependency graph for the current set of registered services.
-
-        This is based on the context's but with the following changes
-        * Transient services are removed
-        * Objects depending on interfaces will instead depend on all implementations of that interface.
-        * Factories are replaced with the thing they produce.
-        """
-        # handle generators in warmup.
-        factory_to_type: dict[Callable[..., Any], type[Any]] = {
-            v.factory: k[0] for k, v in self.factory_functions.items()
-        }
-        types_created_by_factories = set(factory_to_type.values())
-        res: dict[type, set[type[Any]]] = {}
-
-        for target, dependencies in self.context.dependencies.items():
-            # If this type is being created by a factory then do not process the current entry
-            # as the dependency graph for it will be processed through the factory.
-            if target in types_created_by_factories:
-                continue
-
-            klass: type[Any] = factory_to_type.get(target, target)  # type: ignore[arg-type]
-
-            if not self.is_impl_singleton(klass):
-                continue
-
-            res[klass] = {cls for cls in self._get_class_deps(dependencies.values()) if self.is_impl_singleton(cls)}
-
-        return res
-
-    def _get_class_deps(self, dependencies: Iterable[AnnotatedParameter]) -> set[type[Any]]:
-        """Return a set with non-parameter dependencies from the given annotated parameter list."""
-        current_deps: set[type[Any]] = set()
-
-        for annotated_param in dependencies:
-            if annotated_param.is_parameter or not annotated_param.klass:
-                continue
-
-            if self.is_interface_known(annotated_param.klass):
-                current_deps.update(self.known_interfaces.get(annotated_param.klass, {}).values())
-            else:
-                current_deps.add(annotated_param.klass)
-        return current_deps
 
     def is_impl_known(self, klass: type) -> bool:
         """Determine if klass is known by the registry."""
