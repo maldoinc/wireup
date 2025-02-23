@@ -204,7 +204,6 @@ class BaseContainer:
 
         injection_result = self._callable_get_params_to_inject(ctor)
         instance_or_generator = ctor(**injection_result.kwargs)
-        object_identifier = resolved_type, qualifier
 
         if factory_type == FactoryType.GENERATOR:
             generator = instance_or_generator
@@ -217,7 +216,7 @@ class BaseContainer:
             lifetime=lifetime,
             generator=generator,
             instance=instance,
-            object_identifier=object_identifier,
+            object_identifier=(resolved_type, qualifier),
             injection_result=injection_result,
         )
 
@@ -236,7 +235,6 @@ class BaseContainer:
             if factory_type == FactoryType.COROUTINE_FN
             else ctor(**injection_result.kwargs)
         )
-        object_identifier = resolved_type, qualifier
 
         if factory_type in GENERATOR_FACTORY_TYPES:
             generator = instance_or_generator
@@ -253,7 +251,7 @@ class BaseContainer:
             lifetime=lifetime,
             generator=generator,
             instance=instance,
-            object_identifier=object_identifier,
+            object_identifier=(resolved_type, qualifier),
             injection_result=injection_result,
         )
 
