@@ -353,6 +353,12 @@ class TestContainer(unittest.IsolatedAsyncioTestCase):
         self.container.register(FooBarChild, qualifier="child")
         inner()
 
+        parent = self.container.get(FooBase, qualifier="parent")
+        self.assertEqual(parent.foo, "bar")
+
+        child = self.container.get(FooBase, qualifier="child")
+        self.assertEqual(child.foo, "bar_child")
+
     def test_services_from_multiple_bases_are_injected(self):
         @self.container.autowire
         def inner(sub: FooBase):
@@ -367,6 +373,12 @@ class TestContainer(unittest.IsolatedAsyncioTestCase):
         self.container.register(FooBarMultipleBases)
         inner()
         inner_another()
+
+        foo = self.container.get(FooBase)
+        self.assertEqual(foo.foo, "bar_multiple_bases")
+
+        foo_another = self.container.get(FooBaseAnother)
+        self.assertEqual(foo_another.foo, "bar_multiple_bases")
 
     def test_register_with_qualifier_fails_when_invoked_without(self):
         @self.container.register(qualifier=__name__)
