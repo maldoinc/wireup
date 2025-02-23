@@ -146,7 +146,7 @@ class WireupConfig(AppConfig):
         # so this needs to create a new type to disambiguate.
         # see: https://github.com/maldoinc/wireup/issues/53
         wrapped_type = type(f"WireupWrapped{callback.view_class.__name__}", (callback.view_class,), {})
-        self.container._registry.register_service(wrapped_type)
+        self.container._registry.register(wrapped_type)
 
         # This is taken from the django .as_view() method.
         @functools.wraps(callback)

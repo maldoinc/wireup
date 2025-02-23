@@ -20,7 +20,7 @@ async def test_cleans_up_on_exit(container: Container) -> None:
         nonlocal _cleanup_performed
         _cleanup_performed = True
 
-    container._registry.register_factory(some_factory)
+    container._registry.register(some_factory)
 
     assert await run(container.get(Something)) == Something("foo")
     await run(container.close())
@@ -37,7 +37,7 @@ async def test_async_cleans_up_on_exit() -> None:
         _cleanup_performed = True
 
     container = wireup.create_async_container()
-    container._registry.register_factory(some_factory)
+    container._registry.register(some_factory)
 
     @make_inject_decorator(container)
     async def target(smth: Something):
@@ -55,7 +55,7 @@ async def test_async_raise_close_async() -> None:
         yield Something("foo")
 
     container = wireup.create_sync_container()
-    container._registry.register_factory(some_factory)
+    container._registry.register(some_factory)
 
     @make_inject_decorator(container)
     async def target(smth: Something):
@@ -78,7 +78,7 @@ async def test_raises_on_transient_dependency(container: Container) -> None:
     def some_factory() -> Iterator[Something]:
         yield Something("foo")
 
-    container._registry.register_factory(some_factory, lifetime=ServiceLifetime.TRANSIENT)
+    container._registry.register(some_factory, lifetime=ServiceLifetime.TRANSIENT)
 
     with pytest.raises(WireupError) as e:
         await run(container.get(Something))
@@ -101,8 +101,8 @@ def test_injects_transient(container: Container) -> None:
         nonlocal _cleanups
         _cleanups.append("f2")
 
-    container._registry.register_factory(f1, lifetime=ServiceLifetime.TRANSIENT)
-    container._registry.register_factory(f2, lifetime=ServiceLifetime.TRANSIENT)
+    container._registry.register(f1, lifetime=ServiceLifetime.TRANSIENT)
+    container._registry.register(f2, lifetime=ServiceLifetime.TRANSIENT)
 
     @make_inject_decorator(container)
     def target(_: SomethingElse) -> None:
@@ -128,8 +128,8 @@ async def test_async_injects_transient_sync_depends_on_async_result() -> None:
         _cleanups.append("f2")
 
     container = wireup.create_async_container()
-    container._registry.register_factory(f1, lifetime=ServiceLifetime.TRANSIENT)
-    container._registry.register_factory(f2, lifetime=ServiceLifetime.TRANSIENT)
+    container._registry.register(f1, lifetime=ServiceLifetime.TRANSIENT)
+    container._registry.register(f2, lifetime=ServiceLifetime.TRANSIENT)
 
     async with wireup.enter_async_scope(container) as scoped:
         await scoped.get(SomethingElse)
@@ -151,8 +151,8 @@ async def test_cleans_up_in_order(container: Container) -> None:
         nonlocal _cleanups
         _cleanups.append("f2")
 
-    container._registry.register_factory(f1)
-    container._registry.register_factory(f2)
+    container._registry.register(f1)
+    container._registry.register(f2)
 
     assert await run(container.get(Something)) == Something("Something")
     assert await run(container.get(SomethingElse)) == SomethingElse("Something else")
@@ -168,7 +168,7 @@ def test_sync_raises_when_generating_async() -> None:
         raise ValueError("boom")
 
     c = wireup.create_sync_container()
-    c._registry.register_factory(f1)
+    c._registry.register(f1)
 
     @make_inject_decorator(c)
     def target(_: Something) -> None:
@@ -193,7 +193,7 @@ def test_raises_errors() -> None:
         raise ValueError("boom")
 
     c = wireup.create_sync_container()
-    c._registry.register_factory(f1)
+    c._registry.register(f1)
 
     assert c.get(Something) == Something("Something")
     with pytest.raises(ContainerCloseError) as e:

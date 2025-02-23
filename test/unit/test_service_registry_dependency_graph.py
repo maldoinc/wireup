@@ -16,7 +16,7 @@ class TestServiceRegistry(unittest.TestCase):
         class SingletonService:
             pass
 
-        self.registry.register_service(SingletonService, qualifier=None, lifetime=ServiceLifetime.SINGLETON)
+        self.registry.register(SingletonService, qualifier=None, lifetime=ServiceLifetime.SINGLETON)
 
         graph = self.registry.get_dependency_graph()
         self.assertEqual(graph, {SingletonService: set()})
@@ -26,7 +26,7 @@ class TestServiceRegistry(unittest.TestCase):
         class TransientService:
             pass
 
-        self.registry.register_service(TransientService, qualifier=None, lifetime=ServiceLifetime.TRANSIENT)
+        self.registry.register(TransientService, qualifier=None, lifetime=ServiceLifetime.TRANSIENT)
 
         graph = self.registry.get_dependency_graph()
         self.assertEqual(graph, {})
@@ -43,9 +43,9 @@ class TestServiceRegistry(unittest.TestCase):
                 self.a = a
                 self.b = b
 
-        self.registry.register_service(DependencyA, qualifier=None, lifetime=ServiceLifetime.SINGLETON)
-        self.registry.register_service(DependencyB, qualifier=None, lifetime=ServiceLifetime.SINGLETON)
-        self.registry.register_service(ServiceWithDependencies, qualifier=None, lifetime=ServiceLifetime.SINGLETON)
+        self.registry.register(DependencyA, qualifier=None, lifetime=ServiceLifetime.SINGLETON)
+        self.registry.register(DependencyB, qualifier=None, lifetime=ServiceLifetime.SINGLETON)
+        self.registry.register(ServiceWithDependencies, qualifier=None, lifetime=ServiceLifetime.SINGLETON)
 
         graph = self.registry.get_dependency_graph()
         self.assertEqual(
@@ -67,9 +67,9 @@ class TestServiceRegistry(unittest.TestCase):
                 self.iface = iface
 
         self.registry.register_abstract(MyInterface)
-        self.registry.register_service(ImplementationA, qualifier="A", lifetime=ServiceLifetime.SINGLETON)
-        self.registry.register_service(ImplementationB, qualifier="B", lifetime=ServiceLifetime.SINGLETON)
-        self.registry.register_service(ServiceWithInterface, qualifier=None, lifetime=ServiceLifetime.SINGLETON)
+        self.registry.register(ImplementationA, qualifier="A", lifetime=ServiceLifetime.SINGLETON)
+        self.registry.register(ImplementationB, qualifier="B", lifetime=ServiceLifetime.SINGLETON)
+        self.registry.register(ServiceWithInterface, qualifier=None, lifetime=ServiceLifetime.SINGLETON)
 
         graph = self.registry.get_dependency_graph()
         self.assertEqual(
@@ -92,9 +92,9 @@ class TestServiceRegistry(unittest.TestCase):
                 self.iface = iface
 
         self.registry.register_abstract(MyInterface)
-        self.registry.register_service(ImplementationA, qualifier="A", lifetime=ServiceLifetime.TRANSIENT)
-        self.registry.register_service(ImplementationB, qualifier="B", lifetime=ServiceLifetime.TRANSIENT)
-        self.registry.register_service(ServiceWithInterface, qualifier=None, lifetime=ServiceLifetime.SINGLETON)
+        self.registry.register(ImplementationA, qualifier="A", lifetime=ServiceLifetime.TRANSIENT)
+        self.registry.register(ImplementationB, qualifier="B", lifetime=ServiceLifetime.TRANSIENT)
+        self.registry.register(ServiceWithInterface, qualifier=None, lifetime=ServiceLifetime.SINGLETON)
 
         graph = self.registry.get_dependency_graph()
         self.assertEqual(graph, {ServiceWithInterface: set()})
@@ -106,7 +106,7 @@ class TestServiceRegistry(unittest.TestCase):
         def create_my_service() -> MyService:
             return MyService()
 
-        self.registry.register_factory(create_my_service, lifetime=ServiceLifetime.SINGLETON)
+        self.registry.register(create_my_service, lifetime=ServiceLifetime.SINGLETON)
 
         graph = self.registry.get_dependency_graph()
         self.assertEqual(graph, {MyService: set()})

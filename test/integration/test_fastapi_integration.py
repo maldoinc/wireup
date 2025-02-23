@@ -101,11 +101,11 @@ def create_app() -> FastAPI:
         assert scoped_service.other is scoped_service_dependency
 
     container = wireup.create_async_container(service_modules=[], parameters={"foo": "bar"})
-    container._registry.register_service(RandomService)
-    container._registry.register_service(GreeterService)
-    container._registry.register_service(ScopedService, lifetime=ServiceLifetime.SCOPED)
-    container._registry.register_service(ScopedServiceDependency, lifetime=ServiceLifetime.SCOPED)
-    container._registry.register_service(ServiceUsingFastapiRequest, lifetime=ServiceLifetime.TRANSIENT)
+    container._registry.register(RandomService)
+    container._registry.register(GreeterService)
+    container._registry.register(ScopedService, lifetime=ServiceLifetime.SCOPED)
+    container._registry.register(ScopedServiceDependency, lifetime=ServiceLifetime.SCOPED)
+    container._registry.register(ServiceUsingFastapiRequest, lifetime=ServiceLifetime.TRANSIENT)
     wireup.integration.fastapi.setup(container, app)
 
     return app

@@ -17,7 +17,7 @@ from test.unit.util import run
 
 
 async def test_container_overrides_deps_service_locator(container: Container):
-    container._registry.register_service(RandomService)
+    container._registry.register(RandomService)
 
     random_mock = MagicMock()
     random_mock.get_random.return_value = 5
@@ -32,7 +32,7 @@ async def test_container_overrides_deps_service_locator(container: Container):
 
 async def test_container_overrides_deps_service_locator_interface(container: Container):
     container._registry.register_abstract(FooBase)
-    container._registry.register_service(FooBar)
+    container._registry.register(FooBar)
 
     foo_mock = MagicMock()
     foo_mock.foo = "mock"
@@ -43,8 +43,8 @@ async def test_container_overrides_deps_service_locator_interface(container: Con
 
 
 async def test_container_override_many_with_qualifier(container: Container):
-    container._registry.register_service(RandomService, qualifier="Rand1")
-    container._registry.register_service(RandomService, qualifier="Rand2")
+    container._registry.register(RandomService, qualifier="Rand1")
+    container._registry.register(RandomService, qualifier="Rand2")
 
     @make_inject_decorator(container)
     def target(
@@ -76,7 +76,7 @@ async def test_container_override_many_with_qualifier(container: Container):
 
 async def test_container_override_with_interface(container: Container):
     container._registry.register_abstract(FooBase)
-    container._registry.register_service(FooBar)
+    container._registry.register(FooBar)
 
     @make_inject_decorator(container)
     async def target(foo: FooBase):
@@ -115,7 +115,7 @@ async def test_raises_on_unknown_override(container: Container):
 
 async def test_override_interface_works_with_service_locator(container: Container):
     container._registry.register_abstract(FooBase)
-    container._registry.register_service(FooBar)
+    container._registry.register(FooBar)
 
     foobaz = FooBaz()
 

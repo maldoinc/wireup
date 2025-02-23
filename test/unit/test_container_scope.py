@@ -19,7 +19,7 @@ def test_scoped_exit_does_not_close_singleton_scopes() -> None:
         singleton_service_factory_exited = True
 
     c = wireup.create_sync_container()
-    c._registry.register_factory(singleton_service_factory)
+    c._registry.register(singleton_service_factory)
 
     with wireup.enter_scope(c) as scoped:
         scoped.get(SingletonService)
@@ -36,7 +36,7 @@ async def test_scoped_exit_does_not_close_singleton_scopes_async() -> None:
         singleton_service_factory_exited = True
 
     c = wireup.create_async_container()
-    c._registry.register_factory(singleton_service_factory)
+    c._registry.register(singleton_service_factory)
 
     async with wireup.enter_async_scope(c) as scoped:
         await scoped.get(SingletonService)
@@ -46,7 +46,7 @@ async def test_scoped_exit_does_not_close_singleton_scopes_async() -> None:
 
 def test_scoped_container_singleton_in_scope() -> None:
     c = wireup.create_sync_container()
-    c._registry.register_service(SingletonService)
+    c._registry.register(SingletonService)
 
     singleton1 = c.get(SingletonService)
 
@@ -56,7 +56,7 @@ def test_scoped_container_singleton_in_scope() -> None:
 
 def test_scoped_container_reuses_instance_container_get() -> None:
     c = wireup.create_sync_container()
-    c._registry.register_service(ScopedService, lifetime=ServiceLifetime.SCOPED)
+    c._registry.register(ScopedService, lifetime=ServiceLifetime.SCOPED)
 
     with wireup.enter_scope(c) as scoped:
         assert scoped.get(ScopedService) is scoped.get(ScopedService)
@@ -64,7 +64,7 @@ def test_scoped_container_reuses_instance_container_get() -> None:
 
 def test_scoped_container_multiple_scopes() -> None:
     c = wireup.create_sync_container()
-    c._registry.register_service(ScopedService, lifetime=ServiceLifetime.SCOPED)
+    c._registry.register(ScopedService, lifetime=ServiceLifetime.SCOPED)
 
     with wireup.enter_scope(c) as scoped1, wireup.enter_scope(c) as scoped2:
         assert scoped1 is not scoped2
@@ -84,7 +84,7 @@ def test_scoped_container_cleansup_container_get() -> None:
         done = True
 
     c = wireup.create_sync_container()
-    c._registry.register_factory(factory, lifetime=ServiceLifetime.TRANSIENT)
+    c._registry.register(factory, lifetime=ServiceLifetime.TRANSIENT)
 
     with wireup.enter_scope(c) as scoped:
         assert scoped.get(SomeService)

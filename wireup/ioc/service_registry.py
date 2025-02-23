@@ -10,7 +10,6 @@ from typing import TYPE_CHECKING, Any, Callable, TypeVar
 from wireup.errors import (
     DuplicateQualifierForInterfaceError,
     DuplicateServiceRegistrationError,
-    FactoryDuplicateServiceRegistrationError,
     FactoryReturnTypeIsEmptyError,
     UnknownQualifiedServiceRequestedError,
 )
@@ -46,6 +45,9 @@ class ServiceFactory:
 
 
 def _function_get_unwrapped_return_type(fn: Callable[..., T]) -> tuple[type[T], FactoryType] | None:
+    if isinstance(fn, type):
+        return fn, FactoryType.REGULAR
+
     if ret := fn.__annotations__.get("return"):
         ret = ensure_is_type(ret, globalns=_get_globals(fn))
         if not ret:
@@ -77,56 +79,38 @@ class ServiceRegistry:
 
         self.context = InitializationContext()
 
-    def register_service(
+    def register(
         self,
-        klass: type,
-        qualifier: Qualifier | None = None,
+        obj: Callable[..., Any],
         lifetime: ServiceLifetime = ServiceLifetime.SINGLETON,
-    ) -> None:
-        if self.is_type_with_qualifier_known(klass, qualifier):
-            raise DuplicateServiceRegistrationError(klass, qualifier)
-
-        if klass.__base__ and self.is_interface_known(klass.__base__):
-            if qualifier in self.known_interfaces[klass.__base__]:
-                raise DuplicateQualifierForInterfaceError(klass, qualifier)
-
-            self.known_interfaces[klass.__base__][qualifier] = klass
-
-        self.known_impls[klass].add(qualifier)
-        self.target_init_context(klass, lifetime)
-
-    def register_abstract(self, klass: type) -> None:
-        self.known_interfaces[klass] = defaultdict()
-
-    def register_factory(
-        self,
-        fn: Callable[..., Any],
         qualifier: Qualifier | None = None,
-        lifetime: ServiceLifetime = ServiceLifetime.SINGLETON,
     ) -> None:
-        return_type_result = _function_get_unwrapped_return_type(fn)
+        return_type_result = _function_get_unwrapped_return_type(obj)
 
         if return_type_result is None:
             raise FactoryReturnTypeIsEmptyError
 
         return_type, factory_type = return_type_result
 
-        if self.is_impl_known_from_factory(return_type, qualifier):
-            raise FactoryDuplicateServiceRegistrationError(return_type)
-
         if self.is_type_with_qualifier_known(return_type, qualifier):
-            raise DuplicateServiceRegistrationError(return_type, qualifier=None)
+            raise DuplicateServiceRegistrationError(return_type, qualifier=qualifier)
 
-        self.target_init_context(fn, lifetime=lifetime)
+        if hasattr(return_type, "__base__") and return_type.__base__ and self.is_interface_known(return_type.__base__):
+            if qualifier in self.known_interfaces[return_type.__base__]:
+                raise DuplicateQualifierForInterfaceError(return_type, qualifier)
+
+            self.known_interfaces[return_type.__base__][qualifier] = return_type
+
+        self.target_init_context(obj, lifetime=lifetime)
         self.factory_functions[return_type, qualifier] = ServiceFactory(
-            factory=fn,
+            factory=obj,
             factory_type=factory_type,
         )
         self.known_impls[return_type].add(qualifier)
-
-        # The target and its lifetime just needs to be known. No need to check its dependencies
-        # as the factory will be the one to create it.
         self.context.init_target(return_type, lifetime)
+
+    def register_abstract(self, klass: type) -> None:
+        self.known_interfaces[klass] = defaultdict()
 
     def target_init_context(
         self,

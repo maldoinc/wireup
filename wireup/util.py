@@ -74,10 +74,8 @@ def _register_services(registry: ServiceRegistry, service_modules: list[ModuleTy
         registry.register_abstract(cls)
 
     for svc in service_registrations:
-        if isinstance(svc.obj, type):
-            registry.register_service(klass=svc.obj, qualifier=svc.qualifier, lifetime=svc.lifetime)
-        elif callable(svc.obj):
-            registry.register_factory(fn=svc.obj, qualifier=svc.qualifier, lifetime=svc.lifetime)
+        if isinstance(svc.obj, type) or callable(svc.obj):
+            registry.register(obj=svc.obj, qualifier=svc.qualifier, lifetime=svc.lifetime)
 
 
 def _find_objects_in_module(
