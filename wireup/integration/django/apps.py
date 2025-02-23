@@ -118,7 +118,7 @@ class WireupConfig(AppConfig):
                 if not entry.startswith("__") and hasattr(settings, entry)
             },
         )
-        self.container._registry.register_factory(_django_request_factory, lifetime=ServiceLifetime.SCOPED)
+        self.container._registry.register(_django_request_factory, lifetime=ServiceLifetime.SCOPED)
         self.inject_scoped = make_inject_decorator(self.container, get_container)
 
         if integration_settings.perform_warmup:

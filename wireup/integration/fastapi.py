@@ -74,7 +74,7 @@ def setup(container: AsyncContainer, app: FastAPI) -> None:
 
     This will automatically inject dependencies on FastAPI routers.
     """
-    container._registry.register_factory(_fastapi_request_factory, lifetime=ServiceLifetime.SCOPED)
+    container._registry.register(_fastapi_request_factory, lifetime=ServiceLifetime.SCOPED)
     app.middleware("http")(_wireup_request_middleware)
     _autowire_views(container, app)
     app.state.wireup_container = container
