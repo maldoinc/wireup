@@ -68,12 +68,12 @@ def _function_get_unwrapped_return_type(fn: Callable[..., T]) -> tuple[type[T], 
 class ServiceRegistry:
     """Container class holding service registration info and dependencies among them."""
 
-    __slots__ = ("context", "factory_functions", "known_impls", "known_interfaces")
+    __slots__ = ("context", "factories", "impls", "interfaces")
 
     def __init__(self) -> None:
-        self.known_interfaces: dict[type, dict[Qualifier, type]] = {}
-        self.known_impls: dict[type, set[Qualifier]] = defaultdict(set)
-        self.factory_functions: dict[tuple[type, Qualifier], ServiceFactory] = {}
+        self.interfaces: dict[type, dict[Qualifier, type]] = {}
+        self.impls: dict[type, set[Qualifier]] = defaultdict(set)
+        self.factories: dict[tuple[type, Qualifier], ServiceFactory] = {}
 
         self.context = InitializationContext()
 
@@ -94,21 +94,21 @@ class ServiceRegistry:
             raise DuplicateServiceRegistrationError(return_type, qualifier=qualifier)
 
         if hasattr(return_type, "__base__") and return_type.__base__ and self.is_interface_known(return_type.__base__):
-            if qualifier in self.known_interfaces[return_type.__base__]:
+            if qualifier in self.interfaces[return_type.__base__]:
                 raise DuplicateQualifierForInterfaceError(return_type, qualifier)
 
-            self.known_interfaces[return_type.__base__][qualifier] = return_type
+            self.interfaces[return_type.__base__][qualifier] = return_type
 
         self.target_init_context(obj, lifetime=lifetime)
-        self.factory_functions[return_type, qualifier] = ServiceFactory(
+        self.factories[return_type, qualifier] = ServiceFactory(
             factory=obj,
             factory_type=factory_type,
         )
-        self.known_impls[return_type].add(qualifier)
+        self.impls[return_type].add(qualifier)
         self.context.init_target(return_type, lifetime)
 
     def register_abstract(self, klass: type) -> None:
-        self.known_interfaces[klass] = defaultdict()
+        self.interfaces[klass] = defaultdict()
 
     def target_init_context(
         self,
@@ -133,36 +133,32 @@ class ServiceRegistry:
 
     def is_impl_known(self, klass: type) -> bool:
         """Determine if klass is known by the registry."""
-        return klass in self.known_impls
+        return klass in self.impls
 
     def is_impl_with_qualifier_known(self, klass: type, qualifier_value: Qualifier | None) -> bool:
         """Determine if klass represending a concrete implementation + qualifier is known by the registry."""
-        return klass in self.known_impls and qualifier_value in self.known_impls[klass]
+        return klass in self.impls and qualifier_value in self.impls[klass]
 
     def is_type_with_qualifier_known(self, klass: type, qualifier: Qualifier | None) -> bool:
         """Determine if klass+qualifier is known. Klass can be a concrete class or one registered as abstract."""
         is_known_impl = self.is_impl_with_qualifier_known(klass, qualifier)
         is_known_intf = self.__is_interface_with_qualifier_known(klass, qualifier)
-        is_known_from_factory = self.is_impl_known_from_factory(klass, qualifier)
 
-        return is_known_impl or is_known_intf or is_known_from_factory
+        return is_known_impl or is_known_intf
 
     def __is_interface_with_qualifier_known(
         self,
         klass: type,
         qualifier: Qualifier | None,
     ) -> bool:
-        return klass in self.known_interfaces and qualifier in self.known_interfaces[klass]
-
-    def is_impl_known_from_factory(self, klass: type, qualifier: Qualifier | None) -> bool:
-        return (klass, qualifier) in self.factory_functions
+        return klass in self.interfaces and qualifier in self.interfaces[klass]
 
     def is_interface_known(self, klass: type) -> bool:
-        return klass in self.known_interfaces
+        return klass in self.interfaces
 
     def interface_resolve_impl(self, klass: type[T], qualifier: Qualifier | None) -> type[T]:
         """Given an interface and qualifier return the concrete implementation."""
-        impls = self.known_interfaces.get(klass, {})
+        impls = self.interfaces.get(klass, {})
 
         if qualifier in impls:
             return impls[qualifier]

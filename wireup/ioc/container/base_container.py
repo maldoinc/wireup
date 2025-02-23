@@ -80,7 +80,7 @@ class BaseContainer:
     def _get_ctor(
         self, klass: type[T], qualifier: Qualifier | None
     ) -> tuple[Callable[..., Any], type[T], FactoryType] | None:
-        if ctor := self._registry.factory_functions.get((klass, qualifier)):
+        if ctor := self._registry.factories.get((klass, qualifier)):
             return ctor.factory, klass, ctor.factory_type
 
         if self._registry.is_interface_known(klass):
@@ -92,7 +92,7 @@ class BaseContainer:
                 raise UnknownQualifiedServiceRequestedError(
                     klass,
                     qualifier,
-                    self._registry.known_impls[klass],
+                    self._registry.impls[klass],
                 )
 
             return klass, klass, FactoryType.REGULAR
