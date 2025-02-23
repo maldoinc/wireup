@@ -13,8 +13,8 @@ from wireup.errors import (
     FactoryReturnTypeIsEmptyError,
     UnknownQualifiedServiceRequestedError,
 )
-from wireup.ioc.initialization_context import InitializationContext
-from wireup.ioc.types import InjectionTarget, ServiceLifetime
+from wireup.ioc.initialization_context import InitializationContext, InjectionTarget
+from wireup.ioc.types import ServiceLifetime
 from wireup.ioc.util import _get_globals, ensure_is_type, is_type_injectable, param_get_annotation
 
 if TYPE_CHECKING:

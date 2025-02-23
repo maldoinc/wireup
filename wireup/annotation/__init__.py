@@ -24,7 +24,7 @@ def Inject(  # noqa: N802
     param: str | None = None,
     expr: str | None = None,
     qualifier: Qualifier | None = None,
-) -> InjectableType | Callable[[], InjectableType]:
+) -> InjectableType:
     """Let the container know this argument must be injected.
 
     This should be used where additional metadata is required for injection.

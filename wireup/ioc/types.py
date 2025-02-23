@@ -9,8 +9,6 @@ if TYPE_CHECKING:
     from types import AsyncGeneratorType, GeneratorType
 
 AnyCallable = Callable[..., Any]
-InjectionTarget = Union[AnyCallable, type]
-"""Represents valid dependency injection targets: Functions and Classes."""
 
 
 class InjectableType:
