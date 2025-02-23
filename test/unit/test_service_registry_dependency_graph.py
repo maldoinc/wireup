@@ -102,7 +102,7 @@ class TestServiceRegistry(unittest.TestCase):
             {
                 ImplementationParent: set(),
                 ImplementationChild: set(),
-                ServiceWithInterface: {ImplementationParent, ImplementationChild}
+                ServiceWithInterface: {ImplementationParent, ImplementationChild},
             },
         )
 
