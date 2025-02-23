@@ -80,10 +80,10 @@ async def test_raises_on_transient_dependency(container: Container) -> None:
 
     container._registry.register(some_factory, lifetime=ServiceLifetime.TRANSIENT)
 
-    with pytest.raises(WireupError) as e:
+    with pytest.raises(
+        WireupError, match="Container.get does not support Transient lifetime service generator factories."
+    ):
         await run(container.get(Something))
-
-    assert str(e.value) == "Container.get does not support Transient lifetime service generator factories."
 
 
 def test_injects_transient(container: Container) -> None:

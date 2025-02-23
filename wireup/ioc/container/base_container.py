@@ -297,8 +297,6 @@ class BaseContainer:
     def _synchronous_get(self, klass: type[T], qualifier: Qualifier | None = None) -> T:
         """Get an instance of the requested type.
 
-        Use this to locate services by their type but strongly prefer using injection instead.
-
         :param qualifier: Qualifier for the class if it was registered with one.
         :param klass: Class of the dependency already registered in the container.
         :return: An instance of the requested object. Always returns an existing instance when one is available.
@@ -321,8 +319,6 @@ class BaseContainer:
 
     async def _async_get(self, klass: type[T], qualifier: Qualifier | None = None) -> T:
         """Get an instance of the requested type.
-
-        Use this to locate services by their type but strongly prefer using injection instead.
 
         :param qualifier: Qualifier for the class if it was registered with one.
         :param klass: Class of the dependency already registered in the container.
