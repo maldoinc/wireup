@@ -199,7 +199,8 @@ class BaseContainer:
             )
             raise WireupError(msg)
 
-        self._assert_lifetime_is_valid(self._registry.context.lifetime[resolved_type])
+        lifetime = self._registry.context.lifetime[resolved_type]
+        self._assert_lifetime_is_valid(lifetime)
 
         injection_result = self._callable_get_params_to_inject(ctor)
         instance_or_generator = ctor(**injection_result.kwargs)
@@ -213,6 +214,7 @@ class BaseContainer:
             generator = None
 
         return self._wrap_result(
+            lifetime=lifetime,
             generator=generator,
             instance=instance,
             object_identifier=object_identifier,
@@ -226,7 +228,8 @@ class BaseContainer:
             return None
 
         ctor, resolved_type, factory_type = ctor_and_type
-        self._assert_lifetime_is_valid(self._registry.context.lifetime[resolved_type])
+        lifetime = self._registry.context.lifetime[resolved_type]
+        self._assert_lifetime_is_valid(lifetime)
         injection_result = await self._async_callable_get_params_to_inject(ctor)
         instance_or_generator = (
             await ctor(**injection_result.kwargs)
@@ -247,6 +250,7 @@ class BaseContainer:
             instance = instance_or_generator
 
         return self._wrap_result(
+            lifetime=lifetime,
             generator=generator,
             instance=instance,
             object_identifier=object_identifier,
@@ -256,12 +260,12 @@ class BaseContainer:
     def _wrap_result(
         self,
         *,
+        lifetime: ServiceLifetime,
         generator: Any | None,
         instance: Any,
         object_identifier: ContainerObjectIdentifier,
         injection_result: InjectionResult,
     ) -> CreationResult:
-        lifetime = self._registry.context.lifetime.get(object_identifier[0])
         is_singleton = lifetime == ServiceLifetime.SINGLETON
 
         if is_singleton:
