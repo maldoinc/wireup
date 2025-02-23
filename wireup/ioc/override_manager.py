@@ -25,7 +25,7 @@ class OverrideManager:
     def set(self, target: type, new: Any, qualifier: Qualifier | None = None) -> None:
         """Override the `target` service with `new`.
 
-        Subsequent autowire calls to `target` will result in `new` being injected.
+        Future requests to inject `target` will result in `new` being injected.
 
         :param target: The target service to override.
         :param qualifier: The qualifier of the service to override. Set this if service is registered
@@ -50,7 +50,7 @@ class OverrideManager:
     def service(self, target: type, new: Any, qualifier: Qualifier | None = None) -> Iterator[None]:
         """Override the `target` service with `new` for the duration of the context manager.
 
-        Subsequent autowire calls to `target` will result in `new` being injected.
+        Future requests to inject `target` will result in `new` being injected.
 
         :param target: The target service to override.
         :param qualifier: The qualifier of the service to override. Set this if service is registered

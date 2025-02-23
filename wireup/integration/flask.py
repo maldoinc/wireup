@@ -6,7 +6,7 @@ from wireup.integration.util import is_view_using_container
 from wireup.ioc.container.sync_container import SyncContainer
 
 
-def _autowire_views(container: SyncContainer, app: Flask) -> None:
+def _inject_views(container: SyncContainer, app: Flask) -> None:
     inject_scoped = make_inject_decorator(container, lambda: g.wireup_container)
 
     app.view_functions = {
@@ -36,7 +36,7 @@ def setup(container: SyncContainer, app: Flask, *, import_flask_config: bool = F
     app.before_request(_before_request)
     app.after_request(_after_request)
 
-    _autowire_views(container, app)
+    _inject_views(container, app)
     app.wireup_container = container  # type: ignore[reportAttributeAccessIssue]
 
 

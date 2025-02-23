@@ -147,8 +147,8 @@ class BaseContainer:
 
                 names_to_remove.add(name)
 
-        # If autowiring, the container is assumed to be final, so unnecessary entries can be removed
-        # from the context in order to speed up the autowiring process.
+        # If the container is creating services, it is assumed to be final, so unnecessary entries can be removed
+        # from the context in order to speed up subsequent calls.
         if names_to_remove:
             self._registry.context.remove_dependencies(fn, names_to_remove)
 
@@ -176,8 +176,8 @@ class BaseContainer:
 
                 names_to_remove.add(name)
 
-        # If autowiring, the container is assumed to be final, so unnecessary entries can be removed
-        # from the context in order to speed up the autowiring process.
+        # If the container is creating services, it is assumed to be final, so unnecessary entries can be removed
+        # from the context in order to speed up subsequent calls.
         if names_to_remove:
             self._registry.context.remove_dependencies(fn, names_to_remove)
 

@@ -42,8 +42,8 @@ def param_get_annotation(parameter: Parameter, *, globalns: dict[str, Any]) -> A
     return None if not resolved_type else AnnotatedParameter(klass=resolved_type)
 
 
-def is_type_autowireable(obj_type: Any) -> bool:
-    """Determine if the given type is can be autowired without additional annotations."""
+def is_type_injectable(obj_type: Any) -> bool:
+    """Determine if the given type is can be injected without additional annotations."""
     if obj_type is None or obj_type in {int, float, str, bool, complex, bytes, bytearray, memoryview}:
         return False
 

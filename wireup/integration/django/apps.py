@@ -124,24 +124,24 @@ class WireupConfig(AppConfig):
         if integration_settings.perform_warmup:
             """fix warmup."""
 
-        self._autowire(django.urls.get_resolver())
+        self._inject(django.urls.get_resolver())
 
-    def _autowire(self, resolver: URLResolver) -> None:
+    def _inject(self, resolver: URLResolver) -> None:
         for p in resolver.url_patterns:
             if isinstance(p, URLResolver):
-                self._autowire(p)
+                self._inject(p)
                 continue
 
             if isinstance(p, URLPattern) and p.callback:  # type: ignore[reportUnnecessaryComparison]
                 target = p.callback
 
                 if hasattr(p.callback, "view_class") and hasattr(p.callback, "view_initkwargs"):
-                    p.callback = self._autowire_class_based_view(target)
+                    p.callback = self._inject_class_based_view(target)
                 else:
                     p.callback = self.inject_scoped(p.callback)
                     self.container._registry.context.remove_dependency_type(target, HttpRequest)
 
-    def _autowire_class_based_view(self, callback: Any) -> Any:
+    def _inject_class_based_view(self, callback: Any) -> Any:
         # It is possible in django for one class to serve multiple routes,
         # so this needs to create a new type to disambiguate.
         # see: https://github.com/maldoinc/wireup/issues/53
@@ -151,9 +151,9 @@ class WireupConfig(AppConfig):
         # This is taken from the django .as_view() method.
         @functools.wraps(callback)
         def view(request: HttpRequest, *args: Any, **kwargs: Any) -> Any:
-            autowired_args: InjectionResult = get_container()._callable_get_params_to_inject(wrapped_type)
+            provided_args: InjectionResult = get_container()._callable_get_params_to_inject(wrapped_type)
 
-            this = callback.view_class(**{**callback.view_initkwargs, **autowired_args.kwargs})
+            this = callback.view_class(**{**callback.view_initkwargs, **provided_args.kwargs})
             this.setup(request, *args, **kwargs)
             if not hasattr(this, "request"):
                 raise AttributeError(

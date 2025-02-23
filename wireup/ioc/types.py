@@ -9,12 +9,8 @@ if TYPE_CHECKING:
     from types import AsyncGeneratorType, GeneratorType
 
 AnyCallable = Callable[..., Any]
-AutowireTarget = Union[AnyCallable, type]
-"""Represents types that can be targets for autowiring.
-
-This is any method where autowire decorator is used or any class which is registered in the container
-where autowiring happens automatically.
-"""
+InjectionTarget = Union[AnyCallable, type]
+"""Represents valid dependency injection targets: Functions and Classes."""
 
 
 class InjectableType:

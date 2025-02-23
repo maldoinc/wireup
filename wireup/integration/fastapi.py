@@ -51,7 +51,7 @@ def _inject_websocket_route(container: AsyncContainer, target: Callable[..., Any
     return _inner
 
 
-def _autowire_views(container: AsyncContainer, app: FastAPI) -> None:
+def _inject_routes(container: AsyncContainer, app: FastAPI) -> None:
     inject_scoped = make_inject_decorator(container, get_request_container)
 
     for route in app.routes:
@@ -76,7 +76,7 @@ def setup(container: AsyncContainer, app: FastAPI) -> None:
     """
     container._registry.register(_fastapi_request_factory, lifetime=ServiceLifetime.SCOPED)
     app.middleware("http")(_wireup_request_middleware)
-    _autowire_views(container, app)
+    _inject_routes(container, app)
     app.state.wireup_container = container
 
 

@@ -14,8 +14,8 @@ from wireup.errors import (
     UnknownQualifiedServiceRequestedError,
 )
 from wireup.ioc.initialization_context import InitializationContext
-from wireup.ioc.types import AutowireTarget, ServiceLifetime
-from wireup.ioc.util import _get_globals, ensure_is_type, is_type_autowireable, param_get_annotation
+from wireup.ioc.types import InjectionTarget, ServiceLifetime
+from wireup.ioc.util import _get_globals, ensure_is_type, is_type_injectable, param_get_annotation
 
 if TYPE_CHECKING:
     from wireup.ioc.types import (
@@ -112,7 +112,7 @@ class ServiceRegistry:
 
     def target_init_context(
         self,
-        target: AutowireTarget,
+        target: InjectionTarget,
         lifetime: ServiceLifetime | None = None,
     ) -> None:
         """Init and collect all the necessary dependencies to initialize the specified target."""
@@ -128,7 +128,7 @@ class ServiceRegistry:
             # Add to the context only if it's something we can inject
             # or if it is a class that's not one of the builtins: int str dict etc.
             # This is the case for services which are only typed and do not require an annotation.
-            if annotated_param.annotation or is_type_autowireable(annotated_param.klass):
+            if annotated_param.annotation or is_type_injectable(annotated_param.klass):
                 self.context.add_dependency(target, name, annotated_param)
 
     def is_impl_known(self, klass: type) -> bool:

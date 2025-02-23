@@ -25,11 +25,9 @@ def Inject(  # noqa: N802
     expr: str | None = None,
     qualifier: Qualifier | None = None,
 ) -> InjectableType | Callable[[], InjectableType]:
-    """Inject resources from the container to autowired method arguments.
+    """Let the container know this argument must be injected.
 
-    Arguments are exclusive and only one of them must be used at any time.
-    !!! note
-        Methods MUST be still decorated with autowire for this to work.
+    This should be used where additional metadata is required for injection.
 
     :param param: Inject a given parameter by name.
     :param expr: Inject a string value using a templated string.
