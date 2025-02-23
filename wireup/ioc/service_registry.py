@@ -157,9 +157,6 @@ class ServiceRegistry:
     def is_impl_known_from_factory(self, klass: type, qualifier: Qualifier | None) -> bool:
         return (klass, qualifier) in self.factory_functions
 
-    def is_impl_singleton(self, klass: type) -> bool:
-        return self.context.lifetime.get(klass) == ServiceLifetime.SINGLETON
-
     def is_interface_known(self, klass: type) -> bool:
         return klass in self.known_interfaces
 

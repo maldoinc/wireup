@@ -24,7 +24,7 @@ class TestServiceRegistry(unittest.TestCase):
         self.assertTrue(self.registry.is_impl_known(MyService))
         self.assertTrue(self.registry.is_impl_with_qualifier_known(MyService, "default"))
         self.assertTrue(self.registry.is_type_with_qualifier_known(MyService, "default"))
-        self.assertTrue(self.registry.is_impl_singleton(MyService))
+        self.assertEqual(self.registry.context.lifetime[MyService], ServiceLifetime.SINGLETON)
 
         # Test registering a duplicate service
         with self.assertRaises(DuplicateServiceRegistrationError):
@@ -77,12 +77,6 @@ class TestServiceRegistry(unittest.TestCase):
         self.registry.register(my_factory, lifetime=ServiceLifetime.SINGLETON)
         self.assertTrue(self.registry.is_impl_known_from_factory(RandomService, None))
 
-    def test_is_impl_singleton(self):
-        self.assertFalse(self.registry.is_impl_singleton(MyService))
-
-        self.registry.register(MyService, qualifier="default", lifetime=ServiceLifetime.SINGLETON)
-        self.assertTrue(self.registry.is_impl_singleton(MyService))
-
     def test_is_interface_known(self):
         self.assertFalse(self.registry.is_interface_known(MyInterface))
 
@@ -112,7 +106,7 @@ class TestServiceRegistry(unittest.TestCase):
 
         self.registry.register(y_factory, lifetime=ServiceLifetime.SINGLETON)
 
-        self.assertTrue(self.registry.is_impl_singleton(Y))
+        self.assertEqual(self.registry.context.lifetime[Y], ServiceLifetime.SINGLETON)
 
     def test_registry_newtypes_anything(self) -> None:
         Y = NewType("Y", str)
@@ -122,7 +116,7 @@ class TestServiceRegistry(unittest.TestCase):
 
         self.registry.register(y_factory, lifetime=ServiceLifetime.SINGLETON)
 
-        self.assertTrue(self.registry.is_impl_singleton(Y))
+        self.assertEqual(self.registry.context.lifetime[Y], ServiceLifetime.SINGLETON)
 
 
 class MyService:
