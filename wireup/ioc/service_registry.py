@@ -114,7 +114,7 @@ class ServiceRegistry:
         self.context.init_target(klass, lifetime)
 
     def register_abstract(self, klass: type) -> None:
-        self.interfaces[klass] = defaultdict()
+        self.interfaces[klass] = {}
 
     def target_init_context(
         self,
