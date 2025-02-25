@@ -4,9 +4,11 @@ from typing import TYPE_CHECKING, Any, NamedTuple
 
 import pytest
 from wireup import ParameterBag
+from wireup.errors import WireupError
 
 from test.unit.services.no_annotations.random.random_service import RandomService
 from test.unit.services.with_annotations.env import EnvService
+from test.unit.services.with_annotations.services import ScopedService, TransientService
 from test.unit.util import run
 
 if TYPE_CHECKING:
@@ -43,3 +45,17 @@ async def test_container_get_returns_service(container: Container) -> None:
 async def test_container_params_returns_bag(container: Container) -> None:
     assert isinstance(container.params, ParameterBag)
     assert container.params.get("env_name") == "test"
+
+
+async def test_container_raises_get_transient_scoped(container: Container) -> None:
+    msg = (
+        "Cannot create 'transient' or 'scoped' lifetime objects from the base container. "
+        "Please enter a scope using wireup.enter_scope or wireup.enter_async_scope. "
+        "If you are within a scope, use the scoped container instance to create dependencies."
+    )
+
+    with pytest.raises(WireupError, match=msg):
+        await run(container.get(TransientService))
+
+    with pytest.raises(WireupError, match=msg):
+        await run(container.get(ScopedService))

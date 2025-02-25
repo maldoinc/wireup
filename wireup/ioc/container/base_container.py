@@ -267,10 +267,11 @@ class BaseContainer:
     def _assert_lifetime_is_valid(self, lifetime: ServiceLifetime) -> None:
         if lifetime is not ServiceLifetime.SINGLETON and self._current_scope is None:
             msg = (
-                "Creating transient or scoped objects from the base container is deprecated. "
-                "Please enter a scope using wireup.enter_scope or wireup.enter_async_scope."
+                "Cannot create 'transient' or 'scoped' lifetime objects from the base container. "
+                "Please enter a scope using wireup.enter_scope or wireup.enter_async_scope. "
+                "If you are within a scope, use the scoped container instance to create dependencies."
             )
-            logger.warning(msg)
+            raise WireupError(msg)
 
     async def _async_get(self, klass: type[T], qualifier: Qualifier | None = None) -> T:
         """Get an instance of the requested type.
@@ -287,10 +288,6 @@ class BaseContainer:
             return res  # type: ignore[no-any-return]
 
         if res := await self._async_create_instance(klass, qualifier):
-            if res.exit_stack:
-                msg = "Container.get does not support Transient lifetime service generator factories."
-                raise WireupError(msg)
-
             return res.instance  # type: ignore[no-any-return]
 
         raise UnknownServiceRequestedError(klass)
