@@ -60,3 +60,8 @@ No direct replacement is offered. Create your own container instance instead via
 #### Removed `FactoryDuplicateServiceRegistrationError`
 
 Use `DuplicateServiceRegistrationError` instead.
+
+
+### Django Integration
+
+The `perform_wramup` setting is removed.
