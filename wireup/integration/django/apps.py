@@ -21,14 +21,14 @@ from wireup import (
 )
 from wireup.decorators import make_inject_decorator
 from wireup.errors import WireupError
-from wireup.ioc.container.scoped_container import async_container_force_sync_scope
+from wireup.ioc.container.async_container import ScopedAsyncContainer, async_container_force_sync_scope
 
 if TYPE_CHECKING:
     from types import ModuleType
 
     from wireup.integration.django import WireupSettings
     from wireup.ioc.container.async_container import AsyncContainer
-    from wireup.ioc.container.scoped_container import ScopedAsyncContainer, ScopedSyncContainer
+    from wireup.ioc.container.sync_container import ScopedSyncContainer
     from wireup.ioc.types import InjectionResult
 
 
