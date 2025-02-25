@@ -9,8 +9,7 @@ from wireup import ServiceLifetime
 from wireup.decorators import make_inject_decorator
 from wireup.errors import WireupError
 from wireup.integration.util import is_view_using_container
-from wireup.ioc.container.async_container import AsyncContainer
-from wireup.ioc.container.scoped_container import ScopedAsyncContainer
+from wireup.ioc.container.async_container import AsyncContainer, ScopedAsyncContainer
 
 current_request: ContextVar[Request] = ContextVar("wireup_fastapi_request")
 current_ws_container: ContextVar[ScopedAsyncContainer] = ContextVar("wireup_fastapi_container")
