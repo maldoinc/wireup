@@ -17,6 +17,7 @@ As a result of this, the following has changed:
     * Same as above except use `@abstract` decorator.
 * `@container.autowire`
     * This has also been removed. Refer to the relevant docs for an upgrade path: [Apply the container as a decorator](apply_container_as_decorator.md).
+* `wireup.create_container` is now `wireup.create_sync_container` and `wireup.create_async_container`.
 
 #### Removed support for default values
 
