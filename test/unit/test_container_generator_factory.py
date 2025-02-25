@@ -62,10 +62,9 @@ async def test_async_raise_close_async() -> None:
         assert smth == Something("foo")
 
     await target()
-    msg = re.escape(
-        "The following generators are async factories and closing the container with `container.close()`"
-        " is not possible. Replace the `container.close()` call with `await container.aclose()`. "
-        "If you used `wireup.enter_scope`, you should use `wireup.enter_async_scope` instead. "
+    msg = (
+        "The following generators are async factories and closing them with a SyncContainer is not possible. "
+        "If you require async dependencies create an AsyncContainer via wireup.create_async_container instead."
         "List of async factories:"
     )
     with pytest.raises(WireupError, match=msg):
