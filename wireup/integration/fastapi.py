@@ -10,7 +10,7 @@ from wireup.decorators import make_inject_decorator
 from wireup.errors import WireupError
 from wireup.integration.util import is_view_using_container
 from wireup.ioc.container.async_container import AsyncContainer
-from wireup.ioc.container.scoped_container import ScopedAsyncContainer, enter_async_scope
+from wireup.ioc.container.scoped_container import ScopedAsyncContainer
 
 current_request: ContextVar[Request] = ContextVar("wireup_fastapi_request")
 current_ws_container: ContextVar[ScopedAsyncContainer] = ContextVar("wireup_fastapi_container")
@@ -19,7 +19,7 @@ current_ws_container: ContextVar[ScopedAsyncContainer] = ContextVar("wireup_fast
 async def _wireup_request_middleware(request: Request, call_next: Callable[[Request], Awaitable[Response]]) -> Response:
     token = current_request.set(request)
     try:
-        async with enter_async_scope(request.app.state.wireup_container) as scoped_container:
+        async with request.app.state.wireup_container.enter_scope() as scoped_container:
             request.state.wireup_container = scoped_container
             return await call_next(request)
     finally:
@@ -40,7 +40,7 @@ def _inject_websocket_route(container: AsyncContainer, target: Callable[..., Any
 
     @functools.wraps(target)
     async def _inner(*args: Any, **kwargs: Any) -> Any:
-        async with enter_async_scope(container) as scoped_container:
+        async with container.enter_scope() as scoped_container:
             token = current_ws_container.set(scoped_container)
             res = await scoped_container._async_callable_get_params_to_inject(target)
             try:

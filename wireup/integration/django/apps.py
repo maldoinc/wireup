@@ -18,7 +18,6 @@ from django.utils.decorators import sync_and_async_middleware
 import wireup
 from wireup import (
     ServiceLifetime,
-    enter_async_scope,
 )
 from wireup.decorators import make_inject_decorator
 from wireup.errors import WireupError
@@ -47,7 +46,7 @@ def wireup_middleware(  # noqa: D103
     if asyncio.iscoroutinefunction(get_response):
 
         async def async_inner(request: HttpRequest) -> HttpResponse:
-            async with enter_async_scope(container) as scoped:
+            async with container.enter_scope() as scoped:
                 container_token = async_view_request_container.set(scoped)
                 request_token = current_request.set(request)
                 try:

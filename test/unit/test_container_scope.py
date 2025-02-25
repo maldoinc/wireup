@@ -21,7 +21,7 @@ def test_scoped_exit_does_not_close_singleton_scopes() -> None:
     c = wireup.create_sync_container()
     c._registry.register(singleton_service_factory)
 
-    with wireup.enter_scope(c) as scoped:
+    with c.enter_scope() as scoped:
         scoped.get(SingletonService)
 
     assert not singleton_service_factory_exited
@@ -38,7 +38,7 @@ async def test_scoped_exit_does_not_close_singleton_scopes_async() -> None:
     c = wireup.create_async_container()
     c._registry.register(singleton_service_factory)
 
-    async with wireup.enter_async_scope(c) as scoped:
+    async with c.enter_scope() as scoped:
         await scoped.get(SingletonService)
 
     assert not singleton_service_factory_exited
@@ -50,7 +50,7 @@ def test_scoped_container_singleton_in_scope() -> None:
 
     singleton1 = c.get(SingletonService)
 
-    with wireup.enter_scope(c) as scoped:
+    with c.enter_scope() as scoped:
         assert scoped.get(SingletonService) is singleton1
 
 
@@ -58,7 +58,7 @@ def test_scoped_container_reuses_instance_container_get() -> None:
     c = wireup.create_sync_container()
     c._registry.register(ScopedService, lifetime=ServiceLifetime.SCOPED)
 
-    with wireup.enter_scope(c) as scoped:
+    with c.enter_scope() as scoped:
         assert scoped.get(ScopedService) is scoped.get(ScopedService)
 
 
@@ -66,7 +66,7 @@ def test_scoped_container_multiple_scopes() -> None:
     c = wireup.create_sync_container()
     c._registry.register(ScopedService, lifetime=ServiceLifetime.SCOPED)
 
-    with wireup.enter_scope(c) as scoped1, wireup.enter_scope(c) as scoped2:
+    with c.enter_scope() as scoped1, c.enter_scope() as scoped2:
         assert scoped1 is not scoped2
         assert scoped1.get(ScopedService) is scoped1.get(ScopedService)
         assert scoped2.get(ScopedService) is scoped2.get(ScopedService)
@@ -86,7 +86,7 @@ def test_scoped_container_cleansup_container_get() -> None:
     c = wireup.create_sync_container()
     c._registry.register(factory, lifetime=ServiceLifetime.TRANSIENT)
 
-    with wireup.enter_scope(c) as scoped:
+    with c.enter_scope() as scoped:
         assert scoped.get(SomeService)
 
     assert done

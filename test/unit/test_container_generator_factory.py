@@ -71,21 +71,7 @@ async def test_async_raise_close_async() -> None:
         container.close()
 
 
-async def test_raises_on_transient_dependency(container: Container) -> None:
-    Something = NewType("Something", str)
-
-    def some_factory() -> Iterator[Something]:
-        yield Something("foo")
-
-    container._registry.register(some_factory, lifetime=ServiceLifetime.TRANSIENT)
-
-    with pytest.raises(
-        WireupError, match="Container.get does not support Transient lifetime service generator factories."
-    ):
-        await run(container.get(Something))
-
-
-def test_injects_transient(container: Container) -> None:
+def test_injects_transient() -> None:
     _cleanups: list[str] = []
     Something = NewType("Something", str)
     SomethingElse = NewType("SomethingElse", str)
@@ -100,14 +86,17 @@ def test_injects_transient(container: Container) -> None:
         nonlocal _cleanups
         _cleanups.append("f2")
 
+    container = wireup.create_sync_container()
     container._registry.register(f1, lifetime=ServiceLifetime.TRANSIENT)
     container._registry.register(f2, lifetime=ServiceLifetime.TRANSIENT)
 
-    @make_inject_decorator(container)
+    @make_inject_decorator(container, lambda: scoped)
     def target(_: SomethingElse) -> None:
         pass
 
-    target()
+    with container.enter_scope() as scoped:
+        target()
+
     assert _cleanups == ["f2", "f1"]
 
 
@@ -130,7 +119,7 @@ async def test_async_injects_transient_sync_depends_on_async_result() -> None:
     container._registry.register(f1, lifetime=ServiceLifetime.TRANSIENT)
     container._registry.register(f2, lifetime=ServiceLifetime.TRANSIENT)
 
-    async with wireup.enter_async_scope(container) as scoped:
+    async with container.enter_scope() as scoped:
         await scoped.get(SomethingElse)
     assert _cleanups == ["f2", "f1"]
 

@@ -465,34 +465,33 @@ class TestContainer(unittest.IsolatedAsyncioTestCase):
 
     def test_container_register_transient(self):
         self.container._registry.register(Counter, lifetime=ServiceLifetime.TRANSIENT)
-        c1 = self.container.get(Counter)
-        c2 = self.container.get(Counter)
+        with self.container.enter_scope() as scoped:
+            c1 = scoped.get(Counter)
+            c2 = scoped.get(Counter)
 
-        c1.inc()
-        self.assertEqual(c1.count, 1)
-        self.assertEqual(c2.count, 0)
+            c1.inc()
+            self.assertEqual(c1.count, 1)
+            self.assertEqual(c2.count, 0)
 
     def test_container_register_transient_nested(self):
-        c = wireup.create_sync_container()
+        with wireup.create_sync_container().enter_scope() as c:
+            c._registry.register(TrulyRandomService, lifetime=ServiceLifetime.TRANSIENT)
+            c._registry.register(RandomService, lifetime=ServiceLifetime.TRANSIENT)
+            c1 = c.get(TrulyRandomService)
+            c2 = c.get(TrulyRandomService)
 
-        c._registry.register(TrulyRandomService, lifetime=ServiceLifetime.TRANSIENT)
-        c._registry.register(RandomService, lifetime=ServiceLifetime.TRANSIENT)
-        c1 = c.get(TrulyRandomService)
-        c2 = c.get(TrulyRandomService)
-
-        self.assertNotEqual(c1, c2)
-        self.assertNotEqual(c1.random_service, c2.random_service)
+            self.assertNotEqual(c1, c2)
+            self.assertNotEqual(c1.random_service, c2.random_service)
 
     def test_container_register_transient_nested_singletons(self):
-        c = wireup.create_sync_container()
+        with wireup.create_sync_container().enter_scope() as c:
+            c._registry.register(TrulyRandomService, lifetime=ServiceLifetime.TRANSIENT)
+            c._registry.register(RandomService, lifetime=ServiceLifetime.SINGLETON)
+            c1 = c.get(TrulyRandomService)
+            c2 = c.get(TrulyRandomService)
 
-        c._registry.register(TrulyRandomService, lifetime=ServiceLifetime.TRANSIENT)
-        c._registry.register(RandomService, lifetime=ServiceLifetime.SINGLETON)
-        c1 = c.get(TrulyRandomService)
-        c2 = c.get(TrulyRandomService)
-
-        self.assertNotEqual(c1, c2)
-        self.assertEqual(c1.random_service, c2.random_service)
+            self.assertNotEqual(c1, c2)
+            self.assertEqual(c1.random_service, c2.random_service)
 
     def test_injects_ctor(self):
         class Dummy:
@@ -536,16 +535,6 @@ class TestContainer(unittest.IsolatedAsyncioTestCase):
         # On the second call, container will drop b from dependencies as it is an unknown object.
         autowired()
         self.assertEqual(self.container._registry.context.dependencies[target].keys(), {"a"})
-
-    def test_returns_real_instances_on_second_build(self):
-        class Foo:
-            def bar(self):
-                pass
-
-        self.container._registry.register(Foo, lifetime=ServiceLifetime.TRANSIENT)
-        self.container.get(Foo).bar()
-
-        self.assertIsInstance(self.container.get(Foo), Foo)
 
     async def test_container_overrides_already_passed_keyword_args(self):
         self.container.params.put("foo", "Foo")

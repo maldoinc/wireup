@@ -50,7 +50,7 @@ async def test_container_params_returns_bag(container: Container) -> None:
 async def test_container_raises_get_transient_scoped(container: Container) -> None:
     msg = (
         "Cannot create 'transient' or 'scoped' lifetime objects from the base container. "
-        "Please enter a scope using wireup.enter_scope or wireup.enter_async_scope. "
+        "Please enter a scope using container.enter_scope. "
         "If you are within a scope, use the scoped container instance to create dependencies."
     )
 

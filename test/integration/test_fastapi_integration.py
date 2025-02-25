@@ -178,5 +178,5 @@ def test_raises_on_unknown_service(client: TestClient):
 
 async def test_raises_request_outside_of_scope(app: FastAPI) -> None:
     with pytest.raises(WireupError, match="fastapi.Request in wireup is only available during a request."):
-        async with wireup.enter_async_scope(get_container(app)) as scoped:
+        async with get_container(app).enter_scope() as scoped:
             await scoped.get(Request)

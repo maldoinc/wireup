@@ -1,6 +1,5 @@
 from flask import Flask, Response, g
 
-from wireup import enter_scope
 from wireup.decorators import make_inject_decorator
 from wireup.integration.util import is_view_using_container
 from wireup.ioc.container.sync_container import SyncContainer
@@ -24,7 +23,7 @@ def setup(container: SyncContainer, app: Flask, *, import_flask_config: bool = F
         container.params.update(dict(app.config.items()))  # type: ignore[reportArgumentType]
 
     def _before_request() -> None:
-        ctx = enter_scope(container)
+        ctx = container.enter_scope()
         g.wireup_container_ctx = ctx
         g.wireup_container = ctx.__enter__()
 
