@@ -249,20 +249,20 @@ class BaseContainer:
         elif self._current_scope is not None and lifetime == ServiceLifetime.SCOPED:
             self._current_scope.objects[object_identifier] = instance
 
-        if generator:
-            result_exit_stack = injection_result.exit_stack
-            if is_singleton:
-                self._global_scope.exit_stack.append(generator)
-                result_exit_stack = []
-            elif self._current_scope is not None:
-                self._current_scope.exit_stack.append(generator)
-                result_exit_stack = []
-            else:
-                result_exit_stack.append(generator)
+        if not generator:
+            return CreationResult(instance=instance, exit_stack=injection_result.exit_stack)
 
-            return CreationResult(instance=instance, exit_stack=result_exit_stack)
+        result_exit_stack = injection_result.exit_stack
+        if is_singleton:
+            self._global_scope.exit_stack.append(generator)
+            result_exit_stack = []
+        elif self._current_scope is not None:
+            self._current_scope.exit_stack.append(generator)
+            result_exit_stack = []
+        else:
+            result_exit_stack.append(generator)
 
-        return CreationResult(instance=instance, exit_stack=injection_result.exit_stack)
+        return CreationResult(instance=instance, exit_stack=result_exit_stack)
 
     def _assert_lifetime_is_valid(self, lifetime: ServiceLifetime) -> None:
         if lifetime is not ServiceLifetime.SINGLETON and self._current_scope is None:
