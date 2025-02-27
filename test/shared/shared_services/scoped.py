@@ -1,14 +1,6 @@
 from dataclasses import dataclass
 
-from typing_extensions import Annotated
-from wireup import Inject, service
-from wireup.ioc.types import ServiceLifetime
-
-
-@service
-@dataclass
-class IsTestService:
-    is_test: Annotated[bool, Inject(param="TESTING")]
+from wireup import ServiceLifetime, service
 
 
 @service(lifetime=ServiceLifetime.SCOPED)

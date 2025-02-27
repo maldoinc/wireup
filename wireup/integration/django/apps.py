@@ -41,7 +41,7 @@ sync_view_request_container: ContextVar[ScopedSyncContainer] = ContextVar("wireu
 def wireup_middleware(  # noqa: D103
     get_response: Callable[[HttpRequest], HttpResponse],
 ) -> Callable[[HttpRequest], HttpResponse | Awaitable[HttpResponse]]:
-    container = _get_base_container()
+    container = get_app_container()
 
     if asyncio.iscoroutinefunction(get_response):
 
@@ -81,18 +81,16 @@ def _django_request_factory() -> HttpRequest:
         raise WireupError(msg) from e
 
 
-def get_container() -> ScopedSyncContainer | ScopedAsyncContainer | AsyncContainer:
-    """Return the container instance associated with the current django application."""
+def get_request_container() -> ScopedSyncContainer | ScopedAsyncContainer:
+    """When inside a request, returns the scoped container instance handling the current request."""
     try:
         return async_view_request_container.get()
     except LookupError:
-        try:
-            return sync_view_request_container.get()
-        except LookupError:
-            return _get_base_container()
+        return sync_view_request_container.get()
 
 
-def _get_base_container() -> AsyncContainer:
+def get_app_container() -> AsyncContainer:
+    """Return the container instance associated with the current django application."""
     return apps.get_app_config(WireupConfig.name).container  # type: ignore[reportAttributeAccessIssue]
 
 
@@ -118,10 +116,7 @@ class WireupConfig(AppConfig):
             },
         )
         self.container._registry.register(_django_request_factory, lifetime=ServiceLifetime.SCOPED)
-        self.inject_scoped = make_inject_decorator(self.container, get_container)
-
-        if integration_settings.perform_warmup:
-            """fix warmup."""
+        self.inject_scoped = make_inject_decorator(self.container, get_request_container)
 
         self._inject(django.urls.get_resolver())
 
@@ -150,7 +145,7 @@ class WireupConfig(AppConfig):
         # This is taken from the django .as_view() method.
         @functools.wraps(callback)
         def view(request: HttpRequest, *args: Any, **kwargs: Any) -> Any:
-            provided_args: InjectionResult = get_container()._callable_get_params_to_inject(wrapped_type)
+            provided_args: InjectionResult = get_request_container()._callable_get_params_to_inject(wrapped_type)
 
             this = callback.view_class(**{**callback.view_initkwargs, **provided_args.kwargs})
             this.setup(request, *args, **kwargs)

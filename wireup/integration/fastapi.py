@@ -79,13 +79,13 @@ def setup(container: AsyncContainer, app: FastAPI) -> None:
     app.state.wireup_container = container
 
 
-def get_container(app: FastAPI) -> AsyncContainer:
-    """Return the container associated with the given application."""
+def get_app_container(app: FastAPI) -> AsyncContainer:
+    """Return the container associated with the given FastAPI application."""
     return app.state.wireup_container
 
 
 def get_request_container() -> ScopedAsyncContainer:
-    """Return the container associated with the current request/websocket."""
+    """When inside a request, returns the scoped container instance handling the current request."""
     try:
         return current_request.get().state.wireup_container
     except LookupError:

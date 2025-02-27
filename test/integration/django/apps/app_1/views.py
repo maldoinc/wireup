@@ -1,6 +1,6 @@
 from django.http import HttpRequest, HttpResponse
 
-from test.integration.django.service.greeter_interface import GreeterService
+from test.shared.shared_services.greeter import GreeterService
 
 
 def test(request: HttpRequest, greeter: GreeterService) -> HttpResponse:

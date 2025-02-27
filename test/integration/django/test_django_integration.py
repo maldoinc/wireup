@@ -8,10 +8,10 @@ from django.test import Client
 from django.urls import include, path
 from django.views.generic import TemplateView
 from wireup.integration.django import WireupSettings
-from wireup.integration.django.apps import get_container
+from wireup.integration.django.apps import get_request_container
 
 from test.integration.django import view
-from test.integration.django.service.greeter_interface import GreeterService
+from test.shared.shared_services.greeter import GreeterService
 
 INSTALLED_APPS = [
     "wireup.integration.django",
@@ -20,7 +20,13 @@ INSTALLED_APPS = [
 ]
 DEBUG = True
 ROOT_URLCONF = sys.modules[__name__]
-WIREUP = WireupSettings(service_modules=["test.integration.django.service", "test.integration.django.factory"])
+WIREUP = WireupSettings(
+    service_modules=[
+        "test.shared.shared_services",
+        "test.integration.django.service",
+        "test.integration.django.factory",
+    ]
+)
 SECRET_KEY = "not_actually_a_secret"  # noqa: S105
 START_NUM = 4
 
@@ -77,11 +83,11 @@ def test_get_templated_views(client: Client, path: str):
 
 
 def test_override(client: Client):
-    class DummyGreeter(GreeterService):
+    class RudeGreeter(GreeterService):
         def greet(self, name: str) -> str:
             return f"Bad day to you, {name}"
 
-    with get_container().override.service(GreeterService, new=DummyGreeter()):
+    with get_request_container().override.service(GreeterService, new=RudeGreeter()):
         res = client.get("/classbased?name=Test")
 
     assert res.status_code == 200

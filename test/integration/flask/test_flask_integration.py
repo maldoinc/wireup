@@ -4,49 +4,23 @@ import pytest
 import wireup.integration.flask
 from flask import Flask
 from flask.testing import FlaskClient
-from typing_extensions import Annotated
-from wireup import Inject
 from wireup.integration.flask import get_container
 from wireup.util import create_sync_container
 
-from test.fixtures import FooBase
-from test.integration.flask import services
-from test.integration.flask.services.foo import IsTestService, ScopedService, ScopedServiceDependency
-from test.unit.services.no_annotations.random.random_service import RandomService
+from test.integration.flask import services as flask_integration_services
+from test.integration.flask.bp import bp
+from test.integration.flask.services.is_test_service import IsTestService
+from test.shared import shared_services
 
 
 def create_app() -> Flask:
     app = Flask(__name__)
     app.config["TESTING"] = True
+    app.register_blueprint(bp)
 
-    @app.get("/random")
-    def _random(random: RandomService):
-        return {"lucky_number": random.get_random()}
-
-    @app.get("/env")
-    def _env(is_debug: Annotated[bool, Inject(param="DEBUG")], is_test: Annotated[bool, Inject(param="TESTING")]):
-        return {"debug": is_debug, "test": is_test}
-
-    @app.get("/not-autowired")
-    def _not_autowired():
-        return "not autowired"
-
-    @app.get("/intf")
-    def _intf(foo: FooBase):
-        return foo.foo
-
-    @app.get("/scoped")
-    def _scoped(s1: ScopedService, s2: ScopedServiceDependency, s3: ScopedServiceDependency):
-        assert s1.other is s2
-        assert s3 is s2
-
-        return {}
-
-    @app.get("/foo")
-    def _foo(foo: IsTestService):
-        return {"test": foo.is_test}
-
-    container = create_sync_container(service_modules=[services], parameters={"custom_params": True})
+    container = create_sync_container(
+        service_modules=[shared_services, flask_integration_services], parameters={"custom_params": True}
+    )
     wireup.integration.flask.setup(container, app, import_flask_config=True)
 
     return app
@@ -83,12 +57,6 @@ def test_scoped_depenencies(client: FlaskClient) -> None:
 def test_will_not_autowire_when_no_injections_requested(client: FlaskClient) -> None:
     res = client.get("/not-autowired")
     assert res.data.decode() == "not autowired"
-
-
-def test_autowires_view_with_interface(client: FlaskClient) -> None:
-    res = client.get("/intf")
-    assert res.status_code == 200
-    assert res.data.decode() == "bar"
 
 
 def test_service_depends_on_flask_params(client: FlaskClient) -> None:

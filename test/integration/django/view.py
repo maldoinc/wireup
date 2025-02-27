@@ -4,8 +4,8 @@ from typing_extensions import Annotated
 from wireup import Inject
 
 from test.integration.django.service.current_request_service import CurrentDjangoRequest
-from test.integration.django.service.greeter_interface import GreeterService
 from test.integration.django.service.random_service import RandomService
+from test.shared.shared_services.greeter import GreeterService
 
 
 def index(
