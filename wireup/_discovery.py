@@ -1,53 +1,20 @@
 from __future__ import annotations
 
 import fnmatch
-import functools
 import importlib
 import inspect
 import re
-import types
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, TypeVar
+from types import FunctionType, ModuleType
+from typing import TYPE_CHECKING, Any, Callable
 
 from wireup.annotation import AbstractDeclaration, ServiceDeclaration
-from wireup.ioc.container.async_container import AsyncContainer
-from wireup.ioc.container.base_container import BaseContainer
-from wireup.ioc.container.sync_container import SyncContainer
-from wireup.ioc.parameter import ParameterBag
-from wireup.ioc.service_registry import ServiceRegistry
-from wireup.ioc.types import ContainerScope
 
 if TYPE_CHECKING:
-    from collections.abc import Callable
-    from types import ModuleType
-
-_ContainerT = TypeVar("_ContainerT", bound=BaseContainer)
+    from wireup.ioc.service_registry import ServiceRegistry
 
 
-def _create_container(
-    klass: type[_ContainerT],
-    *,
-    service_modules: list[ModuleType] | None = None,
-    parameters: dict[str, Any] | None = None,
-) -> _ContainerT:
-    """Create a container with the given parameters and register all services found in service modules."""
-    container = klass(
-        registry=ServiceRegistry(),
-        parameters=ParameterBag(parameters),
-        global_scope=ContainerScope(),
-        overrides={},
-    )
-    if service_modules:
-        _register_services(container._registry, service_modules)
-
-    return container
-
-
-create_sync_container = functools.partial(_create_container, SyncContainer)
-create_async_container = functools.partial(_create_container, AsyncContainer)
-
-
-def _register_services(registry: ServiceRegistry, service_modules: list[ModuleType]) -> None:
+def register_services_from_modules(registry: ServiceRegistry, service_modules: list[ModuleType]) -> None:
     abstract_registrations: set[type[Any]] = set()
     service_registrations: list[ServiceDeclaration] = []
 
@@ -55,7 +22,7 @@ def _register_services(registry: ServiceRegistry, service_modules: list[ModuleTy
         # Check that the hasattr call is only made on user defined functions and classes.
         # This is so that it avoids interacting with proxies and things such as flask.g when imported.
         # "from flask import g" would cause a hasattr call to g outside of app context.
-        return (isinstance(obj, types.FunctionType) or inspect.isclass(obj)) and hasattr(obj, "__wireup_registration__")
+        return (isinstance(obj, FunctionType) or inspect.isclass(obj)) and hasattr(obj, "__wireup_registration__")
 
     for module in service_modules:
         for cls in _find_objects_in_module(module, predicate=_is_valid_wireup_target):
