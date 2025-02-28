@@ -1,9 +1,7 @@
 from __future__ import annotations
 
-import fnmatch
 import importlib
 import inspect
-import re
 from pathlib import Path
 from types import FunctionType, ModuleType
 from typing import TYPE_CHECKING, Any, Callable
@@ -41,19 +39,11 @@ def register_services_from_modules(registry: ServiceRegistry, service_modules: l
             registry.register(obj=svc.obj, qualifier=svc.qualifier, lifetime=svc.lifetime)
 
 
-def _find_objects_in_module(
-    module: ModuleType, predicate: Callable[[Any], bool], pattern: str | re.Pattern[str] = "*"
-) -> set[type]:
+def _find_objects_in_module(module: ModuleType, predicate: Callable[[Any], bool]) -> set[type]:
     classes: set[type[Any]] = set()
 
     def _module_get_objects(m: ModuleType) -> set[type]:
-        return {
-            obj
-            for name, obj in inspect.getmembers(m)
-            if predicate(obj)
-            and obj.__module__.startswith(m.__name__)
-            and (fnmatch.fnmatch(name, pattern) if isinstance(pattern, str) else re.match(pattern, name))
-        }
+        return {obj for _, obj in inspect.getmembers(m) if predicate(obj)}
 
     def _find_in_path(path: Path, parent_module_name: str) -> None:
         for file in path.iterdir():
