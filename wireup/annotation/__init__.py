@@ -107,20 +107,15 @@ def service(
     If used on a function it will register it as a factory for the class
     denoted by its return type.
     """
+
     # Allow this to be used as a decorator factory or as a decorator directly.
-    if obj is None:
+    def _service_decorator(decorated_obj: T) -> T:
+        decorated_obj.__wireup_registration__ = ServiceDeclaration(  # type: ignore[attr-defined]
+            obj=decorated_obj, qualifier=qualifier, lifetime=lifetime
+        )
+        return decorated_obj
 
-        def decorator(decorated_obj: T) -> T:
-            decorated_obj.__wireup_registration__ = ServiceDeclaration(  # type: ignore[attr-defined]
-                obj=decorated_obj, qualifier=qualifier, lifetime=lifetime
-            )
-            return decorated_obj
-
-        return decorator
-
-    obj.__wireup_registration__ = ServiceDeclaration(obj=obj)  # type: ignore[attr-defined]
-
-    return obj
+    return _service_decorator if obj is None else _service_decorator(obj)
 
 
 def abstract(cls: type[T]) -> type[T]:
