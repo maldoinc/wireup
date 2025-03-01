@@ -5,7 +5,6 @@ import wireup.integration.flask
 from flask import Flask
 from flask.testing import FlaskClient
 from wireup.integration.flask import get_container
-from wireup.util import create_sync_container
 
 from test.integration.flask import services as flask_integration_services
 from test.integration.flask.bp import bp
@@ -18,7 +17,7 @@ def create_app() -> Flask:
     app.config["TESTING"] = True
     app.register_blueprint(bp)
 
-    container = create_sync_container(
+    container = wireup.create_sync_container(
         service_modules=[shared_services, flask_integration_services], parameters={"custom_params": True}
     )
     wireup.integration.flask.setup(container, app, import_flask_config=True)

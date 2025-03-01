@@ -8,7 +8,7 @@ from django.test import Client
 from django.urls import include, path
 from django.views.generic import TemplateView
 from wireup.integration.django import WireupSettings
-from wireup.integration.django.apps import get_request_container
+from wireup.integration.django.apps import get_app_container, get_request_container
 
 from test.integration.django import view
 from test.shared.shared_services.greeter import GreeterService
@@ -87,7 +87,7 @@ def test_override(client: Client):
         def greet(self, name: str) -> str:
             return f"Bad day to you, {name}"
 
-    with get_request_container().override.service(GreeterService, new=RudeGreeter()):
+    with get_app_container().override.service(GreeterService, new=RudeGreeter()):
         res = client.get("/classbased?name=Test")
 
     assert res.status_code == 200
