@@ -200,9 +200,8 @@ class BaseContainer:
 
         if factory_type in {FactoryType.ASYNC_GENERATOR, FactoryType.COROUTINE_FN}:
             msg = (
-                f"{klass} is an async dependency and it cannot be created in a blocking context. "
-                f"You likely used `container.get({klass.__module__}.{klass.__name__})` or called `get` on a dependent. "
-                "Use `await container.aget` instead of `container.get`."
+                f"{klass} is an async dependency and it cannot be created in a synchronous context. "
+                "Create and use an async container via wireup.create_async_container. "
             )
             raise WireupError(msg)
 

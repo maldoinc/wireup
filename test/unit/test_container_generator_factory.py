@@ -165,9 +165,8 @@ def test_sync_raises_when_generating_async() -> None:
     with pytest.raises(
         WireupError,
         match=re.escape(
-            f"{Something} is an async dependency and it cannot be created in a blocking context. "
-            f"You likely used `container.get({Something.__module__}.{Something.__name__})` or called `get` on a dependent. "  # noqa: E501
-            "Use `await container.aget` instead of `container.get`."
+            f"{Something} is an async dependency and it cannot be created in a synchronous context. "
+            "Create and use an async container via wireup.create_async_container. "
         ),
     ):
         target()
