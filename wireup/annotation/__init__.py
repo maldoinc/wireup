@@ -123,12 +123,3 @@ def abstract(cls: type[T]) -> type[T]:
     cls.__wireup_registration__ = AbstractDeclaration()  # type: ignore[attr-defined]
 
     return cls
-
-
-__all__ = [
-    "AbstractDeclaration",
-    "Inject",
-    "ServiceDeclaration",
-    "abstract",
-    "service",
-]
