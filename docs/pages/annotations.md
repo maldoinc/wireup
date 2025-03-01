@@ -31,20 +31,6 @@ def target(
     ...
 ```
 
-### Default values (deprecated)
-
-This relies on the use of default values to inject parameters. Anything that can be passed to `Annotated` may also
-be used here.
-
-```python
-@container.autowire
-def target(
-    env: str = Inject(param="env_name"), 
-    logs_cache_dir: str = Inject(expr="${cache_dir}/logs")
-):
-    ...
-```
-
 ### Explicit injection annotation
 Even though annotating services is optional, you CAN still annotate them to be explicit about what will 
 be injected. This also has the benefit of raising when the service does not exist instead
