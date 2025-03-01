@@ -23,7 +23,13 @@ def _create_container(
     service_modules: list[ModuleType] | None = None,
     parameters: dict[str, Any] | None = None,
 ) -> _ContainerT:
-    """Create a container with the given parameters and register all services found in service modules."""
+    """Create a Wireup container.
+
+    :param service_modules: This is a list of top-level modules containing services registered
+    with `@service` or `@abstract`. Wireup will recursively scan the modules and register services found in them.
+    :param parameters: Dict containing parameters you want to expose to the container. Services or factories can
+    request parameters via the `Inject(param="name")` syntax.
+    """
     container = klass(
         registry=ServiceRegistry(),
         parameters=ParameterBag(parameters),
