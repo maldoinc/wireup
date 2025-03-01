@@ -6,6 +6,7 @@ from wireup import Inject, ServiceLifetime
 from wireup.errors import (
     DuplicateServiceRegistrationError,
     FactoryReturnTypeIsEmptyError,
+    InvalidRegistrationTypeError,
 )
 from wireup.ioc.service_registry import ServiceRegistry
 from wireup.ioc.types import AnnotatedParameter, ParameterWrapper
@@ -112,6 +113,10 @@ class TestServiceRegistry(unittest.TestCase):
         self.registry.register(y_factory, lifetime=ServiceLifetime.SINGLETON)
 
         self.assertEqual(self.registry.context.lifetime[Y], ServiceLifetime.SINGLETON)
+
+    def test_register_invalid_target(self) -> None:
+        with self.assertRaises(InvalidRegistrationTypeError):
+            self.registry.register(1)
 
 
 class MyService:

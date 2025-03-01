@@ -11,6 +11,7 @@ from wireup.errors import (
     DuplicateQualifierForInterfaceError,
     DuplicateServiceRegistrationError,
     FactoryReturnTypeIsEmptyError,
+    InvalidRegistrationTypeError,
     UnknownQualifiedServiceRequestedError,
 )
 from wireup.ioc.initialization_context import InitializationContext, InjectionTarget
@@ -83,6 +84,9 @@ class ServiceRegistry:
         lifetime: ServiceLifetime = ServiceLifetime.SINGLETON,
         qualifier: Qualifier | None = None,
     ) -> None:
+        if not callable(obj):
+            raise InvalidRegistrationTypeError(obj)
+
         return_type_result = _function_get_unwrapped_return_type(obj)
 
         if return_type_result is None:

@@ -82,10 +82,10 @@ class UsageOfQualifierOnUnknownObjectError(WireupError):
 
 
 class InvalidRegistrationTypeError(WireupError):
-    """Raised when attempting to call @container.register with an invalid argument."""
+    """Raised when attempting to register an invalid object type as a service."""
 
     def __init__(self, attempted: Any) -> None:
-        super().__init__(f"Cannot register {attempted} with the container. Allowed types are callables and types")
+        super().__init__(f"Cannot register {attempted} with the container. Allowed types are callables and types.")
 
 
 class UnknownOverrideRequestedError(WireupError):
