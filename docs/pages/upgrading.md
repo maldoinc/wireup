@@ -65,3 +65,10 @@ Use `DuplicateServiceRegistrationError` instead.
 ### Django Integration
 
 The `perform_wramup` setting is removed.
+
+
+### Flask Integration
+
+Removed `import_flask_config` setting from the integration.
+Instead expose flask config directly to the create_sync_container call.
+See Flask integration docs for more info.

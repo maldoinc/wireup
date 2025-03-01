@@ -14,13 +14,11 @@ def _inject_views(container: SyncContainer, app: Flask) -> None:
     }
 
 
-def setup(container: SyncContainer, app: Flask, *, import_flask_config: bool = False) -> None:
+def setup(container: SyncContainer, app: Flask) -> None:
     """Integrate Wireup with Flask.
 
     This can import Flask config in the container and will automatically inject dependencies in views.
     """
-    if import_flask_config:
-        container.params.update(dict(app.config.items()))  # type: ignore[reportArgumentType]
 
     def _before_request() -> None:
         ctx = container.enter_scope()
