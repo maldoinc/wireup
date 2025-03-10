@@ -241,11 +241,11 @@ class BaseContainer:
         object_identifier: ContainerObjectIdentifier,
         injection_result: InjectionResult,
     ) -> CreationResult:
-        is_singleton = lifetime == ServiceLifetime.SINGLETON
+        is_singleton = lifetime == "singleton"
 
         if is_singleton:
             self._global_scope.objects[object_identifier] = instance
-        elif self._current_scope is not None and lifetime == ServiceLifetime.SCOPED:
+        elif self._current_scope is not None and lifetime == "scoped":
             self._current_scope.objects[object_identifier] = instance
 
         if not generator:
@@ -264,7 +264,7 @@ class BaseContainer:
         return CreationResult(instance=instance, exit_stack=result_exit_stack)
 
     def _assert_lifetime_is_valid(self, lifetime: ServiceLifetime) -> None:
-        if lifetime is not ServiceLifetime.SINGLETON and self._current_scope is None:
+        if lifetime != "singleton" and self._current_scope is None:
             msg = (
                 "Cannot create 'transient' or 'scoped' lifetime objects from the base container. "
                 "Please enter a scope using container.enter_scope. "

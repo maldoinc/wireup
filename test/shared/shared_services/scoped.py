@@ -1,13 +1,13 @@
 from dataclasses import dataclass
 
-from wireup import ServiceLifetime, service
+from wireup import service
 
 
-@service(lifetime=ServiceLifetime.SCOPED)
+@service(lifetime="scoped")
 class ScopedServiceDependency: ...
 
 
-@service(lifetime=ServiceLifetime.SCOPED)
+@service(lifetime="scoped")
 @dataclass
 class ScopedService:
     other: ScopedServiceDependency

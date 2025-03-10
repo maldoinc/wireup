@@ -71,12 +71,12 @@ Services depending on it should be transient, so that you get a fresh copy
 every time with the current request being processed.
 
 ```python
-@service(lifetime=ServiceLifetime.TRANSIENT)
+@service(lifetime="transient")
 class HttpAuthenticationService:
     def __init__(self, request: fastapi.Request) -> None: ...
 
 
-@service(lifetime=ServiceLifetime.TRANSIENT)
+@service(lifetime="transient")
 def example_factory(request: fastapi.Request) -> ExampleService: ...
 ```
 

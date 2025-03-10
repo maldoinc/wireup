@@ -69,7 +69,7 @@ class ServiceDeclaration:
 
     obj: Any
     qualifier: Qualifier | None = None
-    lifetime: ServiceLifetime = ServiceLifetime.SINGLETON
+    lifetime: ServiceLifetime = "singleton"
 
 
 class AbstractDeclaration:
@@ -81,7 +81,7 @@ def service(
     obj: None = None,
     *,
     qualifier: Qualifier | None = None,
-    lifetime: ServiceLifetime = ServiceLifetime.SINGLETON,
+    lifetime: ServiceLifetime = "singleton",
 ) -> Callable[[T], T]:
     pass
 
@@ -91,7 +91,7 @@ def service(
     obj: T,
     *,
     qualifier: Qualifier | None = None,
-    lifetime: ServiceLifetime = ServiceLifetime.SINGLETON,
+    lifetime: ServiceLifetime = "singleton",
 ) -> T:
     pass
 
@@ -100,7 +100,7 @@ def service(
     obj: T | None = None,
     *,
     qualifier: Qualifier | None = None,
-    lifetime: ServiceLifetime = ServiceLifetime.SINGLETON,
+    lifetime: ServiceLifetime = "singleton",
 ) -> T | Callable[[T], T]:
     """Mark the decorated class as a service.
 

@@ -2,8 +2,9 @@ from __future__ import annotations
 
 from collections.abc import Hashable
 from dataclasses import dataclass, field
-from enum import Enum, auto
 from typing import TYPE_CHECKING, Any, Callable, Optional, Tuple, Union
+
+from typing_extensions import Literal
 
 if TYPE_CHECKING:
     from types import AsyncGeneratorType, GeneratorType
@@ -63,20 +64,7 @@ class EmptyContainerInjectionRequest(InjectableType):
     """
 
 
-class ServiceLifetime(Enum):
-    """Determines the lifetime of a service."""
-
-    SINGLETON = auto()
-    """Singleton services are initialized once and reused throughout the lifetime of the container."""
-
-    SCOPED = auto()
-    """Scoped objects live for the duration of the scope.
-
-    When not in a scoped container, these will be treated as transient services.
-    """
-
-    TRANSIENT = auto()
-    """Transient services will have a fresh instance initialized on every injection."""
+ServiceLifetime = Literal["singleton", "scoped", "transient"]
 
 
 class AnnotatedParameter:

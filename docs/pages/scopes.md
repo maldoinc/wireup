@@ -7,10 +7,10 @@ Assume a container with the following services
 @service
 class GreeterService: ...
 
-@service(lifetime=ServiceLifetime.SCOPED)
+@service(lifetime="scoped")
 class TransactionManager: ...
 
-@service(lifetime=ServiceLifetime.TRANSIENT)
+@service(lifetime="transient")
 class Transaction: ...
 ```
 

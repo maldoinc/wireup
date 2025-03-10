@@ -16,9 +16,6 @@ from django.urls import URLPattern, URLResolver
 from django.utils.decorators import sync_and_async_middleware
 
 import wireup
-from wireup import (
-    ServiceLifetime,
-)
 from wireup.decorators import make_inject_decorator
 from wireup.errors import WireupError
 from wireup.ioc.container.async_container import ScopedAsyncContainer, async_container_force_sync_scope
@@ -115,7 +112,7 @@ class WireupConfig(AppConfig):
                 if not entry.startswith("__") and hasattr(settings, entry)
             },
         )
-        self.container._registry.register(_django_request_factory, lifetime=ServiceLifetime.SCOPED)
+        self.container._registry.register(_django_request_factory, lifetime="scoped")
         self.inject_scoped = make_inject_decorator(self.container, get_request_container)
 
         self._inject(django.urls.get_resolver())

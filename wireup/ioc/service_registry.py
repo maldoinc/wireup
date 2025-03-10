@@ -15,12 +15,12 @@ from wireup.errors import (
     UnknownQualifiedServiceRequestedError,
 )
 from wireup.ioc.initialization_context import InitializationContext, InjectionTarget
-from wireup.ioc.types import ServiceLifetime
 from wireup.ioc.util import _get_globals, ensure_is_type, is_type_injectable, param_get_annotation
 
 if TYPE_CHECKING:
     from wireup.ioc.types import (
         Qualifier,
+        ServiceLifetime,
     )
 
 
@@ -81,7 +81,7 @@ class ServiceRegistry:
     def register(
         self,
         obj: Callable[..., Any],
-        lifetime: ServiceLifetime = ServiceLifetime.SINGLETON,
+        lifetime: ServiceLifetime = "singleton",
         qualifier: Qualifier | None = None,
     ) -> None:
         if not callable(obj):

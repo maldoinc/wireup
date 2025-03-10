@@ -7,7 +7,7 @@ from unittest.mock import MagicMock, Mock, patch
 
 import wireup
 from typing_extensions import Annotated
-from wireup import Inject, ServiceLifetime
+from wireup import Inject
 from wireup.decorators import make_inject_decorator
 from wireup.errors import (
     DuplicateQualifierForInterfaceError,
@@ -464,7 +464,7 @@ class TestContainer(unittest.IsolatedAsyncioTestCase):
         inner()
 
     def test_container_register_transient(self):
-        self.container._registry.register(Counter, lifetime=ServiceLifetime.TRANSIENT)
+        self.container._registry.register(Counter, lifetime="transient")
         with self.container.enter_scope() as scoped:
             c1 = scoped.get(Counter)
             c2 = scoped.get(Counter)
@@ -475,8 +475,8 @@ class TestContainer(unittest.IsolatedAsyncioTestCase):
 
     def test_container_register_transient_nested(self):
         with wireup.create_sync_container().enter_scope() as c:
-            c._registry.register(TrulyRandomService, lifetime=ServiceLifetime.TRANSIENT)
-            c._registry.register(RandomService, lifetime=ServiceLifetime.TRANSIENT)
+            c._registry.register(TrulyRandomService, lifetime="transient")
+            c._registry.register(RandomService, lifetime="transient")
             c1 = c.get(TrulyRandomService)
             c2 = c.get(TrulyRandomService)
 
@@ -485,8 +485,8 @@ class TestContainer(unittest.IsolatedAsyncioTestCase):
 
     def test_container_register_transient_nested_singletons(self):
         with wireup.create_sync_container().enter_scope() as c:
-            c._registry.register(TrulyRandomService, lifetime=ServiceLifetime.TRANSIENT)
-            c._registry.register(RandomService, lifetime=ServiceLifetime.SINGLETON)
+            c._registry.register(TrulyRandomService, lifetime="transient")
+            c._registry.register(RandomService, lifetime="singleton")
             c1 = c.get(TrulyRandomService)
             c2 = c.get(TrulyRandomService)
 

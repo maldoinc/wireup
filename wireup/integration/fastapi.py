@@ -5,7 +5,6 @@ from typing import Any, Awaitable, Callable
 from fastapi import FastAPI, Request, Response
 from fastapi.routing import APIRoute, APIWebSocketRoute
 
-from wireup import ServiceLifetime
 from wireup.decorators import make_inject_decorator
 from wireup.errors import WireupError
 from wireup.integration.util import is_view_using_container
@@ -73,7 +72,7 @@ def setup(container: AsyncContainer, app: FastAPI) -> None:
 
     This will automatically inject dependencies on FastAPI routers.
     """
-    container._registry.register(_fastapi_request_factory, lifetime=ServiceLifetime.SCOPED)
+    container._registry.register(_fastapi_request_factory, lifetime="scoped")
     app.middleware("http")(_wireup_request_middleware)
     _inject_routes(container, app)
     app.state.wireup_container = container

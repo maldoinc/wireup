@@ -1,7 +1,7 @@
 import pytest
 from wireup import Inject
 from wireup.ioc.initialization_context import InitializationContext
-from wireup.ioc.types import AnnotatedParameter, ServiceLifetime
+from wireup.ioc.types import AnnotatedParameter
 
 from test.unit.services.no_annotations.random.random_service import RandomService
 
@@ -18,9 +18,9 @@ def test_init_target(context: InitializationContext):
 
 
 def test_init_target_with_lifetime(context: InitializationContext):
-    assert context.init_target(RandomService, ServiceLifetime.SINGLETON)
+    assert context.init_target(RandomService, "singleton")
     assert RandomService in context.lifetime
-    assert context.lifetime[RandomService] == ServiceLifetime.SINGLETON
+    assert context.lifetime[RandomService] == "singleton"
 
 
 def test_init_target_existing(context: InitializationContext):

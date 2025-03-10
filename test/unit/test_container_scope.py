@@ -1,7 +1,6 @@
 from typing import Iterator
 
 import wireup
-from wireup.ioc.types import ServiceLifetime
 
 
 class SingletonService: ...
@@ -56,7 +55,7 @@ def test_scoped_container_singleton_in_scope() -> None:
 
 def test_scoped_container_reuses_instance_container_get() -> None:
     c = wireup.create_sync_container()
-    c._registry.register(ScopedService, lifetime=ServiceLifetime.SCOPED)
+    c._registry.register(ScopedService, lifetime="scoped")
 
     with c.enter_scope() as scoped:
         assert scoped.get(ScopedService) is scoped.get(ScopedService)
@@ -64,7 +63,7 @@ def test_scoped_container_reuses_instance_container_get() -> None:
 
 def test_scoped_container_multiple_scopes() -> None:
     c = wireup.create_sync_container()
-    c._registry.register(ScopedService, lifetime=ServiceLifetime.SCOPED)
+    c._registry.register(ScopedService, lifetime="scoped")
 
     with c.enter_scope() as scoped1, c.enter_scope() as scoped2:
         assert scoped1 is not scoped2
@@ -84,7 +83,7 @@ def test_scoped_container_cleansup_container_get() -> None:
         done = True
 
     c = wireup.create_sync_container()
-    c._registry.register(factory, lifetime=ServiceLifetime.TRANSIENT)
+    c._registry.register(factory, lifetime="transient")
 
     with c.enter_scope() as scoped:
         assert scoped.get(SomeService)

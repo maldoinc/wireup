@@ -67,7 +67,7 @@ from wireup import service, ServiceLifetime
 AuthenticatedUser = NewType("AuthenticatedUser", User)
 
 
-@service(lifetime=ServiceLifetime.TRANSIENT)
+@service(lifetime="transient")
 def get_current_user(auth_service: AuthService) -> AuthenticatedUser:
     return AuthenticatedUser(auth_service.get_current_user())
 
@@ -88,7 +88,7 @@ Given a user it is possible to instantiate the correct type of notifier based on
 from wireup import service, ServiceLifetime
 
 
-@service(lifetime=ServiceLifetime.TRANSIENT)
+@service(lifetime="transient")
 def get_user_notifier(
     user: AuthenticatedUser, 
     slack_notifier: SlackNotifier, 

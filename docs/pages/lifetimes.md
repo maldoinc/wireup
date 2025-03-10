@@ -11,10 +11,10 @@ Take the following services.
 @service
 class SingletonService: ...
 
-@service(lifetime=ServiceLifetime.TRANSIENT)
+@service(lifetime="transient")
 class TransientService: ...
 
-@service(lifetime=ServiceLifetime.SCOPED)
+@service(lifetime="scoped")
 class ScopedService: ...
 ```
 

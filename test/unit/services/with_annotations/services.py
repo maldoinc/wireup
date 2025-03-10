@@ -2,7 +2,6 @@ import abc
 
 from typing_extensions import Annotated
 from wireup import Inject, abstract, service
-from wireup.ioc.types import ServiceLifetime
 
 from test.unit.services.no_annotations.random.random_service import RandomService
 from test.unit.services.no_annotations.random.truly_random_service import TrulyRandomService
@@ -33,9 +32,9 @@ class FooImpl(IFoo):
         return "foo"
 
 
-@service(lifetime=ServiceLifetime.SCOPED)
+@service(lifetime="scoped")
 class ScopedService: ...
 
 
-@service(lifetime=ServiceLifetime.TRANSIENT)
+@service(lifetime="transient")
 class TransientService: ...

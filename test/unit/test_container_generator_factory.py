@@ -5,7 +5,6 @@ import pytest
 import wireup
 from wireup.decorators import make_inject_decorator
 from wireup.errors import ContainerCloseError, WireupError
-from wireup.ioc.types import ServiceLifetime
 
 from test.conftest import Container
 from test.unit.util import run
@@ -87,8 +86,8 @@ def test_injects_transient() -> None:
         _cleanups.append("f2")
 
     container = wireup.create_sync_container()
-    container._registry.register(f1, lifetime=ServiceLifetime.TRANSIENT)
-    container._registry.register(f2, lifetime=ServiceLifetime.TRANSIENT)
+    container._registry.register(f1, lifetime="transient")
+    container._registry.register(f2, lifetime="transient")
 
     @make_inject_decorator(container, lambda: scoped)
     def target(_: SomethingElse) -> None:
@@ -116,8 +115,8 @@ async def test_async_injects_transient_sync_depends_on_async_result() -> None:
         _cleanups.append("f2")
 
     container = wireup.create_async_container()
-    container._registry.register(f1, lifetime=ServiceLifetime.TRANSIENT)
-    container._registry.register(f2, lifetime=ServiceLifetime.TRANSIENT)
+    container._registry.register(f1, lifetime="transient")
+    container._registry.register(f2, lifetime="transient")
 
     async with container.enter_scope() as scoped:
         await scoped.get(SomethingElse)

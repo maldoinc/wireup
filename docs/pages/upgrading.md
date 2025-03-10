@@ -61,6 +61,10 @@ No direct replacement is offered. Create your own container instance instead via
 
 Use `DuplicateServiceRegistrationError` instead.
 
+#### Removed `ServiceLifetime` enum in favor of literals.
+
+Replace `ServiceLifetime.SINGLETON` with `"singleton"`, `ServiceLifetime.TRANSIENT` with `"transient"`.
+
 
 ### Django Integration
 

@@ -2,7 +2,7 @@ from typing import NewType
 
 import pytest
 from typing_extensions import Annotated
-from wireup import Inject, ServiceLifetime
+from wireup import Inject
 from wireup.errors import (
     DuplicateServiceRegistrationError,
     FactoryReturnTypeIsEmptyError,
@@ -20,15 +20,15 @@ def registry():
 
 
 def test_register_service(registry: ServiceRegistry) -> None:
-    registry.register(MyService, qualifier="default", lifetime=ServiceLifetime.SINGLETON)
+    registry.register(MyService, qualifier="default", lifetime="singleton")
 
     assert MyService in registry.impls
     assert registry.is_impl_with_qualifier_known(MyService, "default")
     assert registry.is_type_with_qualifier_known(MyService, "default")
-    assert registry.context.lifetime[MyService] == ServiceLifetime.SINGLETON
+    assert registry.context.lifetime[MyService] == "singleton"
 
     with pytest.raises(DuplicateServiceRegistrationError):
-        registry.register(MyService, qualifier="default", lifetime=ServiceLifetime.SINGLETON)
+        registry.register(MyService, qualifier="default", lifetime="singleton")
 
 
 def test_register_abstract(registry: ServiceRegistry) -> None:
@@ -37,7 +37,7 @@ def test_register_abstract(registry: ServiceRegistry) -> None:
 
 
 def test_register_factory(registry: ServiceRegistry) -> None:
-    registry.register(random_service_factory, lifetime=ServiceLifetime.SINGLETON)
+    registry.register(random_service_factory, lifetime="singleton")
 
     assert (RandomService, None) in registry.factories
     assert registry.impls[RandomService] == {None}
@@ -46,30 +46,30 @@ def test_register_factory(registry: ServiceRegistry) -> None:
         pass
 
     with pytest.raises(FactoryReturnTypeIsEmptyError):
-        registry.register(invalid_factory, lifetime=ServiceLifetime.SINGLETON)
+        registry.register(invalid_factory, lifetime="singleton")
 
     with pytest.raises(DuplicateServiceRegistrationError):
-        registry.register(random_service_factory, lifetime=ServiceLifetime.SINGLETON)
+        registry.register(random_service_factory, lifetime="singleton")
 
 
 def test_is_impl_known(registry: ServiceRegistry) -> None:
     assert MyService not in registry.impls
 
-    registry.register(MyService, qualifier="default", lifetime=ServiceLifetime.SINGLETON)
+    registry.register(MyService, qualifier="default", lifetime="singleton")
     assert MyService in registry.impls
 
 
 def test_is_impl_with_qualifier_known(registry: ServiceRegistry) -> None:
     assert not registry.is_impl_with_qualifier_known(MyService, "default")
 
-    registry.register(MyService, qualifier="default", lifetime=ServiceLifetime.SINGLETON)
+    registry.register(MyService, qualifier="default", lifetime="singleton")
     assert registry.is_impl_with_qualifier_known(MyService, "default")
 
 
 def test_is_type_with_qualifier_known(registry: ServiceRegistry) -> None:
     assert not registry.is_type_with_qualifier_known(MyService, "default")
 
-    registry.register(MyService, qualifier="default", lifetime=ServiceLifetime.SINGLETON)
+    registry.register(MyService, qualifier="default", lifetime="singleton")
     assert registry.is_type_with_qualifier_known(MyService, "default")
 
 
@@ -99,9 +99,9 @@ def test_registry_newtypes_class(registry: ServiceRegistry) -> None:
     def y_factory() -> Y:
         return Y(X())
 
-    registry.register(y_factory, lifetime=ServiceLifetime.SINGLETON)
+    registry.register(y_factory, lifetime="singleton")
 
-    assert registry.context.lifetime[Y] == ServiceLifetime.SINGLETON
+    assert registry.context.lifetime[Y] == "singleton"
 
 
 def test_registry_newtypes_anything(registry: ServiceRegistry) -> None:
@@ -110,9 +110,9 @@ def test_registry_newtypes_anything(registry: ServiceRegistry) -> None:
     def y_factory() -> Y:
         return Y("Hi")
 
-    registry.register(y_factory, lifetime=ServiceLifetime.SINGLETON)
+    registry.register(y_factory, lifetime="singleton")
 
-    assert registry.context.lifetime[Y] == ServiceLifetime.SINGLETON
+    assert registry.context.lifetime[Y] == "singleton"
 
 
 def test_register_invalid_target(registry: ServiceRegistry) -> None:
