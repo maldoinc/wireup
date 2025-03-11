@@ -4,7 +4,7 @@ import pytest
 import wireup.integration.flask
 from flask import Flask
 from flask.testing import FlaskClient
-from wireup.integration.flask import get_container
+from wireup.integration.flask import get_app_container
 
 from test.integration.flask import services as flask_integration_services
 from test.integration.flask.bp import bp
@@ -69,7 +69,7 @@ def test_service_override(client: FlaskClient, app: Flask):
     mocked_foo = MagicMock()
     mocked_foo.is_test = "mocked"
 
-    with get_container(app).override.service(IsTestService, new=mocked_foo):
+    with get_app_container(app).override.service(IsTestService, new=mocked_foo):
         res = client.get("/foo")
         assert res.status_code == 200
         assert res.json == {"test": "mocked"}
