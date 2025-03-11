@@ -3,10 +3,11 @@ nav:
   - Wireup: index.md
   - 📚 Documentation:
     - Getting started: getting_started.md
-    - Learn:
+    - Basics:
         - Services: services.md
         - Configuration: configuration.md
         - Annotations: annotations.md
+    - Learn:
         - Lifetimes: lifetimes.md
         - Interfaces: interfaces.md
         - Factory functions: factory_functions.md
