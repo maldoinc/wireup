@@ -2,10 +2,8 @@ Dependency injection for Flask is available in the`wireup.integration.flask_inte
 
 **Features:**
 
-* Automatically decorate Flask views and blueprints where the container is being used.
-    * Eliminates the need for `@container.autowire` in views.
-    * Views without container references will not be decorated.
-* Expose Flask configuration in the container's parameters.
+- [x] Dependency injection in function-based and class-based views (sync and async)z
+- [x] Request-scoped container lifecycle management.
 
 ## Examples
 
@@ -13,6 +11,14 @@ Dependency injection for Flask is available in the`wireup.integration.flask_inte
 
 app = Flask(__name__)
 app.config["FOO"] = "bar"
+
+
+@service
+class RandomService:
+    def __init__(self) -> None: ...
+
+    def get_random(self) -> int: ...
+
 
 @app.get("/random")
 def get_random(random: RandomService):
@@ -62,6 +68,19 @@ def test_override():
 See [Flask integration tests](https://github.com/maldoinc/wireup/blob/master/test/integration/flask/test_flask_integration.py)
 for more examples.
 
+## Accessing the Container
+
+Access the Wireup container using the provided functions:
+
+```python
+from wireup.integration.flask import get_app_container, get_request_container
+
+# Get application-wide container
+app_container = get_app_container(app)
+
+# Get request-scoped container
+request_container = get_request_container()
+```
 
 ## Api Reference
 
