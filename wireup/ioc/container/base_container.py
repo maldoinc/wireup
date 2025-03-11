@@ -1,7 +1,5 @@
-from __future__ import annotations
-
 import logging
-from typing import TYPE_CHECKING, Any, TypeVar
+from typing import TYPE_CHECKING, Any, Callable, Dict, Optional, Tuple, Type, TypeVar
 
 from wireup._async_to_sync import async_to_sync
 from wireup.errors import (
@@ -11,10 +9,12 @@ from wireup.errors import (
     WireupError,
 )
 from wireup.ioc.override_manager import OverrideManager
-from wireup.ioc.service_registry import GENERATOR_FACTORY_TYPES, FactoryType
+from wireup.ioc.parameter import ParameterBag
+from wireup.ioc.service_registry import GENERATOR_FACTORY_TYPES, FactoryType, ServiceRegistry
 from wireup.ioc.types import (
     AnnotatedParameter,
     AnyCallable,
+    ContainerObjectIdentifier,
     ContainerScope,
     CreationResult,
     EmptyContainerInjectionRequest,
@@ -26,12 +26,8 @@ from wireup.ioc.types import (
 )
 
 if TYPE_CHECKING:
-    from collections.abc import Callable
     from types import AsyncGeneratorType, GeneratorType
 
-    from wireup import ParameterBag
-    from wireup.ioc.service_registry import ServiceRegistry
-    from wireup.ioc.types import ContainerObjectIdentifier, Qualifier
 
 T = TypeVar("T")
 logger = logging.getLogger(__name__)
@@ -53,9 +49,9 @@ class BaseContainer:
         self,
         registry: ServiceRegistry,
         parameters: ParameterBag,
-        overrides: dict[ContainerObjectIdentifier, Any],
+        overrides: Dict[ContainerObjectIdentifier, Any],
         global_scope: ContainerScope,
-        current_scope: ContainerScope | None = None,
+        current_scope: Optional[ContainerScope] = None,
     ) -> None:
         self._registry = registry
         self._params = parameters
@@ -79,8 +75,8 @@ class BaseContainer:
         return self._override_mgr
 
     def _get_ctor(
-        self, klass: type[T], qualifier: Qualifier | None
-    ) -> tuple[Callable[..., Any], type[T], FactoryType] | None:
+        self, klass: Type[T], qualifier: Optional[Qualifier]
+    ) -> Optional[Tuple[Callable[..., Any], Type[T], FactoryType]]:
         if self._registry.is_interface_known(klass):
             klass = self._registry.interface_resolve_impl(klass, qualifier)
 
@@ -104,7 +100,7 @@ class BaseContainer:
 
         return None
 
-    def _try_get_existing_value(self, param: AnnotatedParameter) -> tuple[Any, bool]:
+    def _try_get_existing_value(self, param: AnnotatedParameter) -> Tuple[Any, bool]:
         if param.klass:
             obj_id = param.klass, param.qualifier_value
 
@@ -155,7 +151,7 @@ class BaseContainer:
 
         return InjectionResult(kwargs=result, exit_stack=exit_stack)
 
-    async def _async_create_instance(self, klass: type[T], qualifier: Qualifier | None) -> CreationResult | None:
+    async def _async_create_instance(self, klass: Type[T], qualifier: Optional[Qualifier]) -> Optional[CreationResult]:
         ctor_and_type = self._get_ctor(klass=klass, qualifier=qualifier)
 
         if not ctor_and_type:
@@ -190,7 +186,7 @@ class BaseContainer:
             injection_result=injection_result,
         )
 
-    def _create_instance(self, klass: type[T], qualifier: Qualifier | None) -> CreationResult | None:
+    def _create_instance(self, klass: Type[T], qualifier: Optional[Qualifier]) -> Optional[CreationResult]:
         ctor_and_type = self._get_ctor(klass=klass, qualifier=qualifier)
 
         if not ctor_and_type:
@@ -236,7 +232,7 @@ class BaseContainer:
         self,
         *,
         lifetime: ServiceLifetime,
-        generator: Any | None,
+        generator: Optional[Any],
         instance: Any,
         object_identifier: ContainerObjectIdentifier,
         injection_result: InjectionResult,
@@ -272,7 +268,7 @@ class BaseContainer:
             )
             raise WireupError(msg)
 
-    async def _async_get(self, klass: type[T], qualifier: Qualifier | None = None) -> T:
+    async def _async_get(self, klass: Type[T], qualifier: Optional[Qualifier] = None) -> T:
         """Get an instance of the requested type.
 
         :param qualifier: Qualifier for the class if it was registered with one.
