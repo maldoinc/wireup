@@ -14,7 +14,7 @@
 
 
 > [!NOTE]  
-> Wireup 1.0 is coming soon with a simpler Api and support for scoped lifetimes
+> Wireup 1.0 is coming soon with a support for scoped lifetimes, a simpler api and improved documentation.
 
 ---
 
