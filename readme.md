@@ -12,6 +12,10 @@
 <p><a target="_blank" href="https://maldoinc.github.io/wireup">📚 Documentation</a> | <a target="_blank" href="https://github.com/maldoinc/wireup-demo">🎮 Demo Application</a></p>
 </div>
 
+
+> [!NOTE]  
+> Wireup 1.0 is coming soon with a simpler Api and support for scoped lifetimes
+
 ---
 
 Dependency Injection (DI) is a design pattern where objects receive their dependencies externally instead of creating them.
