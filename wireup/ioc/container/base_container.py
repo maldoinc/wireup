@@ -1,5 +1,5 @@
 import logging
-from typing import TYPE_CHECKING, Any, Callable, Dict, Optional, Tuple, Type, TypeVar
+from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Tuple, Type, TypeVar, Union
 
 from wireup._async_to_sync import async_to_sync
 from wireup.errors import (
@@ -125,7 +125,7 @@ class BaseContainer:
     async def _async_callable_get_params_to_inject(self, fn: AnyCallable) -> InjectionResult:
         result: dict[str, Any] = {}
         names_to_remove: set[str] = set()
-        exit_stack: list[GeneratorType[Any, Any, Any] | AsyncGeneratorType[Any, Any]] = []
+        exit_stack: List[Union[GeneratorType[Any, Any, Any], AsyncGeneratorType[Any, Any]]] = []
 
         for name, param in self._registry.context.dependencies[fn].items():
             obj, value_found = self._try_get_existing_value(param)
