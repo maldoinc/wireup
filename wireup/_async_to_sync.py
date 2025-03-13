@@ -3,7 +3,7 @@ import functools
 import inspect
 import textwrap
 import types
-from typing import Any, Awaitable, Callable, Mapping, TypeVar, cast
+from typing import Any, Awaitable, Callable, Dict, Mapping, TypeVar, cast
 
 from typing_extensions import ParamSpec
 
@@ -19,7 +19,7 @@ def async_to_sync(new_name: str, func: Callable[P, Awaitable[T]], replacements: 
     source = source.replace("async def", "def")
 
     code = compile(source, filename="<string>", mode="exec")
-    namespace: dict[str, object] = {}
+    namespace: Dict[str, object] = {}
     exec(code, func.__globals__, namespace)  # noqa: S102
     sync_func: types.FunctionType = cast(types.FunctionType, namespace[func.__name__])
 

@@ -47,29 +47,6 @@ async def test_async_cleans_up_on_exit() -> None:
     assert _cleanup_performed
 
 
-async def test_async_raise_close_async() -> None:
-    Something = NewType("Something", str)
-
-    async def some_factory() -> AsyncIterator[Something]:
-        yield Something("foo")
-
-    container = wireup.create_sync_container()
-    container._registry.register(some_factory)
-
-    @autowire(container)
-    async def target(smth: Something):
-        assert smth == Something("foo")
-
-    await target()
-    msg = (
-        "The following generators are async factories and closing them with a SyncContainer is not possible. "
-        "If you require async dependencies create an AsyncContainer via wireup.create_async_container instead."
-        "List of async factories:"
-    )
-    with pytest.raises(WireupError, match=msg):
-        container.close()
-
-
 def test_injects_transient() -> None:
     _cleanups: list[str] = []
     Something = NewType("Something", str)

@@ -2,6 +2,7 @@ import datetime
 import functools
 import unittest
 from dataclasses import dataclass
+from re import A
 from typing import Any, Optional
 from unittest.mock import MagicMock, Mock, patch
 
@@ -98,7 +99,7 @@ class TestContainer(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(autowired_fn(), 5)
 
     async def test_autowire_async(self):
-        self.container.params.put("env", "test")
+        container = wireup.create_async_container(parameters={"env": "test"}, service_modules=[services])
 
         async def test_function(
             random: Annotated[RandomService, Inject(qualifier="foo")], env: Annotated[str, Inject(param="env")]
@@ -106,7 +107,7 @@ class TestContainer(unittest.IsolatedAsyncioTestCase):
             self.assertEqual(env, "test")
             return random.get_random()
 
-        autowired_fn = autowire(self.container)(test_function)
+        autowired_fn = autowire(container)(test_function)
         self.assertTrue(callable(autowired_fn))
         self.assertEqual(await autowired_fn(), 4)
 
@@ -530,20 +531,21 @@ class TestContainer(unittest.IsolatedAsyncioTestCase):
             self.assertEqual(a.get_random(), 4)
             self.assertIsInstance(b, SomeClass)
 
-        autowired = autowired(self.container)(target)
+        inject_scoped = autowire(self.container)(target)
         self.assertEqual(self.container._registry.context.dependencies[target].keys(), {"a", "b"})
         # On the second call, container will drop b from dependencies as it is an unknown object.
-        autowired()
+        inject_scoped()
         self.assertEqual(self.container._registry.context.dependencies[target].keys(), {"a"})
 
     async def test_container_overrides_already_passed_keyword_args(self):
-        self.container.params.put("foo", "Foo")
+        sync_container = wireup.create_sync_container(parameters={"foo": "Foo"})
+        async_container = wireup.create_async_container(parameters={"foo": "Foo"})
 
-        @autowire(self.container)
+        @autowire(sync_container)
         def sync_inner(name: Annotated[str, Inject(param="foo")]):
             self.assertEqual(name, "Foo")
 
-        @autowire(self.container)
+        @autowire(async_container)
         async def async_inner(name: Annotated[str, Inject(param="foo")]):
             self.assertEqual(name, "Foo")
 

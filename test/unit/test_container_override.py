@@ -79,7 +79,7 @@ async def test_container_override_with_interface(container: Container):
     container._registry.register(FooBar)
 
     @autowire(container)
-    async def target(foo: FooBase):
+    def target(foo: FooBase):
         assert foo.foo == "mock"
         assert isinstance(foo, MagicMock)
 
