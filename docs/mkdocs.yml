@@ -1,8 +1,7 @@
 site_name: Wireup
 nav:
-  - Wireup: index.md
   - 📚 Documentation:
-    - Getting started: getting_started.md
+    - Wireup: index.md
     - Basics:
         - Services: services.md
         - Configuration: configuration.md
