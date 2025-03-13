@@ -3,7 +3,7 @@ Dependency injection for FastAPI is available in the `wireup.integration.fastapi
 **Features:**
 
 - [x] Inject dependencies in FastAPI routes.
-    * Eliminates the need for `@container.autowire`.
+    * Eliminates the need for `@autowire(container)`.
 - [x] Expose `fastapi.Request` as a wireup dependency.
     * Available as a `TRANSIENT` scoped dependency, your services can ask for a fastapi request object.
 - [x] Can: Mix Wireup and FastAPI dependencies in routes.

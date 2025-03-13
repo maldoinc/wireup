@@ -5,7 +5,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 from typing_extensions import Annotated
 from wireup import Inject
-from wireup.decorators import make_inject_decorator
+from wireup._decorators import autowire
 from wireup.errors import UnknownOverrideRequestedError
 from wireup.ioc.override_manager import OverrideManager
 from wireup.ioc.types import Qualifier, ServiceOverride
@@ -46,7 +46,7 @@ async def test_container_override_many_with_qualifier(container: Container):
     container._registry.register(RandomService, qualifier="Rand1")
     container._registry.register(RandomService, qualifier="Rand2")
 
-    @make_inject_decorator(container)
+    @autowire(container)
     def target(
         rand1: Annotated[RandomService, Inject(qualifier="Rand1")],
         rand2: Annotated[RandomService, Inject(qualifier="Rand2")],
@@ -78,7 +78,7 @@ async def test_container_override_with_interface(container: Container):
     container._registry.register_abstract(FooBase)
     container._registry.register(FooBar)
 
-    @make_inject_decorator(container)
+    @autowire(container)
     async def target(foo: FooBase):
         assert foo.foo == "mock"
         assert isinstance(foo, MagicMock)

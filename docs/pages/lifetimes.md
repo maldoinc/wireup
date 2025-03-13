@@ -1,92 +1,102 @@
+
+
+
 # Service Lifetimes
 
-Wireup supports three different lifetimes for services: Singleton, Scoped, and Transient. The lifetime of a service
-determines how long an instance of the service will live and is configured via the `lifetime` parameter in the `@service` decorator.
+Wireup manages how long service instances live through three different lifetimes: Singleton, Scoped, and Transient. Configure the lifetime using the `lifetime` parameter in the `@service` decorator.
 
-## Lifetimes Overview
+## Available Lifetimes
 
-### Singleton (default)
-
-A singleton service is created once and shared throughout the application. Every request for this service will return the same instance.
-This is useful for services that maintain state or are expensive to create.
+### Singleton (Default)
+One instance is created and shared across the entire application.
 
 ```python
-from wireup import service
+@service  # lifetime="singleton" is the default
+class Database: ...
 
-@service
-class SingletonService:
-    ...
-
-# Usage
-s1 = container.get(SingletonService)
-s2 = container.get(SingletonService)
-
-# Both s1 and s2 refer to the same instance
-assert s1 is s2
+# Same instance everywhere
+db1 = container.get(Database)
+db2 = container.get(Database)
+assert db1 is db2
 ```
+
+Best for:
+
+* Stateful services.
+* Resource-intensive services.
+* Configuration holders.
 
 ### Scoped
-
-A scoped service is created once per scope and shared within that scope. The service instance will live as long as the scope does.
-This is particularly useful in web applications where you want a service to live for the duration of a request.
+One instance per scope, shared within that scope.
 
 ```python
-from wireup import service
-
 @service(lifetime="scoped")
-class ScopedService:
-    ...
+class RequestContext: ...
 
-# Usage within a scope
-with container.enter_scope() as scoped:
-    s1 = container.get(SingletonService)
-    s2 = scoped.get(SingletonService)
+with container.enter_scope() as scope1, container.enter_scope() as scope2:
+    # Same instance within scope
+    ctx1 = scope1.get(RequestContext)
+    ctx2 = scope1.get(RequestContext)
+    assert ctx1 is ctx2
 
-    # Singleton service remains the same across scopes
-    assert s1 is s2
-
-    sc1 = scoped.get(ScopedService)
-    sc2 = scoped.get(ScopedService)
-
-    # Scoped service remains the same within the same scope
-    assert sc1 is sc2
-
-# Usage across different scopes
-with container.enter_scope() as scoped_a, container.enter_scope() as scoped_b:
-    sc_a = scoped_a.get(ScopedService)
-    sc_b = scoped_b.get(ScopedService)
-
-    # Different scopes have different instances of ScopedService
-    assert sc_a is not sc_b
+    # Different instance in different scope
+    other = scope2.get(RequestContext)
+    assert ctx1 is not other
 ```
 
-!!! note
+Best for:
+
+* Request-specific services.
+* Per-operation state.
+* Database transactions.
+
+!!! info
     Wireup integrations manage the scope lifecycle for you. 
     A new scope is entered at the beginning of a request and exited at the end. 
     This means that a `scoped` service will live for the duration of the request.
 
-
-
 ### Transient
-
-A transient service creates a new instance every time it is requested. This is useful for stateless services or those that require a fresh state for each use.
+New instance created on every request.
 
 ```python
-from wireup import service
-
 @service(lifetime="transient")
-class TransientService:
-    ...
+class MessageBuilder: ...
 
-# Usage
-with container.enter_scope() as scoped:
-    t1 = scoped.get(TransientService)
-    t2 = scoped.get(TransientService)
-
-    # t1 and t2 are different instances
-    assert t1 is not t2
+with container.enter_scope() as scope:
+    # New instance every time
+    builder1 = scope.get(MessageBuilder)
+    builder2 = scope.get(MessageBuilder)
+    assert builder1 is not builder2
 ```
 
-!!! note
-    To resolve transient services you need to enter a scope. This is required because the container needs to know
-    when to perform cleanup if the transient scope or one of its dependencies is a context manager.
+Best for:
+
+* Stateless services.
+* Services that need fresh state.
+* Temporary resources.
+
+!!! warning "Scope Required"
+    Transient services must be resolved within a scope, even if they don't use scoped dependencies.
+    This ensures proper cleanup of resources if the transient service itself or one of its dependencies
+    needs to perform cleanup.
+
+
+## Lifetime Rules
+
+* Singletons can depend only on other singletons.
+* Scoped services can depend only on other scoped services or transient ones.
+* Transient services can depend only on other transient services.
+* Parameters can be injected into all lifetimes.
+
+!!! tip "Choosing a Lifetime"
+    * Start with singleton unless you have a reason not to.
+    * Use scoped for request-specific state.
+    * Use transient for fresh instances or temporary resources.
+
+#### Scoped services and decorated functions
+
+Wireup lets you apply the container as a decorator. The provided integrations also decorate for you the routes/views
+where Wireup services are used.
+
+For such cases, you don't need to do any scope management yourself and can simply ask for the scoped/transient services
+in the function's signature. The decorator can enter a scope

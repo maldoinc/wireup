@@ -5,7 +5,7 @@ from typing import Any, Awaitable, Callable
 from fastapi import FastAPI, Request, Response
 from fastapi.routing import APIRoute, APIWebSocketRoute
 
-from wireup.decorators import make_inject_decorator
+from wireup._decorators import autowire
 from wireup.errors import WireupError
 from wireup.integration.util import is_view_using_container
 from wireup.ioc.container.async_container import AsyncContainer, ScopedAsyncContainer
@@ -50,7 +50,7 @@ def _inject_websocket_route(container: AsyncContainer, target: Callable[..., Any
 
 
 def _inject_routes(container: AsyncContainer, app: FastAPI) -> None:
-    inject_scoped = make_inject_decorator(container, get_request_container)
+    inject_scoped = autowire(container, get_request_container)
 
     for route in app.routes:
         if (

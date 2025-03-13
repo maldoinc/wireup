@@ -24,7 +24,7 @@ class CombustionEngine(Engine):
         return EngineType.COMBUSTION
 
 
-@container.autowire
+@autowire(container)
 def target(engine: Engine):
     engine_type = engine.get_type()  # Returns EngineType.COMBUSTION
 ```
@@ -46,7 +46,7 @@ class CombustionEngine(Engine):
         return EngineType.COMBUSTION
 
 
-@container.autowire
+@autowire(container)
 def target(
     electric: Annotated[Engine, Inject(qualifier="electric")],
     combustion: Annotated[Engine, Inject(qualifier="combustion")],

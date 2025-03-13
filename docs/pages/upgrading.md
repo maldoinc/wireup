@@ -15,7 +15,7 @@ As a result of this, the following has changed:
     * If you were manually registering services with the container, that has now been removed. You should instead use `@service` on services or factories and point the container to then at creation time when calling `wireup.create_sync_container` or `wireup.create_async_container`.
 * `@container.abstract`
     * Same as above except use `@abstract` decorator.
-* `@container.autowire`
+* `@autowire(container)`
     * This has also been removed. Refer to the relevant docs for an upgrade path: [Apply the container as a decorator](apply_container_as_decorator.md).
 * `wireup.create_container` is now `wireup.create_sync_container` and `wireup.create_async_container`.
 

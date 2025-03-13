@@ -73,7 +73,7 @@ def get_current_user(auth_service: AuthService) -> AuthenticatedUser:
 
 
 # Now it is possible to inject the authenticated user directly wherever it is necessary.
-@container.autowire
+@autowire(container)
 def get_user_logs(user: AuthenticatedUser):
     ...
 ```
