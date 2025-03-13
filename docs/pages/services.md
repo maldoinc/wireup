@@ -1,63 +1,57 @@
-In Wireup, services are decorated classes or functions that produce a result when called. To define a service
-you must use the `@service` decorator on a class or a function that produces the desired dependency.
+# Services
 
-Wireup does not enforce a code structure. Services may live anywhere, but must be registered with the container. 
-To do that, the modules where services reside must be passed to the `service_modules` argument in the 
-`wireup.create_container` or `wireup.create_async_container` call.
+A service in Wireup is any class or function decorated with `@service`. 
+While services can live in any module, their containing modules must be registered with the container via `service_modules` when calling `wireup.create_sync_container` or `wireup.create_async_container`.
 
-!!! tip "Good to know"
-    You don't need to register each module separately, only the top level modules are sufficient
-    as the container will perform a recursive scan.
+You also don't need to register each module separately, only the top level modules are sufficient
+as the container will perform a recursive scan.
 
-## Class-based services
+## Class Services
 
-Services in Wireup can be defined using class-based or factory-based approaches. For class-based services, 
-use the `@service` decorator on your class definition.
+The simplest way to define a service is with a class:
 
 ```python
 from wireup import service
 
 @service
-class Foo:
-    def __init__(self) -> None:
-        pass
+class VehicleRepository: ...
 
 @service
-class Bar:
-    def __init__(self, foo: Foo) -> None:
-        # Wireup automatically injects the Foo instance
-        self.foo = foo
+class RentalService:
+    # VehicleRepository is automatically injected
+    def __init__(self, repository: VehicleRepository) -> None: ...
 ```
 
-## Factory-based services
+## Factory Services
 
-For more complex initialization scenarios, you can use factory functions. These are regular functions
+For complex initialization, use factories. These are regular functions
 decorated with `@service` that construct and return service instances. The function must include a return
-type annotation to tell Wireup what type of service it creates.
+type annotation denote what type of service it creates.
 
 ```python
-from wireup import service
-
 @service
-def create_bar(foo: Foo) -> Bar:
-    # Custom initialization logic here
-    return Bar(foo)
+def create_payment_processor(
+    api_key: Annotated[str, Inject(param="STRIPE_API_KEY")]
+) -> PaymentProcessor:
+    processor = PaymentProcessor()
+    processor.configure(api_key)
+
+    return processor
 ```
 
-## Dependency injection
+You can now inject `PaymentProcessor` as usual.
 
-Wireup uses type annotations for dependency resolution.
-Choose descriptive parameter names for readability, but know that they don't affect
-how dependencies are resolved. The following factory definitions are equivalent:
+## Dependency Resolution
+
+Wireup uses type annotations to resolve dependencies. Parameter names are for readability only:
 
 ```python
-# These factory functions are functionally identical:
+# These are equivalent:
+@service
+def create_rental_service(repo: VehicleRepository) -> RentalService:
+    return RentalService(repo)
 
 @service
-def create_bar(foo: Foo) -> Bar:
-    return Bar(foo)
-
-@service
-def create_bar(foo_dependency: Foo) -> Bar:
-    return Bar(foo_dependency)
+def create_rental_service(vehicle_store: VehicleRepository) -> RentalService:
+    return RentalService(vehicle_store)
 ```

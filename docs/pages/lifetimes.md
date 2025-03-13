@@ -25,25 +25,6 @@ s2 = container.get(SingletonService)
 assert s1 is s2
 ```
 
-### Transient
-
-A transient service creates a new instance every time it is requested. This is useful for stateless services or those that require a fresh state for each use.
-
-```python
-from wireup import service
-
-@service(lifetime="transient")
-class TransientService:
-    ...
-
-# Usage
-t1 = container.get(TransientService)
-t2 = container.get(TransientService)
-
-# t1 and t2 are different instances
-assert t1 is not t2
-```
-
 ### Scoped
 
 A scoped service is created once per scope and shared within that scope. The service instance will live as long as the scope does.
@@ -57,7 +38,7 @@ class ScopedService:
     ...
 
 # Usage within a scope
-with wireup.enter_scope(container) as scoped:
+with container.enter_scope() as scoped:
     s1 = container.get(SingletonService)
     s2 = scoped.get(SingletonService)
 
@@ -71,7 +52,7 @@ with wireup.enter_scope(container) as scoped:
     assert sc1 is sc2
 
 # Usage across different scopes
-with wireup.enter_scope(container) as scoped_a, wireup.enter_scope(container) as scoped_b:
+with container.enter_scope() as scoped_a, container.enter_scope() as scoped_b:
     sc_a = scoped_a.get(ScopedService)
     sc_b = scoped_b.get(ScopedService)
 
@@ -83,3 +64,29 @@ with wireup.enter_scope(container) as scoped_a, wireup.enter_scope(container) as
     Wireup integrations manage the scope lifecycle for you. 
     A new scope is entered at the beginning of a request and exited at the end. 
     This means that a `scoped` service will live for the duration of the request.
+
+
+
+### Transient
+
+A transient service creates a new instance every time it is requested. This is useful for stateless services or those that require a fresh state for each use.
+
+```python
+from wireup import service
+
+@service(lifetime="transient")
+class TransientService:
+    ...
+
+# Usage
+with container.enter_scope() as scoped:
+    t1 = scoped.get(TransientService)
+    t2 = scoped.get(TransientService)
+
+    # t1 and t2 are different instances
+    assert t1 is not t2
+```
+
+!!! note
+    To resolve transient services you need to enter a scope. This is required because the container needs to know
+    when to perform cleanup if the transient scope or one of its dependencies is a context manager.

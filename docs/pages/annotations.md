@@ -1,43 +1,40 @@
-Autowiring relies on annotations or hints to be able to inject dependencies.
-When it is not possible to automatically locate a given dependency, it must be annotated with additional metadata.
+# Dependency Annotations
 
-## When do you need to provide annotations.
+Wireup uses type annotations to resolve dependencies. Some cases require additional metadata through annotations.
 
-| Injecting                               | Annotations required? | What is required     |
-|-----------------------------------------|-----------------------|----------------------|
-| Services                                | No                    |                      |
-| Interface with only one implementation  | No                    |                      |
-| Default implementation of an interface  | No                    |                      |
-| Interface with multiple implementations | Yes                   | Qualifier            |
-| Parameters                              | Yes                   | Parameter name       |
-| Parameter expressions                   | Yes                   | Expression           |
+## When Are Annotations Required?
+
+| Type of Dependency                      | Annotations required? | What is required |
+| --------------------------------------- | --------------------- | ---------------- |
+| Services                                | No                    |                  |
+| Interface with only one implementation  | No                    |                  |
+| Default implementation of an interface  | No                    |                  |
+| Interface with multiple implementations | Yes                   | Qualifier        |
+| Parameters                              | Yes                   | Parameter name   |
+| Parameter expressions                   | Yes                   | Expression       |
  
-## Annotation types
 
-Wireup supports two types of annotations. Using Python's `Annotated` and default values.
+## Example
 
-### Annotated
-
-This is the preferred method for Python 3.9+ and moving forward. It is also recommended to
-backport this using `typing_extensions` for Python 3.8.
-
+For Python 3.9+ (or 3.8+ with `typing_extensions`):
 
 ```python
 @container.autowire
-def target(
-    env: Annotated[str, Inject(param="env_name")],
-    logs_cache_dir: Annotated[str, Inject(expr="${cache_dir}/logs")],
+def configure(
+    # Inject configuration parameter
+    env: Annotated[str, Inject(param="APP_ENV")],
+    
+    # Inject dynamic expression
+    log_path: Annotated[str, Inject(expr="${data_dir}/logs")],
+    
+    # Explicitly inject service
+    service: Annotated[MyService, Inject()],
+    
+    # Inject specific implementation
+    db: Annotated[Database, Inject(qualifier="replica")]
 ):
     ...
 ```
 
-### Explicit injection annotation
-Even though annotating services is optional, you CAN still annotate them to be explicit about what will 
-be injected. This also has the benefit of raising when the service does not exist instead
-of silently skipping this parameter.
-
-```python
-@container.autowire
-def target(random_service: Annotated[RandomService, Inject()]):
-    ...
-```
+!!! tip
+    While service annotations are optional, using them helps catch missing dependencies early.

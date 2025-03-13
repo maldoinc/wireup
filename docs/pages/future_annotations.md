@@ -1,29 +1,30 @@
-Wireup has support for string types or `from __future__ import annotations`. 
-To enable this, you must install the `eval_type_backport` package, also used in Pydantic and FastAPI among others.
+# Type Annotations Support
 
-!!! tip "Good to know"
-    * Services/factories must be defined at the module level. Registering types declared inside functions is not supported.
-    * Types used by Wireup MUST NOT be moved into `TYPE_CHECKING` blocks. Doing so, makes them unavailable at runtime for inspection.
+Wireup supports string type annotations and `from __future__ import annotations` when the `eval_type_backport` package is installed.
 
+## Important Requirements
 
+1. Define services and factories at the module level only. Inner function definitions are not supported.
+2. Keep type imports accessible at runtime - don't move them to `TYPE_CHECKING` blocks.
 
-
-Take the following code for example. Ruff/flake8 will suggest to move the `Iterator` and `Thing` imports into a type checking block, but doing so
-prevents the import from happening during runtime and as such Wireup will not be able to resolve the type.
-
-You should pay extra attention to this if you use the `TCH` rules from Ruff.
+## Example
 
 ```python
-from collections.abc import Iterator
+from typing import TYPE_CHECKING  # Don't do this!
+
+if TYPE_CHECKING:
+    from collections.abc import Iterator
+
 
 @service
-def thing_factory() -> Iterator[Thing]:
+def create_thing() -> Iterator[Thing]:  # This needs the import at runtime
     yield Thing()
-
 
 @service
 @dataclass
-class ExampleService:
-    thing: Thing
-
+class Service:
+    thing: Thing  # This too needs the import at runtime
 ```
+
+!!! warning
+    If you use Ruff/flake8 with rules like `TCH`, be careful not to move required imports into `TYPE_CHECKING` blocks.
