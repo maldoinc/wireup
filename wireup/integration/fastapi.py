@@ -1,14 +1,22 @@
+from __future__ import annotations
+
+import contextlib
 import functools
 from contextvars import ContextVar
-from typing import Any, Awaitable, Callable
+from typing import TYPE_CHECKING, Any, Awaitable, Callable
 
 from fastapi import FastAPI, Request, Response
 from fastapi.routing import APIRoute, APIWebSocketRoute
+from starlette.middleware.base import BaseHTTPMiddleware
 
 from wireup._decorators import autowire
 from wireup.errors import WireupError
 from wireup.integration.util import is_view_using_container
-from wireup.ioc.container.async_container import AsyncContainer, ScopedAsyncContainer
+
+if TYPE_CHECKING:
+    from collections.abc import AsyncIterator
+
+    from wireup.ioc.container.async_container import AsyncContainer, ScopedAsyncContainer
 
 current_request: ContextVar[Request] = ContextVar("wireup_fastapi_request")
 current_ws_container: ContextVar[ScopedAsyncContainer] = ContextVar("wireup_fastapi_container")
@@ -67,13 +75,41 @@ def _inject_routes(container: AsyncContainer, app: FastAPI) -> None:
             container._registry.context.remove_dependency_type(target, Request)
 
 
+def _update_lifespan(container: AsyncContainer, app: FastAPI) -> None:
+    old_lifespan = app.router.lifespan_context
+
+    @contextlib.asynccontextmanager
+    async def lifespan(app: FastAPI) -> AsyncIterator[Any]:
+        async with old_lifespan(app) as state:
+            yield state
+
+        await container.close()
+
+    app.router.lifespan_context = lifespan
+
+
 def setup(container: AsyncContainer, app: FastAPI) -> None:
     """Integrate Wireup with FastAPI.
 
-    This will automatically inject dependencies on FastAPI routers.
+    This performs the following:
+    * Inject dependencies in http and websocket routes.
+    * Enter a new container scope per request. Scoped lifetime lasts as long as the request does.
+    * Expose `fastapi.Request` as a Wireup scoped dependency.
+    * Close the Wireup container on app shutdown via lifespan.
+
+    See: https://maldoinc.github.io/wireup/latest/integrations/fastapi/
+
+    Note that for lifespan events to trigger in the FastAPI test client you must use the client as a context manager.
+    ```python
+    @pytest.fixture()
+    def client(app: FastAPI) -> Iterator[TestClient]:
+        with TestClient(app) as client:
+            yield client
+    ```
     """
+    _update_lifespan(container, app)
     container._registry.register(_fastapi_request_factory, lifetime="scoped")
-    app.middleware("http")(_wireup_request_middleware)
+    app.add_middleware(BaseHTTPMiddleware, dispatch=_wireup_request_middleware)
     _inject_routes(container, app)
     app.state.wireup_container = container
 
