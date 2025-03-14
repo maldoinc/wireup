@@ -286,7 +286,7 @@ class TestContainer(unittest.IsolatedAsyncioTestCase):
             inner()
 
         self.assertIn(
-            "Cannot create <class 'test.fixtures.FooBase'> " "as qualifier 'sub1' is unknown. Available qualifiers: []",
+            "Cannot create <class 'test.fixtures.FooBase'> as qualifier 'sub1' is unknown. Available qualifiers: []",
             str(context.exception),
         )
 
@@ -300,7 +300,7 @@ class TestContainer(unittest.IsolatedAsyncioTestCase):
             inner()
 
         self.assertEqual(
-            f"Cannot create {FooBase} as qualifier 'None' is unknown. " "Available qualifiers: ['foobar'].",
+            f"Cannot create {FooBase} as qualifier 'None' is unknown. Available qualifiers: ['foobar'].",
             str(context.exception),
         )
 
@@ -313,7 +313,7 @@ class TestContainer(unittest.IsolatedAsyncioTestCase):
             inner()
 
         self.assertEqual(
-            f"Cannot create {FooBase} as qualifier 'None' is unknown. " "Available qualifiers: [].",
+            f"Cannot create {FooBase} as qualifier 'None' is unknown. Available qualifiers: [].",
             str(context.exception),
         )
 

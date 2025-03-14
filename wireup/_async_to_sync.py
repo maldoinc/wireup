@@ -2,10 +2,12 @@ import copy
 import functools
 import inspect
 import textwrap
-import types
-from typing import Any, Awaitable, Callable, Dict, Mapping, TypeVar, cast
+from typing import TYPE_CHECKING, Any, Awaitable, Callable, Dict, Mapping, TypeVar, cast
 
 from typing_extensions import ParamSpec
+
+if TYPE_CHECKING:
+    import types
 
 T = TypeVar("T")
 P = ParamSpec("P")
@@ -21,7 +23,7 @@ def async_to_sync(new_name: str, func: Callable[P, Awaitable[T]], replacements: 
     code = compile(source, filename="<string>", mode="exec")
     namespace: Dict[str, object] = {}
     exec(code, func.__globals__, namespace)  # noqa: S102
-    sync_func: types.FunctionType = cast(types.FunctionType, namespace[func.__name__])
+    sync_func: types.FunctionType = cast("types.FunctionType", namespace[func.__name__])
 
     sync_func.__name__ = new_name
     sync_func.__signature__ = inspect.signature(func)  # type: ignore[attr-defined]

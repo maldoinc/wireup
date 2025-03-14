@@ -60,8 +60,7 @@ class UnknownQualifiedServiceRequestedError(WireupError):
         qualifiers_str = ", ".join(sorted(f"'{q}'" for q in available_qualifiers))
 
         super().__init__(
-            f"Cannot create {klass} as qualifier '{qualifier}' is unknown. "
-            f"Available qualifiers: [{qualifiers_str}].",
+            f"Cannot create {klass} as qualifier '{qualifier}' is unknown. Available qualifiers: [{qualifiers_str}].",
         )
 
 
