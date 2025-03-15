@@ -19,7 +19,8 @@ To having the dependencies injected directly into the function.
 
 ## Implementation
 
-Wireup provides a decorator called `autowire`. The container will enter a scope before executing the function and exit the scope once the function returns.
+Wireup provides a decorator called `autowire`.
+The container will enter a scope before executing the function, inject all dependencies and exit the scope once the function returns.
 
 ```python
 @autowire(container)
