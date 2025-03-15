@@ -2,11 +2,14 @@ from __future__ import annotations
 
 import asyncio
 import functools
+import inspect
 from contextlib import AsyncExitStack, ExitStack
 from typing import TYPE_CHECKING, Any
 
 from wireup.ioc.container.async_container import AsyncContainer, async_container_force_sync_scope
 from wireup.ioc.container.sync_container import SyncContainer
+from wireup.ioc.types import InjectableType, ParameterWrapper
+from wireup.ioc.util import _get_globals, param_get_annotation
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -30,21 +33,25 @@ def inject_from_container(
     scoped container if required.
     """
 
-    # Exit stack needs to be cleaned in case the container handling injection is not a scoped one.
     def _decorator(target: Callable[..., Any]) -> Callable[..., Any]:
-        container._registry.target_init_context(target)
+        names_to_inject = {
+            name: param
+            for name, parmeter in inspect.signature(target).parameters.items()
+            if (param := param_get_annotation(parmeter, globalns=_get_globals(target)))
+            and isinstance(param.annotation, InjectableType)
+        }
 
         if asyncio.iscoroutinefunction(target):
 
             @functools.wraps(target)
             async def _inject_async_target(*args: Any, **kwargs: Any) -> Any:
+                # TODO(@maldoinc): remove this to the outer layer.
                 if isinstance(container, SyncContainer):
                     msg = (
-                        "Sync container cannot perform injectio on async targets. "
+                        "Sync container cannot perform injection on async targets. "
                         "Please create an async container via wireup.create_async_container."
                     )
                     raise TypeError(msg)
-
                 async with AsyncExitStack() as cm:
                     scoped_container = (
                         scoped_container_supplier()
@@ -52,8 +59,15 @@ def inject_from_container(
                         else await cm.enter_async_context(container.enter_scope())
                     )
 
-                    res = await scoped_container._async_callable_get_params_to_inject(target)
-                    return await target(*args, **{**kwargs, **res.kwargs})
+                    injected_names = {
+                        name: container.params.get(param.annotation.param)
+                        if isinstance(param.annotation, ParameterWrapper)
+                        else await scoped_container.get(param.klass, qualifier=param.qualifier_value)
+                        for name, param in names_to_inject.items()
+                        if param.annotation
+                    }
+
+                    return await target(*args, **{**kwargs, **injected_names})
 
             return _inject_async_target
 
@@ -70,8 +84,14 @@ def inject_from_container(
                     )
                 )
 
-                res = scoped_container._callable_get_params_to_inject(target)
-                return target(*args, **{**kwargs, **res.kwargs})
+                injected_names = {
+                    name: container.params.get(param.annotation.param)
+                    if isinstance(param.annotation, ParameterWrapper)
+                    else scoped_container.get(param.klass, qualifier=param.qualifier_value)
+                    for name, param in names_to_inject.items()
+                    if param.annotation
+                }
+                return target(*args, **{**kwargs, **injected_names})
 
         return _inject_target
 

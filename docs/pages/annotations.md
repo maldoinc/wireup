@@ -28,8 +28,11 @@ def configure(
     # Inject dynamic expression
     log_path: Annotated[str, Inject(expr="${data_dir}/logs")],
     
-    # Explicitly inject service
-    service: Annotated[MyService, Inject()],
+    # Inject service
+    service: Injected[MyService, Inject()],
+
+    # Injected is an alias of Annotated[T, Inject()]
+    service: Injected[MyService],
     
     # Inject specific implementation
     db: Annotated[Database, Inject(qualifier="replica")]

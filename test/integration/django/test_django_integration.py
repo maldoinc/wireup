@@ -8,7 +8,7 @@ from django.test import Client
 from django.urls import include, path
 from django.views.generic import TemplateView
 from wireup.integration.django import WireupSettings
-from wireup.integration.django.apps import get_app_container, get_request_container
+from wireup.integration.django.apps import get_app_container
 
 from test.integration.django import view
 from test.shared.shared_services.greeter import GreeterService

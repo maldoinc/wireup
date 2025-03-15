@@ -34,6 +34,3 @@ class InitializationContext:
 
     def remove_dependencies(self, target: InjectionTarget, names_to_remove: set[str]) -> None:
         self.dependencies[target] = {k: v for k, v in self.dependencies[target].items() if k not in names_to_remove}
-
-    def remove_dependency_type(self, target: InjectionTarget, type_to_remove: type) -> None:
-        self.dependencies[target] = {k: v for k, v in self.dependencies[target].items() if v.klass != type_to_remove}

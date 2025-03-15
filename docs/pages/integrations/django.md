@@ -92,8 +92,12 @@ To inject dependencies in views, simply request them by their type:
 ```python title="app/views.py"
 from django.http import HttpRequest, HttpResponse
 from mysite.polls.services import S3Manager
+from wireup import Injected
 
-def upload_file_view(request: HttpRequest, s3_manager: S3Manager) -> HttpResponse:
+def upload_file_view(
+    request: HttpRequest, 
+    s3_manager: Injected[S3Manager]
+) -> HttpResponse:
     # Use the injected S3Manager instance
     return HttpResponse(...)
 ```

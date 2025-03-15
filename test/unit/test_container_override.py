@@ -4,7 +4,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 from typing_extensions import Annotated
-from wireup import Inject
+from wireup import Inject, Injected
 from wireup._decorators import inject_from_container
 from wireup.errors import UnknownOverrideRequestedError
 from wireup.ioc.override_manager import OverrideManager
@@ -79,7 +79,7 @@ async def test_container_override_with_interface(container: Container):
     container._registry.register(FooBar)
 
     @inject_from_container(container)
-    def target(foo: FooBase):
+    def target(foo: Injected[FooBase]):
         assert foo.foo == "mock"
         assert isinstance(foo, MagicMock)
 

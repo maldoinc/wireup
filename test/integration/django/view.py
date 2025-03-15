@@ -1,7 +1,7 @@
 from django.http import HttpRequest, HttpResponse
 from django.views import View
 from typing_extensions import Annotated
-from wireup import Inject
+from wireup import Inject, Injected
 
 from test.integration.django.service.current_request_service import CurrentDjangoRequest
 from test.integration.django.service.random_service import RandomService
@@ -10,10 +10,10 @@ from test.shared.shared_services.greeter import GreeterService
 
 def index(
     _request: HttpRequest,
-    example_request_service: CurrentDjangoRequest,
-    greeter: GreeterService,
+    example_request_service: Injected[CurrentDjangoRequest],
+    greeter: Injected[GreeterService],
     is_debug: Annotated[bool, Inject(param="DEBUG")],
-    random_service: RandomService,
+    random_service: Injected[RandomService],
 ) -> HttpResponse:
     name = example_request_service.request.GET["name"]
     greeting = greeter.greet(name)

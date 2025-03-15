@@ -5,6 +5,8 @@ import importlib
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, TypeVar, overload
 
+from typing_extensions import Annotated
+
 from wireup.ioc.types import (
     EmptyContainerInjectionRequest,
     InjectableType,
@@ -61,6 +63,8 @@ def Inject(  # noqa: N802
 
 
 T = TypeVar("T")
+
+Injected = Annotated[T, Inject()]
 
 
 @dataclass

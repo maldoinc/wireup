@@ -55,3 +55,12 @@ def create_rental_service(repo: VehicleRepository) -> RentalService:
 def create_rental_service(vehicle_store: VehicleRepository) -> RentalService:
     return RentalService(vehicle_store)
 ```
+
+
+!!! warning
+    You might have noticed the use of `Injected[T]` in the documentation.
+    In Wireup's own services, this is not necessary because Wireup assumes ownership of all dependencies for its services.
+    However, this may not be the case when injecting into functions, as some arguments might be provided by other decorators or callers.
+
+    When injecting into a function, Wireup uses the `Injected[T]` syntax to explicitly indicate what is being injected.
+    This ensures that if the requested dependency is not known, an error is raised instead of silently skipping the parameter.

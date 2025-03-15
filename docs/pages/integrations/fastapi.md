@@ -35,9 +35,7 @@ To inject dependencies, add the type to the route's signature and annotate it wi
 
     @app.get("/random")
     async def target(
-        # Inject annotation tells wireup that this argument should be injected.
-        # Inject() annotation is required otherwise fastapi will think it's a pydantic model.
-        random_service: Annotated[RandomService, Inject()],
+        random_service: Injected[RandomService],
         is_debug: Annotated[bool, Inject(param="debug")],
 
         # This is a regular FastAPI dependency.
@@ -48,7 +46,7 @@ To inject dependencies, add the type to the route's signature and annotate it wi
 
     ```python
     @app.websocket("/ws")
-    async def ws(websocket: WebSocket, greeter: Annotated[GreeterService, Inject()]): ...
+    async def ws(websocket: WebSocket, greeter: Injected[GreeterService]): ...
     ```
 
 

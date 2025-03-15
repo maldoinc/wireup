@@ -6,7 +6,7 @@ from dataclasses import dataclass
 
 import wireup
 from typing_extensions import Annotated
-from wireup._decorators import inject_from_container
+from wireup import Injected, inject_from_container
 
 
 @wireup.service
@@ -36,7 +36,9 @@ def test_eval_type_evaluates_strings() -> None:
     )
 
     @inject_from_container(container)
-    def test(a: A, b: B, c: C, foo: Annotated[str, wireup.Inject(param="foo")], _: int = 1):
+    def test(
+        a: Injected[A], b: Injected[B], c: Injected[C], foo: Annotated[str, wireup.Inject(param="foo")], _: int = 1
+    ):
         assert isinstance(a, A)
         assert isinstance(b, B)
         assert isinstance(c, C)

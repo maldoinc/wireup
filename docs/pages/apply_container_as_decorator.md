@@ -22,11 +22,17 @@ To having the dependencies injected directly into the function.
 Wireup provides a decorator called `wireup.inject_from_container`.
 The container will enter a scope before executing the function, inject all dependencies and exit the scope once the function returns.
 
+!!! warning
+    When injecting on decorated functions, the container will only interact with parameters annotated with `Injected[T]` or `Annotated[T, Inject()]`
+    (the two are equivalent, `Injected[T]` is only an alias).
+
 ```python
+from wireup import Injected
+
 @wireup.inject_from_container(container)
 def awesome_function(
-    service: RandomService, 
-    scoped_service: ScopedService, 
+    service: Injected[RandomService], 
+    scoped_service: Injected[ScopedService], 
     env_name: Annotated[str, Inject(param="env")]
 ) -> None: ...
 ```
@@ -38,8 +44,8 @@ scoped_container: ContextVar[ScopedSyncContainer] = ContextVar("scoped_container
 
 @wireup.inject_from_container(container, scoped_container.get)
 def awesome_function(
-    service: RandomService, 
-    scoped_service: ScopedService, 
+    service: Injected[RandomService], 
+    scoped_service: Injected[ScopedService], 
     env_name: Annotated[str, Inject(param="env")]
 ) -> None: ...
 ```
@@ -52,8 +58,8 @@ injected = wireup.inject_from_container(container, scoped_container.get)
 
 @injected
 def awesome_function(
-    service: RandomService, 
-    scoped_service: ScopedService, 
+    service: Injected[RandomService], 
+    scoped_service: Injected[ScopedService], 
     env_name: Annotated[str, Inject(param="env")]
 ) -> None: ...
 ```

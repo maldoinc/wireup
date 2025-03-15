@@ -204,10 +204,12 @@ All that's left now is to retrieve services from the container.
     You can also apply Wireup containers as decorators. See [Apply the container as a decorator](apply_container_as_decorator.md) docs for more info, but the end result is that you can
     decorate any function and specify dependencies to inject in it's signature.
 
-    ```python title="views/posts.py"  hl_lines="2 3"
+    ```python title="views/posts.py"  hl_lines="4 5"
+    from wireup import Injected, inject_from_container
+
     @app.get("/weather/forecast")
-    @wireup.inject_from_container(container)
-    async def get_forecast(weather_service: WeatherService):
+    @inject_from_container(container)
+    async def get_forecast(weather_service: Injected[WeatherService]):
         return await weather_service.get_forecast(...)
     ```
 
@@ -215,12 +217,12 @@ All that's left now is to retrieve services from the container.
 === "FastAPI"
 
     With the FastAPI integration you can just declare dependencies in http or websocket routes.
-    Note that due to how the framework operates, you MUST annotate the types with `Inject()`. This
-    is only required in routes and not in Wireup dependencies elsewhere.
 
-    ```python title="views/posts.py"  hl_lines="2"
+    ```python title="views/posts.py"  hl_lines="4"
+    from wireup import Injected
+
     @app.get("/weather/forecast")
-    async def get_forecast(weather_service: Annotated[WeatherService, Inject()]):
+    async def get_forecast(weather_service: Injected[WeatherService]):
         return await weather_service.get_forecast(...)
     ```
 
@@ -231,9 +233,11 @@ All that's left now is to retrieve services from the container.
 
     With the Flask integration you can just declare dependencies in views.
 
-    ```python title="views/posts.py"  hl_lines="2"
+    ```python title="views/posts.py"  hl_lines="4"
+    from wireup import Injected
+
     @app.get("/weather/forecast")
-    async def get_forecast(weather_service: WeatherService):
+    async def get_forecast(weather_service: Injected[WeatherService]):
         return await weather_service.get_forecast(...)
     ```
 
@@ -246,8 +250,10 @@ All that's left now is to retrieve services from the container.
     support for async views, regular views as well as class-based views.
 
 
-    ```python title="views/posts.py"  hl_lines="1"
-    async def get_forecast(weather_service: WeatherService):
+    ```python title="views/posts.py"  hl_lines="4"
+    from wireup import Injected
+
+    async def get_forecast(weather_service: Injected[WeatherService]):
         return await weather_service.get_forecast(...)
     ```
 

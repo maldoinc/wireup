@@ -1,5 +1,5 @@
 from wireup._decorators import inject_from_container
-from wireup.annotation import Inject, abstract, service
+from wireup.annotation import Inject, Injected, abstract, service
 from wireup.ioc.container import (
     create_async_container,
     create_sync_container,
@@ -12,6 +12,7 @@ from wireup.ioc.types import ParameterReference, ServiceOverride
 __all__ = [
     "AsyncContainer",
     "Inject",
+    "Injected",
     "ParameterBag",
     "ParameterReference",
     "ServiceOverride",

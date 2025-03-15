@@ -2,7 +2,7 @@ from typing import Any, Dict
 
 import flask
 from typing_extensions import Annotated
-from wireup import Inject
+from wireup import Inject, Injected
 
 from test.integration.flask.services.is_test_service import IsTestService
 from test.shared.shared_services.rand import RandomService
@@ -12,7 +12,7 @@ bp = flask.Blueprint("bp", "bp")
 
 
 @bp.get("/random")
-def random(random: RandomService):
+def random(random: Injected[RandomService]):
     return {"lucky_number": random.get_random()}
 
 
@@ -27,7 +27,9 @@ def not_autowired():
 
 
 @bp.get("/scoped")
-def scoped(s1: ScopedService, s2: ScopedServiceDependency, s3: ScopedServiceDependency) -> Dict[str, Any]:
+def scoped(
+    s1: Injected[ScopedService], s2: Injected[ScopedServiceDependency], s3: Injected[ScopedServiceDependency]
+) -> Dict[str, Any]:
     assert s1.other is s2
     assert s3 is s2
 
@@ -35,5 +37,5 @@ def scoped(s1: ScopedService, s2: ScopedServiceDependency, s3: ScopedServiceDepe
 
 
 @bp.get("/foo")
-def foo(foo: IsTestService):
+def foo(foo: Injected[IsTestService]):
     return {"test": foo.is_test}

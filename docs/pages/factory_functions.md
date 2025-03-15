@@ -74,7 +74,7 @@ def get_current_user(auth_service: AuthService) -> AuthenticatedUser:
 
 # Now it is possible to inject the authenticated user directly wherever it is necessary.
 @wireup.inject_from_container(container)
-def get_user_logs(user: AuthenticatedUser):
+def get_user_logs(user: Injected[AuthenticatedUser]):
     ...
 ```
 
@@ -106,27 +106,14 @@ When injecting `Notifier` the correct type will be injected based on the authent
 You can use factory functions to inject a class which you have not declared yourself and therefore cannot annotate. 
 Let's take redis client as an example. 
 
-=== "@ Annotations"
-
-    ```python
-    from wireup import service
+```python
+from wireup import service
 
 
-    @service
-    def redis_factory(redis_url: Annotated[str, Inject(param="redis_url")]) -> Redis:
-        return redis.from_url(redis_url)
-    ```
-
-=== "🏭 Programmatic"
-
-    ```python
-    from wireup import service
-
-
-    @service
-    def redis_factory(settings: Settings) -> Redis:
-        return redis.from_url(settings.redis_url)
-    ```
+@service
+def redis_factory(redis_url: Annotated[str, Inject(param="redis_url")]) -> Redis:
+    return redis.from_url(redis_url)
+```
 
 
 ### Inject built-in types

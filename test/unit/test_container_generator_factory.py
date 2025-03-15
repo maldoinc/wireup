@@ -3,6 +3,7 @@ from typing import AsyncIterator, Iterator, NewType
 
 import pytest
 import wireup
+from wireup import Injected
 from wireup._decorators import inject_from_container
 from wireup.errors import ContainerCloseError, WireupError
 
@@ -39,7 +40,7 @@ async def test_async_cleans_up_on_exit() -> None:
     container._registry.register(some_factory)
 
     @inject_from_container(container)
-    async def target(smth: Something):
+    async def target(smth: Injected[Something]):
         assert smth == Something("foo")
 
     await target()
@@ -67,7 +68,7 @@ def test_injects_transient() -> None:
     container._registry.register(f2, lifetime="transient")
 
     @inject_from_container(container, lambda: scoped)
-    def target(_: SomethingElse) -> None:
+    def target(_: Injected[SomethingElse]) -> None:
         pass
 
     with container.enter_scope() as scoped:
@@ -135,7 +136,7 @@ def test_sync_raises_when_generating_async() -> None:
     c._registry.register(f1)
 
     @inject_from_container(c)
-    def target(_: Something) -> None:
+    def target(_: Injected[Something]) -> None:
         pass
 
     with pytest.raises(

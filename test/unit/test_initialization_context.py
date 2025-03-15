@@ -44,11 +44,3 @@ def test_remove_dependencies(context: InitializationContext):
     context.remove_dependencies(RandomService, {"param1"})
     assert "param1" not in context.dependencies[RandomService]
     assert "param2" in context.dependencies[RandomService]
-
-
-def test_remove_dependency_type(context: InitializationContext):
-    context.init_target(RandomService)
-    param1 = AnnotatedParameter(klass=RandomService)
-    context.add_dependency(RandomService, "param1", param1)
-    context.remove_dependency_type(RandomService, RandomService)
-    assert context.dependencies == {RandomService: {}}

@@ -2,7 +2,7 @@ from typing import Any, Dict
 
 from fastapi import APIRouter, Depends, Request, WebSocket
 from typing_extensions import Annotated
-from wireup.annotation import Inject
+from wireup.annotation import Inject, Injected
 
 from test.integration.fastapi.services import ServiceUsingFastapiRequest
 from test.shared.shared_services.greeter import GreeterService
@@ -25,13 +25,13 @@ def get_lucky_number() -> int:
 
 @router.get("/lucky-number")
 async def lucky_number_route(
-    random_service: Annotated[RandomService, Inject()], lucky_number: Annotated[int, Depends(get_lucky_number)]
+    random_service: Injected[RandomService], lucky_number: Annotated[int, Depends(get_lucky_number)]
 ):
     return {"number": random_service.get_random(), "lucky_number": lucky_number}
 
 
 @router.get("/rng")
-async def rng_route(random_service: Annotated[RandomService, Inject()]):
+async def rng_route(random_service: Injected[RandomService]):
     return {"number": random_service.get_random()}
 
 
@@ -41,22 +41,22 @@ async def params_route(foo: Annotated[str, Inject(param="foo")], foo_foo: Annota
 
 
 @router.get("/raise-unknown")
-async def raise_unknown(_unknown_service: Annotated[None, Inject()]):
+async def raise_unknown(_unknown_service: Injected[None]):
     return {"msg": "Hello World"}
 
 
 @router.get("/current-request")
-async def curr_request(_request: Request, req: Annotated[ServiceUsingFastapiRequest, Inject()]) -> Dict[str, Any]:
+async def curr_request(_request: Request, req: Injected[ServiceUsingFastapiRequest]) -> Dict[str, Any]:
     return {"foo": req.req.query_params["foo"], "request_id": req.req.headers["X-Request-Id"]}
 
 
 @router.websocket("/ws")
 async def websocket_endpoint(
     websocket: WebSocket,
-    greeter: Annotated[GreeterService, Inject()],
-    scoped_service: Annotated[ScopedService, Inject()],
-    scoped_service2: Annotated[ScopedService, Inject()],
-    scoped_service_dependency: Annotated[ScopedServiceDependency, Inject()],
+    greeter: Injected[GreeterService],
+    scoped_service: Injected[ScopedService],
+    scoped_service2: Injected[ScopedService],
+    scoped_service_dependency: Injected[ScopedServiceDependency],
 ):
     assert scoped_service is scoped_service2
     assert scoped_service.other is scoped_service_dependency
@@ -69,9 +69,9 @@ async def websocket_endpoint(
 
 @router.get("/scoped")
 async def scoped_route(
-    scoped_service: Annotated[ScopedService, Inject()],
-    scoped_service2: Annotated[ScopedService, Inject()],
-    scoped_service_dependency: Annotated[ScopedServiceDependency, Inject()],
+    scoped_service: Injected[ScopedService],
+    scoped_service2: Injected[ScopedService],
+    scoped_service_dependency: Injected[ScopedServiceDependency],
 ):
     assert scoped_service is scoped_service2
     assert scoped_service.other is scoped_service_dependency

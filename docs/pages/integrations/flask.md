@@ -8,6 +8,7 @@ Dependency injection for Flask is available in the`wireup.integration.flask_inte
 ## Examples
 
 ```python
+from wireup import Inject, Injected, service
 
 app = Flask(__name__)
 app.config["FOO"] = "bar"
@@ -21,7 +22,7 @@ class RandomService:
 
 
 @app.get("/random")
-def get_random(random: RandomService):
+def get_random(random: Injected[RandomService]):
     return {"lucky_number": random.get_random()}
 
 @app.get("/env")

@@ -11,7 +11,6 @@ import django
 import django.urls
 from django.apps import AppConfig, apps
 from django.conf import settings
-from django.http import HttpRequest, HttpResponse
 from django.urls import URLPattern, URLResolver
 from django.utils.decorators import sync_and_async_middleware
 
@@ -22,6 +21,8 @@ from wireup.ioc.container.async_container import ScopedAsyncContainer, async_con
 
 if TYPE_CHECKING:
     from types import ModuleType
+
+    from django.http import HttpRequest, HttpResponse
 
     from wireup.integration.django import WireupSettings
     from wireup.ioc.container.async_container import AsyncContainer
@@ -130,7 +131,6 @@ class WireupConfig(AppConfig):
                     p.callback = self._inject_class_based_view(target)
                 else:
                     p.callback = self.inject_scoped(p.callback)
-                    self.container._registry.context.remove_dependency_type(target, HttpRequest)
 
     def _inject_class_based_view(self, callback: Any) -> Any:
         # It is possible in django for one class to serve multiple routes,

@@ -5,7 +5,6 @@ import functools
 from contextvars import ContextVar
 from typing import TYPE_CHECKING, Any, Awaitable, Callable
 
-from fastapi import FastAPI, Request, Response
 from fastapi.routing import APIRoute, APIWebSocketRoute
 from starlette.middleware.base import BaseHTTPMiddleware
 
@@ -15,6 +14,8 @@ from wireup.integration.util import is_view_using_container
 
 if TYPE_CHECKING:
     from collections.abc import AsyncIterator
+
+    from fastapi import FastAPI, Request, Response
 
     from wireup.ioc.container.async_container import AsyncContainer, ScopedAsyncContainer
 
@@ -70,9 +71,6 @@ def _inject_routes(container: AsyncContainer, app: FastAPI) -> None:
             route.dependant.call = (
                 inject_scoped(target) if isinstance(route, APIRoute) else _inject_websocket_route(container, target)
             )
-            # Remove Request as a dependency from this target.
-            # Let fastapi inject it instead and avoid duplicated work.
-            container._registry.context.remove_dependency_type(target, Request)
 
 
 def _update_lifespan(container: AsyncContainer, app: FastAPI) -> None:
