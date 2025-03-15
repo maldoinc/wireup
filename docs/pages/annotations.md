@@ -1,5 +1,6 @@
 # Dependency Annotations
 
+When injecting in functions (as opposed to calling `container.get(T)`),
 Wireup uses type annotations to resolve dependencies. Some cases require additional metadata through annotations.
 
 ## When Are Annotations Required?

@@ -206,7 +206,7 @@ All that's left now is to retrieve services from the container.
 
     ```python title="views/posts.py"  hl_lines="2 3"
     @app.get("/weather/forecast")
-    @wireup.inject_from_container(container)
+    @autowire(container)
     async def get_forecast(weather_service: WeatherService):
         return await weather_service.get_forecast(...)
     ```
