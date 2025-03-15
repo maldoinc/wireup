@@ -19,10 +19,11 @@ from wireup._decorators import inject_from_container
 from wireup.errors import WireupError
 from wireup.ioc.container.async_container import AsyncContainer, ScopedAsyncContainer, async_container_force_sync_scope
 from wireup.ioc.container.sync_container import ScopedSyncContainer
+from wireup.ioc.types import ParameterWrapper
+from wireup.ioc.util import get_annotated_parameters
 
 if TYPE_CHECKING:
     from wireup.integration.django import WireupSettings
-    from wireup.ioc.types import InjectionResult
 
 
 current_request: ContextVar[HttpRequest] = ContextVar("wireup_django_request")
@@ -128,18 +129,20 @@ class WireupConfig(AppConfig):
                     p.callback = self.inject_scoped(p.callback)
 
     def _inject_class_based_view(self, callback: Any) -> Any:
-        # It is possible in django for one class to serve multiple routes,
-        # so this needs to create a new type to disambiguate.
-        # see: https://github.com/maldoinc/wireup/issues/53
-        wrapped_type = type(f"WireupWrapped{callback.view_class.__name__}", (callback.view_class,), {})
-        self.container._registry.register(wrapped_type)
+        names_to_inject = get_annotated_parameters(callback.view_class)
 
         # This is taken from the django .as_view() method.
         @functools.wraps(callback)
         def view(request: HttpRequest, *args: Any, **kwargs: Any) -> Any:
-            provided_args: InjectionResult = get_request_container()._callable_get_params_to_inject(wrapped_type)
+            injected_names = {
+                name: self.container.params.get(param.annotation.param)
+                if isinstance(param.annotation, ParameterWrapper)
+                else sync_view_request_container.get().get(param.klass, qualifier=param.qualifier_value)
+                for name, param in names_to_inject.items()
+                if param.annotation
+            }
 
-            this = callback.view_class(**{**callback.view_initkwargs, **provided_args.kwargs})
+            this = callback.view_class(**{**callback.view_initkwargs, **injected_names})
             this.setup(request, *args, **kwargs)
             if not hasattr(this, "request"):
                 raise AttributeError(

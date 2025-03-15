@@ -18,16 +18,8 @@ class InitializationContext:
         self.dependencies: dict[InjectionTarget, dict[str, AnnotatedParameter]] = {}
         self.lifetime: dict[InjectionTarget, ServiceLifetime] = {}
 
-    def init_target(self, target: InjectionTarget, lifetime: ServiceLifetime | None = None) -> bool:
-        if target in self.dependencies:
-            return False
-
+    def init_target(self, target: InjectionTarget) -> None:
         self.dependencies[target] = {}
-
-        if lifetime is not None:
-            self.lifetime[target] = lifetime
-
-        return True
 
     def add_dependency(self, target: InjectionTarget, parameter_name: str, value: AnnotatedParameter) -> None:
         self.dependencies[target][parameter_name] = value

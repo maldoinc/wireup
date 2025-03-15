@@ -2,10 +2,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any
 
-from wireup.ioc.types import AnyCallable
-
 if TYPE_CHECKING:
-    from wireup.ioc.types import Qualifier
+    from wireup.ioc.types import AnyCallable, Qualifier
 
 
 class WireupError(Exception):

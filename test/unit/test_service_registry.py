@@ -1,15 +1,12 @@
 from typing import NewType
 
 import pytest
-from typing_extensions import Annotated
-from wireup import Inject
 from wireup.errors import (
     DuplicateServiceRegistrationError,
     FactoryReturnTypeIsEmptyError,
     InvalidRegistrationTypeError,
 )
 from wireup.ioc.service_registry import ServiceRegistry
-from wireup.ioc.types import AnnotatedParameter, ParameterWrapper
 
 from test.unit.services.no_annotations.random.random_service import RandomService
 
@@ -78,16 +75,6 @@ def test_is_interface_known(registry: ServiceRegistry) -> None:
 
     registry.register_abstract(MyInterface)
     assert registry.is_interface_known(MyInterface)
-
-
-def test_register_only_injectable_params(registry: ServiceRegistry) -> None:
-    def target(_a, _b, _c, _d: RandomService, _e: str, _f: Annotated[str, Inject(param="name")]) -> None: ...
-
-    registry.target_init_context(target)
-    assert registry.context.dependencies[target] == {
-        "_d": AnnotatedParameter(klass=RandomService),
-        "_f": AnnotatedParameter(klass=str, annotation=ParameterWrapper("name")),
-    }
 
 
 def test_registry_newtypes_class(registry: ServiceRegistry) -> None:

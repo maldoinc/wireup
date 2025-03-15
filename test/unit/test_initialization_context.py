@@ -12,15 +12,9 @@ def context() -> InitializationContext:
 
 
 def test_init_target(context: InitializationContext):
-    assert context.init_target(RandomService)
+    context.init_target(RandomService)
     assert RandomService in context.dependencies
     assert context.dependencies[RandomService] == {}
-
-
-def test_init_target_with_lifetime(context: InitializationContext):
-    assert context.init_target(RandomService, "singleton")
-    assert RandomService in context.lifetime
-    assert context.lifetime[RandomService] == "singleton"
 
 
 def test_init_target_existing(context: InitializationContext):

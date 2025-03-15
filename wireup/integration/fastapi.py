@@ -1,8 +1,12 @@
 import contextlib
 import functools
-from collections.abc import AsyncIterator
 from contextvars import ContextVar
-from typing import Any, Awaitable, Callable
+from typing import (
+    Any,
+    AsyncIterator,
+    Awaitable,
+    Callable,
+)
 
 from fastapi import FastAPI, Request, Response
 from fastapi.routing import APIRoute, APIWebSocketRoute

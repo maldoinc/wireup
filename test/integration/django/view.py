@@ -24,9 +24,9 @@ def index(
 class RandomNumberView(View):
     def __init__(
         self,
-        greeter: GreeterService,
+        greeter: Injected[GreeterService],
         is_debug: Annotated[bool, Inject(param="DEBUG")],
-        random_service: RandomService,
+        random_service: Injected[RandomService],
     ) -> None:
         self.random_service = random_service
         self.is_debug = is_debug

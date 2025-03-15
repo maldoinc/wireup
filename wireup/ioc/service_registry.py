@@ -13,9 +13,10 @@ from wireup.errors import (
     FactoryReturnTypeIsEmptyError,
     InvalidRegistrationTypeError,
     UnknownQualifiedServiceRequestedError,
+    WireupError,
 )
 from wireup.ioc.initialization_context import InitializationContext, InjectionTarget
-from wireup.ioc.util import _get_globals, ensure_is_type, is_type_injectable, param_get_annotation
+from wireup.ioc.util import ensure_is_type, get_globals, param_get_annotation
 
 if TYPE_CHECKING:
     from wireup.ioc.types import (
@@ -48,7 +49,7 @@ def _function_get_unwrapped_return_type(fn: Callable[..., T]) -> tuple[type[T], 
         return fn, FactoryType.REGULAR
 
     if ret := fn.__annotations__.get("return"):
-        ret = ensure_is_type(ret, globalns=_get_globals(fn))
+        ret = ensure_is_type(ret, globalns=get_globals(fn))
         if not ret:
             return None
 
@@ -109,13 +110,13 @@ class ServiceRegistry:
         if hasattr(klass, "__bases__"):
             discover_interfaces(klass.__bases__)
 
-        self.target_init_context(obj, lifetime=lifetime)
+        self.target_init_context(obj)
+        self.context.lifetime[klass] = lifetime
         self.factories[klass, qualifier] = ServiceFactory(
             factory=obj,
             factory_type=factory_type,
         )
         self.impls[klass].add(qualifier)
-        self.context.init_target(klass, lifetime)
 
     def register_abstract(self, klass: type) -> None:
         self.interfaces[klass] = {}
@@ -123,23 +124,18 @@ class ServiceRegistry:
     def target_init_context(
         self,
         target: InjectionTarget,
-        lifetime: ServiceLifetime | None = None,
     ) -> None:
         """Init and collect all the necessary dependencies to initialize the specified target."""
-        if not self.context.init_target(target, lifetime):
-            return
+        self.context.init_target(target)
 
         for name, parameter in inspect.signature(target).parameters.items():
-            annotated_param = param_get_annotation(parameter, globalns=_get_globals(target))
+            annotated_param = param_get_annotation(parameter, globalns=get_globals(target))
 
             if not annotated_param:
-                continue
+                msg = f"Wireup dependencies must have types. Please add a type to the '{name}' parameter in {target}."
+                raise WireupError(msg)
 
-            # Add to the context only if it's something we can inject
-            # or if it is a class that's not one of the builtins: int str dict etc.
-            # This is the case for services which are only typed and do not require an annotation.
-            if annotated_param.annotation or is_type_injectable(annotated_param.klass):
-                self.context.add_dependency(target, name, annotated_param)
+            self.context.add_dependency(target, name, annotated_param)
 
     def is_impl_with_qualifier_known(self, klass: type, qualifier_value: Qualifier | None) -> bool:
         """Determine if klass represending a concrete implementation + qualifier is known by the registry."""
