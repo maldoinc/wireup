@@ -135,13 +135,13 @@ class TestContainer(unittest.IsolatedAsyncioTestCase):
         self.container._registry.context.add_dependency(
             NoHints,
             "interpolated",
-            AnnotatedParameter(annotation=ParameterWrapper(TemplatedString("${first}-${second}"))),
+            AnnotatedParameter(klass=str, annotation=ParameterWrapper(TemplatedString("${first}-${second}"))),
         )
         self.container._registry.context.add_dependency(
-            NoHints, "mambo_number", AnnotatedParameter(annotation=ParameterWrapper("mambo_number"))
+            NoHints, "mambo_number", AnnotatedParameter(klass=str, annotation=ParameterWrapper("mambo_number"))
         )
         self.container._registry.context.add_dependency(
-            NoHints, "env", AnnotatedParameter(annotation=ParameterWrapper("env"))
+            NoHints, "env", AnnotatedParameter(klass=str, annotation=ParameterWrapper("env"))
         )
 
         self.container.params.update({"first": "foo", "second": "bar", "env": "test", "mambo_number": 5})

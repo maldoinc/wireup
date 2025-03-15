@@ -74,7 +74,7 @@ class AnnotatedParameter:
 
     def __init__(
         self,
-        klass: type[Any] | None = None,
+        klass: type[Any],
         annotation: InjectableType | None = None,
     ) -> None:
         """Create a new AnnotatedParameter.
