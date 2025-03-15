@@ -1,9 +1,5 @@
-import datetime
-import functools
 import unittest
 from dataclasses import dataclass
-from re import A
-from typing import Any, Optional
 from unittest.mock import MagicMock, Mock, patch
 
 import wireup
@@ -19,7 +15,7 @@ from wireup.errors import (
     UsageOfQualifierOnUnknownObjectError,
 )
 from wireup.ioc.parameter import TemplatedString
-from wireup.ioc.types import AnnotatedParameter, AnyCallable, ParameterWrapper
+from wireup.ioc.types import AnnotatedParameter, ParameterWrapper
 
 from test.fixtures import Counter, FooBar, FooBarChild, FooBarMultipleBases, FooBase, FooBaseAnother, FooBaz
 from test.unit import services
@@ -29,7 +25,7 @@ from test.unit.services.no_annotations.random.truly_random_service import TrulyR
 
 class TestContainer(unittest.IsolatedAsyncioTestCase):
     def setUp(self) -> None:
-        self.container = wireup.create_sync_container(service_modules=[services])
+        self.container = wireup.create_sync_container(service_modules=[services], parameters={"env_name": "test"})
 
     def test_raises_on_unknown_dependency(self):
         class UnknownDep: ...
@@ -100,10 +96,10 @@ class TestContainer(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(autowired_fn(), 5)
 
     async def test_autowire_async(self):
-        container = wireup.create_async_container(parameters={"env": "test"}, service_modules=[services])
+        container = wireup.create_async_container(parameters={"env_name": "test"}, service_modules=[services])
 
         async def test_function(
-            random: Annotated[RandomService, Inject(qualifier="foo")], env: Annotated[str, Inject(param="env")]
+            random: Annotated[RandomService, Inject(qualifier="foo")], env: Annotated[str, Inject(param="env_name")]
         ) -> int:
             self.assertEqual(env, "test")
             return random.get_random()
