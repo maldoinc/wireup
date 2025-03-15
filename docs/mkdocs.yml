@@ -4,7 +4,7 @@ nav:
     - Wireup: index.md
     - Basics:
       - Services: services.md
-      - Configuration: configuration.md
+      - Parameters: parameters.md
     - Learn:
       - Lifetimes: lifetimes.md
       - Interfaces: interfaces.md
