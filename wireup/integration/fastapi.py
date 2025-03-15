@@ -1,23 +1,17 @@
-from __future__ import annotations
-
 import contextlib
 import functools
+from collections.abc import AsyncIterator
 from contextvars import ContextVar
-from typing import TYPE_CHECKING, Any, Awaitable, Callable
+from typing import Any, Awaitable, Callable
 
+from fastapi import FastAPI, Request, Response
 from fastapi.routing import APIRoute, APIWebSocketRoute
 from starlette.middleware.base import BaseHTTPMiddleware
 
 from wireup._decorators import inject_from_container
 from wireup.errors import WireupError
 from wireup.integration.util import is_view_using_container
-
-if TYPE_CHECKING:
-    from collections.abc import AsyncIterator
-
-    from fastapi import FastAPI, Request, Response
-
-    from wireup.ioc.container.async_container import AsyncContainer, ScopedAsyncContainer
+from wireup.ioc.container.async_container import AsyncContainer, ScopedAsyncContainer
 
 current_request: ContextVar[Request] = ContextVar("wireup_fastapi_request")
 current_ws_container: ContextVar[ScopedAsyncContainer] = ContextVar("wireup_fastapi_container")

@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any
 
+from wireup.ioc.types import AnyCallable
+
 if TYPE_CHECKING:
     from wireup.ioc.types import Qualifier
 
@@ -42,8 +44,11 @@ class UnknownParameterError(WireupError):
 class FactoryReturnTypeIsEmptyError(WireupError):
     """Raised when a factory function has no return type defined."""
 
-    def __init__(self) -> None:
-        super().__init__("Factory functions must specify a return type denoting the type of dependency it can create.")
+    def __init__(self, fn: AnyCallable) -> None:
+        super().__init__(
+            "Factory functions must specify a return type denoting the type of dependency it can create. "
+            f"Please add a return tyoe to {fn}"
+        )
 
 
 class UnknownQualifiedServiceRequestedError(WireupError):

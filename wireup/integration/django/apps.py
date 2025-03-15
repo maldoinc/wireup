@@ -1,32 +1,27 @@
-from __future__ import annotations
-
 import asyncio
 import functools
 import importlib
 from contextvars import ContextVar
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, Awaitable, Callable
+from types import ModuleType
+from typing import TYPE_CHECKING, Any, Awaitable, Callable, List, Union
 
 import django
 import django.urls
 from django.apps import AppConfig, apps
 from django.conf import settings
+from django.http import HttpRequest, HttpResponse
 from django.urls import URLPattern, URLResolver
 from django.utils.decorators import sync_and_async_middleware
 
 import wireup
 from wireup._decorators import inject_from_container
 from wireup.errors import WireupError
-from wireup.ioc.container.async_container import ScopedAsyncContainer, async_container_force_sync_scope
+from wireup.ioc.container.async_container import AsyncContainer, ScopedAsyncContainer, async_container_force_sync_scope
+from wireup.ioc.container.sync_container import ScopedSyncContainer
 
 if TYPE_CHECKING:
-    from types import ModuleType
-
-    from django.http import HttpRequest, HttpResponse
-
     from wireup.integration.django import WireupSettings
-    from wireup.ioc.container.async_container import AsyncContainer
-    from wireup.ioc.container.sync_container import ScopedSyncContainer
     from wireup.ioc.types import InjectionResult
 
 
@@ -38,7 +33,7 @@ sync_view_request_container: ContextVar[ScopedSyncContainer] = ContextVar("wireu
 @sync_and_async_middleware
 def wireup_middleware(  # noqa: D103
     get_response: Callable[[HttpRequest], HttpResponse],
-) -> Callable[[HttpRequest], HttpResponse | Awaitable[HttpResponse]]:
+) -> Callable[[HttpRequest], Union[HttpResponse, Awaitable[HttpResponse]]]:
     container = get_app_container()
 
     if asyncio.iscoroutinefunction(get_response):
@@ -79,7 +74,7 @@ def _django_request_factory() -> HttpRequest:
         raise WireupError(msg) from e
 
 
-def get_request_container() -> ScopedSyncContainer | ScopedAsyncContainer:
+def get_request_container() -> Union[ScopedSyncContainer, ScopedAsyncContainer]:
     """When inside a request, returns the scoped container instance handling the current request."""
     try:
         return async_view_request_container.get()
@@ -160,5 +155,5 @@ class WireupConfig(AppConfig):
 class WireupSettings:
     """Class containing Wireup settings specific to Django."""
 
-    service_modules: list[str | ModuleType]
+    service_modules: List[Union[str, ModuleType]]
     """List of modules containing wireup service registrations."""

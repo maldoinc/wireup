@@ -90,7 +90,7 @@ class ServiceRegistry:
         return_type_result = _function_get_unwrapped_return_type(obj)
 
         if return_type_result is None:
-            raise FactoryReturnTypeIsEmptyError
+            raise FactoryReturnTypeIsEmptyError(obj)
 
         klass, factory_type = return_type_result
 
