@@ -1,27 +1,8 @@
-Wireup configuration can be injected through annotations or programmatically using factory functions. 
-You can also mix and match the two as necessary.
-
-**Annotations**: This declarative approach uses configuration metadata provided by decorators and annotations to define services and dependencies between them.
-It allows you to declare the final state and let the container handle the rest.
-
-This generally results in less boilerplate code compared to a programmatic approach and is how many popular frameworks operate.
-
-
-**🏭 Programmatic**: With a programmatic approach, you have full control over how services are created and can keep service
-definitions free of container references if this is important to you.
-
-This approach results in more code as you will need to write these factories and construct services yourself.
-
-This will also be somewhat familiar if you're coming from FastAPI,
-with the major difference being that you won't need to `Depends(get_service_from_function)` everywhere.
-
-Factories can request dependencies as usual and may use annotations for configuration.
-
----
-
-## @ Annotation-based configuration
 In addition to service objects, the container also holds configuration, called parameters
 that can be used to configure services.
+
+This is an optional feature but enables self-contained service declarations where you just add `@service`
+and any annotations to let Wireup know what to inject. 
 
 !!! warning
     **Parameters represent application configuration**. 
@@ -60,60 +41,4 @@ If you prefer using typed classes for configuration, they are also supported via
 
 The main idea is to register your settings as a service and inject it into factories like a regular dependency.
 
-### Configuration
-
-Assume your configuration is defined in an class such as this.
-Examples use [pydantic-settings](https://docs.pydantic.dev/latest/concepts/pydantic_settings) but any class will work exactly the same.
-
-
-
-```python title="settings.py"
-from pydantic_settings import BaseSettings
-from pydantic import Field, PostgresDsn
-
-
-class Settings(BaseSettings):
-    gh_api_key: str = Field(alias="gh_api_key")  
-    pg_dsn: PostgresDsn = Field(alias="pg_dsn")  
-```
-
-### Services
-Next step would be to define a few services, such as `GithubClient` and a `DatabaseConnection`.
-
-```python title="services/github_client.py"
-@dataclass
-class GithubClient:
-    api_key: str
-
-```
-
-```python title="services/db.py"
-@dataclass
-class DatabaseConnection:
-    dsn: str
-```
-
-### Factories
-
-To wire everything together we can use a few factories.
-
-```python title="factories.py"
-from wireup import service, container
-
-@service
-def settings_factory() -> Settings:
-    return Settings(...)
-
-
-# Now that settings is registered with the container 
-# it is possible to inject it like a regular service.
-@service
-def github_client_factory(settings: Settings) -> GithubClient:
-    return GithubClient(api_key=settings.gh_api_key)
-
-
-@service
-def database_connection_factory(settings: Settings) -> DatabaseConnection:
-    return DatabaseConnection(dsn=str(settings.pg_dsn))
-```
-
+See [Use Without Annotations](use_without_annotations.md) for more info.

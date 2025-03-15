@@ -3,18 +3,20 @@ nav:
   - 📚 Documentation:
     - Wireup: index.md
     - Basics:
-        - Services: services.md
-        - Configuration: configuration.md
+      - Services: services.md
+      - Configuration: configuration.md
     - Learn:
-        - Lifetimes: lifetimes.md
-        - Interfaces: interfaces.md
-        - Factory functions: factory_functions.md
-        - Annotations: annotations.md
-        - Apply as a decorator: apply_container_as_decorator.md
-        - Testing: testing.md
-        - Multiple registrations: multiple_registrations.md
-        - Use with __future__ annotations: future_annotations.md
-        - Introduce to an existing project: introduce_to_an_existing_project.md
+      - Lifetimes: lifetimes.md
+      - Interfaces: interfaces.md
+      - Factory functions: factory_functions.md
+      - Annotations: annotations.md
+      - Apply as a decorator: apply_container_as_decorator.md
+      - Testing: testing.md
+      - Multiple registrations: multiple_registrations.md
+      - Introduce to an existing project: introduce_to_an_existing_project.md
+    - Advanced:
+      - Use without annotations: use_without_annotations.md
+      - Use with __future__ annotations: future_annotations.md
     - Misc:
       - Demo application: demo_app.md
       - Versioning: versioning.md

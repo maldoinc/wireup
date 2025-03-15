@@ -159,7 +159,7 @@ async def make_http_client() -> AsyncIterator[aiohttp.ClientSession]:
     If using annotations is not suitable for your project, you can use factories as shown above to create
     all dependencies.
 
-    This lets you keep service definitions free of Wireup references. [Learn more](factory_functions.md)
+    This lets you keep service definitions free of Wireup references. [Learn more](use_without_annotations.md)
 
 
 #### 🐍 `WeatherService`
