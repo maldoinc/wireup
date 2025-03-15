@@ -5,6 +5,7 @@ import functools
 from contextlib import AsyncExitStack, ExitStack
 from typing import TYPE_CHECKING, Any
 
+from wireup.ioc.container import assert_dependency_exists
 from wireup.ioc.container.async_container import AsyncContainer, async_container_force_sync_scope
 from wireup.ioc.container.sync_container import SyncContainer
 from wireup.ioc.types import ParameterWrapper
@@ -35,22 +36,24 @@ def inject_from_container(
     def _decorator(target: Callable[..., Any]) -> Callable[..., Any]:
         names_to_inject = get_annotated_parameters(target)
 
+        for name, parameter in names_to_inject.items():
+            assert_dependency_exists(container, parameter=parameter, target=target, name=name)
+
         if asyncio.iscoroutinefunction(target):
+            if isinstance(container, SyncContainer):
+                msg = (
+                    "Sync container cannot perform injection on async targets. "
+                    "Create an async container via wireup.create_async_container."
+                )
+                raise TypeError(msg)
 
             @functools.wraps(target)
             async def _inject_async_target(*args: Any, **kwargs: Any) -> Any:
-                # TODO(@maldoinc): remove this to the outer layer.
-                if isinstance(container, SyncContainer):
-                    msg = (
-                        "Sync container cannot perform injection on async targets. "
-                        "Please create an async container via wireup.create_async_container."
-                    )
-                    raise TypeError(msg)
                 async with AsyncExitStack() as cm:
                     scoped_container = (
                         scoped_container_supplier()
                         if scoped_container_supplier
-                        else await cm.enter_async_context(container.enter_scope())
+                        else await cm.enter_async_context(container.enter_scope())  # type:ignore[reportArgumentType, unused-ignore]
                     )
 
                     injected_names = {
