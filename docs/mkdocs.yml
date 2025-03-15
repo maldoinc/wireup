@@ -18,6 +18,7 @@ nav:
       - Use without annotations: use_without_annotations.md
       - Use with __future__ annotations: future_annotations.md
     - Misc:
+      - Tips & Tricks: tips_tricks.md
       - Demo application: demo_app.md
       - Versioning: versioning.md
       - Upgrading: upgrading.md
