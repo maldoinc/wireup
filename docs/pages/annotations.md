@@ -20,7 +20,7 @@ Wireup uses type annotations to resolve dependencies. Some cases require additio
 For Python 3.9+ (or 3.8+ with `typing_extensions`):
 
 ```python
-@autowire(container)
+@wireup.inject_from_container(container)
 def configure(
     # Inject configuration parameter
     env: Annotated[str, Inject(param="APP_ENV")],

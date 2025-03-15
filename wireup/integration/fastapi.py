@@ -9,7 +9,7 @@ from fastapi import FastAPI, Request, Response
 from fastapi.routing import APIRoute, APIWebSocketRoute
 from starlette.middleware.base import BaseHTTPMiddleware
 
-from wireup._decorators import autowire
+from wireup._decorators import inject_from_container
 from wireup.errors import WireupError
 from wireup.integration.util import is_view_using_container
 
@@ -58,7 +58,7 @@ def _inject_websocket_route(container: AsyncContainer, target: Callable[..., Any
 
 
 def _inject_routes(container: AsyncContainer, app: FastAPI) -> None:
-    inject_scoped = autowire(container, get_request_container)
+    inject_scoped = inject_from_container(container, get_request_container)
 
     for route in app.routes:
         if (

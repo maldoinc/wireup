@@ -16,7 +16,7 @@ from django.urls import URLPattern, URLResolver
 from django.utils.decorators import sync_and_async_middleware
 
 import wireup
-from wireup._decorators import autowire
+from wireup._decorators import inject_from_container
 from wireup.errors import WireupError
 from wireup.ioc.container.async_container import ScopedAsyncContainer, async_container_force_sync_scope
 
@@ -113,7 +113,7 @@ class WireupConfig(AppConfig):
             },
         )
         self.container._registry.register(_django_request_factory, lifetime="scoped")
-        self.inject_scoped = autowire(self.container, get_request_container)
+        self.inject_scoped = inject_from_container(self.container, get_request_container)
 
         self._inject(django.urls.get_resolver())
 

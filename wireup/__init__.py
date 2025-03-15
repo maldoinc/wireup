@@ -1,4 +1,4 @@
-from wireup._decorators import autowire
+from wireup._decorators import inject_from_container
 from wireup.annotation import Inject, abstract, service
 from wireup.ioc.container import (
     create_async_container,
@@ -17,8 +17,8 @@ __all__ = [
     "ServiceOverride",
     "SyncContainer",
     "abstract",
-    "autowire",
     "create_async_container",
     "create_sync_container",
+    "inject_from_container",
     "service",
 ]

@@ -55,7 +55,7 @@ Best for:
     A new scope is entered at the beginning of a request and exited at the end. 
     This means that a `scoped` service will live for the duration of the request.
 
-    The Wireup `@autowire(container)` decorator can also enter/exit a scope after the decorated function returns.
+    The Wireup `@wireup.inject_from_container(container)` decorator can also enter/exit a scope after the decorated function returns.
     [Learn More](apply_container_as_decorator.md).
 
 ### Transient

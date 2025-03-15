@@ -3,7 +3,7 @@ from typing import AsyncIterator, Iterator, NewType
 
 import pytest
 import wireup
-from wireup._decorators import autowire
+from wireup._decorators import inject_from_container
 from wireup.errors import ContainerCloseError, WireupError
 
 from test.conftest import Container
@@ -38,7 +38,7 @@ async def test_async_cleans_up_on_exit() -> None:
     container = wireup.create_async_container()
     container._registry.register(some_factory)
 
-    @autowire(container)
+    @inject_from_container(container)
     async def target(smth: Something):
         assert smth == Something("foo")
 
@@ -66,7 +66,7 @@ def test_injects_transient() -> None:
     container._registry.register(f1, lifetime="transient")
     container._registry.register(f2, lifetime="transient")
 
-    @autowire(container, lambda: scoped)
+    @inject_from_container(container, lambda: scoped)
     def target(_: SomethingElse) -> None:
         pass
 
@@ -134,7 +134,7 @@ def test_sync_raises_when_generating_async() -> None:
     c = wireup.create_sync_container()
     c._registry.register(f1)
 
-    @autowire(c)
+    @inject_from_container(c)
     def target(_: Something) -> None:
         pass
 

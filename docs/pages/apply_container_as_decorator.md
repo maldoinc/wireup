@@ -19,11 +19,11 @@ To having the dependencies injected directly into the function.
 
 ## Implementation
 
-Wireup provides a decorator called `autowire`.
+Wireup provides a decorator called `wireup.inject_from_container`.
 The container will enter a scope before executing the function, inject all dependencies and exit the scope once the function returns.
 
 ```python
-@autowire(container)
+@wireup.inject_from_container(container)
 def awesome_function(
     service: RandomService, 
     scoped_service: ScopedService, 
@@ -36,7 +36,7 @@ If you have already created a scoped container elsewhere, you can supply a calla
 ```python
 scoped_container: ContextVar[ScopedSyncContainer] = ContextVar("scoped_container")
 
-@autowire(container, scoped_container.get)
+@wireup.inject_from_container(container, scoped_container.get)
 def awesome_function(
     service: RandomService, 
     scoped_service: ScopedService, 
@@ -48,9 +48,9 @@ You can also alias the decorator for a cleaner look.
 
 ```python
 scoped_container: ContextVar[ScopedSyncContainer] = ContextVar("scoped_container")
-autowired = autowire(container, scoped_container.get)
+injected = wireup.inject_from_container(container, scoped_container.get)
 
-@autowired
+@injected
 def awesome_function(
     service: RandomService, 
     scoped_service: ScopedService, 
@@ -58,12 +58,15 @@ def awesome_function(
 ) -> None: ...
 ```
 
-!!! note
-    This function works with both sync and async containers.
+
+## Good to know
+
+* This function works with both sync and async containers.
+* To inject `async def` functions you need an async container created via `wireup.create_async_contaier`.
 
 ## Function documentation
 
-### `autowire`
+### `wireup.inject_from_container`
 
-::: wireup._decorators.autowire
+::: wireup._decorators.inject_from_container
 

@@ -9,7 +9,7 @@ from unittest.mock import MagicMock, Mock, patch
 import wireup
 from typing_extensions import Annotated
 from wireup import Inject
-from wireup._decorators import autowire
+from wireup._decorators import inject_from_container
 from wireup.errors import (
     DuplicateQualifierForInterfaceError,
     DuplicateServiceRegistrationError,
@@ -74,7 +74,7 @@ class TestContainer(unittest.IsolatedAsyncioTestCase):
         mock_import_module.assert_called_once_with("fastapi")
 
     def test_inject_using_annotated_empty_wire_fails_to_inject_unknown(self):
-        @autowire(self.container)
+        @inject_from_container(self.container)
         def inner(_random: Annotated[unittest.TestCase, Inject()]): ...
 
         with self.assertRaises(UnknownServiceRequestedError) as context:
@@ -94,7 +94,7 @@ class TestContainer(unittest.IsolatedAsyncioTestCase):
             self.assertEqual(env, "test")
             return random.get_truly_random()
 
-        autowired_fn = autowire(self.container)(test_function)
+        autowired_fn = inject_from_container(self.container)(test_function)
         self.assertTrue(callable(autowired_fn))
         self.assertEqual(autowired_fn(), 5)
 
@@ -107,7 +107,7 @@ class TestContainer(unittest.IsolatedAsyncioTestCase):
             self.assertEqual(env, "test")
             return random.get_random()
 
-        autowired_fn = autowire(container)(test_function)
+        autowired_fn = inject_from_container(container)(test_function)
         self.assertTrue(callable(autowired_fn))
         self.assertEqual(await autowired_fn(), 4)
 
@@ -199,7 +199,7 @@ class TestContainer(unittest.IsolatedAsyncioTestCase):
         )
 
     def test_two_qualifiers_are_injected(self):
-        @autowire(self.container)
+        @inject_from_container(self.container)
         def inner(
             sub1: Annotated[FooBase, Inject(qualifier="sub1")], sub2: Annotated[FooBase, Inject(qualifier="sub2")]
         ):
@@ -212,7 +212,7 @@ class TestContainer(unittest.IsolatedAsyncioTestCase):
         inner()
 
     def test_default_impl_is_injected(self):
-        @autowire(self.container)
+        @inject_from_container(self.container)
         def inner(sub1: FooBase, sub2: Annotated[FooBase, Inject(qualifier="baz")]):
             self.assertEqual(sub1.foo, "bar")
             self.assertEqual(sub2.foo, "baz")
@@ -223,7 +223,7 @@ class TestContainer(unittest.IsolatedAsyncioTestCase):
         inner()
 
     def test_two_qualifiers_are_injected_annotated(self):
-        @autowire(self.container)
+        @inject_from_container(self.container)
         def inner(
             sub1: Annotated[FooBase, Inject(qualifier="sub1")], sub2: Annotated[FooBase, Inject(qualifier="sub2")]
         ):
@@ -236,7 +236,7 @@ class TestContainer(unittest.IsolatedAsyncioTestCase):
         inner()
 
     def test_interface_with_single_implementation_no_qualifier_gets_autowired(self):
-        @autowire(self.container)
+        @inject_from_container(self.container)
         def inner(foo: FooBase):
             self.assertEqual(foo.foo, "bar")
 
@@ -278,7 +278,7 @@ class TestContainer(unittest.IsolatedAsyncioTestCase):
         )
 
     def test_qualifier_raises_wire_called_on_unknown_type(self):
-        @autowire(self.container)
+        @inject_from_container(self.container)
         def inner(_sub1: Annotated[FooBase, Inject(qualifier="sub1")]): ...
 
         self.container._registry.register_abstract(FooBase)
@@ -291,7 +291,7 @@ class TestContainer(unittest.IsolatedAsyncioTestCase):
         )
 
     def test_inject_abstract_directly_raises(self):
-        @autowire(self.container)
+        @inject_from_container(self.container)
         def inner(_sub1: FooBase): ...
 
         self.container._registry.register_abstract(FooBase)
@@ -305,7 +305,7 @@ class TestContainer(unittest.IsolatedAsyncioTestCase):
         )
 
     def test_inject_abstract_directly_with_no_impls_raises(self):
-        @autowire(self.container)
+        @inject_from_container(self.container)
         def inner(_sub1: FooBase): ...
 
         self.container._registry.register_abstract(FooBase)
@@ -318,7 +318,7 @@ class TestContainer(unittest.IsolatedAsyncioTestCase):
         )
 
     def test_inherited_services_from_same_base_are_injected(self):
-        @autowire(self.container)
+        @inject_from_container(self.container)
         def inner(
             parent: Annotated[FooBase, Inject(qualifier="parent")], child: Annotated[FooBase, Inject(qualifier="child")]
         ):
@@ -337,11 +337,11 @@ class TestContainer(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(child.foo, "bar_child")
 
     def test_services_from_multiple_bases_are_injected(self):
-        @autowire(self.container)
+        @inject_from_container(self.container)
         def inner(sub: FooBase):
             self.assertEqual(sub.foo, "bar_multiple_bases")
 
-        @autowire(self.container)
+        @inject_from_container(self.container)
         def inner_another(sub: FooBaseAnother):
             self.assertEqual(sub.foo, "bar_multiple_bases")
 
@@ -362,7 +362,7 @@ class TestContainer(unittest.IsolatedAsyncioTestCase):
 
         self.container._registry.register(RegisterWithQualifierClass, qualifier=__name__)
 
-        @autowire(self.container)
+        @inject_from_container(self.container)
         def inner(_foo: RegisterWithQualifierClass): ...
 
         with self.assertRaises(UnknownQualifiedServiceRequestedError) as context:
@@ -381,7 +381,7 @@ class TestContainer(unittest.IsolatedAsyncioTestCase):
 
         self.container._registry.register(RegisterWithQualifierClass, qualifier=__name__)
 
-        @autowire(self.container)
+        @inject_from_container(self.container)
         def inner(foo: Annotated[RegisterWithQualifierClass, Inject(qualifier=__name__)]):
             self.assertEqual(foo.foo, "bar")
 
@@ -390,7 +390,7 @@ class TestContainer(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(foo.foo, "bar")
 
     def test_inject_qualifier_on_unknown_type(self):
-        @autowire(self.container)
+        @inject_from_container(self.container)
         def inner(_foo: Annotated[str, Inject(qualifier=__name__)]): ...
 
         with self.assertRaises(UsageOfQualifierOnUnknownObjectError) as context:
@@ -429,8 +429,8 @@ class TestContainer(unittest.IsolatedAsyncioTestCase):
             self.assertEqual(counter.count, 1)
             self.assertEqual(p1, "param_value")
 
-        autowire(c1)(inner)()
-        autowire(c2)(inner)()
+        inject_from_container(c1)(inner)()
+        inject_from_container(c2)(inner)()
 
     def test_container_get_with_interface_returns_impl(self):
         self.container._registry.register_abstract(FooBase)
@@ -440,7 +440,7 @@ class TestContainer(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(foo_bar.foo, "bar")
 
     def test_wire_from_annotation(self):
-        @autowire(self.container)
+        @inject_from_container(self.container)
         def inner(
             name: Annotated[str, Inject(param="name")],
             env: Annotated[str, Inject(param="env")],
@@ -457,7 +457,7 @@ class TestContainer(unittest.IsolatedAsyncioTestCase):
     def test_container_wires_none_values_from_parameter_bag(self):
         self.container.params.put("foo", None)
 
-        @autowire(self.container)
+        @inject_from_container(self.container)
         def inner(name: Annotated[str, Inject(param="foo")], name2: Annotated[str, Inject(param="foo")]):
             self.assertIsNone(name)
             self.assertIsNone(name2)
@@ -496,7 +496,7 @@ class TestContainer(unittest.IsolatedAsyncioTestCase):
 
     def test_injects_ctor(self):
         class Dummy:
-            @autowire(self.container)
+            @inject_from_container(self.container)
             def __init__(
                 self,
                 rand_service: Annotated[RandomService, Inject(qualifier="foo")],
@@ -531,7 +531,7 @@ class TestContainer(unittest.IsolatedAsyncioTestCase):
             self.assertEqual(a.get_random(), 4)
             self.assertIsInstance(b, SomeClass)
 
-        inject_scoped = autowire(self.container)(target)
+        inject_scoped = inject_from_container(self.container)(target)
         self.assertEqual(self.container._registry.context.dependencies[target].keys(), {"a", "b"})
         # On the second call, container will drop b from dependencies as it is an unknown object.
         inject_scoped()
@@ -541,11 +541,11 @@ class TestContainer(unittest.IsolatedAsyncioTestCase):
         sync_container = wireup.create_sync_container(parameters={"foo": "Foo"})
         async_container = wireup.create_async_container(parameters={"foo": "Foo"})
 
-        @autowire(sync_container)
+        @inject_from_container(sync_container)
         def sync_inner(name: Annotated[str, Inject(param="foo")]):
             self.assertEqual(name, "Foo")
 
-        @autowire(async_container)
+        @inject_from_container(async_container)
         async def async_inner(name: Annotated[str, Inject(param="foo")]):
             self.assertEqual(name, "Foo")
 
@@ -557,7 +557,7 @@ class TestContainer(unittest.IsolatedAsyncioTestCase):
         container.params.put("foo", "Foo")
         container._registry.register(RandomService, qualifier="foo")
 
-        @autowire(container)
+        @inject_from_container(container)
         def inner(
             foo: Annotated[str, Inject(param="foo")],
             foo_foo: Annotated[str, Inject(expr="${foo}-${foo}")],
@@ -579,7 +579,7 @@ class TestContainer(unittest.IsolatedAsyncioTestCase):
         self.container._registry.register_abstract(FooBase)
         self.container._registry.register(FooBar)
 
-        @autowire(self.container)
+        @inject_from_container(self.container)
         def foo(x: FooBase) -> FooBase:
             return x
 
@@ -590,7 +590,7 @@ class TestContainer(unittest.IsolatedAsyncioTestCase):
         self.container._registry.register_abstract(FooBase)
         self.container._registry.register(FooBar, qualifier="bar")
 
-        @autowire(self.container)
+        @inject_from_container(self.container)
         def foo(x: Annotated[FooBase, Inject(qualifier="bar")]) -> FooBase:
             return x
 

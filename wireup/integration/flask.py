@@ -1,12 +1,12 @@
 from flask import Flask, Response, g
 
-from wireup._decorators import autowire
+from wireup._decorators import inject_from_container
 from wireup.integration.util import is_view_using_container
 from wireup.ioc.container.sync_container import ScopedSyncContainer, SyncContainer
 
 
 def _inject_views(container: SyncContainer, app: Flask) -> None:
-    inject_scoped = autowire(container, get_request_container)
+    inject_scoped = inject_from_container(container, get_request_container)
 
     app.view_functions = {
         name: inject_scoped(view) if is_view_using_container(container, view) else view

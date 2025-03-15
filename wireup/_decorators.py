@@ -15,7 +15,7 @@ if TYPE_CHECKING:
     from wireup.ioc.container.sync_container import ScopedSyncContainer
 
 
-def autowire(
+def inject_from_container(
     container: SyncContainer | AsyncContainer,
     scoped_container_supplier: Callable[[], ScopedSyncContainer | ScopedAsyncContainer] | None = None,
 ) -> Callable[..., Any]:
