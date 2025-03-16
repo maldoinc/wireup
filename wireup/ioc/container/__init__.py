@@ -39,16 +39,28 @@ def _create_container(
     )
     if service_modules:
         register_services_from_modules(container._registry, service_modules)
-    assert_dependencies_valid(container)
+    _assert_dependencies_valid(container)
 
     return container
 
 
-def assert_dependencies_valid(container: BaseContainer) -> None:
+def _assert_dependencies_valid(container: BaseContainer) -> None:
     """Assert that all required dependencies exist for this container instance."""
-    for target, dependencies in container._registry.dependencies.items():
-        for name, annotated_parameter in dependencies.items():
-            assert_dependency_exists(container=container, parameter=annotated_parameter, target=target, name=name)
+    for impl in container._registry.impls:
+        for name, dependency in container._registry.dependencies[impl].items():
+            if (
+                not dependency.is_parameter
+                and container._registry.lifetime[impl] == "singleton"
+                and (dep_lifetime := container._registry.lifetime[dependency.klass]) != "singleton"
+            ):
+                msg = (
+                    f"Parameter '{name}' of {type(impl).__name__.capitalize()} {impl.__module__}.{impl.__name__} "
+                    f"depends on a service with a '{dep_lifetime}' lifetime which is not supported. "
+                    "Singletons can only depend on other singletons."
+                )
+                raise WireupError(msg)
+
+            assert_dependency_exists(container=container, parameter=dependency, target=impl, name=name)
 
 
 def assert_dependency_exists(container: BaseContainer, parameter: AnnotatedParameter, target: Any, name: str) -> None:
