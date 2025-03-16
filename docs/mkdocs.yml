@@ -49,6 +49,7 @@ theme:
     - content.code.annotate
     - navigation.instant
     - navigation.tabs
+    - navigation.footer
     - content.tabs.link
   font:
     text: Reddit Sans
@@ -95,6 +96,8 @@ markdown_extensions:
         - name: mermaid
           class: mermaid
           format: !!python/name:pymdownx.superfences.fence_code_format
+  - toc:
+      permalink: true
 plugins:
   - mike
   - search
