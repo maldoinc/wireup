@@ -3,8 +3,7 @@ from typing import AsyncIterator, Iterator, NewType
 
 import pytest
 import wireup
-from wireup import Injected
-from wireup._decorators import inject_from_container
+from wireup import Injected, inject_from_container
 from wireup.errors import ContainerCloseError, WireupError
 
 from test.conftest import Container

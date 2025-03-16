@@ -4,9 +4,7 @@ from unittest.mock import MagicMock, Mock, patch
 
 import wireup
 from typing_extensions import Annotated
-from wireup import Inject
-from wireup._decorators import inject_from_container
-from wireup.annotation import Injected
+from wireup import Inject, Injected, inject_from_container
 from wireup.errors import (
     DuplicateQualifierForInterfaceError,
     DuplicateServiceRegistrationError,
@@ -14,8 +12,6 @@ from wireup.errors import (
     UnknownServiceRequestedError,
     UsageOfQualifierOnUnknownObjectError,
 )
-from wireup.ioc.parameter import TemplatedString
-from wireup.ioc.types import AnnotatedParameter, ParameterWrapper
 
 from test.fixtures import Counter, FooBar, FooBarChild, FooBarMultipleBases, FooBase, FooBaseAnother, FooBaz
 from test.unit import services

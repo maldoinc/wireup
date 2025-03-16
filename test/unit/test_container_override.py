@@ -4,8 +4,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 from typing_extensions import Annotated
-from wireup import Inject, Injected
-from wireup._decorators import inject_from_container
+from wireup import Inject, Injected, inject_from_container
 from wireup.errors import UnknownOverrideRequestedError
 from wireup.ioc.override_manager import OverrideManager
 from wireup.ioc.types import Qualifier, ServiceOverride

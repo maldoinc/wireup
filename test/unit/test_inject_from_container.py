@@ -1,7 +1,6 @@
 import wireup
 from typing_extensions import Annotated
-from wireup._decorators import inject_from_container
-from wireup.annotation import Inject
+from wireup import Inject, inject_from_container
 
 from test.conftest import Container
 from test.unit import services

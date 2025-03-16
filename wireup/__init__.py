@@ -1,5 +1,5 @@
+from wireup._annotations import Inject, Injected, abstract, service
 from wireup._decorators import inject_from_container
-from wireup.annotation import Inject, Injected, abstract, service
 from wireup.ioc.container import (
     create_async_container,
     create_sync_container,

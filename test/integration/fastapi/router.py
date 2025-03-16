@@ -2,7 +2,7 @@ from typing import Any, Dict
 
 from fastapi import APIRouter, Depends, Request, WebSocket
 from typing_extensions import Annotated
-from wireup.annotation import Inject, Injected
+from wireup import Inject, Injected
 
 from test.integration.fastapi.services import ServiceUsingFastapiRequest
 from test.shared.shared_services.greeter import GreeterService

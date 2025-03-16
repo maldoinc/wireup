@@ -1,6 +1,5 @@
 from typing_extensions import Annotated
-from wireup import Inject
-from wireup.annotation import service
+from wireup import Inject, service
 
 
 @service

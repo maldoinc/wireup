@@ -6,7 +6,7 @@ from pathlib import Path
 from types import FunctionType, ModuleType
 from typing import TYPE_CHECKING, Any, Callable
 
-from wireup.annotation import AbstractDeclaration, ServiceDeclaration
+from wireup._annotations import AbstractDeclaration, ServiceDeclaration
 
 if TYPE_CHECKING:
     from wireup.ioc.service_registry import ServiceRegistry
