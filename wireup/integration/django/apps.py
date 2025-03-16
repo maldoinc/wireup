@@ -21,7 +21,7 @@ from wireup.ioc.container import assert_dependencies_valid
 from wireup.ioc.container.async_container import AsyncContainer, ScopedAsyncContainer, async_container_force_sync_scope
 from wireup.ioc.container.sync_container import ScopedSyncContainer
 from wireup.ioc.types import ParameterWrapper
-from wireup.ioc.util import get_annotated_parameters
+from wireup.ioc.util import get_inject_annotated_parameters
 
 if TYPE_CHECKING:
     from wireup.integration.django import WireupSettings
@@ -131,7 +131,7 @@ class WireupConfig(AppConfig):
                     p.callback = self.inject_scoped(p.callback)
 
     def _inject_class_based_view(self, callback: Any) -> Any:
-        names_to_inject = get_annotated_parameters(callback.view_class)
+        names_to_inject = get_inject_annotated_parameters(callback.view_class)
 
         # This is taken from the django .as_view() method.
         @functools.wraps(callback)

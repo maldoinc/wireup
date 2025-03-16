@@ -43,7 +43,7 @@ def param_get_annotation(parameter: Parameter, *, globalns: dict[str, Any]) -> A
     return None if not resolved_type else AnnotatedParameter(klass=resolved_type)
 
 
-def get_annotated_parameters(target: AnyCallable) -> dict[str, AnnotatedParameter]:
+def get_inject_annotated_parameters(target: AnyCallable) -> dict[str, AnnotatedParameter]:
     """Retrieve annotated parameters from a given callable target.
 
     This function inspects the signature of the provided callable and returns a dictionary
