@@ -119,34 +119,6 @@ class TestContainer(unittest.IsolatedAsyncioTestCase):
             str(context.exception),
         )
 
-    def test_can_initialize_from_context_tests_add_update(self):
-        @dataclass
-        class NoHints:
-            interpolated: str
-            env: str
-            mambo_number: int
-
-        self.container._registry.register(NoHints)
-
-        self.container._registry.context.add_dependency(
-            NoHints,
-            "interpolated",
-            AnnotatedParameter(klass=str, annotation=ParameterWrapper(TemplatedString("${first}-${second}"))),
-        )
-        self.container._registry.context.add_dependency(
-            NoHints, "mambo_number", AnnotatedParameter(klass=str, annotation=ParameterWrapper("mambo_number"))
-        )
-        self.container._registry.context.add_dependency(
-            NoHints, "env", AnnotatedParameter(klass=str, annotation=ParameterWrapper("env"))
-        )
-
-        self.container.params.update({"first": "foo", "second": "bar", "env": "test", "mambo_number": 5})
-        obj = self.container.get(NoHints)
-
-        self.assertEqual(obj.interpolated, "foo-bar")
-        self.assertEqual(obj.env, "test")
-        self.assertEqual(obj.mambo_number, 5)
-
     def test_db_service_dataclass_with_params(self):
         @dataclass
         class MyDbService:

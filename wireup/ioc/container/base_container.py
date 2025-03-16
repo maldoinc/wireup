@@ -1,5 +1,5 @@
 import logging
-from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Set, Tuple, Type, TypeVar, Union
+from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Tuple, Type, TypeVar, Union
 
 from wireup._async_to_sync import async_to_sync
 from wireup.errors import (
@@ -124,10 +124,9 @@ class BaseContainer:
 
     async def _async_callable_get_params_to_inject(self, fn: AnyCallable) -> InjectionResult:
         result: Dict[str, Any] = {}
-        names_to_remove: Set[str] = set()
         exit_stack: List[Union[GeneratorType[Any, Any, Any], AsyncGeneratorType[Any, Any]]] = []
 
-        for name, param in self._registry.context.dependencies[fn].items():
+        for name, param in self._registry.dependencies[fn].items():
             obj, value_found = self._try_get_existing_value(param)
 
             if value_found:
@@ -136,18 +135,8 @@ class BaseContainer:
                 if creation.exit_stack:
                     exit_stack.extend(creation.exit_stack)
                 result[name] = creation.instance
-            else:
-                # Normally the container won't throw if it encounters a type it doesn't know about
-                # But if it's explicitly marked as to be injected then we need to throw.
-                if param.klass and isinstance(param.annotation, EmptyContainerInjectionRequest):
-                    raise UnknownServiceRequestedError(param.klass)
-
-                names_to_remove.add(name)
-
-        # If the container is creating services, it is assumed to be final, so unnecessary entries can be removed
-        # from the context in order to speed up subsequent calls.
-        if names_to_remove:
-            self._registry.context.remove_dependencies(fn, names_to_remove)
+            elif param.klass and isinstance(param.annotation, EmptyContainerInjectionRequest):
+                raise UnknownServiceRequestedError(param.klass)
 
         return InjectionResult(kwargs=result, exit_stack=exit_stack)
 
@@ -158,7 +147,7 @@ class BaseContainer:
             return None
 
         ctor, resolved_type, factory_type = ctor_and_type
-        lifetime = self._registry.context.lifetime[resolved_type]
+        lifetime = self._registry.lifetime[resolved_type]
         self._assert_lifetime_is_valid(lifetime)
         injection_result = await self._async_callable_get_params_to_inject(ctor)
         instance_or_generator = (
@@ -201,7 +190,7 @@ class BaseContainer:
             )
             raise WireupError(msg)
 
-        lifetime = self._registry.context.lifetime[resolved_type]
+        lifetime = self._registry.lifetime[resolved_type]
         self._assert_lifetime_is_valid(lifetime)
 
         injection_result = self._callable_get_params_to_inject(ctor)

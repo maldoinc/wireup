@@ -5,7 +5,7 @@ import typing
 from collections import defaultdict
 from dataclasses import dataclass
 from enum import Enum, auto
-from typing import TYPE_CHECKING, Any, Callable, TypeVar
+from typing import TYPE_CHECKING, Any, Callable, TypeVar, Union
 
 from wireup.errors import (
     DuplicateQualifierForInterfaceError,
@@ -15,7 +15,7 @@ from wireup.errors import (
     UnknownQualifiedServiceRequestedError,
     WireupError,
 )
-from wireup.ioc.initialization_context import InitializationContext, InjectionTarget
+from wireup.ioc.types import AnnotatedParameter, AnyCallable
 from wireup.ioc.util import ensure_is_type, get_globals, param_get_annotation
 
 if TYPE_CHECKING:
@@ -26,6 +26,8 @@ if TYPE_CHECKING:
 
 
 T = TypeVar("T")
+InjectionTarget = Union[AnyCallable, type]
+"""Represents valid dependency injection targets: Functions and Classes."""
 
 
 class FactoryType(Enum):
@@ -70,14 +72,14 @@ def _function_get_unwrapped_return_type(fn: Callable[..., T]) -> tuple[type[T], 
 class ServiceRegistry:
     """Container class holding service registration info and dependencies among them."""
 
-    __slots__ = ("context", "factories", "impls", "interfaces")
+    __slots__ = ("dependencies", "factories", "impls", "interfaces", "lifetime")
 
     def __init__(self) -> None:
         self.interfaces: dict[type, dict[Qualifier, type]] = {}
         self.impls: dict[type, set[Qualifier]] = defaultdict(set)
         self.factories: dict[tuple[type, Qualifier], ServiceFactory] = {}
-
-        self.context = InitializationContext()
+        self.dependencies: dict[InjectionTarget, dict[str, AnnotatedParameter]] = defaultdict(defaultdict)
+        self.lifetime: dict[InjectionTarget, ServiceLifetime] = {}
 
     def register(
         self,
@@ -111,7 +113,7 @@ class ServiceRegistry:
             discover_interfaces(klass.__bases__)
 
         self.target_init_context(obj)
-        self.context.lifetime[klass] = lifetime
+        self.lifetime[klass] = lifetime
         self.factories[klass, qualifier] = ServiceFactory(
             factory=obj,
             factory_type=factory_type,
@@ -126,8 +128,6 @@ class ServiceRegistry:
         target: InjectionTarget,
     ) -> None:
         """Init and collect all the necessary dependencies to initialize the specified target."""
-        self.context.init_target(target)
-
         for name, parameter in inspect.signature(target).parameters.items():
             annotated_param = param_get_annotation(parameter, globalns=get_globals(target))
 
@@ -135,7 +135,7 @@ class ServiceRegistry:
                 msg = f"Wireup dependencies must have types. Please add a type to the '{name}' parameter in {target}."
                 raise WireupError(msg)
 
-            self.context.add_dependency(target, name, annotated_param)
+            self.dependencies[target][name] = annotated_param
 
     def is_impl_with_qualifier_known(self, klass: type, qualifier_value: Qualifier | None) -> bool:
         """Determine if klass represending a concrete implementation + qualifier is known by the registry."""

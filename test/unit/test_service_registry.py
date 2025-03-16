@@ -22,7 +22,7 @@ def test_register_service(registry: ServiceRegistry) -> None:
     assert MyService in registry.impls
     assert registry.is_impl_with_qualifier_known(MyService, "default")
     assert registry.is_type_with_qualifier_known(MyService, "default")
-    assert registry.context.lifetime[MyService] == "singleton"
+    assert registry.lifetime[MyService] == "singleton"
 
     with pytest.raises(DuplicateServiceRegistrationError):
         registry.register(MyService, qualifier="default", lifetime="singleton")
@@ -88,7 +88,7 @@ def test_registry_newtypes_class(registry: ServiceRegistry) -> None:
 
     registry.register(y_factory, lifetime="singleton")
 
-    assert registry.context.lifetime[Y] == "singleton"
+    assert registry.lifetime[Y] == "singleton"
 
 
 def test_registry_newtypes_anything(registry: ServiceRegistry) -> None:
@@ -99,7 +99,7 @@ def test_registry_newtypes_anything(registry: ServiceRegistry) -> None:
 
     registry.register(y_factory, lifetime="singleton")
 
-    assert registry.context.lifetime[Y] == "singleton"
+    assert registry.lifetime[Y] == "singleton"
 
 
 def test_register_invalid_target(registry: ServiceRegistry) -> None:
