@@ -18,7 +18,7 @@ import wireup
 from wireup import service
 from wireup._decorators import inject_from_container
 from wireup.errors import WireupError
-from wireup.ioc.container import assert_dependencies_valid
+from wireup.ioc.container import assert_dependency_exists
 from wireup.ioc.container.async_container import AsyncContainer, ScopedAsyncContainer, async_container_force_sync_scope
 from wireup.ioc.container.sync_container import ScopedSyncContainer
 from wireup.ioc.types import ParameterWrapper
@@ -111,7 +111,6 @@ class WireupConfig(AppConfig):
                 if not entry.startswith("__") and hasattr(settings, entry)
             },
         )
-        assert_dependencies_valid(self.container)
         self.inject_scoped = inject_from_container(self.container, get_request_container)
 
         self._inject(django.urls.get_resolver())
@@ -132,6 +131,8 @@ class WireupConfig(AppConfig):
 
     def _inject_class_based_view(self, callback: Any) -> Any:
         names_to_inject = get_inject_annotated_parameters(callback.view_class)
+        for name, parameter in names_to_inject.items():
+            assert_dependency_exists(self.container, parameter=parameter, target=callback.view_class, name=name)
 
         # This is taken from the django .as_view() method.
         @functools.wraps(callback)
