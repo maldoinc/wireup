@@ -10,7 +10,7 @@ import wireup.integration
 import wireup.integration.fastapi
 from fastapi import FastAPI, Request
 from fastapi.testclient import TestClient
-from wireup.errors import UnknownServiceRequestedError, WireupError
+from wireup.errors import WireupError
 from wireup.integration.fastapi import get_app_container
 
 from test.integration.fastapi import services as fastapi_test_services
@@ -24,7 +24,7 @@ def create_app() -> FastAPI:
     app.include_router(router)
 
     container = wireup.create_async_container(
-        service_modules=[fastapi_test_services, shared_services], parameters={"foo": "bar"}
+        service_modules=[fastapi_test_services, shared_services, wireup.integration.fastapi], parameters={"foo": "bar"}
     )
     wireup.integration.fastapi.setup(container, app)
 
@@ -107,7 +107,9 @@ async def test_closes_container_on_lifespan_close() -> None:
         nonlocal cleanup_done
         cleanup_done = True
 
-    container = wireup.create_async_container(service_modules=[fastapi_test_services, shared_services])
+    container = wireup.create_async_container(
+        service_modules=[fastapi_test_services, shared_services, wireup.integration.fastapi]
+    )
     container._registry.register(random_service_factory)
 
     wireup.integration.fastapi.setup(container, app)
@@ -129,7 +131,9 @@ async def test_executes_fastapi_lifespan() -> None:
         cleanup_done = True
 
     app = FastAPI(lifespan=lifespan)
-    container = wireup.create_async_container(service_modules=[fastapi_test_services, shared_services])
+    container = wireup.create_async_container(
+        service_modules=[fastapi_test_services, shared_services, wireup.integration.fastapi]
+    )
 
     wireup.integration.fastapi.setup(container, app)
 

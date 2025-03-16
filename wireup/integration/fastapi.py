@@ -12,10 +12,9 @@ from fastapi import FastAPI, Request, Response
 from fastapi.routing import APIRoute, APIWebSocketRoute
 from starlette.middleware.base import BaseHTTPMiddleware
 
-from wireup._decorators import inject_from_container
+from wireup import inject_from_container, service
 from wireup.errors import WireupError
 from wireup.integration.util import is_view_using_container
-from wireup.ioc.container import assert_dependencies_valid
 from wireup.ioc.container.async_container import AsyncContainer, ScopedAsyncContainer
 
 current_request: ContextVar[Request] = ContextVar("wireup_fastapi_request")
@@ -32,7 +31,12 @@ async def _wireup_request_middleware(request: Request, call_next: Callable[[Requ
         current_request.reset(token)
 
 
-def _fastapi_request_factory() -> Request:
+@service(lifetime="scoped")
+def fastapi_request_factory() -> Request:
+    """Provide the current FastAPI request as a dependency.
+
+    Note that this requires the Wireup-FastAPI integration to be set up.
+    """
     try:
         return current_request.get()
     except LookupError as e:
@@ -104,8 +108,6 @@ def setup(container: AsyncContainer, app: FastAPI) -> None:
             yield client
     ```
     """
-    container._registry.register(_fastapi_request_factory, lifetime="scoped")
-    assert_dependencies_valid(container)
     _update_lifespan(container, app)
 
     app.add_middleware(BaseHTTPMiddleware, dispatch=_wireup_request_middleware)

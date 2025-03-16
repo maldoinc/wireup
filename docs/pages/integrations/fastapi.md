@@ -53,6 +53,8 @@ To inject dependencies, add the type to the route's signature and annotate it wi
 ### Inject FastAPI request
 
 A key feature of the integration is to expose `fastapi.Request` in Wireup.
+To allow injecting it in your services you must add `wireup.integration.fastapi` module to your service modules
+when creating a container.
 
 Services depending on it should be transient or scoped, so that these are not shared across requests.
 

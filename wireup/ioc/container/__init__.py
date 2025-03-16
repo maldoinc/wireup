@@ -39,6 +39,7 @@ def _create_container(
     )
     if service_modules:
         register_services_from_modules(container._registry, service_modules)
+    assert_dependencies_valid(container)
 
     return container
 

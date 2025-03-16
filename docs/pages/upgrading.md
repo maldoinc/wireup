@@ -15,7 +15,7 @@ As a result of this, the following has changed:
     * If you were manually registering services with the container, that has now been removed. You should instead use `@service` on services or factories and point the container to then at creation time when calling `wireup.create_sync_container` or `wireup.create_async_container`.
 * `@container.abstract`
     * Same as above except use `@abstract` decorator.
-* `@wireup.inject_from_container(container)`
+* `@container.autowire`
     * This has also been removed. Refer to the relevant docs for an upgrade path: [Apply the container as a decorator](apply_container_as_decorator.md).
 * `wireup.create_container` is now `wireup.create_sync_container` and `wireup.create_async_container`.
 
@@ -76,3 +76,9 @@ The `perform_wramup` setting is removed.
 Removed `import_flask_config` setting from the integration.
 Instead expose flask config directly to the create_sync_container call.
 See Flask integration docs for more info.
+
+
+### FastAPI Integration
+
+The integration now no longer automatically exposes `fastapi.Request` as a Wireup dependency. If you require that
+you need to pass `wireup.integration.fastapi` in your service modules when creating a container.

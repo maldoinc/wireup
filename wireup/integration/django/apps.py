@@ -15,6 +15,7 @@ from django.urls import URLPattern, URLResolver
 from django.utils.decorators import sync_and_async_middleware
 
 import wireup
+from wireup import service
 from wireup._decorators import inject_from_container
 from wireup.errors import WireupError
 from wireup.ioc.container import assert_dependencies_valid
@@ -65,6 +66,7 @@ def wireup_middleware(  # noqa: D103
     return sync_inner
 
 
+@service
 def _django_request_factory() -> HttpRequest:
     try:
         return current_request.get()
@@ -99,18 +101,16 @@ class WireupConfig(AppConfig):
 
     def ready(self) -> None:
         integration_settings: WireupSettings = settings.WIREUP
+        all_modules: List[Union[ModuleType, str]] = [*integration_settings.service_modules, __name__]
 
         self.container = wireup.create_async_container(
-            service_modules=[
-                importlib.import_module(m) if isinstance(m, str) else m for m in integration_settings.service_modules
-            ],
+            service_modules=[importlib.import_module(m) if isinstance(m, str) else m for m in all_modules],
             parameters={
                 entry: getattr(settings, entry)
                 for entry in dir(settings)
                 if not entry.startswith("__") and hasattr(settings, entry)
             },
         )
-        self.container._registry.register(_django_request_factory, lifetime="scoped")
         assert_dependencies_valid(self.container)
         self.inject_scoped = inject_from_container(self.container, get_request_container)
 
