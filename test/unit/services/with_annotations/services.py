@@ -20,14 +20,14 @@ def truly_random_service_factory(
 
 
 @abstract
-class IFoo(abc.ABC):
+class Foo(abc.ABC):
     @abc.abstractmethod
     def get_foo(self) -> str:
         raise NotImplementedError
 
 
 @service
-class FooImpl(IFoo):
+class FooImpl(Foo):
     def get_foo(self) -> str:
         return "foo"
 

@@ -8,7 +8,7 @@ from wireup.errors import WireupError
 
 from test.unit.services.no_annotations.random.random_service import RandomService
 from test.unit.services.with_annotations.env import EnvService
-from test.unit.services.with_annotations.services import ScopedService, TransientService
+from test.unit.services.with_annotations.services import Foo, FooImpl, ScopedService, TransientService
 from test.unit.util import run
 
 if TYPE_CHECKING:
@@ -18,21 +18,29 @@ if TYPE_CHECKING:
 class ContainerGetParams(NamedTuple):
     service: type[Any]
     qualifier: str | None
+    expected_type: type[Any]
 
 
 @pytest.mark.parametrize(
     ContainerGetParams._fields,
     [
-        pytest.param(*ContainerGetParams(service=EnvService, qualifier=None), id="Default qualifier"),
-        pytest.param(*ContainerGetParams(service=RandomService, qualifier="foo"), id="With qualifier"),
+        pytest.param(
+            *ContainerGetParams(service=EnvService, qualifier=None, expected_type=EnvService), id="Default qualifier"
+        ),
+        pytest.param(
+            *ContainerGetParams(service=RandomService, qualifier="foo", expected_type=RandomService),
+            id="With qualifier",
+        ),
+        pytest.param(*ContainerGetParams(service=Foo, qualifier=None, expected_type=FooImpl), id="With qualifier"),
     ],
 )
 async def test_container_get_with_qualifier_returns_service(
-    container: Container, service: type[Any], qualifier: str
+    container: Container, service: type[Any], qualifier: str, expected_type: type[Any]
 ) -> None:
     res = await run(container.get(service, qualifier=qualifier))
 
     assert isinstance(res, service)
+    assert isinstance(res, expected_type)
 
 
 async def test_container_get_returns_service(container: Container) -> None:
