@@ -22,7 +22,7 @@ which help with overriding dependencies
 
 
 !!! info "Good to know"
-    * Overriding only applies to future autowire calls.
+    * Overriding only applies to future injections.
     * Once a singleton service has been instantiated, it is not possible to directly replace
     any of its direct or transitive dependencies via overriding as the object is already in memory.
     * When injecting interfaces and/or qualifiers, override the interface and/or qualifier 

@@ -280,7 +280,7 @@ Key benefits of the integrations are:
 
 Wireup does not patch your services, which means they can be instantiated and tested independently of the container.
 
-To substitute dependencies on autowired targets such as views in a web application you can override dependencies with new ones on the fly.
+To substitute dependencies on targets such as views in a web application you can override dependencies with new ones on the fly.
 
 
 ```python
