@@ -89,14 +89,6 @@ async def test_current_request_service(client: TestClient):
     await asyncio.gather(*(_make_request() for _ in range(100)))
 
 
-def test_raises_on_unknown_service(client: TestClient):
-    with pytest.raises(
-        UnknownServiceRequestedError,
-        match="Cannot wire unknown class <class 'NoneType'>. Use '@service' or '@abstract' to enable autowiring.",
-    ):
-        client.get("/raise-unknown")
-
-
 async def test_raises_request_outside_of_scope(app: FastAPI) -> None:
     with pytest.raises(WireupError, match="fastapi.Request in wireup is only available during a request."):
         async with get_app_container(app).enter_scope() as scoped:

@@ -15,6 +15,7 @@ from starlette.middleware.base import BaseHTTPMiddleware
 from wireup._decorators import inject_from_container
 from wireup.errors import WireupError
 from wireup.integration.util import is_view_using_container
+from wireup.ioc.container import assert_dependencies_valid
 from wireup.ioc.container.async_container import AsyncContainer, ScopedAsyncContainer
 
 current_request: ContextVar[Request] = ContextVar("wireup_fastapi_request")
@@ -103,8 +104,10 @@ def setup(container: AsyncContainer, app: FastAPI) -> None:
             yield client
     ```
     """
-    _update_lifespan(container, app)
     container._registry.register(_fastapi_request_factory, lifetime="scoped")
+    assert_dependencies_valid(container)
+    _update_lifespan(container, app)
+
     app.add_middleware(BaseHTTPMiddleware, dispatch=_wireup_request_middleware)
     _inject_routes(container, app)
     app.state.wireup_container = container

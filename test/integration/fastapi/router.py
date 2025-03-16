@@ -40,11 +40,6 @@ async def params_route(foo: Annotated[str, Inject(param="foo")], foo_foo: Annota
     return {"foo": foo, "foo_foo": foo_foo}
 
 
-@router.get("/raise-unknown")
-async def raise_unknown(_unknown_service: Injected[None]):
-    return {"msg": "Hello World"}
-
-
 @router.get("/current-request")
 async def curr_request(_request: Request, req: Injected[ServiceUsingFastapiRequest]) -> Dict[str, Any]:
     return {"foo": req.req.query_params["foo"], "request_id": req.req.headers["X-Request-Id"]}

@@ -2,6 +2,7 @@ from flask import Flask, Response, g
 
 from wireup._decorators import inject_from_container
 from wireup.integration.util import is_view_using_container
+from wireup.ioc.container import assert_dependencies_valid
 from wireup.ioc.container.sync_container import ScopedSyncContainer, SyncContainer
 
 
@@ -19,6 +20,7 @@ def setup(container: SyncContainer, app: Flask) -> None:
 
     This can import Flask config in the container and will automatically inject dependencies in views.
     """
+    assert_dependencies_valid(container)
 
     def _before_request() -> None:
         ctx = container.enter_scope()

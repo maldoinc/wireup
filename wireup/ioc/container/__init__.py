@@ -40,13 +40,12 @@ def _create_container(
     if service_modules:
         register_services_from_modules(container._registry, service_modules)
 
-    _assert_dependencies_valid(container)
-
     return container
 
 
-def _assert_dependencies_valid(container: BaseContainer) -> None:
-    for target, dependencies in container._registry.context.dependencies.items():
+def assert_dependencies_valid(container: BaseContainer) -> None:
+    """Assert that all required dependencies exist for this container instance."""
+    for target, dependencies in container._registry.dependencies.items():
         for name, annotated_parameter in dependencies.items():
             assert_dependency_exists(container=container, parameter=annotated_parameter, target=target, name=name)
 
