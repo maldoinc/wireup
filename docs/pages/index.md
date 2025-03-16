@@ -302,5 +302,5 @@ This concludes the "Getting Started" walkthrough, covering the most common depen
 ## Next Steps
 
 * [Services](services.md)
-* [Configuration](configuration.md)
+* [Parameters](parameters.md)
 * [Factory functions](factory_functions.md)
