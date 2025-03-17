@@ -88,3 +88,15 @@ async def test_raises_on_unknown_parameter(container: Container) -> None:
         def _(
             not_managed_by_wireup: Annotated[str, Inject(param="invalid")],
         ) -> None: ...
+
+
+async def test_injects_service_with_provided_async_scoped_container() -> None:
+    container = wireup.create_async_container(service_modules=[services], parameters={"env_name": "test"})
+
+    async with container.enter_scope() as scoped:
+
+        @inject_from_container(container, lambda: scoped)
+        def target(rand_service: Annotated[RandomService, Inject(qualifier="foo")]) -> None:
+            assert isinstance(rand_service, RandomService)
+
+    target()

@@ -80,11 +80,12 @@ def inject_from_container(
                         else async_container_force_sync_scope(container)
                     )
                 )
+                get = scoped_container._synchronous_get
 
                 injected_names = {
                     name: container.params.get(param.annotation.param)
                     if isinstance(param.annotation, ParameterWrapper)
-                    else scoped_container.get(param.klass, qualifier=param.qualifier_value)
+                    else get(param.klass, qualifier=param.qualifier_value)
                     for name, param in names_to_inject.items()
                     if param.annotation
                 }
