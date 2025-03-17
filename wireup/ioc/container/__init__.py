@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING, Any, TypeVar
 
 from wireup._annotations import AbstractDeclaration, ServiceDeclaration
 from wireup._discovery import discover_wireup_registrations
+from wireup.errors import WireupError
 from wireup.ioc.container.async_container import AsyncContainer
 from wireup.ioc.container.base_container import BaseContainer
 from wireup.ioc.container.sync_container import SyncContainer
@@ -40,7 +41,7 @@ def _create_container(
         for service in services:
             if not hasattr(service, "__wireup_registration__"):
                 msg = f"Service {service} is not decorated with @abstract or @service."
-                raise ValueError(msg)
+                raise WireupError(msg)
 
             reg: AbstractDeclaration | ServiceDeclaration = service.__wireup_registration__
 

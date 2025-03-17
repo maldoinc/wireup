@@ -2,12 +2,9 @@ from __future__ import annotations
 
 from collections.abc import Hashable
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, Any, Callable, Optional, Tuple, Union
+from typing import Any, AsyncGenerator, Callable, Generator, Optional, Tuple, Union
 
 from typing_extensions import Literal
-
-if TYPE_CHECKING:
-    from types import AsyncGeneratorType, GeneratorType
 
 AnyCallable = Callable[..., Any]
 
@@ -116,16 +113,16 @@ class ServiceOverride:
 @dataclass(frozen=True)
 class CreationResult:
     instance: Any
-    exit_stack: list[GeneratorType[Any, Any, Any] | AsyncGeneratorType[Any, Any]]
+    exit_stack: list[Generator[Any, Any, Any] | AsyncGenerator[Any, Any]]
 
 
 @dataclass(frozen=True)
 class InjectionResult:
     kwargs: dict[str, Any]
-    exit_stack: list[GeneratorType[Any, Any, Any] | AsyncGeneratorType[Any, Any]]
+    exit_stack: list[Generator[Any, Any, Any] | AsyncGenerator[Any, Any]]
 
 
 @dataclass(frozen=True)
 class ContainerScope:
     objects: dict[ContainerObjectIdentifier, Any] = field(default_factory=dict)
-    exit_stack: list[GeneratorType[Any, Any, Any] | AsyncGeneratorType[Any, Any]] = field(default_factory=list)
+    exit_stack: list[Generator[Any, Any, Any] | AsyncGenerator[Any, Any]] = field(default_factory=list)

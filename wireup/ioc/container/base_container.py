@@ -1,5 +1,17 @@
 import logging
-from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Tuple, Type, TypeVar, Union
+from typing import (
+    Any,
+    AsyncGenerator,
+    Callable,
+    Dict,
+    Generator,
+    List,
+    Optional,
+    Tuple,
+    Type,
+    TypeVar,
+    Union,
+)
 
 from wireup._async_to_sync import async_to_sync
 from wireup.errors import (
@@ -24,10 +36,6 @@ from wireup.ioc.types import (
     ServiceLifetime,
     ServiceQualifier,
 )
-
-if TYPE_CHECKING:
-    from types import AsyncGeneratorType, GeneratorType
-
 
 T = TypeVar("T")
 logger = logging.getLogger(__name__)
@@ -124,7 +132,7 @@ class BaseContainer:
 
     async def _async_callable_get_params_to_inject(self, fn: AnyCallable) -> InjectionResult:
         result: Dict[str, Any] = {}
-        exit_stack: List[Union[GeneratorType[Any, Any, Any], AsyncGeneratorType[Any, Any]]] = []
+        exit_stack: List[Union[Generator[Any, Any, Any], AsyncGenerator[Any, Any]]] = []
 
         for name, param in self._registry.dependencies[fn].items():
             obj, value_found = self._try_get_existing_value(param)

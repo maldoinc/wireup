@@ -100,3 +100,19 @@ async def test_injects_service_with_provided_async_scoped_container() -> None:
             assert isinstance(rand_service, RandomService)
 
     target()
+
+
+async def test_container_sync_raises_async_def() -> None:
+    container = wireup.create_sync_container(service_modules=[services], parameters={"env_name": "test"})
+
+    with pytest.raises(
+        WireupError,
+        match=re.escape(
+            "Sync container cannot perform injection on async targets. "
+            "Create an async container via wireup.create_async_container."
+        ),
+    ):
+
+        @inject_from_container(container)
+        async def _(rand_service: Annotated[RandomService, Inject(qualifier="foo")]) -> None:
+            assert isinstance(rand_service, RandomService)

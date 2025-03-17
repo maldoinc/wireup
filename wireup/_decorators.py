@@ -5,6 +5,7 @@ import functools
 from contextlib import AsyncExitStack, ExitStack
 from typing import TYPE_CHECKING, Any
 
+from wireup.errors import WireupError
 from wireup.ioc.container.async_container import AsyncContainer, async_container_force_sync_scope
 from wireup.ioc.container.sync_container import SyncContainer
 from wireup.ioc.types import ParameterWrapper
@@ -41,7 +42,7 @@ def inject_from_container(
                     "Sync container cannot perform injection on async targets. "
                     "Create an async container via wireup.create_async_container."
                 )
-                raise TypeError(msg)
+                raise WireupError(msg)
 
             @functools.wraps(target)
             async def _inject_async_target(*args: Any, **kwargs: Any) -> Any:

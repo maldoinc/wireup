@@ -4,6 +4,7 @@ from dataclasses import dataclass
 import pytest
 import wireup
 from typing_extensions import Annotated
+from wireup._annotations import abstract, service
 from wireup.errors import WireupError
 
 from test.unit.services.no_annotations.random.random_service import RandomService
@@ -99,3 +100,24 @@ def test_lifetimes_match_factories() -> None:
         ),
     ):
         wireup.create_sync_container(services=[_scoped_factory, _singleton_factory])
+
+
+def test_errors_not_decorated_service() -> None:
+    class NotDecorated: ...
+
+    with pytest.raises(
+        WireupError,
+        match=f"Service {NotDecorated} is not decorated with @abstract or @service",
+    ):
+        wireup.create_sync_container(services=[NotDecorated])
+
+
+def test_registers_abstract() -> None:
+    @abstract
+    class Foo: ...
+
+    @service
+    class FooImpl(Foo): ...
+
+    container = wireup.create_sync_container(services=[Foo, FooImpl])
+    assert isinstance(container.get(Foo), FooImpl)

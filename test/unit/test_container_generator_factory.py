@@ -165,3 +165,22 @@ def test_raises_errors() -> None:
     assert len(e.value.errors) == 1
     assert isinstance(e.value.errors[0], ValueError)
     assert str(e.value.errors[0]) == "boom"
+
+
+async def test_raises_errors_async() -> None:
+    Something = NewType("Something", str)
+
+    async def f1() -> AsyncIterator[Something]:
+        yield Something("Something")
+        raise ValueError("boom")
+
+    c = wireup.create_async_container()
+    c._registry.register(f1)
+
+    assert await c.get(Something) == Something("Something")
+    with pytest.raises(ContainerCloseError) as e:
+        await c.close()
+
+    assert len(e.value.errors) == 1
+    assert isinstance(e.value.errors[0], ValueError)
+    assert str(e.value.errors[0]) == "boom"
