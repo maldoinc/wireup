@@ -4,12 +4,9 @@ import importlib
 import inspect
 from pathlib import Path
 from types import FunctionType, ModuleType
-from typing import TYPE_CHECKING, Any, Callable
+from typing import Any, Callable
 
 from wireup._annotations import AbstractDeclaration, ServiceDeclaration
-
-if TYPE_CHECKING:
-    from wireup.ioc.service_registry import ServiceRegistry
 
 
 def discover_wireup_registrations(
@@ -34,33 +31,6 @@ def discover_wireup_registrations(
                 abstract_registrations.append(reg)
 
     return abstract_registrations, service_registrations
-
-
-def register_services_from_modules(registry: ServiceRegistry, service_modules: list[ModuleType]) -> None:
-    abstract_registrations: set[type[Any]] = set()
-    service_registrations: list[ServiceDeclaration] = []
-
-    def _is_valid_wireup_target(obj: Any) -> bool:
-        # Check that the hasattr call is only made on user defined functions and classes.
-        # This is so that it avoids interacting with proxies and things such as flask.g when imported.
-        # "from flask import g" would cause a hasattr call to g outside of app context.
-        return (isinstance(obj, FunctionType) or inspect.isclass(obj)) and hasattr(obj, "__wireup_registration__")
-
-    for module in service_modules:
-        for cls in _find_objects_in_module(module, predicate=_is_valid_wireup_target):
-            reg = getattr(cls, "__wireup_registration__", None)
-
-            if isinstance(reg, ServiceDeclaration):
-                service_registrations.append(reg)
-            elif isinstance(reg, AbstractDeclaration):
-                abstract_registrations.add(cls)
-
-    for cls in abstract_registrations:
-        registry.register_abstract(cls)
-
-    for svc in service_registrations:
-        if isinstance(svc.obj, type) or callable(svc.obj):
-            registry.register(obj=svc.obj, qualifier=svc.qualifier, lifetime=svc.lifetime)
 
 
 def _find_objects_in_module(module: ModuleType, predicate: Callable[[Any], bool]) -> set[type]:
