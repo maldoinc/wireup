@@ -76,8 +76,11 @@ class ServiceDeclaration:
     lifetime: ServiceLifetime = "singleton"
 
 
+@dataclass
 class AbstractDeclaration:
     """Used to denote a registration for a service that is abstract."""
+
+    obj: Any
 
 
 @overload
@@ -124,6 +127,6 @@ def service(
 
 def abstract(cls: type[T]) -> type[T]:
     """Mark the decorated class as a service."""
-    cls.__wireup_registration__ = AbstractDeclaration()  # type: ignore[attr-defined]
+    cls.__wireup_registration__ = AbstractDeclaration(cls)  # type: ignore[attr-defined]
 
     return cls
