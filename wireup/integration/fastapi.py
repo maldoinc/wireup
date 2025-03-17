@@ -15,10 +15,9 @@ from starlette.middleware.base import BaseHTTPMiddleware
 from wireup import inject_from_container, service
 from wireup.errors import WireupError
 from wireup.integration.util import is_view_using_container
-from wireup.ioc.container import assert_dependency_exists
 from wireup.ioc.container.async_container import AsyncContainer, ScopedAsyncContainer
 from wireup.ioc.types import ParameterWrapper
-from wireup.ioc.util import get_inject_annotated_parameters
+from wireup.ioc.validation import get_valid_injection_annotated_parameters
 
 current_request: ContextVar[Request] = ContextVar("wireup_fastapi_request")
 current_ws_container: ContextVar[ScopedAsyncContainer] = ContextVar("wireup_fastapi_container")
@@ -49,9 +48,7 @@ def fastapi_request_factory() -> Request:
 
 # We need to inject websocket routes separately as the regular fastapi middlewares work only for http.
 def _inject_websocket_route(container: AsyncContainer, target: Callable[..., Any]) -> Callable[..., Any]:
-    names_to_inject = get_inject_annotated_parameters(target)
-    for name, parameter in names_to_inject.items():
-        assert_dependency_exists(container, parameter=parameter, target=target, name=name)
+    names_to_inject = get_valid_injection_annotated_parameters(container, target)
 
     @functools.wraps(target)
     async def _inner(*args: Any, **kwargs: Any) -> Any:

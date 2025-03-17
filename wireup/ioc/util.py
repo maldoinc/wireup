@@ -1,13 +1,12 @@
 from __future__ import annotations
 
 import importlib
-import inspect
 import typing
 from inspect import Parameter
 from typing import Any, TypeVar
 
 from wireup.errors import WireupError
-from wireup.ioc.types import AnnotatedParameter, AnyCallable, InjectableType
+from wireup.ioc.types import AnnotatedParameter, InjectableType
 
 if typing.TYPE_CHECKING:
     from collections.abc import Callable
@@ -41,29 +40,6 @@ def param_get_annotation(parameter: Parameter, *, globalns: dict[str, Any]) -> A
         return AnnotatedParameter(klass, annotation)
 
     return None if not resolved_type else AnnotatedParameter(klass=resolved_type)
-
-
-def get_inject_annotated_parameters(target: AnyCallable) -> dict[str, AnnotatedParameter]:
-    """Retrieve annotated parameters from a given callable target.
-
-    This function inspects the signature of the provided callable and returns a dictionary
-    of parameter names and their corresponding annotated parameters, filtered by those
-    that are instances of `InjectableType`.
-
-    Args:
-        target (AnyCallable): The callable whose parameters are to be inspected.
-
-    Returns:
-        dict[str, AnnotatedParameter]: A dictionary where the keys are parameter names
-        and the values are the annotated parameters that are instances of `InjectableType`.
-
-    """
-    return {
-        name: param
-        for name, parmeter in inspect.signature(target).parameters.items()
-        if (param := param_get_annotation(parmeter, globalns=get_globals(target)))
-        and isinstance(param.annotation, InjectableType)
-    }
 
 
 def get_globals(obj: type[Any] | Callable[..., Any]) -> dict[str, Any]:

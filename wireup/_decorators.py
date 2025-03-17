@@ -7,9 +7,8 @@ from typing import TYPE_CHECKING, Any
 
 from wireup.ioc.container.async_container import AsyncContainer, async_container_force_sync_scope
 from wireup.ioc.container.sync_container import SyncContainer
-from wireup.ioc.container.util import assert_dependency_exists
 from wireup.ioc.types import ParameterWrapper
-from wireup.ioc.util import get_inject_annotated_parameters
+from wireup.ioc.validation import get_valid_injection_annotated_parameters
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -34,10 +33,7 @@ def inject_from_container(
     """
 
     def _decorator(target: Callable[..., Any]) -> Callable[..., Any]:
-        names_to_inject = get_inject_annotated_parameters(target)
-
-        for name, parameter in names_to_inject.items():
-            assert_dependency_exists(container, parameter=parameter, target=target, name=name)
+        names_to_inject = get_valid_injection_annotated_parameters(container, target)
 
         if asyncio.iscoroutinefunction(target):
             if isinstance(container, SyncContainer):
