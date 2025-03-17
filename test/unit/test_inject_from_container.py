@@ -1,13 +1,17 @@
+import re
+
+import pytest
 import wireup
 from typing_extensions import Annotated
 from wireup import Inject, inject_from_container
+from wireup.errors import WireupError
 
 from test.conftest import Container
 from test.unit import services
 from test.unit.services.no_annotations.random.random_service import RandomService
 
 
-async def test_inject_from_container_injects_targets(container: Container) -> None:
+async def test_injects_targets(container: Container) -> None:
     class NotManagedByWireup: ...
 
     @inject_from_container(container)
@@ -23,7 +27,7 @@ async def test_inject_from_container_injects_targets(container: Container) -> No
     target(not_managed_by_wireup=NotManagedByWireup())
 
 
-async def test_inject_from_container_injects_targets2() -> None:
+async def test_injects_targets2() -> None:
     container = wireup.create_async_container(service_modules=[services], parameters={"env_name": "test"})
 
     class NotManagedByWireup: ...
@@ -50,3 +54,37 @@ async def test_inject_from_container_injects_targets2() -> None:
 
     target(not_managed_by_wireup=NotManagedByWireup())
     await async_target(not_managed_by_wireup=NotManagedByWireup())
+
+
+@pytest.mark.parametrize("qualifier", [None, "foo"])
+async def test_raises_on_unknown_service(container: Container, qualifier: str) -> None:
+    class NotManagedByWireup: ...
+
+    with pytest.raises(
+        WireupError,
+        match=re.escape(
+            "Parameter 'not_managed_by_wireup' of Function test.unit.test_inject_from_container._ "
+            "depends on an unknown service Type test.unit.test_inject_from_container.NotManagedByWireup "
+            f"with qualifier {qualifier}."
+        ),
+    ):
+
+        @inject_from_container(container)
+        def _(
+            not_managed_by_wireup: Annotated[NotManagedByWireup, Inject(qualifier=qualifier)],
+        ) -> None: ...
+
+
+async def test_raises_on_unknown_parameter(container: Container) -> None:
+    with pytest.raises(
+        WireupError,
+        match=re.escape(
+            "Parameter 'not_managed_by_wireup' of Function test.unit.test_inject_from_container._ "
+            "depends on an unknown Wireup parameter 'invalid'."
+        ),
+    ):
+
+        @inject_from_container(container)
+        def _(
+            not_managed_by_wireup: Annotated[str, Inject(param="invalid")],
+        ) -> None: ...
