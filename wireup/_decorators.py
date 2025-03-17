@@ -5,9 +5,9 @@ import functools
 from contextlib import AsyncExitStack, ExitStack
 from typing import TYPE_CHECKING, Any
 
-from wireup.ioc.container import assert_dependency_exists
 from wireup.ioc.container.async_container import AsyncContainer, async_container_force_sync_scope
 from wireup.ioc.container.sync_container import SyncContainer
+from wireup.ioc.container.util import assert_dependency_exists
 from wireup.ioc.types import ParameterWrapper
 from wireup.ioc.util import get_inject_annotated_parameters
 

@@ -74,10 +74,7 @@ lint.ignore = [
     "PT009",  # Prefer using assertEqual instead of plain asserts
     "TD003",  # Exclude "missing issue link for todos",
     "FIX002", # Disable "Line contains to do, consider resolving the issue". It will be done, in due time.
-    "D100",   # Disable undocumented public module. The definitions themselves will be documented
-    "D101",
-    "D102",
-    "D104",   # Same as above, disable missing docstring in public package,
+    "D",
     "D203",   # Ignore "one blank line before class". Using "no blank lines before class rule".
     "D213",   # Disable "Summary must go into next line"
     "D107",   # Disable required docs for __init. Can be redundant if class also has them.
