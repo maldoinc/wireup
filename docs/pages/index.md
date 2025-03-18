@@ -29,9 +29,7 @@ Inject services and configuration using a clean and intuitive syntax.
         def __init__(self, db: Database) -> None:
             self.db = db
 
-    container = wireup.create_sync_container(
-        services=[Database, UserRepository], 
-    )
+    container = wireup.create_sync_container(services=[Database, UserRepository])
     user_repository = container.get(UserRepository)
     # ✅ Dependencies resolved.
     ```
@@ -72,9 +70,9 @@ def my_awesome_function(repo: Injected[UserRepository]):
     pass
 ```
 
-### 🔌 Native Integration with Django, FastAPI, Flask
+### 🔌 Native Integration with Django, FastAPI Flask
 
-Integrate seamlessly with your favorite web frameworks in just two lines of code!
+Integrate with popular frameworks for a more streamlined experience.
 
 ```python
 app = FastAPI()
@@ -181,6 +179,19 @@ Wireup will warn you at the earliest possible stage about misconfigurations to a
     wireup.integration.flask.setup(container, app)
     # ❌ Parameter 'oops' of 'home' depends on an unknown service 'NotManagedByWireup'.
     ```
+
+
+=== "Parameter Checks"
+
+    Wireup parameters are also checked for validity.
+    ```python
+    class Database:
+        def __init__(self, url: Annotated[str, Inject(param="db_url")]) -> None:
+            self.db = db
+
+    # ❌ Parameter 'url' of Type 'Database' depends on an unknown Wireup parameter 'db_url'.
+    ```
+
 
 ## Next Steps
 

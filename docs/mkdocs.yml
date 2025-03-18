@@ -14,7 +14,6 @@ nav:
       - Apply as a decorator: apply_container_as_decorator.md
       - Testing: testing.md
       - Multiple registrations: multiple_registrations.md
-      - Introduce to an existing project: introduce_to_an_existing_project.md
     - Advanced:
       - Use without annotations: use_without_annotations.md
       - Use with __future__ annotations: future_annotations.md

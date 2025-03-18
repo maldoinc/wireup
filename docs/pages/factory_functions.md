@@ -131,8 +131,3 @@ def authenticated_username_factory(auth: SomeAuthService) -> AuthenticatedUserna
 ```
 
 This can now be injected as usual by annotating the dependency with the new type.
-
-
-## Links
-
-* [Introduce to an existing project](introduce_to_an_existing_project.md)

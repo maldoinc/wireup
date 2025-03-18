@@ -1,7 +1,7 @@
 In addition to service objects, the container also holds configuration, called parameters
 that can be used to configure services.
 
-This is an optional feature but enables self-contained service declarations where you just add `@service`
+This is an optional feature that enables self-contained service declarations where you just add `@service`
 and any annotations to let Wireup know what to inject. 
 
 !!! warning

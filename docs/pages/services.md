@@ -1,10 +1,11 @@
 # Services
 
 A service in Wireup is any class or function decorated with `@service`. 
-While services can live in any module, their containing modules must be registered with the container via `service_modules` when calling `wireup.create_sync_container` or `wireup.create_async_container`.
+While services can live in any module, their containing modules must be registered with the container.
 
-You also don't need to register each module separately, only the top level modules are sufficient
-as the container will perform a recursive scan.
+When creating a container, you can use the `service_module` parameter to pass a list of modules which Wireup
+will recursively scan for services, or pass them to the `services` parameter which accepts a list of classes and functions
+decorated with `@service` or `@abstract`.
 
 ## Class Services
 
@@ -57,10 +58,11 @@ def create_rental_service(vehicle_store: VehicleRepository) -> RentalService:
 ```
 
 
-!!! warning
+!!! tip
     You might have noticed the use of `Injected[T]` in the documentation.
     In Wireup's own services, this is not necessary because Wireup assumes ownership of all dependencies for its services.
     However, this may not be the case when injecting into functions, as some arguments might be provided by other decorators or callers.
 
-    When injecting into a function, Wireup uses the `Injected[T]` syntax to explicitly indicate what is being injected.
-    This ensures that if the requested dependency is not known, an error is raised instead of silently skipping the parameter.
+    When injecting into a function, Wireup requires the `Injected[T]` syntax to make it explicit that it should
+    inject that parameter. This ensures that if the requested dependency is not known,
+    an error is raised instead of silently skipping the parameter.

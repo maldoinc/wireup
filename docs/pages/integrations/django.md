@@ -1,6 +1,6 @@
 # Django Integration
 
-Wireup provides seamless integration with Django through the `wireup.integration.django` package, enabling
+Wireup provides seamless integration with Django through the `wireup.integration.django` module, enabling
 dependency injection in Django applications.
 
 ## Features

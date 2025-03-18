@@ -1,4 +1,4 @@
-Dependency injection for FastAPI is available in the `wireup.integration.fastapi_integration` module.
+Dependency injection for FastAPI is available in the `wireup.integration.fastapi` module.
 
 **Features:**
 
@@ -15,7 +15,12 @@ To initialize the integration, call `wireup.integration.fastapi.setup` after add
 ```python
 container = wireup.create_async_container(
     # Add service modules.
-    service_modules=[services],
+    service_modules=[
+        # Top level module containing service registrations.
+        services,
+        # Include the integration if you require `fastapi.Request` in Wireup.
+        wireup.integration.fastapi
+    ],
     # Expose parameters to Wireup as necessary. 
     parameters={
         "debug": settings.DEBUG
@@ -31,8 +36,6 @@ To inject dependencies, add the type to the route's signature and annotate it wi
 === "HTTP"
 
     ```python title="main.py"
-    app = FastAPI()
-
     @app.get("/random")
     async def target(
         random_service: Injected[RandomService],

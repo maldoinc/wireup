@@ -31,6 +31,8 @@ def _create_container(
 
     :param service_modules: This is a list of top-level modules containing services registered
     with `@service` or `@abstract`. Wireup will recursively scan the modules and register services found in them.
+    :param services: A list of classes or functions decorated with `@service` or `@abstract` to register with the
+    container instance. Use this when you want to explicitly list services.
     :param parameters: Dict containing parameters you want to expose to the container. Services or factories can
     request parameters via the `Inject(param="name")` syntax.
     """
