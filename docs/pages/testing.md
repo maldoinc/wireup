@@ -52,7 +52,7 @@ with container.override.service(target=RandomService, new=random_mock):
 #### Pytest
 
 Similar to the above example but this uses pytest's autouse to achieve the same result.
-Also shows how to use `get_container` when using integrations.
+Also shows how to use `get_app_container` when using integrations.
 
 ```python title="app.py"
 def create_app():
@@ -74,28 +74,10 @@ def app():
 ```
 
 ```python title="some_test_file.py"
-from wireup.integration.fastapi import get_container
+from wireup.integration.fastapi import get_app_container
 
 def test_something_with_mocked_db_service(client: TestClient, app):
-    with get_container(app).override.service(DBService, new=...):
-        response = client.get("/some/path")
-
-    # Assert response and mock calls.
-```
-
-It is also possible to add a fixture to fetch the container to avoid the `get_container` call.
-
-```python title="conftest.py"
-from wireup.integration.fastapi import get_container
-
-@pytest.fixture
-def container(app) -> DependencyContainer:
-    return get_container(app)
-```
-
-```python title="some_test_file.py"
-def test_override(client: TestClient, container: DependencyContainer):
-    with container.override.service(DBService, new=...):
+    with get_app_container(app).override.service(DBService, new=...):
         response = client.get("/some/path")
 
     # Assert response and mock calls.

@@ -95,7 +95,7 @@ def test_lifetimes_match_factories() -> None:
     with pytest.raises(
         WireupError,
         match=re.escape(
-            "Parameter 'scoped' of Type test.unit.test_container_creation.SingletonService depends on a service "
+            "Parameter 'scoped' of Function test.unit.test_container_creation._singleton_factory depends on a service "
             "with a 'scoped' lifetime which is not supported. Singletons can only depend on other singletons."
         ),
     ):
