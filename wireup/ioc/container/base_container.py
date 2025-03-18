@@ -104,7 +104,7 @@ class BaseContainer:
 
         # Throw if a qualifier is being used on an unknown type.
         if qualifier:
-            raise UsageOfQualifierOnUnknownObjectError(qualifier)
+            raise UsageOfQualifierOnUnknownObjectError(klass, qualifier)
 
         return None
 

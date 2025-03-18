@@ -73,7 +73,7 @@ class TestContainer(unittest.IsolatedAsyncioTestCase):
             self.container.get(unittest.TestCase)
 
         self.assertEqual(
-            f"Cannot wire unknown class {unittest.TestCase}. Use '@service' or '@abstract' to enable autowiring.",
+            f"Cannot inject unknown service {unittest.TestCase}. Make sure it is registered with the container.",
             str(context.exception),
         )
 
@@ -111,7 +111,7 @@ class TestContainer(unittest.IsolatedAsyncioTestCase):
             self.container.get(TestGetUnknown)
 
         self.assertEqual(
-            f"Cannot wire unknown class {TestGetUnknown}. Use '@service' or '@abstract' to enable autowiring.",
+            f"Cannot inject unknown service {TestGetUnknown}. Make sure it is registered with the container.",
             str(context.exception),
         )
 
@@ -158,7 +158,7 @@ class TestContainer(unittest.IsolatedAsyncioTestCase):
             container.get(Counter)
 
         self.assertEqual(
-            f"Cannot wire unknown class {Counter}. Use '@service' or '@abstract' to enable autowiring.",
+            f"Cannot inject unknown service {Counter}. Make sure it is registered with the container.",
             str(context.exception),
         )
 
@@ -353,7 +353,7 @@ class TestContainer(unittest.IsolatedAsyncioTestCase):
             self.container.get(str, qualifier=__name__)
 
         self.assertEqual(
-            f"Cannot use qualifier {__name__} on a type that is not managed by the container.",
+            f"Cannot use qualifier {__name__} on type {str} that is not managed by the container.",
             str(context.exception),
         )
 

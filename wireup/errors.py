@@ -45,7 +45,7 @@ class FactoryReturnTypeIsEmptyError(WireupError):
     def __init__(self, fn: AnyCallable) -> None:
         super().__init__(
             "Factory functions must specify a return type denoting the type of dependency it can create. "
-            f"Please add a return tyoe to {fn}"
+            f"Please add a return type to {fn}"
         )
 
 
@@ -72,15 +72,17 @@ class UnknownServiceRequestedError(WireupError):
 
     def __init__(self, klass: type[Any]) -> None:
         super().__init__(
-            f"Cannot wire unknown class {klass}. Use '@service' or '@abstract' to enable autowiring.",
+            f"Cannot inject unknown service {klass}. Make sure it is registered with the container.",
         )
 
 
 class UsageOfQualifierOnUnknownObjectError(WireupError):
     """Raised when using a qualifier on an unknown type that is not managed by the container."""
 
-    def __init__(self, qualifier_value: Qualifier | None) -> None:
-        super().__init__(f"Cannot use qualifier {qualifier_value} on a type that is not managed by the container.")
+    def __init__(self, klass: type, qualifier_value: Qualifier | None) -> None:
+        super().__init__(
+            f"Cannot use qualifier {qualifier_value} on type {klass} that is not managed by the container."
+        )
 
 
 class InvalidRegistrationTypeError(WireupError):
