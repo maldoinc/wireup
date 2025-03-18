@@ -27,9 +27,10 @@ def Inject(  # noqa: N802
     expr: str | None = None,
     qualifier: Qualifier | None = None,
 ) -> InjectableType:
-    """Let the container know this argument must be injected.
+    """Let the Wireup container know it must inject this parameter.
 
-    This should be used where additional metadata is required for injection.
+    When using this without parameters in the form of `Annotated[T, Inject()]`,
+    can also use its alias `Injected[T]` instead.
 
     :param param: Inject a given parameter by name.
     :param expr: Inject a string value using a templated string.
@@ -109,11 +110,7 @@ def service(
     qualifier: Qualifier | None = None,
     lifetime: ServiceLifetime = "singleton",
 ) -> T | Callable[[T], T]:
-    """Mark the decorated class as a service.
-
-    If used on a function it will register it as a factory for the class
-    denoted by its return type.
-    """
+    """Mark the decorated class or function as a Wireup service."""
 
     # Allow this to be used as a decorator factory or as a decorator directly.
     def _service_decorator(decorated_obj: T) -> T:
@@ -126,7 +123,7 @@ def service(
 
 
 def abstract(cls: type[T]) -> type[T]:
-    """Mark the decorated class as a service."""
+    """Mark the decorated class as an abstract service."""
     cls.__wireup_registration__ = AbstractDeclaration(cls)  # type: ignore[attr-defined]
 
     return cls
