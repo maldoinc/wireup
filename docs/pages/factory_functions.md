@@ -24,10 +24,9 @@ When the container needs to inject a dependency, it checks known factories to se
 
 ## Examples
 
+### Generator Functions for Resource Management
 
-### Use a generator function (yield instead of return)
-
-Use this when your service needs to perform cleanup.
+When your service requires cleanup (like database connections or network resources), use generator functions:
 
 ```python
 @service
@@ -39,6 +38,7 @@ def db_session_factory() -> Iterator[Session]:
         db.close()
 ```
 
+Or with context managers:
 ```python
 @service
 def db_session_factory() -> Iterator[Session]:
@@ -46,35 +46,39 @@ def db_session_factory() -> Iterator[Session]:
         yield db
 ```
 
-Async generators are also supported.
+For async services:
 ```python
+@service
 async def client_session_factory() -> ClientSession:
     async with ClientSession() as sess:
         yield sess
 ```
 
-Make sure to close the container at the end. Use `container.close()` or `container.aclose()` if you use async generators. For transient dependencies, the container will automatically perform cleanup after the injected method finishes executing.
+!!! note "Resource Cleanup"
+    The container performs cleanup automatically when:
+    
+    * A context manager exits (`container.enter_scope()`)
+    * An injected function returns
+    * A request completes (when using framework integrations)
 
-### Inject a model
+### Factory for Current User
 
-Assume in the context of an application a class `User` exists and represents a user of the system.
-We can use a factory to inject a user model that represents the current authenticated user.
+Here's how to inject the authenticated user throughout your application:
 
 ```python
 from wireup import service, ServiceLifetime
 
-# You may want to create a new type to make a distinction on the type of user this is.
+# Create a distinct type for the authenticated user
 AuthenticatedUser = NewType("AuthenticatedUser", User)
-
 
 @service(lifetime="transient")
 def get_current_user(auth_service: AuthService) -> AuthenticatedUser:
     return AuthenticatedUser(auth_service.get_current_user())
 
-
-# Now it is possible to inject the authenticated user directly wherever it is necessary.
+# Inject the authenticated user where needed
 @wireup.inject_from_container(container)
 def get_user_logs(user: Injected[AuthenticatedUser]):
+    # Use authenticated user
     ...
 ```
 

@@ -9,9 +9,6 @@ such as services or parameters to them yourself.
 To specify custom behavior for tests, provide a custom implementation 
 or a subclass that returns test data as a dependency instead of mocks.
 
-It is also possible to use the container to build a part of your dependencies by
-calling `container.get(T)` (or `container.aget` for async resources) which will return an instance of `T`.
-
 ## Overriding
 
 Sometimes you need to be able to swap a service object on the fly for a different one such as a mock.
