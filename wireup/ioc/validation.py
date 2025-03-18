@@ -20,18 +20,23 @@ def assert_dependencies_valid(container: BaseContainer) -> None:
     for (impl, _), service_factory in container._registry.factories.items():
         for name, dependency in container._registry.dependencies[service_factory.factory].items():
             assert_dependency_exists(container=container, parameter=dependency, target=impl, name=name)
+            assert_lifetime_valid(container, impl, name, dependency, service_factory.factory)
 
-            if (
-                not dependency.is_parameter
-                and container._registry.lifetime[impl] == "singleton"
-                and (dep_lifetime := container._registry.lifetime[dependency.klass]) != "singleton"
-            ):
-                msg = (
-                    f"Parameter '{name}' of {type(impl).__name__.capitalize()} {impl.__module__}.{impl.__name__} "
-                    f"depends on a service with a '{dep_lifetime}' lifetime which is not supported. "
-                    "Singletons can only depend on other singletons."
-                )
-                raise WireupError(msg)
+
+def assert_lifetime_valid(
+    container: BaseContainer, impl: Any, parameter_name: str, dependency: AnnotatedParameter, factory: AnyCallable
+) -> None:
+    if (
+        not dependency.is_parameter
+        and container._registry.lifetime[impl] == "singleton"
+        and (dep_lifetime := container._registry.lifetime[dependency.klass]) != "singleton"
+    ):
+        msg = (
+            f"Parameter '{parameter_name}' of {stringify_type(factory)} "
+            f"depends on a service with a '{dep_lifetime}' lifetime which is not supported. "
+            "Singletons can only depend on other singletons."
+        )
+        raise WireupError(msg)
 
 
 def assert_dependency_exists(container: BaseContainer, parameter: AnnotatedParameter, target: Any, name: str) -> None:
@@ -60,7 +65,7 @@ def assert_dependency_exists(container: BaseContainer, parameter: AnnotatedParam
         raise WireupError(msg)
 
 
-def stringify_type(target: type) -> str:
+def stringify_type(target: type | AnyCallable) -> str:
     return f"{type(target).__name__.capitalize()} {target.__module__}.{target.__name__}"
 
 
