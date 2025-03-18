@@ -50,10 +50,8 @@ theme:
     - navigation.instant
     - navigation.tabs
     - navigation.footer
-    - content.tabs.link
   font:
-    text: Reddit Sans
-    code: Reddit Mono
+    code: JetBrains Mono 
   palette:
       - media: "(prefers-color-scheme)"
         toggle:
