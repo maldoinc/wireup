@@ -100,10 +100,12 @@ class WireupConfig(AppConfig):
 
     def ready(self) -> None:
         integration_settings: WireupSettings = settings.WIREUP
-        all_modules: List[Union[ModuleType, str]] = [*integration_settings.service_modules, __name__]
 
         self.container = wireup.create_async_container(
-            service_modules=[importlib.import_module(m) if isinstance(m, str) else m for m in all_modules],
+            service_modules=[
+                importlib.import_module(m) if isinstance(m, str) else m for m in integration_settings.service_modules
+            ],
+            services=[_django_request_factory],
             parameters={
                 entry: getattr(settings, entry)
                 for entry in dir(settings)
