@@ -2,7 +2,7 @@ site_name: Wireup
 nav:
   - 📚 Documentation:
     - Wireup: index.md
-    - Quickstart: getting_started.md
+    - Getting Started: getting_started.md
     - Basics:
       - Services: services.md
       - Parameters: parameters.md

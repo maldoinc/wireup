@@ -1,4 +1,4 @@
-Wireup is a performant, concise, and easy-to-use Dependency Injection container for Python 3.8+.
+Performant, concise and type-safe Dependency Injection for Python 3.8+
 
 [![GitHub](https://img.shields.io/github/license/maldoinc/wireup)](https://github.com/maldoinc/wireup)
 [![Coverage](https://img.shields.io/codeclimate/coverage/maldoinc/wireup?label=Coverage)](https://codeclimate.com/github/maldoinc/wireup)
@@ -6,32 +6,29 @@ Wireup is a performant, concise, and easy-to-use Dependency Injection container 
 [![PyPI - Version](https://img.shields.io/pypi/v/wireup)](https://pypi.org/project/wireup/)
 
 !!! note "What is Dependency Injection?"
-    Dependency Injection is a design pattern where objects receive their dependencies externally instead of creating them.
-    Wireup manages the creation, injection, and lifecycle of dependencies. It uses typing to automatically
-    resolve dependencies, reducing boilerplate and supporting modern Python features like async and generators.
+    A design pattern where dependencies are provided externally rather than created within objects.
+    Wireup automates dependency management using Python's type system, with support for async, generators and modern Python features.
 
-## Why Wireup?
+## Features
 
-### 🎯 Dependency Injection Made Simple
+### ✨ Simple & Type-Safe DI
 
-Inject services and configuration using a clean and intuitive syntax.
+Inject services and configuration using a clean and intuitive syntax without boilerplate.
 
-=== "Basic Example"
+=== "Basic Usage"
 
     ```python
     @service
     class Database:
-        def __init__(self) -> None:
-            self.db_url = "postgresql://"
+        pass
 
     @service
-    class UserRepository:
+    class UserService:
         def __init__(self, db: Database) -> None:
             self.db = db
 
-    container = wireup.create_sync_container(services=[Database, UserRepository])
-    user_repository = container.get(UserRepository)
-    # ✅ Dependencies resolved.
+    container = wireup.create_sync_container(services=[Database, UserService])
+    user_service = container.get(UserService)  # ✅ Dependencies resolved automatically
     ```
 
 === "With Configuration"
@@ -42,43 +39,21 @@ Inject services and configuration using a clean and intuitive syntax.
         def __init__(self, db_url: Annotated[str, Inject(param="db_url")]) -> None:
             self.db_url = db_url
 
-    @service
-    class UserRepository:
-        def __init__(self, db: Database) -> None:
-            self.db = db
-
     container = wireup.create_sync_container(
-        services=[Database, UserRepository], 
-        parameters={"db_url": os.environ.get("APP_DB_URL")}
+        services=[Database], 
+        parameters={"db_url": os.environ["APP_DB_URL"]}
     )
-    user_repository = container.get(UserRepository)
-    db_url = container.params.get("db_url")
-    # ✅ Dependencies resolved.
     ```
 
+### 🎯 Function Injection
 
-### @ Apply as a Decorator
-
-Don't want to do `container.get` calls? Wireup lets you apply the container as a decorator.
+Inject dependencies directly into functions with a simple decorator.
 
 ```python
-from wireup import Injected, inject_from_container
-
 @inject_from_container(container)
-def my_awesome_function(repo: Injected[UserRepository]):
-    # ✅ UserRepository injected.
+def process_users(service: Injected[UserService]):
+    # ✅ UserService automatically injected
     pass
-```
-
-### 🔌 Native Integration with Django, FastAPI Flask
-
-Integrate with popular frameworks for a more streamlined experience.
-
-```python
-app = FastAPI()
-container = wireup.create_async_container()
-
-wireup.integration.fastapi.setup(container, app)
 ```
 
 ### 📝 Interfaces & Abstract Classes
@@ -90,20 +65,53 @@ Define abstract types and have the container automatically inject the implementa
 class Notifier(abc.ABC):
     pass
 
-
 @service
 class SlackNotifier(Notifier):
     pass
-
 
 notifier = container.get(Notifier)
 # ✅ SlackNotifier instance.
 ```
 
+### 🔄 Managed Service Lifetimes
+
+Declare dependencies as singletons, scoped, or transient to control whether to inject a fresh copy or reuse existing instances.
+
+=== "Singleton"
+
+    One instance per application. `@service(lifetime="singleton")` is the default.
+
+    ```python
+    @service
+    class Database:
+        pass
+    ```
+
+=== "Scoped"
+
+    One instance per scope/request, shared within that scope/request.
+
+    ```python
+    @service(lifetime="scoped")
+    class RequestContext:
+        def __init__(self) -> None:
+            self.request_id = uuid4()
+    ```
+
+=== "Transient"
+
+    When full isolation and clean state is required. Every request to create transient services results in a new instance.
+
+    ```python
+    @service(lifetime="transient")
+    class OrderProcessor:
+        pass
+    ```
+
 ### 🏭 Flexible Creation Patterns
 
 Defer instantiation to specialized factories when complex initialization or cleanup is required.
-Full support for async and generators. Wireup will take care of cleanup.
+Full support for async and generators. Wireup handles cleanup at the correct time depending on the service lifetime.
 
 === "Synchronous"
 
@@ -113,8 +121,8 @@ Full support for async and generators. Wireup will take care of cleanup.
             self.client = client
 
     @service
-    def http_client_factory() -> Iterator[Weatherclient]:
-        async with requests.Session() as sess:
+    def weather_client_factory() -> Iterator[WeatherClient]:
+        with requests.Session() as sess:
             yield WeatherClient(client=sess)
     ```
 
@@ -126,23 +134,18 @@ Full support for async and generators. Wireup will take care of cleanup.
             self.client = client
 
     @service
-    async def http_client_factory() -> AsyncIterator[Weatherclient]:
+    async def weather_client_factory() -> AsyncIterator[WeatherClient]:
         async with aiohttp.ClientSession() as sess:
             yield WeatherClient(client=sess)
     ```
 
-### 🔄 Managed Service Lifetimes
+### 🛡️ Improved Safety
 
-Declare dependencies as singletons, scoped, or transient to control whether to inject a fresh copy or reuse existing instances.
-
-### 🛡️ Safe
-
-Wireup will warn you at the earliest possible stage about misconfigurations to avoid runtime surprises.
-
+Wireup is mypy strict compliant and will not introduce type errors in your code. It will also warn you at the earliest possible stage about configuration errors to avoid surprises.
 
 === "Container Creation"
 
-    Container will raise at creation time about missing dependencies or other errors.
+    The container will raise errors at creation time about missing dependencies or other issues.
 
     ```python
     @service
@@ -150,14 +153,13 @@ Wireup will warn you at the earliest possible stage about misconfigurations to a
         def __init__(self, unknown: NotManagedByWireup) -> None:
             pass
 
-
     container = wireup.create_sync_container(services=[Foo])
     # ❌ Parameter 'unknown' of 'Foo' depends on an unknown service 'NotManagedByWireup'.
     ```
 
-=== "Function injection"
+=== "Function Injection"
 
-    Injected functions will raise at module import time rather than on call.
+    Injected functions will raise errors at module import time rather than when called.
 
     ```python
     @inject_from_container(container)
@@ -169,21 +171,21 @@ Wireup will warn you at the earliest possible stage about misconfigurations to a
 
 === "Integrations"
 
-    When using the Wireup integrations all dependencies are checked for validity.
+    Wireup integrations assert that requested injections in the framework are valid.
+
     ```python
     @app.get("/")
     def home(foo: Injected[NotManagedByWireup]):
         pass
 
-
     wireup.integration.flask.setup(container, app)
-    # ❌ Parameter 'oops' of 'home' depends on an unknown service 'NotManagedByWireup'.
+    # ❌ Parameter 'foo' of 'home' depends on an unknown service 'NotManagedByWireup'.
     ```
-
 
 === "Parameter Checks"
 
-    Wireup parameters are also checked for validity.
+    Configuration parameters are also checked for validity.
+
     ```python
     class Database:
         def __init__(self, url: Annotated[str, Inject(param="db_url")]) -> None:
@@ -192,9 +194,32 @@ Wireup will warn you at the earliest possible stage about misconfigurations to a
     # ❌ Parameter 'url' of Type 'Database' depends on an unknown Wireup parameter 'db_url'.
     ```
 
+### 📍 Framework-Agnostic
+
+Wireup provides its own Dependency Injection mechanism and is not tied to specific frameworks. Use it anywhere you like.
+
+### 🫶 Share Services Between Application and CLI
+
+Share the service layer between your web application and its accompanying CLI using Wireup.
+
+### 🔌 Native Integration with Django, FastAPI, or Flask
+
+Integrate with popular frameworks for a smoother developer experience.
+Integrations manage request scopes, injection in endpoints, and lifecycle of services.
+
+```python
+app = FastAPI()
+container = wireup.create_async_container(services=[UserService, Database])
+
+@app.get("/")
+def users_list(user_service: Injected[UserService]):
+    pass
+
+wireup.integration.fastapi.setup(container, app)
+```
 
 ## Next Steps
 
-* [Quickstart](getting_started.md) - Follow the quickstart guide for a more in-depth tutorial.
+* [Getting Started](getting_started.md) - Follow the Getting Started guide for a more in-depth tutorial.
 * [Services](services.md)
 * [Parameters](parameters.md)
