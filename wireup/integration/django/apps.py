@@ -139,12 +139,12 @@ class WireupConfig(AppConfig):
             injected_names = {
                 name: self.container.params.get(param.annotation.param)
                 if isinstance(param.annotation, ParameterWrapper)
-                else sync_view_request_container.get().get(param.klass, qualifier=param.qualifier_value)
+                else get_request_container().get(param.klass, qualifier=param.qualifier_value)
                 for name, param in names_to_inject.items()
                 if param.annotation
             }
 
-            this = callback.view_class(**{**callback.view_initkwargs, **injected_names})
+            this = callback.view_class(**callback.view_initkwargs, **injected_names)
             this.setup(request, *args, **kwargs)
             if not hasattr(this, "request"):
                 raise AttributeError(
