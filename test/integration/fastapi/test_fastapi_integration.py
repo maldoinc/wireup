@@ -48,8 +48,9 @@ def test_injects_service(client: TestClient):
     assert response.json() == {"number": 4, "lucky_number": 42}
 
 
-def test_scoped(client: TestClient):
-    response = client.get("/scoped")
+@pytest.mark.parametrize("endpoint", ["/scoped", "/scoped/wireup_injected"])
+def test_scoped(client: TestClient, endpoint: str):
+    response = client.get(endpoint)
     assert response.status_code == 200
 
 
@@ -70,8 +71,9 @@ def test_injects_parameters(client: TestClient):
     assert response.json() == {"foo": "bar", "foo_foo": "bar-bar"}
 
 
-def test_websocket(client: TestClient):
-    with client.websocket_connect("/ws") as websocket:
+@pytest.mark.parametrize("endpoint", ["/ws", "/ws/wireup_injected"])
+def test_websocket(client: TestClient, endpoint: str):
+    with client.websocket_connect(endpoint) as websocket:
         websocket.send_text("World")
         data = websocket.receive_text()
         assert data == "Hello World"

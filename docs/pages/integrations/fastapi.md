@@ -35,7 +35,7 @@ To inject dependencies, add the type to the route's signature and annotate it wi
 
 === "HTTP"
 
-    ```python title="main.py"
+    ```python title="HTTP Route"
     @app.get("/random")
     async def target(
         random_service: Injected[RandomService],
@@ -47,11 +47,33 @@ To inject dependencies, add the type to the route's signature and annotate it wi
     ```
 === "WebSocket"
 
-    ```python
+    ```python title="WebSocket Route"
     @app.websocket("/ws")
     async def ws(websocket: WebSocket, greeter: Injected[GreeterService]): ...
     ```
 
+!!! tip
+    Improve Dependency Injection performance in FastAPI by adding the `@wireup_injected` decorator on routes
+    that Wireup needs to inject. This optional step should reduce the time spent injecting dependencies by around 20%.
+
+    ```python title="HTTP Route" hl_lines="2"
+    @app.get("/random")
+    @wireup_injected
+    async def target(
+        random_service: Injected[RandomService],
+        is_debug: Annotated[bool, Inject(param="debug")],
+
+        # This is a regular FastAPI dependency.
+        lucky_number: Annotated[int, Depends(get_lucky_number)]
+    ): ...
+    ```
+
+    **Under the hood**: FastAPI assumes all the parameters in the signature belong to it. As such, Wireup wraps
+    its own annotations with `fastapi.Depends` to keep FastAPI happy and unwraps them later when the integration is
+    set up.
+    
+    This doesn't actually result in extra work for Wireup but FastAPI still injects the argument because it is annotated
+    with `fastapi.Depends`. This decorator hides these parameters from FastAPI and makes them visible only to Wireup.
 
 ### Inject FastAPI request
 

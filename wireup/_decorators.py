@@ -2,20 +2,40 @@ from __future__ import annotations
 
 import asyncio
 import functools
+import inspect
 from contextlib import AsyncExitStack, ExitStack
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Callable, TypeVar
 
 from wireup.errors import WireupError
 from wireup.ioc.container.async_container import AsyncContainer, async_container_force_sync_scope
 from wireup.ioc.container.sync_container import SyncContainer
 from wireup.ioc.types import ParameterWrapper
-from wireup.ioc.validation import get_valid_injection_annotated_parameters
+from wireup.ioc.validation import (
+    get_inject_annotated_parameters,
+    get_valid_injection_annotated_parameters,
+)
 
 if TYPE_CHECKING:
-    from collections.abc import Callable
-
     from wireup.ioc.container.async_container import ScopedAsyncContainer
     from wireup.ioc.container.sync_container import ScopedSyncContainer
+
+T = TypeVar("T", bound=Callable[..., Any])
+
+
+def hide_annotated_names(func: T) -> T:
+    names_to_hide = get_inject_annotated_parameters(func)
+    orig_sig = inspect.signature(func)
+    filtered_params = {name: param for name, param in orig_sig.parameters.items() if param.name not in names_to_hide}
+    new_sig = inspect.Signature(parameters=list(filtered_params.values()), return_annotation=orig_sig.return_annotation)
+    new_annotations = {
+        name: annotation for name, annotation in func.__annotations__.items() if name not in names_to_hide
+    }
+
+    func.__wireup_names__ = get_inject_annotated_parameters(func)  # type: ignore[attr-defined]
+    func.__signature__ = new_sig  # type: ignore[attr-defined]
+    func.__annotations__ = new_annotations
+
+    return func
 
 
 def inject_from_container(

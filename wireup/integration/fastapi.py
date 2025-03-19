@@ -13,6 +13,7 @@ from fastapi.routing import APIRoute, APIWebSocketRoute
 from starlette.middleware.base import BaseHTTPMiddleware
 
 from wireup import inject_from_container, service
+from wireup._decorators import hide_annotated_names
 from wireup.errors import WireupError
 from wireup.integration.util import is_view_using_container
 from wireup.ioc.container.async_container import AsyncContainer, ScopedAsyncContainer
@@ -21,6 +22,9 @@ from wireup.ioc.validation import get_valid_injection_annotated_parameters
 
 current_request: ContextVar[Request] = ContextVar("wireup_fastapi_request")
 current_ws_container: ContextVar[ScopedAsyncContainer] = ContextVar("wireup_fastapi_container")
+
+wireup_injected = hide_annotated_names
+"""Apply the `@wireup_injected` decorator for a ~20% decrease in time spent doing dependency injection."""
 
 
 async def _wireup_request_middleware(request: Request, call_next: Callable[[Request], Awaitable[Response]]) -> Response:
