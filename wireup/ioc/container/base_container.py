@@ -73,10 +73,6 @@ class BaseContainer:
         """Parameter bag associated with this container."""
         return self._params
 
-    def is_type_known(self, klass: type) -> bool:
-        """Given a class type return True if's registered in the container as a service or interface."""
-        return klass in self._registry.impls or klass in self._registry.interfaces
-
     @property
     def override(self) -> OverrideManager:
         """Override registered container services with new values."""

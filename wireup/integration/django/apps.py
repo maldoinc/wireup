@@ -18,6 +18,7 @@ import wireup
 from wireup import service
 from wireup._decorators import inject_from_container
 from wireup.errors import WireupError
+from wireup.integration.util import is_callable_using_wireup_dependencies
 from wireup.ioc.container.async_container import AsyncContainer, ScopedAsyncContainer, async_container_force_sync_scope
 from wireup.ioc.container.sync_container import ScopedSyncContainer
 from wireup.ioc.types import ParameterWrapper
@@ -123,11 +124,10 @@ class WireupConfig(AppConfig):
                 continue
 
             if isinstance(p, URLPattern) and p.callback:  # type: ignore[reportUnnecessaryComparison]
-                target = p.callback
-
                 if hasattr(p.callback, "view_class") and hasattr(p.callback, "view_initkwargs"):
-                    p.callback = self._inject_class_based_view(target)
-                else:
+                    if is_callable_using_wireup_dependencies(p.callback.view_class):  # type:ignore[reportFunctionMemberAccess]
+                        p.callback = self._inject_class_based_view(p.callback)
+                elif is_callable_using_wireup_dependencies(p.callback):
                     p.callback = self.inject_scoped(p.callback)
 
     def _inject_class_based_view(self, callback: Any) -> Any:
