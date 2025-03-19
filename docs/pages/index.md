@@ -218,6 +218,21 @@ def users_list(user_service: Injected[UserService]):
 wireup.integration.fastapi.setup(container, app)
 ```
 
+### 🧪 Simplified Testing
+
+Wireup does not patch your servies and lets you test them in isolation.
+
+If you need to use the container in your tests, you can have it create parts of your services
+or perform dependency substitution.
+
+```python
+with container.override.service(target=Database, new=in_memory_database):
+    # The /users endpoint depends on Database.
+    # During the lifetime of this context manager, requests to inject `Database`
+    # will result in `in_memory_database` being injected instead.
+    response = client.get("/users")
+```
+
 ## Next Steps
 
 * [Getting Started](getting_started.md) - Follow the Getting Started guide for a more in-depth tutorial.
