@@ -101,15 +101,14 @@ def _update_lifespan(container: AsyncContainer, app: FastAPI) -> None:
 def setup(container: AsyncContainer, app: FastAPI) -> None:
     """Integrate Wireup with FastAPI.
 
-    This performs the following:
-    * Inject dependencies in http and websocket routes.
-    * Enter a new container scope per request. Scoped lifetime lasts as long as the request does.
-    * Expose `fastapi.Request` as a Wireup scoped dependency.
-    * Close the Wireup container on app shutdown via lifespan.
+    This setup performs the following:
+    * Injects dependencies into HTTP and WebSocket routes.
+    * Creates a new container scope for each request, with a scoped lifetime matching the request duration.
+    * Closes the Wireup container upon app shutdown using the lifespan context.
 
-    See: https://maldoinc.github.io/wireup/latest/integrations/fastapi/
+    For more details, visit: https://maldoinc.github.io/wireup/latest/integrations/fastapi/
 
-    Note that for lifespan events to trigger in the FastAPI test client you must use the client as a context manager.
+    Note: To trigger lifespan events in the FastAPI test client, use the client as a context manager.
     ```python
     @pytest.fixture()
     def client(app: FastAPI) -> Iterator[TestClient]:
