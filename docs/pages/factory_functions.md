@@ -13,8 +13,8 @@ inheriting from the same base (See: [Strategy Pattern](https://en.wikipedia.org/
 
 ## Usage
 
-In order for the container to inject these dependencies, you must register the factory function
-by using the `@service` decorator.
+In order for the container to inject these dependencies, you must decorate the factory with `@service` and register
+it with the container.
 
 When the container needs to inject a dependency, it checks known factories to see if any of them can create it.
 
@@ -61,12 +61,13 @@ async def client_session_factory() -> ClientSession:
     * An injected function returns
     * A request completes (when using framework integrations)
 
-### Factory for Current User
+### Inject Models
 
-Here's how to inject the authenticated user throughout your application:
+Assume in the context of an application a class User exists and represents a user of the system.
+We can use a factory to inject a user model that represents the current authenticated user.
 
 ```python
-from wireup import service, ServiceLifetime
+from wireup import service
 
 # Create a distinct type for the authenticated user
 AuthenticatedUser = NewType("AuthenticatedUser", User)
@@ -89,7 +90,7 @@ Given a user it is possible to instantiate the correct type of notifier based on
 
 
 ```python
-from wireup import service, ServiceLifetime
+from wireup import service
 
 
 @service(lifetime="transient")

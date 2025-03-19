@@ -27,7 +27,7 @@ which help with overriding dependencies
 
 
 !!! tip
-    If you're using an integration to get the container instance you can use the `wireup.integration.xxx.get_container` 
+    If you're using an integration to get the container instance you can use the `wireup.integration.xxx.get_app_container` 
     method. This returns the container associated with your application.
 
 ### Examples

@@ -55,14 +55,14 @@ For general testing tips with Wireup refer to the [test docs](../testing.md).
 With the Flask integration you can override dependencies in the container as follows.
 
 ```python title="test_thing.py"
-from wireup.integration.flask import get_container
+from wireup.integration.flask import get_app_container
 
 def test_override():
     class DummyGreeter(GreeterService):
         def greet(self, name: str) -> str:
             return f"Hi, {name}"
 
-    with get_container(app).override.service(GreeterService, new=DummyGreeter()):
+    with get_app_container(app).override.service(GreeterService, new=DummyGreeter()):
         res = self.client.get("/greet?name=Test")
 ```
 
