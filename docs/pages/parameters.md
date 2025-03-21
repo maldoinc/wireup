@@ -1,18 +1,13 @@
-In addition to service objects, the container also holds configuration, called parameters
-that can be used to configure services.
-
-This is an optional feature that enables self-contained service declarations where you just add `@service`
-and any annotations to let Wireup know what to inject. 
+The container can also hold configuration parameters to configure services.
+This feature allows self-contained service declarations by adding `@service` and annotations to indicate what to inject.
 
 !!! warning
-    **Parameters represent application configuration**. 
-    They are not intended to pass values around or to be used as a global session object.
+    **Parameters are for application configuration only**. 
+    They should not be used to pass values around or as a global session object.
 
-    Store only app configuration such as environment name, database url, mailer url etc.
+    Use parameters for app configuration like environment name, database URL, mailer URL, etc.
 
-### Injection
-
-#### By name
+### Inject by name
 
 To inject a parameter by name, annotate the type with `Inject(param="param_name")`.
 
@@ -23,11 +18,11 @@ class GithubClient:
         ...
 ```
 
-#### Parameter expressions
+### Parameter expressions
 
-It is possible to interpolate parameters using a special syntax. This will enable you to retrieve several parameters at once and concatenate their values together.
+You can interpolate parameters using a special syntax to retrieve and concatenate multiple parameter values.
 
-**Note:** As the result is a string, non-string parameters will be converted using `str()`.
+**Note:** The result is a string, so non-string parameters will be converted using `str()`.
 
 ```python
 def target(logs_dir: Annotated[str, Inject(expr="${cache_dir}/${env}/logs")]) -> None:
@@ -36,9 +31,8 @@ def target(logs_dir: Annotated[str, Inject(expr="${cache_dir}/${env}/logs")]) ->
 
 ## 🏭 Class-based configuration
 
-While Wireup provides its own configuration mechanism in the form of parameters, it is entirely optional.
-If you prefer using typed classes for configuration, they are also supported via factories.
+Wireup's parameter configuration is optional. You can use typed classes for configuration, supported via factories.
 
-The main idea is to register your settings as a service and inject it into factories like a regular dependency.
+Register your settings as a service and inject them into factories like regular dependencies.
 
 See [Use Without Annotations](use_without_annotations.md) for more info.

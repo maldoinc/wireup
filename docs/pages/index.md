@@ -13,7 +13,7 @@ Performant, concise and type-safe Dependency Injection for Python 3.8+
 
 ### ✨ Simple & Type-Safe DI
 
-Inject services and configuration using a clean and intuitive syntax without boilerplate.
+Inject services and configuration using a clean and intuitive syntax.
 
 === "Basic Usage"
 
@@ -198,7 +198,7 @@ Wireup is mypy strict compliant and will not introduce type errors in your code.
 
 Wireup provides its own Dependency Injection mechanism and is not tied to specific frameworks. Use it anywhere you like.
 
-### 🫶 Share Services Between Application and CLI
+### 🔗 Share Services Between Application and CLI
 
 Share the service layer between your web application and its accompanying CLI using Wireup.
 

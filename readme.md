@@ -23,7 +23,7 @@ Dependency Injection (DI) is a design pattern where dependencies are provided ex
 
 ### ✨ Simple & Type-Safe DI
 
-Inject services and configuration using a clean and intuitive syntax without boilerplate.
+Inject services and configuration using a clean and intuitive syntax.
 
 ```python
 @service

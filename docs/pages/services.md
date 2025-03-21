@@ -1,11 +1,10 @@
 # Services
 
 A service in Wireup is any class or function decorated with `@service`. 
-While services can live in any module, their containing modules must be registered with the container.
+Services can live anywhere but must be registered with the container.
 
 When creating a container, you can use the `service_module` parameter to pass a list of modules which Wireup
-will recursively scan for services, or pass them to the `services` parameter which accepts a list of classes and functions
-decorated with `@service` or `@abstract`.
+will recursively scan for services, or pass them individually to the `services` parameter.
 
 ## Class Services
 
@@ -26,8 +25,8 @@ class RentalService:
 ## Factory Services
 
 For complex initialization, use factories. These are regular functions
-decorated with `@service` that construct and return service instances. The function must include a return
-type annotation denote what type of service it creates.
+decorated with `@service` that construct and return service instances. The function must have a return
+type. Wireup uses this to figure out what kind of service the factory creates.
 
 ```python
 @service
@@ -39,8 +38,6 @@ def create_payment_processor(
 
     return processor
 ```
-
-You can now inject `PaymentProcessor` as usual.
 
 ## Dependency Resolution
 
