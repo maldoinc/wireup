@@ -42,8 +42,6 @@ logger = logging.getLogger(__name__)
 
 
 class BaseContainer:
-    """Base Container class providing core functionality."""
-
     __slots__ = (
         "_current_scope",
         "_global_scope",

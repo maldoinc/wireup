@@ -101,7 +101,7 @@ def _update_lifespan(container: AsyncContainer, app: FastAPI) -> None:
 def setup(container: AsyncContainer, app: FastAPI) -> None:
     """Integrate Wireup with FastAPI.
 
-    This setup performs the following:
+    Setup performs the following:
     * Injects dependencies into HTTP and WebSocket routes.
     * Creates a new container scope for each request, with a scoped lifetime matching the request duration.
     * Closes the Wireup container upon app shutdown using the lifespan context.
@@ -117,7 +117,6 @@ def setup(container: AsyncContainer, app: FastAPI) -> None:
     ```
     """
     _update_lifespan(container, app)
-
     app.add_middleware(BaseHTTPMiddleware, dispatch=_wireup_request_middleware)
     _inject_routes(container, app)
     app.state.wireup_container = container

@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import functools
 from typing import TYPE_CHECKING, Any, TypeVar
 
 from wireup._annotations import AbstractDeclaration, ServiceDeclaration
@@ -75,5 +74,37 @@ def _create_container(
     return container
 
 
-create_sync_container = functools.partial(_create_container, SyncContainer)
-create_async_container = functools.partial(_create_container, AsyncContainer)
+def create_sync_container(
+    service_modules: list[ModuleType] | None = None,
+    services: list[Any] | None = None,
+    parameters: dict[str, Any] | None = None,
+) -> SyncContainer:
+    """Create a Wireup container.
+
+    :param service_modules: This is a list of top-level modules containing services registered
+    with `@service` or `@abstract`. Wireup will recursively scan the modules and register services found in them.
+    :param services: A list of classes or functions decorated with `@service` or `@abstract` to register with the
+    container instance. Use this when you want to explicitly list services.
+    :param parameters: Dict containing parameters you want to expose to the container. Services or factories can
+    request parameters via the `Inject(param="name")` syntax.
+    :raises WireupError: Raised if the dependencies cannot be fully resolved.
+    """
+    return _create_container(SyncContainer, service_modules=service_modules, services=services, parameters=parameters)
+
+
+def create_async_container(
+    service_modules: list[ModuleType] | None = None,
+    services: list[Any] | None = None,
+    parameters: dict[str, Any] | None = None,
+) -> AsyncContainer:
+    """Create a Wireup container.
+
+    :param service_modules: This is a list of top-level modules containing services registered
+    with `@service` or `@abstract`. Wireup will recursively scan the modules and register services found in them.
+    :param services: A list of classes or functions decorated with `@service` or `@abstract` to register with the
+    container instance. Use this when you want to explicitly list services.
+    :param parameters: Dict containing parameters you want to expose to the container. Services or factories can
+    request parameters via the `Inject(param="name")` syntax.
+    :raises WireupError: Raised if the dependencies cannot be fully resolved.
+    """
+    return _create_container(AsyncContainer, service_modules=service_modules, services=services, parameters=parameters)

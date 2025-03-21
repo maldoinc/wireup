@@ -17,7 +17,7 @@ def _inject_views(container: SyncContainer, app: Flask) -> None:
 def setup(container: SyncContainer, app: Flask) -> None:
     """Integrate Wireup with Flask.
 
-    This setup performs the following:
+    Setup performs the following:
     * Injects dependencies into Flask views.
     * Creates a new container scope for each request, with a scoped lifetime matching the request duration.
     """
