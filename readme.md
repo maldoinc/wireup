@@ -96,7 +96,7 @@ Declare dependencies as singletons, scoped, or transient to control whether to i
 class Database:
     pass
 
-# Scoped One instance per scope/request, shared within that scope/request.
+# Scoped: One instance per scope/request, shared within that scope/request.
 @service(lifetime="scoped")
 class RequestContext:
     def __init__(self) -> None:
@@ -189,7 +189,7 @@ wireup.integration.flask.setup(container, app)
 
 Wireup provides its own Dependency Injection mechanism and is not tied to specific frameworks. Use it anywhere you like.
 
-### 🫶 Share Services Between Application and CLI
+### 🔗 Share Services Between Application and CLI
 
 Share the service layer between your web application and its accompanying CLI using Wireup.
 
