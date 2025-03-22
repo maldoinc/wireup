@@ -3,6 +3,8 @@ from typing import Iterator
 import wireup
 from wireup._annotations import service
 
+from test.unit.services.with_annotations.services import TransientService
+
 
 @service
 class SingletonService: ...
@@ -53,6 +55,13 @@ def test_scoped_container_singleton_in_scope() -> None:
 
     with c.enter_scope() as scoped:
         assert scoped.get(SingletonService) is singleton1
+
+
+def test_does_not_reuse_transient_service() -> None:
+    c = wireup.create_sync_container(services=[TransientService])
+
+    with c.enter_scope() as scoped:
+        assert scoped.get(TransientService) is not scoped.get(TransientService)
 
 
 def test_scoped_container_reuses_instance_container_get() -> None:

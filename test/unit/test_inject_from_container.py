@@ -18,10 +18,12 @@ async def test_injects_targets(container: Container) -> None:
     def target(
         random_service: Annotated[RandomService, Inject(qualifier="foo")],
         env_name: Annotated[str, Inject(param="env_name")],
+        env_env: Annotated[str, Inject(expr="${env_name}-${env_name}")],
         not_managed_by_wireup: NotManagedByWireup,
     ) -> None:
         assert random_service.get_random() == 4
         assert env_name == "test"
+        assert env_env == "test-test"
         assert isinstance(not_managed_by_wireup, NotManagedByWireup)
 
     target(not_managed_by_wireup=NotManagedByWireup())

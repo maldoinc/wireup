@@ -5,6 +5,7 @@ from unittest.mock import MagicMock, Mock, patch
 import wireup
 from typing_extensions import Annotated
 from wireup import Inject, Injected, inject_from_container
+from wireup._annotations import service
 from wireup.errors import (
     DuplicateQualifierForInterfaceError,
     DuplicateServiceRegistrationError,
@@ -24,24 +25,6 @@ class TestContainer(unittest.IsolatedAsyncioTestCase):
         self.container = wireup.create_sync_container(
             service_modules=[services], parameters={"env_name": "test", "env": "test", "name": "foo"}
         )
-
-    def test_raises_on_unknown_dependency(self):
-        class UnknownDep: ...
-
-        self.assertRaises(UnknownServiceRequestedError, lambda: self.container.get(UnknownDep))
-
-    def test_container_returns_singletons(self):
-        self.container._registry.register(Counter)
-        c1 = self.container.get(Counter)
-        c1.inc()
-
-        self.assertEqual(c1.count, self.container.get(Counter).count)
-
-    def test_works_simple_get_instance_with_other_service_injected(self):
-        truly_random = self.container.get(TrulyRandomService, qualifier="foo")
-
-        self.assertIsInstance(truly_random, TrulyRandomService)
-        self.assertEqual(truly_random.get_truly_random(), 5)
 
     def test_get_class_with_param_bindings(self) -> None:
         class ServiceWithParams:
@@ -418,16 +401,6 @@ class TestContainer(unittest.IsolatedAsyncioTestCase):
 
         inner()
 
-    def test_container_register_transient(self):
-        self.container._registry.register(Counter, lifetime="transient")
-        with self.container.enter_scope() as scoped:
-            c1 = scoped.get(Counter)
-            c2 = scoped.get(Counter)
-
-            c1.inc()
-            self.assertEqual(c1.count, 1)
-            self.assertEqual(c2.count, 0)
-
     def test_container_register_transient_nested(self):
         with wireup.create_sync_container().enter_scope() as c:
             c._registry.register(TrulyRandomService, lifetime="transient")
@@ -481,60 +454,3 @@ class TestContainer(unittest.IsolatedAsyncioTestCase):
 
         sync_inner(name="Ignored")
         await async_inner(name="Ignored")
-
-    def test_inject_alias_wire_same_behavior(self) -> None:
-        container = wireup.create_sync_container()
-        container.params.put("foo", "Foo")
-        container._registry.register(RandomService, qualifier="foo")
-
-        @inject_from_container(container)
-        def inner(
-            foo: Annotated[str, Inject(param="foo")],
-            foo_foo: Annotated[str, Inject(expr="${foo}-${foo}")],
-            rand_service: Annotated[RandomService, Inject(qualifier="foo")],
-        ):
-            self.assertEqual(foo, "Foo")
-            self.assertEqual(foo_foo, "Foo-Foo")
-            self.assertEqual(rand_service.get_random(), 4)
-
-        inner()
-
-    def test_container_resolves_existing_instance_from_interface_service_locator(self) -> None:
-        self.container._registry.register_abstract(FooBase)
-        self.container._registry.register(FooBar)
-
-        self.assertTrue(self.container.get(FooBase) is self.container.get(FooBase))
-
-    def test_container_resolves_existing_instance_from_interface_autowire(self) -> None:
-        self.container._registry.register_abstract(FooBase)
-        self.container._registry.register(FooBar)
-
-        @inject_from_container(self.container)
-        def foo(x: Injected[FooBase]) -> FooBase:
-            return x
-
-        self.assertTrue(foo() is foo())
-        self.assertIsInstance(foo(), FooBar)
-
-    def test_container_resolves_existing_instance_from_interface_with_qualifier(self) -> None:
-        self.container._registry.register_abstract(FooBase)
-        self.container._registry.register(FooBar, qualifier="bar")
-
-        @inject_from_container(self.container)
-        def foo(x: Annotated[FooBase, Inject(qualifier="bar")]) -> FooBase:
-            return x
-
-        self.assertTrue(foo() is foo())
-        self.assertIsInstance(foo(), FooBar)
-
-
-async def async_foo_factory() -> FooBar:
-    return FooBar()
-
-
-async def test_container_aget_returns_instance() -> None:
-    container = wireup.create_async_container()
-    container._registry.register(async_foo_factory, qualifier="foo")
-
-    obj = await container.get(FooBar, qualifier="foo")
-    assert isinstance(obj, FooBar)
