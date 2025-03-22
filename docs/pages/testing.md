@@ -1,5 +1,3 @@
-## Unit tests
-
 Unit testing service objects is meant to be easy as the container does not interfere in
 any way with the underlying classes.
 
@@ -7,7 +5,7 @@ Classes can be instantiated as usual in tests, and you need to pass dependencies
 such as services or parameters to them yourself.
 
 To specify custom behavior for tests, provide a custom implementation 
-or a subclass that returns test data as a dependency instead of mocks.
+or a subclass that returns test data.
 
 ## Overriding
 
@@ -30,9 +28,7 @@ which help with overriding dependencies
     If you're using an integration to get the container instance you can use the `wireup.integration.xxx.get_app_container` 
     method. This returns the container associated with your application.
 
-### Examples
-
-#### Context Manager
+### Context Manager
 ```python
 random_mock = MagicMock()
 # Chosen by fair dice roll. Guaranteed to be random.
@@ -46,10 +42,7 @@ with container.override.service(target=RandomService, new=random_mock):
     response = client.get("/random")
 ```
 
-#### Pytest
-
-Similar to the above example but this uses pytest's autouse to achieve the same result.
-Also shows how to use `get_app_container` when using integrations.
+### Pytest
 
 ```python title="app.py"
 def create_app():

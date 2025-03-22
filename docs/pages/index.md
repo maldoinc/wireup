@@ -1,4 +1,4 @@
-Performant, concise, and easy-to-use Dependency Injection container for Python 3.8+.
+Performant, concise and type-safe Dependency Injection for Python 3.8+
 
 [![GitHub](https://img.shields.io/github/license/maldoinc/wireup)](https://github.com/maldoinc/wireup)
 [![Coverage](https://img.shields.io/codeclimate/coverage/maldoinc/wireup?label=Coverage)](https://codeclimate.com/github/maldoinc/wireup)
@@ -6,17 +6,16 @@ Performant, concise, and easy-to-use Dependency Injection container for Python 3
 [![PyPI - Version](https://img.shields.io/pypi/v/wireup)](https://pypi.org/project/wireup/)
 
 !!! note "What is Dependency Injection?"
-    Dependency Injection is a design pattern where objects receive their dependencies externally instead of creating them.
-    Wireup manages the creation, injection, and lifecycle of dependencies. It uses typing to automatically
-    resolve dependencies, reducing boilerplate and supports modern Python features like async and generators.
+    A design pattern where dependencies are provided externally rather than created within objects.
+    Wireup automates dependency management using Python's type system, with support for async, generators and modern Python features.
 
-## Why Wireup?
+## Features
 
-### 🎯 Dependency Injection made (extremely) simple
+### ✨ Simple & Type-Safe DI
 
 Inject services and configuration using a clean and intuitive syntax without boilerplate.
 
-=== "Basic Example"
+=== "Basic Usage"
 
     ```python
     @service
@@ -29,8 +28,7 @@ Inject services and configuration using a clean and intuitive syntax without boi
             self.db = db
 
     container = wireup.create_sync_container(services=[Database, UserService])
-    user_repository = container.get(UserService)
-    # ✅ Dependencies resolved.
+    user_service = container.get(UserService)  # ✅ Dependencies resolved automatically
     ```
 
 === "With Configuration"
@@ -41,31 +39,20 @@ Inject services and configuration using a clean and intuitive syntax without boi
         def __init__(self, db_url: Annotated[str, Inject(param="db_url")]) -> None:
             self.db_url = db_url
 
-    @service
-    class UserService:
-        def __init__(self, db: Database) -> None:
-            self.db = db
-
     container = wireup.create_sync_container(
-        services=[Database, UserService], 
-        parameters={"db_url": os.environ.get("APP_DB_URL")}
+        services=[Database], 
+        parameters={"db_url": os.environ["APP_DB_URL"]}
     )
-    user_repository = container.get(UserService)
-    db_url = container.params.get("db_url")
-    # ✅ Dependencies resolved.
     ```
 
+### 🎯 Function Injection
 
-### @ Apply as a Decorator
-
-Apply the container as a decorator to inject the required dependencies directly into any function.
+Inject dependencies directly into functions with a simple decorator.
 
 ```python
-from wireup import Injected, inject_from_container
-
 @inject_from_container(container)
-def my_awesome_function(repo: Injected[UserService]):
-    # ✅ UserService injected.
+def process_users(service: Injected[UserService]):
+    # ✅ UserService automatically injected
     pass
 ```
 
@@ -124,8 +111,7 @@ Declare dependencies as singletons, scoped, or transient to control whether to i
 ### 🏭 Flexible Creation Patterns
 
 Defer instantiation to specialized factories when complex initialization or cleanup is required.
-Full support for async and generators. Wireup will take care of cleanup at the correct time depending on the service
-lifetime.
+Full support for async and generators. Wireup handles cleanup at the correct time depending on the service lifetime.
 
 === "Synchronous"
 
@@ -135,7 +121,7 @@ lifetime.
             self.client = client
 
     @service
-    def weather_client_factory() -> Iterator[Weatherclient]:
+    def weather_client_factory() -> Iterator[WeatherClient]:
         with requests.Session() as sess:
             yield WeatherClient(client=sess)
     ```
@@ -148,22 +134,18 @@ lifetime.
             self.client = client
 
     @service
-    async def weather_client_factory() -> AsyncIterator[Weatherclient]:
+    async def weather_client_factory() -> AsyncIterator[WeatherClient]:
         async with aiohttp.ClientSession() as sess:
             yield WeatherClient(client=sess)
     ```
 
-
 ### 🛡️ Improved Safety
 
-Wireup is mypy strict compliant and will not introduce type errors in your code.
-
-It will also warn you at the earliest possible stage about configuration errors to avoid surprises.
-
+Wireup is mypy strict compliant and will not introduce type errors in your code. It will also warn you at the earliest possible stage about configuration errors to avoid surprises.
 
 === "Container Creation"
 
-    Container will raise at creation time about missing dependencies or other errors.
+    The container will raise errors at creation time about missing dependencies or other issues.
 
     ```python
     @service
@@ -171,14 +153,13 @@ It will also warn you at the earliest possible stage about configuration errors 
         def __init__(self, unknown: NotManagedByWireup) -> None:
             pass
 
-
     container = wireup.create_sync_container(services=[Foo])
     # ❌ Parameter 'unknown' of 'Foo' depends on an unknown service 'NotManagedByWireup'.
     ```
 
-=== "Function injection"
+=== "Function Injection"
 
-    Injected functions will raise at module import time rather than on when called.
+    Injected functions will raise errors at module import time rather than when called.
 
     ```python
     @inject_from_container(container)
@@ -196,11 +177,9 @@ It will also warn you at the earliest possible stage about configuration errors 
     def home(foo: Injected[NotManagedByWireup]):
         pass
 
-
     wireup.integration.flask.setup(container, app)
-    # ❌ Parameter 'oops' of 'home' depends on an unknown service 'NotManagedByWireup'.
+    # ❌ Parameter 'foo' of 'home' depends on an unknown service 'NotManagedByWireup'.
     ```
-
 
 === "Parameter Checks"
 
@@ -213,19 +192,18 @@ It will also warn you at the earliest possible stage about configuration errors 
     # ❌ Parameter 'url' of Type 'Database' depends on an unknown Wireup parameter 'db_url'.
     ```
 
-### 📍 Framework-agnostic
+### 📍 Framework-Agnostic
 
-Wireup provides its own Dependency Injection mechanism and is not tied things like http. You can use it anywhere
-you like.
+Wireup provides its own Dependency Injection mechanism and is not tied to specific frameworks. Use it anywhere you like.
 
-### 🫶 Share services between application and cli
+### 🔗 Share Services Between Application and CLI
 
-If your Web application has an accompanying CLI, you can use Wireup to share the service layer between.
+Share the service layer between your web application and its accompanying CLI using Wireup.
 
-### 🔌 Native Integration with Django, FastAPI or Flask
+### 🔌 Native Integration with Django, FastAPI, or Flask
 
 Integrate with popular frameworks for a smoother developer experience.
-Integrations will manage request scopes, injection in endpoints and lifecycle of servies.
+Integrations manage request scopes, injection in endpoints, and lifecycle of services.
 
 ```python
 app = FastAPI()
@@ -238,8 +216,23 @@ def users_list(user_service: Injected[UserService]):
 wireup.integration.fastapi.setup(container, app)
 ```
 
+### 🧪 Simplified Testing
+
+Wireup does not patch your servies and lets you test them in isolation.
+
+If you need to use the container in your tests, you can have it create parts of your services
+or perform dependency substitution.
+
+```python
+with container.override.service(target=Database, new=in_memory_database):
+    # The /users endpoint depends on Database.
+    # During the lifetime of this context manager, requests to inject `Database`
+    # will result in `in_memory_database` being injected instead.
+    response = client.get("/users")
+```
+
 ## Next Steps
 
-* [Quickstart](getting_started.md) - Follow the quickstart guide for a more in-depth tutorial.
+* [Getting Started](getting_started.md) - Follow the Getting Started guide for a more in-depth tutorial.
 * [Services](services.md)
 * [Parameters](parameters.md)

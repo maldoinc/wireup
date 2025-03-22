@@ -1,11 +1,14 @@
 # Dependency Annotations
 
-When injecting in functions (as opposed to calling `container.get(T)`),
-Wireup uses type annotations to resolve dependencies. Some cases require additional metadata through annotations.
+Wireup uses type annotations to resolve dependencies. In most cases, the type alone is sufficient, but some cases require additional metadata through annotations.
 
 ## When Are Annotations Required?
 
-| Type of Dependency                      | Annotations required? | What is required |
+Wireup differentiates between injecting into its own services (those decorated with `@service`) and injecting into external targets.
+
+### Annotation Requirements in Wireup Services
+
+| Type of Dependency                      | Annotations Required? | What is Required |
 | --------------------------------------- | --------------------- | ---------------- |
 | Services                                | No                    |                  |
 | Interface with only one implementation  | No                    |                  |
@@ -15,7 +18,16 @@ Wireup uses type annotations to resolve dependencies. Some cases require additio
 | Parameter expressions                   | Yes                   | Expression       |
  
 
-## Example
+### Annotation Requirements in External Targets
+
+Annotations are always required when injecting into an external target, even if they are not normally required in Wireup services. You must annotate parameters with `Annotated[T, Inject()]` or its alias `Injected[T]`.
+
+!!! abstract "Why is this required"
+    In its own services, Wireup assumes full ownership of the dependencies, making empty annotations via `Inject()` redundant. However, when injecting into targets it doesn't own, annotations inform the container to interact only with certain parameters. This ensures compatibility with other libraries or frameworks that might provide additional arguments to the function.
+
+    A major benefit of this, is that the container can now raise an error if you request to inject something it doesn't recognize.
+
+## Examples
 
 For Python 3.9+ (or 3.8+ with `typing_extensions`):
 
@@ -23,7 +35,7 @@ For Python 3.9+ (or 3.8+ with `typing_extensions`):
 @wireup.inject_from_container(container)
 def configure(
     # Inject configuration parameter
-    env: Annotated[str, Inject(param="APP_ENV")],
+    env: Annotated[str, Inject(param="app_env")],
     
     # Inject dynamic expression
     log_path: Annotated[str, Inject(expr="${data_dir}/logs")],
@@ -35,10 +47,7 @@ def configure(
     service: Injected[MyService],
     
     # Inject specific implementation
-    db: Annotated[Database, Inject(qualifier="replica")]
+    db: Annotated[Database, Inject(qualifier="readonly")]
 ):
     ...
 ```
-
-!!! tip
-    While service annotations are optional, using them helps catch missing dependencies early.

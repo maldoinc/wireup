@@ -45,7 +45,7 @@ from wireup import service, container
 def settings_factory() -> Settings:
     return Settings()
 
-# With settings registered in the container, it can be injected like a regular service.
+# Settings can now be injected like a regular service.
 @service
 def github_client_factory(settings: Settings) -> GithubClient:
     return GithubClient(api_key=settings.gh_api_key)

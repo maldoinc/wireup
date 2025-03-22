@@ -1,7 +1,7 @@
 from flask import Flask, Response, g
 
 from wireup._decorators import inject_from_container
-from wireup.integration.util import is_view_using_container
+from wireup.integration.util import is_callable_using_wireup_dependencies
 from wireup.ioc.container.sync_container import ScopedSyncContainer, SyncContainer
 
 
@@ -9,7 +9,7 @@ def _inject_views(container: SyncContainer, app: Flask) -> None:
     inject_scoped = inject_from_container(container, get_request_container)
 
     app.view_functions = {
-        name: inject_scoped(view) if is_view_using_container(container, view) else view
+        name: inject_scoped(view) if is_callable_using_wireup_dependencies(view) else view
         for name, view in app.view_functions.items()
     }
 
@@ -17,7 +17,9 @@ def _inject_views(container: SyncContainer, app: Flask) -> None:
 def setup(container: SyncContainer, app: Flask) -> None:
     """Integrate Wireup with Flask.
 
-    This can import Flask config in the container and will automatically inject dependencies in views.
+    Setup performs the following:
+    * Injects dependencies into Flask views.
+    * Creates a new container scope for each request, with a scoped lifetime matching the request duration.
     """
 
     def _before_request() -> None:

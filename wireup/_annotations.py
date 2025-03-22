@@ -29,15 +29,15 @@ def Inject(  # noqa: N802
 ) -> InjectableType:
     """Let the Wireup container know it must inject this parameter.
 
-    When using this without parameters in the form of `Annotated[T, Inject()]`,
-    can also use its alias `Injected[T]` instead.
+    When used without parameters as `Annotated[T, Inject()]`,
+    you can also use the alias `Injected[T]`.
 
-    :param param: Inject a given parameter by name.
+    :param param: Inject a specific parameter by name.
     :param expr: Inject a string value using a templated string.
-    Parameters inside `${}` will be replaced with their corresponding value.
+    Parameters within `${}` will be replaced with their corresponding values.
 
-    :param qualifier: Qualify which implementation to bind when there are multiple components
-    implementing an interface that is registered in the container via `@abstract`.
+    :param qualifier: Specify which implementation to bind when multiple components
+    implement an interface registered in the container via `@abstract`.
     """
     res: InjectableType
 
@@ -66,6 +66,10 @@ def Inject(  # noqa: N802
 T = TypeVar("T")
 
 Injected = Annotated[T, Inject()]
+"""Let the Wireup container know it must inject this parameter.
+
+Alias of `Annotated[T, Inject()]`.
+"""
 
 
 @dataclass
