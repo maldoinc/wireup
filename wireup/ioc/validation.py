@@ -15,6 +15,25 @@ from wireup.errors import UnknownParameterError
 from wireup.ioc.types import ParameterWrapper
 
 
+def hide_annotated_names(func: AnyCallable) -> None:
+    if hasattr(func, "__wireup_names__"):
+        return
+
+    names_to_hide = get_inject_annotated_parameters(func)
+    orig_sig = inspect.signature(func)
+    filtered_params = {name: param for name, param in orig_sig.parameters.items() if param.name not in names_to_hide}
+    new_sig = inspect.Signature(parameters=list(filtered_params.values()), return_annotation=orig_sig.return_annotation)
+    new_annotations = {
+        name: annotation for name, annotation in func.__annotations__.items() if name not in names_to_hide
+    }
+
+    func.__wireup_names__ = get_inject_annotated_parameters(func)  # type: ignore[attr-defined]
+    func.__signature__ = new_sig  # type: ignore[attr-defined]
+    func.__annotations__ = new_annotations
+
+    return
+
+
 def assert_dependencies_valid(container: BaseContainer) -> None:
     """Assert that all required dependencies exist for this container instance."""
     for (impl, _), service_factory in container._registry.factories.items():

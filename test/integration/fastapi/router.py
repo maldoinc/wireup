@@ -3,7 +3,6 @@ from typing import Any, Dict
 from fastapi import APIRouter, Depends, Request, WebSocket
 from typing_extensions import Annotated
 from wireup import Inject, Injected
-from wireup.integration.fastapi import wireup_injected
 
 from test.integration.fastapi.services import ServiceUsingFastapiRequest
 from test.shared.shared_services.greeter import GreeterService
@@ -63,37 +62,8 @@ async def websocket_endpoint(
     await websocket.close()
 
 
-@router.websocket("/ws/wireup_injected")
-@wireup_injected
-async def websocket_endpoint_wireup_injected(
-    websocket: WebSocket,
-    greeter: Injected[GreeterService],
-    scoped_service: Injected[ScopedService],
-    scoped_service2: Injected[ScopedService],
-    scoped_service_dependency: Injected[ScopedServiceDependency],
-):
-    assert scoped_service is scoped_service2
-    assert scoped_service.other is scoped_service_dependency
-
-    await websocket.accept()
-    data = await websocket.receive_text()
-    await websocket.send_text(greeter.greet(data))
-    await websocket.close()
-
-
 @router.get("/scoped")
 async def scoped_route(
-    scoped_service: Injected[ScopedService],
-    scoped_service2: Injected[ScopedService],
-    scoped_service_dependency: Injected[ScopedServiceDependency],
-):
-    assert scoped_service is scoped_service2
-    assert scoped_service.other is scoped_service_dependency
-
-
-@router.get("/scoped/wireup_injected")
-@wireup_injected
-async def scoped_route_wireup_injected(
     scoped_service: Injected[ScopedService],
     scoped_service2: Injected[ScopedService],
     scoped_service_dependency: Injected[ScopedServiceDependency],

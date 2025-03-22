@@ -14,6 +14,7 @@ from wireup.errors import WireupError
 from wireup.integration.fastapi import get_app_container
 
 from test.integration.fastapi import services as fastapi_test_services
+from test.integration.fastapi import wireup_route
 from test.integration.fastapi.router import router
 from test.shared import shared_services
 from test.shared.shared_services.rand import RandomService
@@ -22,6 +23,7 @@ from test.shared.shared_services.rand import RandomService
 def create_app() -> FastAPI:
     app = FastAPI()
     app.include_router(router)
+    app.include_router(wireup_route.router)
 
     container = wireup.create_async_container(
         service_modules=[fastapi_test_services, shared_services, wireup.integration.fastapi], parameters={"foo": "bar"}

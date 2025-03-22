@@ -1,6 +1,5 @@
 import contextlib
 import functools
-import inspect
 from contextvars import ContextVar
 from typing import (
     Any,
@@ -17,32 +16,17 @@ from wireup import inject_from_container, service
 from wireup.errors import WireupError
 from wireup.integration.util import is_callable_using_wireup_dependencies
 from wireup.ioc.container.async_container import AsyncContainer, ScopedAsyncContainer
-from wireup.ioc.types import AnyCallable, ParameterWrapper
-from wireup.ioc.validation import get_inject_annotated_parameters, get_valid_injection_annotated_parameters
+from wireup.ioc.types import ParameterWrapper
+from wireup.ioc.validation import get_valid_injection_annotated_parameters, hide_annotated_names
 
 current_request: ContextVar[Request] = ContextVar("wireup_fastapi_request")
 current_ws_container: ContextVar[ScopedAsyncContainer] = ContextVar("wireup_fastapi_container")
 
 
-def _hide_annotated_names(func: AnyCallable) -> AnyCallable:
-    names_to_hide = get_inject_annotated_parameters(func)
-    orig_sig = inspect.signature(func)
-    filtered_params = {name: param for name, param in orig_sig.parameters.items() if param.name not in names_to_hide}
-    new_sig = inspect.Signature(parameters=list(filtered_params.values()), return_annotation=orig_sig.return_annotation)
-    new_annotations = {
-        name: annotation for name, annotation in func.__annotations__.items() if name not in names_to_hide
-    }
-
-    func.__wireup_names__ = get_inject_annotated_parameters(func)  # type: ignore[attr-defined]
-    func.__signature__ = new_sig  # type: ignore[attr-defined]
-    func.__annotations__ = new_annotations
-
-    return func
-
-
 class WireupRoute(APIRoute):
     def __init__(self, path: str, endpoint: Callable[..., Any], **kwargs: Any) -> None:
-        super().__init__(path=path, endpoint=_hide_annotated_names(endpoint), **kwargs)
+        hide_annotated_names(endpoint)
+        super().__init__(path=path, endpoint=endpoint, **kwargs)
 
 
 async def _wireup_request_middleware(request: Request, call_next: Callable[[Request], Awaitable[Response]]) -> Response:
