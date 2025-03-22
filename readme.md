@@ -36,7 +36,7 @@ class UserService:
         self.db = db
 
 container = wireup.create_sync_container(services=[Database, UserService])
-user_service = container.get(UserService)  # ✅ Dependencies resolved automatically
+user_service = container.get(UserService) # ✅ Dependencies resolved.
 ```
 
 <details>
@@ -52,6 +52,7 @@ container = wireup.create_sync_container(
     services=[Database], 
     parameters={"db_url": os.environ["APP_DB_URL"]}
 )
+database = container.get(Database) # ✅ Dependencies resolved.
 ```
 
 </details>
@@ -63,7 +64,7 @@ Inject dependencies directly into functions with a simple decorator.
 ```python
 @inject_from_container(container)
 def process_users(service: Injected[UserService]):
-    # ✅ UserService automatically injected
+    # ✅ UserService automatically.
     pass
 ```
 
@@ -124,8 +125,8 @@ class WeatherClient:
 
 @service
 def weather_client_factory() -> Iterator[WeatherClient]:
-    with requests.Session() as sess:
-        yield WeatherClient(client=sess)
+    with requests.Session() as session:
+        yield WeatherClient(client=session)
 ```
 
 **Async**
@@ -137,8 +138,8 @@ class WeatherClient:
 
 @service
 async def weather_client_factory() -> AsyncIterator[WeatherClient]:
-    async with aiohttp.ClientSession() as sess:
-        yield WeatherClient(client=sess)
+    async with aiohttp.ClientSession() as session:
+        yield WeatherClient(client=session)
 ```
 
 
@@ -211,7 +212,7 @@ wireup.integration.fastapi.setup(container, app)
 
 ### 🧪 Simplified Testing
 
-Wireup does not patch your servies and lets you test them in isolation.
+Wireup does not patch your services and lets you test them in isolation.
 
 If you need to use the container in your tests, you can have it create parts of your services
 or perform dependency substitution.
