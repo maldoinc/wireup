@@ -64,7 +64,7 @@ Inject dependencies directly into functions with a simple decorator.
 ```python
 @inject_from_container(container)
 def process_users(service: Injected[UserService]):
-    # ✅ UserService automatically.
+    # ✅ UserService injected.
     pass
 ```
 
