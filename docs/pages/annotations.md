@@ -20,12 +20,12 @@ Wireup differentiates between injecting into its own services (those decorated w
 
 ### Annotation Requirements in External Targets
 
-Annotations are always required when injecting into an external target, even if they are not normally required in Wireup services. You must annotate parameters with `Annotated[T, Inject()]` or its alias `Injected[T]`.
+When injecting into an external target, annotations are always required, even if not typically needed in Wireup services. Annotate parameters with `Annotated[T, Inject()]` or its alias `Injected[T]`.
 
 !!! abstract "Why is this required"
-    In its own services, Wireup assumes full ownership of the dependencies, making empty annotations via `Inject()` redundant. However, when injecting into targets it doesn't own, annotations inform the container to interact only with certain parameters. This ensures compatibility with other libraries or frameworks that might provide additional arguments to the function.
+    In its own services, Wireup assumes full ownership of dependencies, making empty annotations via `Inject()` redundant. For external targets, annotations inform the container to interact only with specific parameters, ensuring compatibility with other libraries or frameworks.
 
-    A major benefit of this, is that the container can now raise an error if you request to inject something it doesn't recognize.
+    Explicit annotations allow the container to fail fast on unrecognized injection requests, improving reliability by catching errors early. They also enhance maintainability and readability by clearly documenting expected dependencies.
 
 ## Examples
 
