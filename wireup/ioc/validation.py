@@ -105,8 +105,8 @@ def get_inject_annotated_parameters(target: AnyCallable) -> dict[str, AnnotatedP
     """
     return {
         name: param
-        for name, parmeter in inspect.signature(target).parameters.items()
-        if (param := param_get_annotation(parmeter, globalns=get_globals(target)))
+        for name, parameter in inspect.signature(target).parameters.items()
+        if (param := param_get_annotation(parameter, globalns=get_globals(target)))
         and isinstance(param.annotation, InjectableType)
     }
 
