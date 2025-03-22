@@ -6,8 +6,8 @@ Performant, concise and type-safe Dependency Injection for Python 3.8+
 [![PyPI - Version](https://img.shields.io/pypi/v/wireup)](https://pypi.org/project/wireup/)
 
 !!! note "What is Dependency Injection?"
-    A design pattern where dependencies are provided externally rather than created within objects.
-    Wireup automates dependency management using Python's type system, with support for async, generators and modern Python features.
+    Dependency Injection (DI) is a design pattern where dependencies are provided externally rather than created within objects.
+    Wireup automates DI using Python's type system, with support for async, generators and other modern Python features.
 
 ## Features
 
@@ -28,7 +28,7 @@ Inject services and configuration using a clean and intuitive syntax without boi
             self.db = db
 
     container = wireup.create_sync_container(services=[Database, UserService])
-    user_service = container.get(UserService)  # ✅ Dependencies resolved automatically
+    user_service = container.get(UserService) # ✅ Dependencies resolved.
     ```
 
 === "With Configuration"
@@ -43,6 +43,7 @@ Inject services and configuration using a clean and intuitive syntax without boi
         services=[Database], 
         parameters={"db_url": os.environ["APP_DB_URL"]}
     )
+    database = container.get(Database) # ✅ Dependencies resolved.
     ```
 
 ### 🎯 Function Injection
@@ -52,7 +53,7 @@ Inject dependencies directly into functions with a simple decorator.
 ```python
 @inject_from_container(container)
 def process_users(service: Injected[UserService]):
-    # ✅ UserService automatically injected
+    # ✅ UserService injected.
     pass
 ```
 
@@ -69,8 +70,7 @@ class Notifier(abc.ABC):
 class SlackNotifier(Notifier):
     pass
 
-notifier = container.get(Notifier)
-# ✅ SlackNotifier instance.
+notifier = container.get(Notifier) # ✅ SlackNotifier instance.
 ```
 
 ### 🔄 Managed Service Lifetimes
@@ -122,8 +122,8 @@ Full support for async and generators. Wireup handles cleanup at the correct tim
 
     @service
     def weather_client_factory() -> Iterator[WeatherClient]:
-        with requests.Session() as sess:
-            yield WeatherClient(client=sess)
+        with requests.Session() as session:
+            yield WeatherClient(client=session)
     ```
 
 === "Async"
@@ -135,8 +135,8 @@ Full support for async and generators. Wireup handles cleanup at the correct tim
 
     @service
     async def weather_client_factory() -> AsyncIterator[WeatherClient]:
-        async with aiohttp.ClientSession() as sess:
-            yield WeatherClient(client=sess)
+        async with aiohttp.ClientSession() as session:
+            yield WeatherClient(client=session)
     ```
 
 ### 🛡️ Improved Safety
@@ -218,7 +218,7 @@ wireup.integration.fastapi.setup(container, app)
 
 ### 🧪 Simplified Testing
 
-Wireup does not patch your servies and lets you test them in isolation.
+Wireup does not patch your services and lets you test them in isolation.
 
 If you need to use the container in your tests, you can have it create parts of your services
 or perform dependency substitution.
