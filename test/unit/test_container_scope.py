@@ -1,24 +1,27 @@
 from typing import Iterator
 
 import wireup
+from wireup._annotations import service
 
 
+@service
 class SingletonService: ...
 
 
+@service(lifetime="scoped")
 class ScopedService: ...
 
 
 def test_scoped_exit_does_not_close_singleton_scopes() -> None:
     singleton_service_factory_exited = False
 
+    @service
     def singleton_service_factory() -> Iterator[SingletonService]:
         yield SingletonService()
         nonlocal singleton_service_factory_exited
         singleton_service_factory_exited = True
 
-    c = wireup.create_sync_container()
-    c._registry.register(singleton_service_factory)
+    c = wireup.create_sync_container(services=[singleton_service_factory])
 
     with c.enter_scope() as scoped:
         scoped.get(SingletonService)
@@ -29,13 +32,13 @@ def test_scoped_exit_does_not_close_singleton_scopes() -> None:
 async def test_scoped_exit_does_not_close_singleton_scopes_async() -> None:
     singleton_service_factory_exited = False
 
+    @service
     def singleton_service_factory() -> Iterator[SingletonService]:
         yield SingletonService()
         nonlocal singleton_service_factory_exited
         singleton_service_factory_exited = True
 
-    c = wireup.create_async_container()
-    c._registry.register(singleton_service_factory)
+    c = wireup.create_async_container(services=[singleton_service_factory])
 
     async with c.enter_scope() as scoped:
         await scoped.get(SingletonService)
@@ -44,8 +47,7 @@ async def test_scoped_exit_does_not_close_singleton_scopes_async() -> None:
 
 
 def test_scoped_container_singleton_in_scope() -> None:
-    c = wireup.create_sync_container()
-    c._registry.register(SingletonService)
+    c = wireup.create_sync_container(services=[SingletonService])
 
     singleton1 = c.get(SingletonService)
 
@@ -54,16 +56,14 @@ def test_scoped_container_singleton_in_scope() -> None:
 
 
 def test_scoped_container_reuses_instance_container_get() -> None:
-    c = wireup.create_sync_container()
-    c._registry.register(ScopedService, lifetime="scoped")
+    c = wireup.create_sync_container(services=[ScopedService])
 
     with c.enter_scope() as scoped:
         assert scoped.get(ScopedService) is scoped.get(ScopedService)
 
 
 def test_scoped_container_multiple_scopes() -> None:
-    c = wireup.create_sync_container()
-    c._registry.register(ScopedService, lifetime="scoped")
+    c = wireup.create_sync_container(services=[ScopedService])
 
     with c.enter_scope() as scoped1, c.enter_scope() as scoped2:
         assert scoped1 is not scoped2
@@ -77,13 +77,13 @@ def test_scoped_container_cleansup_container_get() -> None:
 
     done = False
 
+    @service(lifetime="transient")
     def factory() -> Iterator[SomeService]:
         yield SomeService()
         nonlocal done
         done = True
 
-    c = wireup.create_sync_container()
-    c._registry.register(factory, lifetime="transient")
+    c = wireup.create_sync_container(services=[factory])
 
     with c.enter_scope() as scoped:
         assert scoped.get(SomeService)

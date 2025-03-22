@@ -106,8 +106,8 @@ class ServiceOverride:
     """Data class to represent a service override. Target type will be replaced with the new type by the container."""
 
     target: type[Any]
-    qualifier: Qualifier | None
     new: Any
+    qualifier: Qualifier | None = None
 
 
 @dataclass(frozen=True)

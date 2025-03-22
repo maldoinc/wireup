@@ -10,6 +10,7 @@ import wireup.integration
 import wireup.integration.fastapi
 from fastapi import FastAPI, Request
 from fastapi.testclient import TestClient
+from wireup._annotations import service
 from wireup.errors import WireupError
 from wireup.integration.fastapi import get_app_container
 
@@ -105,6 +106,7 @@ async def test_closes_container_on_lifespan_close() -> None:
 
     NewRandom = NewType("NewRandom", RandomService)
 
+    @service
     def random_service_factory() -> Iterator[NewRandom]:
         yield NewRandom(RandomService())
 
@@ -112,10 +114,9 @@ async def test_closes_container_on_lifespan_close() -> None:
         cleanup_done = True
 
     container = wireup.create_async_container(
-        service_modules=[fastapi_test_services, shared_services, wireup.integration.fastapi]
+        service_modules=[fastapi_test_services, shared_services, wireup.integration.fastapi],
+        services=[random_service_factory],
     )
-    container._registry.register(random_service_factory)
-
     wireup.integration.fastapi.setup(container, app)
 
     with TestClient(app) as _:
