@@ -3,16 +3,16 @@
 Wireup provides seamless integration with Django through the `wireup.integration.django` module, enabling
 dependency injection in Django applications.
 
-## Features
+**Features:**
 
 - [x] Dependency injection in function-based and class-based views (sync and async).
 - [x] Access to `django.http.HttpRequest` as an injectable dependency.
 - [x] Django settings available as Wireup parameters.
 - [x] Request-scoped container lifecycle management.
 
-## Setup
+---
 
-### Installation
+### Initialize the integration
 
 Add the following to your Django settings:
 
@@ -38,9 +38,7 @@ WIREUP = WireupSettings(
 S3_BUCKET_TOKEN = os.environ["S3_BUCKET_ACCESS_TOKEN"]
 ```
 
-## Usage
-
-### Injecting Django Settings
+### Inject Django settings
 
 You can inject Django settings into your services:
 
@@ -70,7 +68,7 @@ def github_client_factory() -> GithubClient:
     return GithubClient(api_key=settings.GH_API_KEY)
 ```
 
-### Injecting the Current Request
+### Inject the current request
 
 The integration exposes the current Django request as a `scoped` lifetime dependency, which can be injected
 into `scoped` or `transient` services:
@@ -85,7 +83,7 @@ class AuthService:
         self.request = request
 ```
 
-### Injecting Dependencies in Views
+### Inject dependencies in views
 
 To inject dependencies in views, simply request them by their type:
 
@@ -106,12 +104,27 @@ Class-based views are also supported. Specify dependencies in the class `__init_
 
 For more examples, see the [Wireup Django integration tests](https://github.com/maldoinc/wireup/tree/master/test/integration/django/view.py).
 
-## Testing
+### Accessing the container
+
+Access the Wireup container using the provided functions:
+
+```python
+from wireup.integration.django import get_app_container, get_request_container
+
+# Get application-wide container
+app_container = get_app_container()
+
+# Get request-scoped container
+request_container = get_request_container()
+```
+
+### Testing
+
 For general testing tips with Wireup refer to the [test docs](../testing.md). 
 With Django you can override dependencies in the container as follows:
 
 ```python title="test_thing.py"
-from wireup.integration.django.apps import get_app_container
+from wireup.integration.django import get_app_container
 
 def test_override():
     class DummyGreeter(GreeterService):
@@ -121,20 +134,6 @@ def test_override():
     with get_app_container().override.service(GreeterService, new=DummyGreeter()):
         res = self.client.get("/greet?name=Test")
         assert res.status_code == 200
-```
-
-## Accessing the Container
-
-Access the Wireup container using the provided functions:
-
-```python
-from wireup.integration.django.apps import get_app_container, get_request_container
-
-# Get application-wide container
-app_container = get_app_container()
-
-# Get request-scoped container
-request_container = get_request_container()
 ```
 
 ## API Reference
