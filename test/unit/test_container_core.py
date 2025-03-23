@@ -8,9 +8,17 @@ import pytest
 import wireup
 from typing_extensions import Annotated
 from wireup import ParameterBag
-from wireup._annotations import Inject, service
-from wireup.errors import DuplicateServiceRegistrationError, UnknownServiceRequestedError, WireupError
+from wireup._annotations import Inject, abstract, service
+from wireup.errors import (
+    DuplicateQualifierForInterfaceError,
+    DuplicateServiceRegistrationError,
+    UnknownServiceRequestedError,
+    UsageOfQualifierOnUnknownObjectError,
+    WireupError,
+)
 
+from test.unit import services
+from test.unit.services.abstract_multiple_bases import FooBase, FooBaseAnother
 from test.unit.services.no_annotations.random.random_service import RandomService
 from test.unit.services.no_annotations.random.truly_random_service import TrulyRandomService
 from test.unit.services.with_annotations.env import EnvService
@@ -110,6 +118,16 @@ async def test_container_get_interface_without_impls_raises(container: Container
         await run(container.get(InterfaceWithoutImpls))
 
 
+async def test_container_get_interface_unknown_impl_errors_known_impls(container: Container) -> None:
+    with pytest.raises(
+        WireupError,
+        match=re.escape(
+            f"Cannot create {Foo} as qualifier 'does-not-exist' is unknown. Available qualifiers: ['None', 'other']."
+        ),
+    ):
+        await run(container.get(Foo, qualifier="does-not-exist"))
+
+
 async def test_container_get_returns_service(container: Container) -> None:
     res = await run(container.get(EnvService))
 
@@ -184,3 +202,63 @@ def test_raises_multiple_definitions():
         match=re.escape(f"Cannot register type {Multiple} with qualifier 'None' as it already exists."),
     ):
         wireup.create_sync_container(services=[Multiple, Multiple])
+
+
+def test_register_same_qualifier_should_raise():
+    @abstract
+    class F1Base: ...
+
+    @service(qualifier="f1")
+    class F1(F1Base): ...
+
+    @service(qualifier="f1")
+    class F11(F1Base): ...
+
+    with pytest.raises(
+        DuplicateQualifierForInterfaceError,
+        match=re.escape(
+            f"Cannot register implementation class {F11} for {F1Base} with qualifier 'f1' as it already exists",
+        ),
+    ):
+        wireup.create_async_container(services=[F1Base, F1, F11])
+
+
+async def test_injects_qualifiers():
+    @abstract
+    class FBase: ...
+
+    @service
+    class FDefault(FBase): ...
+
+    @service(qualifier="f1")
+    class F1(FBase): ...
+
+    @service(qualifier="f2")
+    class F2(FBase): ...
+
+    container = wireup.create_async_container(services=[FBase, FDefault, F1, F2])
+    assert isinstance(await container.get(FBase), FDefault)
+    assert isinstance(await container.get(FBase, "f1"), F1)
+    assert isinstance(await container.get(FBase, "f2"), F2)
+
+
+def test_services_from_multiple_bases_are_injected():
+    container = wireup.create_sync_container(
+        service_modules=[services], parameters={"env_name": "test", "env": "test", "name": "foo"}
+    )
+
+    foo = container.get(FooBase)
+    assert foo.foo == "bar_multiple_bases"
+
+    foo_another = container.get(FooBaseAnother)
+    assert foo_another.foo == "bar_multiple_bases"
+
+
+def test_inject_qualifier_on_unknown_type():
+    with pytest.raises(
+        UsageOfQualifierOnUnknownObjectError,
+        match=re.escape(
+            f"Cannot use qualifier {__name__} on type {str} that is not managed by the container.",
+        ),
+    ):
+        wireup.create_sync_container().get(str, qualifier=__name__)

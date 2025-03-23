@@ -3,7 +3,9 @@ from typing import Iterator
 import wireup
 from wireup._annotations import service
 
-from test.unit.services.with_annotations.services import TransientService
+from test.conftest import Container
+from test.unit.services.no_annotations.random.truly_random_service import TrulyRandomService
+from test.unit.services.with_annotations.services import TransientService, truly_random_service_factory
 
 
 @service
