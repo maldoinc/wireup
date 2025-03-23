@@ -2,7 +2,7 @@
 
 With the API now stable, deprecated features have been removed. Refer to the deprecation notices for upgrade guidance.
 
-### Removed `wireup.DependencyContainer`
+#### Removed `wireup.DependencyContainer`
 
 The previous container was overly complex. It has been split into `wireup.SyncContainer` and `wireup.AsyncContainer`.
 
@@ -18,6 +18,10 @@ Changes include:
     * This is removed. See the [Apply the container as a decorator](apply_container_as_decorator.md) docs for details.
 * Removed `container.has_type`.
 * `wireup.create_container` is now `wireup.create_sync_container` and `wireup.create_async_container`.
+
+#### Removed get_all, put methods of `ParameterBag`.
+
+`ParameterBag` does not support mutations. Pass all parameters when creating the container.
 
 #### Removed support for default values
 
