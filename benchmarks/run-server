@@ -1,0 +1,3 @@
+#! /usr/bin/env sh
+
+./.venv/bin/uvicorn wireup_benchmarks.app:app --port 8080

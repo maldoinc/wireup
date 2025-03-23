@@ -1,0 +1,5 @@
+#! /usr/bin/env sh
+
+test=${2:-singleton}
+
+hey -n 10000 "http://127.0.0.1:8080/$1/$test"
