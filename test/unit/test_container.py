@@ -5,10 +5,8 @@ from unittest.mock import MagicMock, Mock, patch
 import wireup
 from typing_extensions import Annotated
 from wireup import Inject, Injected, inject_from_container
-from wireup._annotations import service
 from wireup.errors import (
     DuplicateQualifierForInterfaceError,
-    DuplicateServiceRegistrationError,
     UnknownQualifiedServiceRequestedError,
     UnknownServiceRequestedError,
     UsageOfQualifierOnUnknownObjectError,
@@ -26,24 +24,6 @@ class TestContainer(unittest.IsolatedAsyncioTestCase):
             service_modules=[services], parameters={"env_name": "test", "env": "test", "name": "foo"}
         )
 
-    def test_get_class_with_param_bindings(self) -> None:
-        class ServiceWithParams:
-            def __init__(
-                self,
-                connection_str: Annotated[str, Inject(param="connection_str")],
-                cache_dir: Annotated[str, Inject(expr="${cache_dir}/etc")],
-            ) -> None:
-                self.connection_str = connection_str
-                self.cache_dir = cache_dir
-
-        self.container._registry.register(ServiceWithParams)
-        self.container.params.put("connection_str", "sqlite://memory")
-        self.container.params.put("cache_dir", "/var/cache")
-        svc = self.container.get(ServiceWithParams)
-
-        self.assertEqual(svc.connection_str, "sqlite://memory")
-        self.assertEqual(svc.cache_dir, "/var/cache/etc")
-
     @patch("importlib.import_module")
     def test_inject_fastapi_dep(self, mock_import_module: MagicMock):
         mock_import_module.return_value = Mock(Depends=Mock())
@@ -59,61 +39,6 @@ class TestContainer(unittest.IsolatedAsyncioTestCase):
             f"Cannot inject unknown service {unittest.TestCase}. Make sure it is registered with the container.",
             str(context.exception),
         )
-
-    def test_autowire_sync(self):
-        self.container.params.put("env", "test")
-
-        def test_function(
-            random: Annotated[TrulyRandomService, Inject(qualifier="foo")], env: Annotated[str, Inject(param="env")]
-        ) -> int:
-            self.assertEqual(env, "test")
-            return random.get_truly_random()
-
-        autowired_fn = inject_from_container(self.container)(test_function)
-        self.assertTrue(callable(autowired_fn))
-        self.assertEqual(autowired_fn(), 5)
-
-    async def test_autowire_async(self):
-        container = wireup.create_async_container(parameters={"env_name": "test"}, service_modules=[services])
-
-        async def test_function(
-            random: Annotated[RandomService, Inject(qualifier="foo")], env: Annotated[str, Inject(param="env_name")]
-        ) -> int:
-            self.assertEqual(env, "test")
-            return random.get_random()
-
-        autowired_fn = inject_from_container(container)(test_function)
-        self.assertTrue(callable(autowired_fn))
-        self.assertEqual(await autowired_fn(), 4)
-
-    def test_get_unknown_class(self):
-        class TestGetUnknown:
-            pass
-
-        with self.assertRaises(UnknownServiceRequestedError) as context:
-            self.container.get(TestGetUnknown)
-
-        self.assertEqual(
-            f"Cannot inject unknown service {TestGetUnknown}. Make sure it is registered with the container.",
-            str(context.exception),
-        )
-
-    def test_db_service_dataclass_with_params(self):
-        @dataclass
-        class MyDbService:
-            connection_str: Annotated[str, Inject(param="connection_str")]
-            cache_dir: Annotated[str, Inject(expr="${cache_dir}/${auth.user}/db")]
-
-        self.container = wireup.create_sync_container()
-        self.container._registry.register(MyDbService)
-        self.container.params.update(
-            {"cache_dir": "/var/cache", "connection_str": "sqlite://memory", "auth.user": "anon"},
-        )
-
-        db = self.container.get(MyDbService)
-
-        self.assertEqual(db.cache_dir, "/var/cache/anon/db")
-        self.assertEqual(db.connection_str, "sqlite://memory")
 
     def test_locates_service_with_qualifier(self):
         self.container._registry.register(Counter, qualifier=999)
@@ -185,34 +110,12 @@ class TestContainer(unittest.IsolatedAsyncioTestCase):
 
         inner()
 
-    def test_interface_with_single_implementation_no_qualifier_gets_autowired(self):
-        self.container._registry.register_abstract(FooBase)
-        self.container._registry.register(FooBar)
-
-        @inject_from_container(self.container)
-        def inner(foo: Injected[FooBase]):
-            self.assertEqual(foo.foo, "bar")
-
-        inner()
-
     def test_get_with_interface_and_qualifier(self):
         self.container._registry.register_abstract(FooBase)
         self.container._registry.register(FooBar, qualifier="sub1")
 
         foo = self.container.get(FooBase, qualifier="sub1")
         self.assertEqual(foo.foo, "bar")
-
-    def test_register_twice_should_raise(self):
-        self.container._registry.register_abstract(FooBase)
-        self.container._registry.register(FooBar, qualifier="foo")
-
-        with self.assertRaises(DuplicateServiceRegistrationError) as context:
-            self.container._registry.register(FooBar, qualifier="foo")
-
-        self.assertIn(
-            f"Cannot register type {FooBar} with qualifier 'foo' as it already exists.",
-            str(context.exception),
-        )
 
     def test_register_same_qualifier_should_raise(self):
         self.container._registry.register_abstract(FooBase)
@@ -353,24 +256,6 @@ class TestContainer(unittest.IsolatedAsyncioTestCase):
         c2.get(Counter).inc()
         self.assertEqual(c2.get(Counter).count, 1)
 
-    def test_autowire_supports_multiple_containers(self):
-        c1 = wireup.create_sync_container()
-        c2 = wireup.create_sync_container()
-
-        c1.params.put("param1", "param_value")
-        c2.params.put("param1", "param_value")
-
-        c1._registry.register(Counter)
-        c2._registry.register(Counter)
-
-        def inner(counter: Annotated[Counter, Inject()], p1: Annotated[str, Inject(param="param1")]):
-            counter.inc()
-            self.assertEqual(counter.count, 1)
-            self.assertEqual(p1, "param_value")
-
-        inject_from_container(c1)(inner)()
-        inject_from_container(c2)(inner)()
-
     def test_container_get_with_interface_returns_impl(self):
         self.container._registry.register_abstract(FooBase)
         self.container._registry.register(FooBar)
@@ -388,16 +273,6 @@ class TestContainer(unittest.IsolatedAsyncioTestCase):
             self.assertEqual(name, "foo")
             self.assertEqual(env, "test")
             self.assertEqual(env_name, "test-foo")
-
-        inner()
-
-    def test_container_wires_none_values_from_parameter_bag(self):
-        self.container.params.put("foo", None)
-
-        @inject_from_container(self.container)
-        def inner(name: Annotated[str, Inject(param="foo")], name2: Annotated[str, Inject(param="foo")]):
-            self.assertIsNone(name)
-            self.assertIsNone(name2)
 
         inner()
 
@@ -420,37 +295,3 @@ class TestContainer(unittest.IsolatedAsyncioTestCase):
 
             self.assertNotEqual(c1, c2)
             self.assertEqual(c1.random_service, c2.random_service)
-
-    def test_injects_ctor(self):
-        class Dummy:
-            @inject_from_container(self.container)
-            def __init__(
-                self,
-                rand_service: Annotated[RandomService, Inject(qualifier="foo")],
-                env: Annotated[str, Inject(param="env")],
-            ):
-                self.env = env
-                self.rand_service = rand_service
-
-            def do_thing(self):
-                return f"Running in {self.env} with a result of {self.rand_service.get_random()}"
-
-        self.container.params.put("env", "test")
-
-        dummy = Dummy()
-        self.assertEqual(dummy.do_thing(), "Running in test with a result of 4")
-
-    async def test_container_overrides_already_passed_keyword_args(self):
-        sync_container = wireup.create_sync_container(parameters={"foo": "Foo"})
-        async_container = wireup.create_async_container(parameters={"foo": "Foo"})
-
-        @inject_from_container(sync_container)
-        def sync_inner(name: Annotated[str, Inject(param="foo")]):
-            self.assertEqual(name, "Foo")
-
-        @inject_from_container(async_container)
-        async def async_inner(name: Annotated[str, Inject(param="foo")]):
-            self.assertEqual(name, "Foo")
-
-        sync_inner(name="Ignored")
-        await async_inner(name="Ignored")

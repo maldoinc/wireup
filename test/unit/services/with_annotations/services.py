@@ -26,10 +26,23 @@ class Foo(abc.ABC):
         raise NotImplementedError
 
 
+@abstract
+class InterfaceWithoutImpls(abc.ABC):
+    @abc.abstractmethod
+    def noop(self) -> str:
+        raise NotImplementedError
+
+
 @service
 class FooImpl(Foo):
     def get_foo(self) -> str:
         return "foo"
+
+
+@service(qualifier="other")
+class OtherFooImpl(Foo):
+    def get_foo(self) -> str:
+        return "other foo"
 
 
 @service(lifetime="scoped")
