@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
-    from wireup.ioc.types import Qualifier
+    from wireup.ioc.types import AnyCallable, Qualifier
 
 
 class WireupError(Exception):
@@ -42,18 +42,10 @@ class UnknownParameterError(WireupError):
 class FactoryReturnTypeIsEmptyError(WireupError):
     """Raised when a factory function has no return type defined."""
 
-    def __init__(self) -> None:
-        super().__init__("Factory functions must specify a return type denoting the type of dependency it can create.")
-
-
-class FactoryDuplicateServiceRegistrationError(WireupError):
-    """Raised when a factory function declares that it produces a type which is already known."""
-
-    def __init__(self, return_type: type[Any], qualifier: Qualifier | None = None) -> None:
-        self.return_type = return_type
+    def __init__(self, fn: AnyCallable) -> None:
         super().__init__(
-            f"A function is already registered as a factory for dependency type {return_type} "
-            f"with qualifier {qualifier}."
+            "Factory functions must specify a return type denoting the type of dependency it can create. "
+            f"Please add a return type to {fn}"
         )
 
 
@@ -71,8 +63,7 @@ class UnknownQualifiedServiceRequestedError(WireupError):
         qualifiers_str = ", ".join(sorted(f"'{q}'" for q in available_qualifiers))
 
         super().__init__(
-            f"Cannot instantiate concrete class for {klass} as qualifier '{qualifier}' is unknown. "
-            f"Available qualifiers: [{qualifiers_str}].",
+            f"Cannot create {klass} as qualifier '{qualifier}' is unknown. Available qualifiers: [{qualifiers_str}].",
         )
 
 
@@ -81,22 +72,24 @@ class UnknownServiceRequestedError(WireupError):
 
     def __init__(self, klass: type[Any]) -> None:
         super().__init__(
-            f"Cannot wire unknown class {klass}. Use '@service' or '@abstract' to enable autowiring.",
+            f"Cannot inject unknown service {klass}. Make sure it is registered with the container.",
         )
 
 
 class UsageOfQualifierOnUnknownObjectError(WireupError):
     """Raised when using a qualifier on an unknown type that is not managed by the container."""
 
-    def __init__(self, qualifier_value: Qualifier | None) -> None:
-        super().__init__(f"Cannot use qualifier {qualifier_value} on a type that is not managed by the container.")
+    def __init__(self, klass: type, qualifier_value: Qualifier | None) -> None:
+        super().__init__(
+            f"Cannot use qualifier {qualifier_value} on type {klass} that is not managed by the container."
+        )
 
 
 class InvalidRegistrationTypeError(WireupError):
-    """Raised when attempting to call @container.register with an invalid argument."""
+    """Raised when attempting to register an invalid object type as a service."""
 
     def __init__(self, attempted: Any) -> None:
-        super().__init__(f"Cannot register {attempted} with the container. Allowed types are callables and types")
+        super().__init__(f"Cannot register {attempted} with the container. Allowed types are callables and types.")
 
 
 class UnknownOverrideRequestedError(WireupError):

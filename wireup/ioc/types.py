@@ -1,17 +1,12 @@
 from __future__ import annotations
 
 from collections.abc import Hashable
-from dataclasses import dataclass
-from enum import Enum, auto
-from typing import Any, Callable, Optional, Tuple, Union
+from dataclasses import dataclass, field
+from typing import Any, AsyncGenerator, Callable, Generator, Optional, Tuple, Union
+
+from typing_extensions import Literal
 
 AnyCallable = Callable[..., Any]
-AutowireTarget = Union[AnyCallable, type]
-"""Represents types that can be targets for autowiring.
-
-This is any method where autowire decorator is used or any class which is registered in the container
-where autowiring happens automatically.
-"""
 
 
 class InjectableType:
@@ -66,14 +61,7 @@ class EmptyContainerInjectionRequest(InjectableType):
     """
 
 
-class ServiceLifetime(Enum):
-    """Determines the lifetime of a service."""
-
-    SINGLETON = auto()
-    """Singleton services are initialized once and reused throughout the lifetime of the container."""
-
-    TRANSIENT = auto()
-    """Transient services will have a fresh instance initialized on every injection."""
+ServiceLifetime = Literal["singleton", "scoped", "transient"]
 
 
 class AnnotatedParameter:
@@ -83,7 +71,7 @@ class AnnotatedParameter:
 
     def __init__(
         self,
-        klass: type[Any] | None = None,
+        klass: type[Any],
         annotation: InjectableType | None = None,
     ) -> None:
         """Create a new AnnotatedParameter.
@@ -118,5 +106,23 @@ class ServiceOverride:
     """Data class to represent a service override. Target type will be replaced with the new type by the container."""
 
     target: type[Any]
-    qualifier: Qualifier | None
     new: Any
+    qualifier: Qualifier | None = None
+
+
+@dataclass(frozen=True)
+class CreationResult:
+    instance: Any
+    exit_stack: list[Generator[Any, Any, Any] | AsyncGenerator[Any, Any]]
+
+
+@dataclass(frozen=True)
+class InjectionResult:
+    kwargs: dict[str, Any]
+    exit_stack: list[Generator[Any, Any, Any] | AsyncGenerator[Any, Any]]
+
+
+@dataclass(frozen=True)
+class ContainerScope:
+    objects: dict[ContainerObjectIdentifier, Any] = field(default_factory=dict)
+    exit_stack: list[Generator[Any, Any, Any] | AsyncGenerator[Any, Any]] = field(default_factory=list)

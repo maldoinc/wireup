@@ -1,18 +1,28 @@
-This library adheres to Semantic Versioning (Semver) principles to ensure predictable versioning and compatibility for
-its users. 
+# Versioning Policy
 
-* Semver consists of three distinct version components: MAJOR, MINOR, and PATCH, separated by dots (e.g.,
-1.2.3). 
-* Changes in the MAJOR version indicate backward-incompatible changes, such as breaking API alterations. 
-* MINOR version updates signify new, backward-compatible features or enhancements, while PATCH versions are reserved for
-backward-compatible bug fixes. 
-* Releases with a MAJOR version of 0 are considered pre-release and as such, the api is considered unstable.
-  Minor-version releases may contain breaking changes as the api evolves.
-* The following is considered public API
-  * Direct exports of the `wireup` package.
-  * Accessible objects from the public interface of the above exported objects.
+Wireup follows [Semantic Versioning](https://semver.org/) (SemVer) to provide clear expectations about version compatibility.
 
+## Version Numbers
 
-!!! tip
-    When using a pre-release version, pin the constraint to `0.x.*` so that you don't accidentally upgrade to a version
-    with breaking changes, but are still able to get bug-fix releases.
+Each version number follows the format `MAJOR.MINOR.PATCH`:
+
+- **MAJOR**: Increments for backward-incompatible changes
+- **MINOR**: Increments for new features (backward-compatible)
+- **PATCH**: Increments for bug fixes (backward-compatible)
+
+## Pre-release Versions (0.x.x)
+
+Versions starting with `0` (e.g., `0.1.0`) are considered pre-release. During this phase:
+
+- The API is considered unstable
+- Minor version updates may include breaking changes
+- Use version constraint `0.x.*` to receive bug fixes while avoiding breaking changes
+
+## Public API Definition
+
+The following components constitute Wireup's public API:
+
+1. All direct exports from the `wireup` package
+2. All public members and interfaces of the exported objects
+
+Changes to these components are subject to semantic versioning rules.

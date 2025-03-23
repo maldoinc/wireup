@@ -1,5 +1,3 @@
-## Unit tests
-
 Unit testing service objects is meant to be easy as the container does not interfere in
 any way with the underlying classes.
 
@@ -7,10 +5,7 @@ Classes can be instantiated as usual in tests, and you need to pass dependencies
 such as services or parameters to them yourself.
 
 To specify custom behavior for tests, provide a custom implementation 
-or a subclass that returns test data as a dependency instead of mocks.
-
-It is also possible to use the container to build a part of your dependencies by
-calling `container.get(T)` (or `container.aget` for async resources) which will return an instance of `T`.
+or a subclass that returns test data.
 
 ## Overriding
 
@@ -22,7 +17,7 @@ which help with overriding dependencies
 
 
 !!! info "Good to know"
-    * Overriding only applies to future autowire calls.
+    * Overriding only applies to future injections.
     * Once a singleton service has been instantiated, it is not possible to directly replace
     any of its direct or transitive dependencies via overriding as the object is already in memory.
     * When injecting interfaces and/or qualifiers, override the interface and/or qualifier 
@@ -30,12 +25,10 @@ which help with overriding dependencies
 
 
 !!! tip
-    If you're using an integration to get the container instance you can use the `wireup.integration.xxx.get_container` 
+    If you're using an integration to get the container instance you can use the `wireup.integration.xxx.get_app_container` 
     method. This returns the container associated with your application.
 
-### Examples
-
-#### Context Manager
+### Context Manager
 ```python
 random_mock = MagicMock()
 # Chosen by fair dice roll. Guaranteed to be random.
@@ -49,10 +42,7 @@ with container.override.service(target=RandomService, new=random_mock):
     response = client.get("/random")
 ```
 
-#### Pytest
-
-Similar to the above example but this uses pytest's autouse to achieve the same result.
-Also shows how to use `get_container` when using integrations.
+### Pytest
 
 ```python title="app.py"
 def create_app():
@@ -74,28 +64,10 @@ def app():
 ```
 
 ```python title="some_test_file.py"
-from wireup.integration.fastapi import get_container
+from wireup.integration.fastapi import get_app_container
 
 def test_something_with_mocked_db_service(client: TestClient, app):
-    with get_container(app).override.service(DBService, new=...):
-        response = client.get("/some/path")
-
-    # Assert response and mock calls.
-```
-
-It is also possible to add a fixture to fetch the container to avoid the `get_container` call.
-
-```python title="conftest.py"
-from wireup.integration.fastapi import get_container
-
-@pytest.fixture
-def container(app) -> DependencyContainer:
-    return get_container(app)
-```
-
-```python title="some_test_file.py"
-def test_override(client: TestClient, container: DependencyContainer):
-    with container.override.service(DBService, new=...):
+    with get_app_container(app).override.service(DBService, new=...):
         response = client.get("/some/path")
 
     # Assert response and mock calls.

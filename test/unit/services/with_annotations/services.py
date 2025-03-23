@@ -20,13 +20,34 @@ def truly_random_service_factory(
 
 
 @abstract
-class IFoo(abc.ABC):
+class Foo(abc.ABC):
     @abc.abstractmethod
     def get_foo(self) -> str:
         raise NotImplementedError
 
 
+@abstract
+class InterfaceWithoutImpls(abc.ABC):
+    @abc.abstractmethod
+    def noop(self) -> str:
+        raise NotImplementedError
+
+
 @service
-class FooImpl(IFoo):
+class FooImpl(Foo):
     def get_foo(self) -> str:
         return "foo"
+
+
+@service(qualifier="other")
+class OtherFooImpl(Foo):
+    def get_foo(self) -> str:
+        return "other foo"
+
+
+@service(lifetime="scoped")
+class ScopedService: ...
+
+
+@service(lifetime="transient")
+class TransientService: ...

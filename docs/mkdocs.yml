@@ -1,22 +1,28 @@
 site_name: Wireup
 nav:
-  - Wireup: index.md
   - 📚 Documentation:
-    - Getting started: getting_started.md
+    - Wireup: index.md
+    - Getting Started: getting_started.md
+    - Basics:
+      - Services: services.md
+      - Parameters: parameters.md
     - Learn:
-        - Services: services.md
-        - Configuration: configuration.md
-        - Annotations: annotations.md
-        - Interfaces: interfaces.md
-        - Factory functions: factory_functions.md
-        - Testing: testing.md
-    - Guides:
-      - Introduce to an existing project: introduce_to_an_existing_project.md
+      - Lifetimes: lifetimes.md
+      - Interfaces: interfaces.md
+      - Factory functions: factory_functions.md
+      - Annotations: annotations.md
+      - Apply as a decorator: apply_container_as_decorator.md
+      - Testing: testing.md
       - Multiple registrations: multiple_registrations.md
+    - Advanced:
+      - Use without annotations: use_without_annotations.md
       - Use with __future__ annotations: future_annotations.md
     - Misc:
+      - Tips & Tricks: tips_tricks.md
       - Demo application: demo_app.md
       - Versioning: versioning.md
+      - Upgrading: upgrading.md
+
   - Integrations:
     - Integrations: integrations/index.md
     - Django: integrations/django.md
@@ -24,11 +30,8 @@ nav:
     - Flask: integrations/flask.md
   - API Reference:
       - wireup: class/wireup.md
-      - DependencyContainer: class/dependency_container.md
       - OverrideManager: class/override_manager.md
       - ParameterBag: class/parameter_bag.md
-      - ParameterEnum: class/parameter_enum.md
-      - InitializationContext: class/initialization_context.md
       - Integrations:
         - Django: class/django_integration.md
         - FastAPI: class/fastapi_integration.md
@@ -46,10 +49,9 @@ theme:
     - content.code.annotate
     - navigation.instant
     - navigation.tabs
-    - content.tabs.link
+    - navigation.footer
   font:
-    text: Reddit Sans
-    code: Reddit Mono
+    code: JetBrains Mono 
   palette:
       - media: "(prefers-color-scheme)"
         toggle:
@@ -92,6 +94,8 @@ markdown_extensions:
         - name: mermaid
           class: mermaid
           format: !!python/name:pymdownx.superfences.fence_code_format
+  - toc:
+      permalink: true
 plugins:
   - mike
   - search

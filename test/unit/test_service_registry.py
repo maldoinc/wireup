@@ -1,129 +1,110 @@
-import unittest
 from typing import NewType
 
-from typing_extensions import Annotated
-from wireup import Inject, ServiceLifetime, Wire
+import pytest
 from wireup.errors import (
     DuplicateServiceRegistrationError,
-    FactoryDuplicateServiceRegistrationError,
     FactoryReturnTypeIsEmptyError,
+    InvalidRegistrationTypeError,
 )
 from wireup.ioc.service_registry import ServiceRegistry
-from wireup.ioc.types import AnnotatedParameter, ParameterWrapper
 
 from test.unit.services.no_annotations.random.random_service import RandomService
 
 
-class TestServiceRegistry(unittest.TestCase):
-    def setUp(self):
-        self.registry = ServiceRegistry()
+@pytest.fixture
+def registry():
+    return ServiceRegistry()
 
-    def test_register_service(self):
-        self.registry.register_service(MyService, qualifier="default", lifetime=ServiceLifetime.SINGLETON)
 
-        # Check if the service is registered correctly
-        self.assertTrue(self.registry.is_impl_known(MyService))
-        self.assertTrue(self.registry.is_impl_with_qualifier_known(MyService, "default"))
-        self.assertTrue(self.registry.is_type_with_qualifier_known(MyService, "default"))
-        self.assertTrue(self.registry.is_impl_singleton(MyService))
+def test_register_service(registry: ServiceRegistry) -> None:
+    registry.register(MyService, qualifier="default", lifetime="singleton")
 
-        # Test registering a duplicate service
-        with self.assertRaises(DuplicateServiceRegistrationError):
-            self.registry.register_service(MyService, qualifier="default", lifetime=ServiceLifetime.SINGLETON)
+    assert MyService in registry.impls
+    assert registry.is_impl_with_qualifier_known(MyService, "default")
+    assert registry.is_type_with_qualifier_known(MyService, "default")
+    assert registry.lifetime[MyService] == "singleton"
 
-    def test_register_abstract(self):
-        self.registry.register_abstract(MyInterface)
+    with pytest.raises(DuplicateServiceRegistrationError):
+        registry.register(MyService, qualifier="default", lifetime="singleton")
 
-        # Check if the interface is registered correctly
-        self.assertTrue(self.registry.is_interface_known(MyInterface))
 
-    def test_register_factory(self):
-        self.registry.register_factory(my_factory, lifetime=ServiceLifetime.SINGLETON)
+def test_register_abstract(registry: ServiceRegistry) -> None:
+    registry.register_abstract(MyInterface)
+    assert registry.is_interface_known(MyInterface)
 
-        # Check if the factory function is registered correctly
-        self.assertTrue(self.registry.is_impl_known_from_factory(RandomService, None))
 
-        # Test registering a factory function with missing return type
-        def invalid_factory():
-            pass
+def test_register_factory(registry: ServiceRegistry) -> None:
+    registry.register(random_service_factory, lifetime="singleton")
 
-        with self.assertRaises(FactoryReturnTypeIsEmptyError):
-            self.registry.register_factory(invalid_factory, lifetime=ServiceLifetime.SINGLETON)
+    assert (RandomService, None) in registry.factories
+    assert registry.impls[RandomService] == {None}
 
-        # Test registering a duplicate factory function
-        with self.assertRaises(FactoryDuplicateServiceRegistrationError):
-            self.registry.register_factory(my_factory, lifetime=ServiceLifetime.SINGLETON)
+    def invalid_factory() -> None:
+        pass
 
-    def test_is_impl_known(self):
-        self.assertFalse(self.registry.is_impl_known(MyService))
+    with pytest.raises(FactoryReturnTypeIsEmptyError):
+        registry.register(invalid_factory, lifetime="singleton")
 
-        self.registry.register_service(MyService, qualifier="default", lifetime=ServiceLifetime.SINGLETON)
-        self.assertTrue(self.registry.is_impl_known(MyService))
+    with pytest.raises(DuplicateServiceRegistrationError):
+        registry.register(random_service_factory, lifetime="singleton")
 
-    def test_is_impl_with_qualifier_known(self):
-        self.assertFalse(self.registry.is_impl_with_qualifier_known(MyService, "default"))
 
-        self.registry.register_service(MyService, qualifier="default", lifetime=ServiceLifetime.SINGLETON)
-        self.assertTrue(self.registry.is_impl_with_qualifier_known(MyService, "default"))
+def test_is_impl_known(registry: ServiceRegistry) -> None:
+    assert MyService not in registry.impls
 
-    def test_is_type_with_qualifier_known(self):
-        self.assertFalse(self.registry.is_type_with_qualifier_known(MyService, "default"))
+    registry.register(MyService, qualifier="default", lifetime="singleton")
+    assert MyService in registry.impls
 
-        self.registry.register_service(MyService, qualifier="default", lifetime=ServiceLifetime.SINGLETON)
-        self.assertTrue(self.registry.is_type_with_qualifier_known(MyService, "default"))
 
-    def test_is_impl_known_from_factory(self):
-        self.assertFalse(self.registry.is_impl_known_from_factory(str, None))
+def test_is_impl_with_qualifier_known(registry: ServiceRegistry) -> None:
+    assert not registry.is_impl_with_qualifier_known(MyService, "default")
 
-        self.registry.register_factory(my_factory, lifetime=ServiceLifetime.SINGLETON)
-        self.assertTrue(self.registry.is_impl_known_from_factory(RandomService, None))
+    registry.register(MyService, qualifier="default", lifetime="singleton")
+    assert registry.is_impl_with_qualifier_known(MyService, "default")
 
-    def test_is_impl_singleton(self):
-        self.assertFalse(self.registry.is_impl_singleton(MyService))
 
-        self.registry.register_service(MyService, qualifier="default", lifetime=ServiceLifetime.SINGLETON)
-        self.assertTrue(self.registry.is_impl_singleton(MyService))
+def test_is_type_with_qualifier_known(registry: ServiceRegistry) -> None:
+    assert not registry.is_type_with_qualifier_known(MyService, "default")
 
-    def test_is_interface_known(self):
-        self.assertFalse(self.registry.is_interface_known(MyInterface))
+    registry.register(MyService, qualifier="default", lifetime="singleton")
+    assert registry.is_type_with_qualifier_known(MyService, "default")
 
-        self.registry.register_abstract(MyInterface)
-        self.assertTrue(self.registry.is_interface_known(MyInterface))
 
-    def test_register_only_injectable_params(self):
-        def target(_a, _b, _c, _d: RandomService, _e: str, _f: Annotated[str, Inject(param="name")]): ...
+def test_is_interface_known(registry: ServiceRegistry) -> None:
+    assert not registry.is_interface_known(MyInterface)
 
-        self.registry.target_init_context(target)
-        self.assertEqual(
-            self.registry.context.dependencies[target],
-            {
-                "_d": AnnotatedParameter(klass=RandomService),
-                "_f": AnnotatedParameter(klass=str, annotation=ParameterWrapper("name")),
-            },
-        )
+    registry.register_abstract(MyInterface)
+    assert registry.is_interface_known(MyInterface)
 
-    def test_registry_newtypes_class(self) -> None:
-        class X:
-            pass
 
-        Y = NewType("Y", X)
+def test_registry_newtypes_class(registry: ServiceRegistry) -> None:
+    class X:
+        pass
 
-        def y_factory() -> Y:
-            return Y(X())
+    Y = NewType("Y", X)
 
-        self.registry.register_factory(y_factory, lifetime=ServiceLifetime.SINGLETON)
+    def y_factory() -> Y:
+        return Y(X())
 
-        self.assertTrue(self.registry.is_impl_singleton(Y))
+    registry.register(y_factory, lifetime="singleton")
 
-    def test_registry_newtypes_anything(self) -> None:
-        Y = NewType("Y", str)
+    assert registry.lifetime[Y] == "singleton"
 
-        def y_factory() -> Y:
-            return Y("Hi")
 
-        self.registry.register_factory(y_factory, lifetime=ServiceLifetime.SINGLETON)
+def test_registry_newtypes_anything(registry: ServiceRegistry) -> None:
+    Y = NewType("Y", str)
 
-        self.assertTrue(self.registry.is_impl_singleton(Y))
+    def y_factory() -> Y:
+        return Y("Hi")
+
+    registry.register(y_factory, lifetime="singleton")
+
+    assert registry.lifetime[Y] == "singleton"
+
+
+def test_register_invalid_target(registry: ServiceRegistry) -> None:
+    with pytest.raises(InvalidRegistrationTypeError):
+        registry.register(1)
 
 
 class MyService:
@@ -134,5 +115,5 @@ class MyInterface:
     pass
 
 
-def my_factory() -> RandomService:
+def random_service_factory() -> RandomService:
     return RandomService()

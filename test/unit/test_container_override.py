@@ -1,119 +1,84 @@
 import unittest
-from unittest.mock import MagicMock, patch
+from typing import Any
+from unittest.mock import MagicMock
 
-from typing_extensions import Annotated
-from wireup import DependencyContainer, Inject, ParameterBag
+import pytest
+import wireup
+from wireup._annotations import Injected
 from wireup.errors import UnknownOverrideRequestedError
 from wireup.ioc.override_manager import OverrideManager
-from wireup.ioc.types import ServiceOverride
+from wireup.ioc.types import Qualifier, ServiceOverride
 
-from test.fixtures import FooBar, FooBase, FooBaz
+from test.conftest import Container
 from test.unit.services.no_annotations.random.random_service import RandomService
+from test.unit.services.with_annotations.services import (
+    Foo,
+    FooImpl,
+    ScopedService,
+    TransientService,
+    random_service_factory,
+)
+from test.unit.util import run
 
 
-class TestContainerOverride(unittest.TestCase):
-    def setUp(self) -> None:
-        self.container = DependencyContainer(ParameterBag())
+def test_container_overrides_deps_service_locator(container: Container):
+    container = wireup.create_sync_container(services=[random_service_factory])
 
-    def test_container_overrides_deps_service_locator(self):
-        self.container.register(RandomService)
+    random_mock = MagicMock()
+    random_mock.get_random.return_value = 5
 
-        random_mock = MagicMock()
-        random_mock.get_random.return_value = 5
+    with container.override.service(target=RandomService, qualifier="foo", new=random_mock):
+        svc = container.get(RandomService, qualifier="foo")
+        assert svc.get_random() == 5
 
-        with self.container.override.service(target=RandomService, new=random_mock):
-            svc = self.container.get(RandomService)
-            self.assertEqual(svc.get_random(), 5)
+    random_mock.get_random.assert_called_once()
+    assert container.get(RandomService, qualifier="foo").get_random() == 4
 
-        random_mock.get_random.assert_called_once()
-        self.assertEqual(self.container.get(RandomService).get_random(), 4)
 
-    def test_container_overrides_deps_service_locator_interface(self):
-        self.container.abstract(FooBase)
-        self.container.register(FooBar)
+async def test_container_overrides_deps_service_locator_interface():
+    container = wireup.create_sync_container(services=[Foo, FooImpl])
 
-        foo_mock = MagicMock()
-        foo_mock.foo = "mock"
+    foo_mock = MagicMock()
+    foo_mock.get_foo.return_value = "mock"
 
-        with self.container.override.service(target=FooBase, new=foo_mock):
-            svc = self.container.get(FooBase)
-            self.assertEqual(svc.foo, "mock")
+    with container.override.service(target=Foo, new=foo_mock):
+        svc = await run(container.get(Foo))
+        assert svc.get_foo() == "mock"
 
-    def test_container_override_many_with_qualifier(self):
-        self.container.register(RandomService, qualifier="Rand1")
-        self.container.register(RandomService, qualifier="Rand2")
 
-        @self.container.autowire
-        def target(
-            rand1: Annotated[RandomService, Inject(qualifier="Rand1")],
-            rand2: Annotated[RandomService, Inject(qualifier="Rand2")],
-        ):
-            self.assertEqual(rand1.get_random(), 5)
-            self.assertEqual(rand2.get_random(), 6)
+async def test_container_override_many_with_qualifier(container: Container):
+    rand1_mock = MagicMock()
+    rand2_mock = MagicMock()
 
-            self.assertIsInstance(rand1, MagicMock)
-            self.assertIsInstance(rand2, MagicMock)
+    overrides = [
+        ServiceOverride(target=ScopedService, new=rand1_mock),
+        ServiceOverride(target=TransientService, new=rand2_mock),
+    ]
 
-        rand1_mock = MagicMock()
-        rand1_mock.get_random.return_value = 5
+    @wireup.inject_from_container(container)
+    def target(scoped: Injected[ScopedService], transient: Injected[TransientService]) -> None:
+        assert scoped is rand1_mock
+        assert transient is rand2_mock
 
-        rand2_mock = MagicMock()
-        rand2_mock.get_random.return_value = 6
+    with container.override.services(overrides=overrides):
+        target()
 
-        overrides = [
-            ServiceOverride(target=RandomService, qualifier="Rand1", new=rand1_mock),
-            ServiceOverride(target=RandomService, qualifier="Rand2", new=rand2_mock),
-        ]
-        with self.container.override.services(overrides=overrides):
-            target()
 
-        rand1_mock.get_random.assert_called_once()
-        rand2_mock.get_random.assert_called_once()
+async def test_clear_services_removes_all():
+    overrides: dict[tuple[type, Qualifier], Any] = {}
+    mock1 = MagicMock()
+    override_mgr = OverrideManager(overrides, lambda _klass, _qualifier: True)
+    override_mgr.set(RandomService, new=mock1)
+    assert overrides == {(RandomService, None): mock1}
 
-    def test_container_override_with_interface(self):
-        self.container.abstract(FooBase)
-        self.container.register(FooBar)
+    override_mgr.clear()
+    assert overrides == {}
 
-        @self.container.autowire
-        def target(foo: FooBase):
-            self.assertEqual(foo.foo, "mock")
-            self.assertIsInstance(foo, MagicMock)
 
-        foo_mock = MagicMock()
-
-        with patch.object(foo_mock, "foo", new="mock"):
-            with self.container.override.service(target=FooBase, new=foo_mock):
-                svc = self.container.get(FooBase)
-                self.assertEqual(svc.foo, "mock")
-
-                target()
-
-    def test_clear_services_removes_all(self):
-        overrides = {}
-        mock1 = MagicMock()
-        override_mgr = OverrideManager(overrides, lambda _klass, _qualifier: True)
-        override_mgr.set(RandomService, new=mock1)
-        self.assertEqual(overrides, {(RandomService, None): mock1})
-
-        override_mgr.clear()
-        self.assertEqual(overrides, {})
-
-    def test_raises_on_unknown_override(self):
-        with self.assertRaises(UnknownOverrideRequestedError) as e:
-            with self.container.override.service(target=unittest.TestCase, qualifier="foo", new=MagicMock()):
-                pass
-
-        self.assertEqual(
-            str(e.exception), "Cannot override unknown <class 'unittest.case.TestCase'> with qualifier 'foo'."
-        )
-
-    def test_override_interface_works_with_service_locator(self):
-        self.container.abstract(FooBase)
-        self.container.register(FooBar)
-
-        foobaz = FooBaz()
-
-        self.assertEqual(self.container.get(FooBase).foo, "bar")
-
-        with self.container.override.service(FooBase, new=foobaz):
-            self.assertEqual(self.container.get(FooBase).foo, "baz")
+async def test_raises_on_unknown_override(container: Container):
+    with pytest.raises(
+        UnknownOverrideRequestedError,
+        match="Cannot override unknown <class 'unittest.case.TestCase'> with qualifier 'foo'.",
+    ):
+        with container.override.service(target=unittest.TestCase, qualifier="foo", new=MagicMock()):
+            pass

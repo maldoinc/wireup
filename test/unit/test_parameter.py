@@ -1,98 +1,52 @@
-import unittest
-
+import pytest
 from wireup.errors import UnknownParameterError
-from wireup.ioc.parameter import ParameterBag, TemplatedString
-from wireup.ioc.types import ParameterWrapper
+from wireup.ioc.parameter import ParameterBag
+from wireup.ioc.types import TemplatedString
 
 
-class TestParameterBag(unittest.TestCase):
-    def setUp(self) -> None:
-        self.bag = ParameterBag()
-
-    def test_put_get(self):
-        self.bag.put("param1", 42)
-
-        self.assertEqual(self.bag.get("param1"), 42)
-
-    def test_put_get_templated_string_is_converted(self):
-        self.bag.put("param1", 42)
-        templated_str = TemplatedString("Number: ${param1}")
-
-        self.assertEqual(self.bag.get(templated_str), "Number: 42")
-        self.assertEqual(self.bag.get(TemplatedString("${param1}")), "42")
-
-    def test_get_unknown_parameter(self):
-        with self.assertRaises(UnknownParameterError):
-            self.bag.get("unknown_param")
-
-    def test_update_assert_merges(self):
-        self.bag.put("param1", 42)
-        self.bag.put("param2", "foo")
-        self.bag.update({"param2": "value"})
-
-        self.assertEqual(self.bag.get("param1"), 42)
-        self.assertEqual(self.bag.get("param2"), "value")
-
-    def test_interpolate_unknown_parameter(self):
-        templated_str = TemplatedString("Test ${unknown_param}")
-
-        with self.assertRaises(UnknownParameterError):
-            self.bag.get(templated_str)
-
-    def test_all(self):
-        self.bag.put("foo", "bar")
-        self.bag.update({"bar": "baz", "baz": "qux"})
-
-        self.assertEqual(self.bag.get_all(), {"foo": "bar", "bar": "baz", "baz": "qux"})
-
-    def test_parameter_interpolation_is_cached(self):
-        self.bag.put("foo", "bar")
-        self.assertEqual(self.bag.get(TemplatedString("${foo}-${foo}")), "bar-bar")
-        self.assertEqual(self.bag.get(TemplatedString("${foo}-${foo}")), "bar-bar")
-        self.assertEqual(self.bag._ParameterBag__cache, {"${foo}-${foo}": "bar-bar"})
-
-    def test_get_parameter_unknown(self):
-        with self.assertRaises(UnknownParameterError) as context:
-            self.bag.get("name")
-
-        self.assertEqual("Unknown parameter requested: name", str(context.exception))
-
-    def test_get_parameter_interpolation_unknown(self):
-        with self.assertRaises(UnknownParameterError) as context:
-            self.bag.get(TemplatedString("name/${dummy}"))
-
-        self.assertEqual("Unknown parameter requested: dummy", str(context.exception))
-
-    def test_get_interpolated_result_is_cached(self):
-        self.bag.put("name", "Bob")
-        self.assertEqual(self.bag.get(TemplatedString("Hi ${name}")), "Hi Bob")
-        self.assertEqual({"Hi ${name}": "Hi Bob"}, self.bag._ParameterBag__cache)
-
-    def test_interpolated_cache_entries_cleared(self):
-        self.bag.put("name", "Bob")
-        self.bag.put("env", "test")
-
-        self.assertEqual(self.bag.get(TemplatedString("Hi ${name}")), "Hi Bob")
-        self.assertEqual(self.bag.get(TemplatedString("Hi from ${env}")), "Hi from test")
-        self.assertEqual({"Hi ${name}": "Hi Bob", "Hi from ${env}": "Hi from test"}, self.bag._ParameterBag__cache)
-
-        self.bag.put("env", "prod")
-        self.assertEqual({"Hi ${name}": "Hi Bob"}, self.bag._ParameterBag__cache)  # Check that entry was removed.
-
-        self.assertEqual(self.bag.get(TemplatedString("Hi from ${env}")), "Hi from prod")
-        self.assertEqual({"Hi ${name}": "Hi Bob", "Hi from ${env}": "Hi from prod"}, self.bag._ParameterBag__cache)
+def test_parameter_bag_initialization():
+    bag = ParameterBag()
+    assert isinstance(bag, ParameterBag)
 
 
-class TestParameterPlaceholder(unittest.TestCase):
-    def test_init(self):
-        param_ref = "param"
-        placeholder = ParameterWrapper(param_ref)
+def test_parameter_bag_initialization_with_values():
+    values = {"param1": "value1", "param2": "value2"}
+    bag = ParameterBag(values)
+    assert bag.get("param1") == "value1"
+    assert bag.get("param2") == "value2"
 
-        self.assertEqual(placeholder.param, param_ref)
+
+def test_get_existing_parameter():
+    values = {"param1": "value1"}
+    bag = ParameterBag(values)
+    assert bag.get("param1") == "value1"
 
 
-class TestTemplatedString(unittest.TestCase):
-    def test_init(self):
-        val = "test value"
-        templated_str = TemplatedString(val)
-        self.assertEqual(templated_str.value, val)
+def test_get_non_existing_parameter():
+    bag = ParameterBag()
+    with pytest.raises(UnknownParameterError):
+        bag.get("non_existing_param")
+
+
+def test_get_templated_string():
+    values = {"param1": "value1", "param2": "value2"}
+    bag = ParameterBag(values)
+    templated_string = TemplatedString("${param1} and ${param2}")
+    assert bag.get(templated_string) == "value1 and value2"
+
+
+def test_get_templated_string_with_non_existing_param():
+    values = {"param1": "value1"}
+    bag = ParameterBag(values)
+    templated_string = TemplatedString("${param1} and ${param2}")
+    with pytest.raises(UnknownParameterError):
+        bag.get(templated_string)
+
+
+def test_cache_interpolated_values():
+    values = {"param1": "value1"}
+    bag = ParameterBag(values)
+    templated_string = TemplatedString("${param1}")
+    assert bag.get(templated_string) == "value1"
+    assert templated_string.value in bag._ParameterBag__cache  # type: ignore[reportAttributeAccessIssue]
+    assert bag._ParameterBag__cache[templated_string.value] == "value1"  # type: ignore[reportAttributeAccessIssue]

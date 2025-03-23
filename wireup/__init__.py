@@ -1,53 +1,25 @@
-import warnings
-
-from wireup.annotation import Inject, ParameterEnum, Wire, abstract, service, wire
-from wireup.ioc.dependency_container import DependencyContainer
-from wireup.ioc.parameter import ParameterBag
-from wireup.ioc.types import ParameterReference, ServiceLifetime, ServiceOverride
-from wireup.util import (
-    create_container,
-    initialize_container,
-    load_module,
-    register_all_in_module,
-    warmup_container,
+from wireup._annotations import Inject, Injected, abstract, service
+from wireup._decorators import inject_from_container
+from wireup.ioc.container import (
+    create_async_container,
+    create_sync_container,
 )
-
-_deprecated_container = DependencyContainer(ParameterBag())
-"""Singleton DI container instance.
-
-Use when your application only needs one container.
-"""
+from wireup.ioc.container.async_container import AsyncContainer
+from wireup.ioc.container.sync_container import SyncContainer
+from wireup.ioc.parameter import ParameterBag
+from wireup.ioc.types import ParameterReference, ServiceOverride
 
 __all__ = [
-    "DependencyContainer",
+    "AsyncContainer",
     "Inject",
+    "Injected",
     "ParameterBag",
-    "ParameterEnum",
     "ParameterReference",
-    "ServiceLifetime",
     "ServiceOverride",
-    "Wire",
+    "SyncContainer",
     "abstract",
-    "create_container",
-    "initialize_container",
-    "load_module",
-    "register_all_in_module",
+    "create_async_container",
+    "create_sync_container",
+    "inject_from_container",
     "service",
-    "warmup_container",
-    "wire",
 ]
-
-
-def __getattr__(name: str) -> DependencyContainer:
-    if name == "container":
-        warnings.warn(
-            "Using the wireup.container singleton is deprecated. "
-            "Create your own instance of the container using wireup.create_container. "
-            "See: https://maldoinc.github.io/wireup/latest/getting_started/",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-        return _deprecated_container
-
-    msg = f"module {__name__} has no attribute {name}"
-    raise AttributeError(msg)

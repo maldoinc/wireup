@@ -1,57 +1,53 @@
-Autowiring relies on annotations or hints to be able to inject dependencies.
-When it is not possible to automatically locate a given dependency, it must be annotated with additional metadata.
+# Dependency Annotations
 
-## When do you need to provide annotations.
+Wireup uses type annotations to resolve dependencies. In most cases, the type alone is sufficient, but some cases require additional metadata through annotations.
 
-| Injecting                               | Annotations required? | What is required     |
-|-----------------------------------------|-----------------------|----------------------|
-| Services                                | No                    |                      |
-| Interface with only one implementation  | No                    |                      |
-| Default implementation of an interface  | No                    |                      |
-| Interface with multiple implementations | Yes                   | Qualifier            |
-| Parameters                              | Yes                   | Parameter name       |
-| Parameter expressions                   | Yes                   | Expression           |
+## When Are Annotations Required?
+
+Wireup differentiates between injecting into its own services (those decorated with `@service`) and injecting into external targets.
+
+### Annotation Requirements in Wireup Services
+
+| Type of Dependency                      | Annotations Required? | What is Required |
+| --------------------------------------- | --------------------- | ---------------- |
+| Services                                | No                    |                  |
+| Interface with only one implementation  | No                    |                  |
+| Default implementation of an interface  | No                    |                  |
+| Interface with multiple implementations | Yes                   | Qualifier        |
+| Parameters                              | Yes                   | Parameter name   |
+| Parameter expressions                   | Yes                   | Expression       |
  
-## Annotation types
 
-Wireup supports two types of annotations. Using Python's `Annotated` and default values.
+### Annotation Requirements in External Targets
 
-### Annotated
+When injecting into an external target, annotations are always required, even if not typically needed in Wireup services. Annotate parameters with `Annotated[T, Inject()]` or its alias `Injected[T]`.
 
-This is the preferred method for Python 3.9+ and moving forward. It is also recommended to
-backport this using `typing_extensions` for Python 3.8.
+!!! abstract "Why is this required"
+    In its own services, Wireup assumes full ownership of dependencies, making empty annotations via `Inject()` redundant. For external targets, annotations inform the container to interact only with specific parameters, ensuring compatibility with other libraries or frameworks.
 
+    Explicit annotations allow the container to fail fast on unrecognized injection requests, improving reliability by catching errors early. They also enhance maintainability and readability by clearly documenting expected dependencies.
+
+## Examples
+
+For Python 3.9+ (or 3.8+ with `typing_extensions`):
 
 ```python
-@container.autowire
-def target(
-    env: Annotated[str, Inject(param="env_name")],
-    logs_cache_dir: Annotated[str, Inject(expr="${cache_dir}/logs")],
+@wireup.inject_from_container(container)
+def configure(
+    # Inject configuration parameter
+    env: Annotated[str, Inject(param="app_env")],
+    
+    # Inject dynamic expression
+    log_path: Annotated[str, Inject(expr="${data_dir}/logs")],
+    
+    # Inject service
+    service: Injected[MyService, Inject()],
+
+    # Injected is an alias of Annotated[T, Inject()]
+    service: Injected[MyService],
+    
+    # Inject specific implementation
+    db: Annotated[Database, Inject(qualifier="readonly")]
 ):
-    ...
-```
-
-### Default values (deprecated)
-
-This relies on the use of default values to inject parameters. Anything that can be passed to `Annotated` may also
-be used here.
-
-```python
-@container.autowire
-def target(
-    env: str = Inject(param="env_name"), 
-    logs_cache_dir: str = Inject(expr="${cache_dir}/logs")
-):
-    ...
-```
-
-### Explicit injection annotation
-Even though annotating services is optional, you CAN still annotate them to be explicit about what will 
-be injected. This also has the benefit of raising when the service does not exist instead
-of silently skipping this parameter.
-
-```python
-@container.autowire
-def target(random_service: Annotated[RandomService, Inject()]):
     ...
 ```

@@ -1,9 +1,10 @@
 from django.http import HttpRequest, HttpResponse
+from wireup import Injected
 
-from test.integration.django.service.greeter_interface import GreeterService
+from test.shared.shared_services.greeter import GreeterService
 
 
-def test(request: HttpRequest, greeter: GreeterService) -> HttpResponse:
+def test(request: HttpRequest, greeter: Injected[GreeterService]) -> HttpResponse:
     name = request.GET["name"]
     greeting = greeter.greet(name)
 

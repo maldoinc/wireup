@@ -1,70 +1,51 @@
-Registering the same class multiple times is supported under different qualifiers through factories. 
+# Multiple Service Registrations
 
-A use case for this would be to have multiple services connected to resources of the same underlying type, 
-such as maintaining two database connections: a main and a read-only copy.
+Use factories to register multiple instances of the same class with different qualifiers. This is useful for scenarios where you need multiple configurations of the same service type.
 
-## Example
+## Example: Multi-Database Setup
 
-Assume an application with two databases: A main one and a read-only replica. In these scenarios, the main
-connection handles writes, and the read-only one will handle reads.
+Here's how to set up multiple database connections - a common scenario where you have a primary database for writes and a replica for reads.
 
-### Service registration via factories
+### Registration
 
 ```python title="db_service.py"
 from typing import Annotated
 from wireup import service, Inject
 
-# Define a class that holds the base methods for interacting with the db.
 class DatabaseService:
     def __init__(self, dsn: str) -> None:
-        self.__connection = ...
+        self.__connection = ...  # Connection initialization
 
     def query(self) -> ...:
         return self.__connection.query(...)
 
-
-# Define a factory which creates and registers the service interacting with the main db.
-# Register this directly without using a qualifier, this will be injected
-# when services depend on DatabaseService.
-@service
-def main_db_connection_factory(
-    dsn: Annotated[str, Inject(param="APP_DB_DSN")]
+@service  # Default connection for writes
+def primary_db(
+    dsn: Annotated[str, Inject(param="PRIMARY_DB_DSN")]
 ) -> DatabaseService:
     return DatabaseService(dsn)
 
-# This factory registers the function using the qualifier "readonly"
-# and requests the parameter that corresponds to the read replica DSN.
-@service(qualifier="readonly")
-def read_db_connection_factory(
-    dsn: Annotated[str, Inject(param="APP_READ_DB_DSN")]
+@service(qualifier="replica")  # Read-only connection
+def replica_db(
+    dsn: Annotated[str, Inject(param="REPLICA_DB_DSN")]
 ) -> DatabaseService:
     return DatabaseService(dsn)
 ```
 
 ### Usage
 
-```python title="thing_repository.py"
-from dataclasses import dataclass
-from wireup import service
-
-
+```python title="repository.py"
 @service
 @dataclass
-class ThingRepository:
-    # Main db connection can be injected directly as it is registered
-    # without a qualifier, this makes it the "default" implementation.
-    main_db_connection: DatabaseService
+class Repository:
+    primary: DatabaseService  # Default connection
+    replica: Annotated[DatabaseService, Inject(qualifier="replica")]
 
-    # To inject the read connection the qualifier must be specified.
-    read_db_connection: Annotated[DatabaseService, Inject(qualifier="readonly")]
+    def save(self, data: dict) -> None:
+        return self.primary.query(...)  # Write operations
 
-    def create_thing(self, ...) -> None:
-        return self.main_db_connection...
-
-    def find_by_id(self, pk: int) -> Thing:
-        return self.read_db_connection...
+    def get(self, id: int) -> dict:
+        return self.replica.query(...)  # Read operations
 ```
 
-
-
-
+The container will inject the appropriate database connection based on whether a qualifier is specified.

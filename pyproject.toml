@@ -45,10 +45,10 @@ Changelog = "https://github.com/maldoinc/wireup/releases"
 
 [tool.poetry.dependencies]
 python = "^3.8"
-graphlib2 = { version = "^0.4.7", python = ">=3.8,<3.9" }
+typing_extensions = "^4.7"
 
 [tool.poetry.group.dev.dependencies]
-ruff = "0.8.6"
+ruff = "0.11.0"
 setuptools = "^68.0.0"
 mkdocs = "^1.5.2"
 mkdocs-material = "^9.4.14"
@@ -74,14 +74,12 @@ lint.ignore = [
     "PT009",  # Prefer using assertEqual instead of plain asserts
     "TD003",  # Exclude "missing issue link for todos",
     "FIX002", # Disable "Line contains to do, consider resolving the issue". It will be done, in due time.
-    "D100",   # Disable undocumented public module. The definitions themselves will be documented
-    "D101",
-    "D102",
-    "D104",   # Same as above, disable missing docstring in public package,
+    "D",
     "D203",   # Ignore "one blank line before class". Using "no blank lines before class rule".
     "D213",   # Disable "Summary must go into next line"
     "D107",   # Disable required docs for __init. Can be redundant if class also has them.
     "A003",   # Disable "shadows builtin". OverrideManager.set was flagged by this
+    "SLF001", # Allow usage of _fields.
     "FA100",  # Don't recommend __future__ annotations.
     # Disable as they may cause conflicts with ruff formatter
     "COM812",
@@ -103,6 +101,7 @@ lint.ignore = [
     "SIM117",
     "S101",
     "PLR2004",
+    "PLR0913",
 ]
 
 
