@@ -112,7 +112,7 @@ class KeyValueStore:
 #### 🏭 `aiohttp.ClientSession`
 
 The http client making requests cannot be instantiated directly as we need to enter an async context manager.
-To accomodate such cases, Wireup allows you to use functions to create dependencies. 
+To accommodate such cases, Wireup allows you to use functions to create dependencies. 
 These can be sync/async as well as regular or generator functions if cleanup needs to take place.
 
 Factories can define their dependencies in the function's signature.
