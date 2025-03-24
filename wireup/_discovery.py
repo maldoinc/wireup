@@ -4,13 +4,13 @@ import importlib
 import inspect
 from pathlib import Path
 from types import FunctionType, ModuleType
-from typing import Any, Callable
+from typing import Any, Callable, Iterable
 
 from wireup._annotations import AbstractDeclaration, ServiceDeclaration
 
 
 def discover_wireup_registrations(
-    service_modules: list[ModuleType],
+    service_modules: Iterable[ModuleType],
 ) -> tuple[list[AbstractDeclaration], list[ServiceDeclaration]]:
     abstract_registrations: list[AbstractDeclaration] = []
     service_registrations: list[ServiceDeclaration] = []

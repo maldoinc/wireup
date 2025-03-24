@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, TypeVar
+from typing import TYPE_CHECKING, Any, Iterable, TypeVar
 
 from wireup._annotations import AbstractDeclaration, ServiceDeclaration
 from wireup._discovery import discover_wireup_registrations
@@ -22,8 +22,8 @@ _ContainerT = TypeVar("_ContainerT", bound=BaseContainer)
 def _create_container(
     klass: type[_ContainerT],
     *,
-    service_modules: list[ModuleType] | None = None,
-    services: list[Any] | None = None,
+    service_modules: Iterable[ModuleType] | None = None,
+    services: Iterable[Any] | None = None,
     parameters: dict[str, Any] | None = None,
 ) -> _ContainerT:
     """Create a Wireup container.
