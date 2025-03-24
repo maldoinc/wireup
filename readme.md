@@ -12,6 +12,11 @@
 </div>
 
 
+> [!NOTE]  
+> Wireup 1.0 has been released, featuring support for scoped lifetimes, a simplified API, enhanced type safety, and improved documentation.
+> Refer to the [Upgrading Guide](https://maldoinc.github.io/wireup/latest/upgrading/) for instructions on upgrading from version 0.x to 1.0.
+---
+
 Dependency Injection (DI) is a design pattern where dependencies are provided externally rather than created within objects. Wireup automates dependency management using Python's type system, with support for async, generators and modern Python features.
 
 ## Features
