@@ -17,7 +17,7 @@ from wireup.errors import (
     WireupError,
 )
 
-from test.unit import services
+from test.unit import service_refs, services
 from test.unit.services.abstract_multiple_bases import FooBase, FooBaseAnother
 from test.unit.services.no_annotations.random.random_service import RandomService
 from test.unit.services.no_annotations.random.truly_random_service import TrulyRandomService
@@ -262,3 +262,10 @@ def test_inject_qualifier_on_unknown_type():
         ),
     ):
         wireup.create_sync_container().get(str, qualifier=__name__)
+
+
+def test_container_deduplicates_services_from_multiple_modules() -> None:
+    # service_refs imports classes with @service from services.
+    # This should not result in a duplicate error since the container should deduplicate classes
+    # when imported from multiple modules.
+    wireup.create_async_container(service_modules=[services, service_refs], parameters={"env_name": "test"})
