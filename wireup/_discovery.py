@@ -21,14 +21,17 @@ def discover_wireup_registrations(
         # "from flask import g" would cause a hasattr call to g outside of app context.
         return (isinstance(obj, FunctionType) or inspect.isclass(obj)) and hasattr(obj, "__wireup_registration__")
 
-    for module in service_modules:
-        for cls in _find_objects_in_module(module, predicate=_is_valid_wireup_target):
-            reg = getattr(cls, "__wireup_registration__", None)
+    all_targets = {
+        m for module in service_modules for m in _find_objects_in_module(module, predicate=_is_valid_wireup_target)
+    }
 
-            if isinstance(reg, ServiceDeclaration):
-                service_registrations.append(reg)
-            elif isinstance(reg, AbstractDeclaration):
-                abstract_registrations.append(reg)
+    for cls in all_targets:
+        reg = getattr(cls, "__wireup_registration__", None)
+
+        if isinstance(reg, ServiceDeclaration):
+            service_registrations.append(reg)
+        elif isinstance(reg, AbstractDeclaration):
+            abstract_registrations.append(reg)
 
     return abstract_registrations, service_registrations
 
