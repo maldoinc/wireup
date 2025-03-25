@@ -1,10 +1,11 @@
 # Interface Injection
 
-You can use abstract classes as interfaces when you need to inject abstract dependencies. This pattern is particularly useful for testing, as it allows you to create mock implementations.
+You can use abstract classes as interfaces when you need to inject dependencies. This pattern is particularly useful for testing, as it allows you to create mock implementations.
 
 ## Basic Usage
 
-Register an abstract class as an interface using the `@abstract` decorator. Then implement and register concrete classes that inherit from it.
+Register a class as an interface using the `@abstract` decorator. Then implement and register concrete classes that inherit from it. Note that the class marked with `@abstract` doesn't actually have to inherit
+`abc.ABC`.
 
 ```python
 from wireup import abstract, container, service

@@ -87,8 +87,7 @@ Best for:
 ## Lifetime Rules
 
 * Singletons can depend only on other singletons.
-* Scoped services can depend only on other scoped services or transient ones.
-* Transient services can depend only on other transient services.
+* Scoped and transient services can depend on any lifetime.
 * Parameters can be injected into all lifetimes.
 
 !!! tip "Choosing a Lifetime"
@@ -102,4 +101,4 @@ Wireup lets you apply the container as a decorator. The provided integrations al
 where Wireup services are used.
 
 For such cases, you don't need to do any scope management yourself and can simply ask for the scoped/transient services
-in the function's signature. The decorator can enter a scope
+in the function's signature. The decorator can enter a scope and exit it once the function returns.

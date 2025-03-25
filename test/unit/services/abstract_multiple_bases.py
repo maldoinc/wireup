@@ -1,5 +1,7 @@
 from dataclasses import dataclass
 
+from wireup._annotations import abstract, service
+
 
 @dataclass
 class Counter:
@@ -9,11 +11,13 @@ class Counter:
         self.count += 1
 
 
+@abstract
 class FooBase:
     def __init__(self):
         self.foo = "foo"
 
 
+@abstract
 class FooBaseAnother:
     def __init__(self):
         self.foo = "another_foo"
@@ -37,6 +41,7 @@ class FooBaz(FooBase):
         self.foo = "baz"
 
 
+@service
 class FooBarMultipleBases(FooBase, FooBaseAnother):
     def __init__(self):
         super().__init__()
