@@ -29,7 +29,7 @@ def create_app() -> FastAPI:
     container = wireup.create_async_container(
         service_modules=[fastapi_test_services, shared_services, wireup.integration.fastapi], parameters={"foo": "bar"}
     )
-    wireup.integration.fastapi.setup(container, app, class_based_routes=[cbr.MyController])
+    wireup.integration.fastapi.setup(container, app, class_based_routes=[cbr.MyClassBasedRoute])
 
     return app
 

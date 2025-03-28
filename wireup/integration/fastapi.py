@@ -1,6 +1,5 @@
 import contextlib
 import functools
-import inspect
 from contextvars import ContextVar
 from typing import (
     Any,
@@ -14,10 +13,12 @@ from typing import (
     TypeVar,
 )
 
+import fastapi
 from fastapi import FastAPI, Request, Response
-from fastapi.routing import APIRoute, APIRouter, APIWebSocketRoute
+from fastapi.routing import APIRoute, APIWebSocketRoute
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.routing import BaseRoute
+from typing_extensions import Protocol
 
 from wireup import inject_from_container, service
 from wireup.errors import WireupError
@@ -32,12 +33,8 @@ current_ws_container: ContextVar[ScopedAsyncContainer] = ContextVar("wireup_fast
 T = TypeVar("T", bound=type)
 
 
-def controller(router: APIRouter) -> Callable[[T], T]:
-    def _decorator(cls: T) -> T:
-        cls.__router__ = router
-        return cls
-
-    return _decorator
+class _ClassBasedRouteProtocol(Protocol):
+    router: fastapi.APIRouter
 
 
 class WireupRoute(APIRoute):
@@ -108,36 +105,41 @@ def _inject_routes(container: AsyncContainer, routes: List[BaseRoute]) -> None:
             )
 
 
-def _with_self(instance: Any, fn: Callable[..., Any]) -> Callable[..., Any]:
-    res = functools.wraps(fn)(functools.partial(fn, self=instance))
-    sig = inspect.signature(res)
-    res.__signature__ = sig.replace(parameters=[p for p in sig.parameters.values() if p.name != "self"])  # type: ignore[reportAttributeAccessIssue]
-    res.__annotations__ = {k: v for k, v in res.__annotations__.items() if k != "self"}
-
-    return res
-
-
-async def _register_class_based_route(app: FastAPI, container: AsyncContainer, cls: Type[Any]) -> None:
+async def _register_class_based_route(
+    app: FastAPI, container: AsyncContainer, cls: Type[_ClassBasedRouteProtocol]
+) -> None:
     container._registry.register(cls)
-    r: APIRouter = cls.__router__  # type: ignore[reportUnknownMemberType]
     instance = await container.get(cls)
 
-    for route in r.routes:
+    for route in cls.router.routes:
         if isinstance(route, (APIRoute, APIWebSocketRoute)):
-            method_name = route.endpoint.__name__
-            unbound_method = getattr(cls, method_name)
+            route_handler_name = route.endpoint.__name__
+            unbound_method = getattr(cls, route_handler_name)
 
             if route.endpoint is unbound_method:
-                route.endpoint = getattr(instance, method_name)
+                route.endpoint = getattr(instance, route_handler_name)
             else:
-                route.endpoint = _with_self(instance, route.endpoint)
+                msg = (
+                    f"Method {route_handler_name} of {cls} has been modified, possibly by the router's APIRoute."
+                    "Class-Based Routes require the endpoint be unmodified! "
+                    "If you want to decorate specific methods you need to place a decorator before the @router one."
+                )
+                raise WireupError(msg)
 
-    _inject_routes(container, r.routes)
-    app.include_router(r)
+    _inject_routes(container, cls.router.routes)
+    app.include_router(cls.router)
+
+    # Now that the router is included revert the endpoints to the original ones
+    # as fastapi will have made a copy of things.
+    for route in cls.router.routes:
+        if isinstance(route, (APIRoute, APIWebSocketRoute)):
+            route.endpoint = getattr(cls, route.endpoint.__name__)
 
 
 def _update_lifespan(
-    container: AsyncContainer, app: FastAPI, class_based_routes: Optional[Iterable[type]] = None
+    container: AsyncContainer,
+    app: FastAPI,
+    class_based_routes: Optional[Iterable[Type[_ClassBasedRouteProtocol]]] = None,
 ) -> None:
     old_lifespan = app.router.lifespan_context
 
@@ -155,7 +157,11 @@ def _update_lifespan(
     app.router.lifespan_context = lifespan
 
 
-def setup(container: AsyncContainer, app: FastAPI, class_based_routes: Optional[Iterable[type]] = None) -> None:
+def setup(
+    container: AsyncContainer,
+    app: FastAPI,
+    class_based_routes: Optional[Iterable[Type[_ClassBasedRouteProtocol]]] = None,
+) -> None:
     """Integrate Wireup with FastAPI.
 
     Setup performs the following:
