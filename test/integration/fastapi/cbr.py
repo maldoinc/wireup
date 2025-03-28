@@ -1,12 +1,13 @@
 from typing import Any, Dict
 
 import fastapi
+from wireup.integration.fastapi import WireupRoute
 
 from test.shared.shared_services.rand import RandomService
 
 
 class MyClassBasedRoute:
-    router = fastapi.APIRouter()
+    router = fastapi.APIRouter(route_class=WireupRoute)
 
     def __init__(self, random_service: RandomService) -> None:
         self.rng = random_service

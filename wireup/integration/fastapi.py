@@ -62,7 +62,10 @@ def fastapi_request_factory() -> Request:
     try:
         return current_request.get()
     except LookupError as e:
-        msg = "fastapi.Request in wireup is only available during a request."
+        msg = (
+            "The 'fastapi.Request' service in Wireup requires 'enable_middleware=True' during FastAPI integration. "
+            "This service is also only accessible within the context of a request."
+        )
         raise WireupError(msg) from e
 
 
@@ -90,8 +93,8 @@ def _inject_websocket_route(container: AsyncContainer, target: Callable[..., Any
     return _inner
 
 
-def _inject_routes(container: AsyncContainer, routes: List[BaseRoute]) -> None:
-    inject_scoped = inject_from_container(container, get_request_container)
+def _inject_routes(container: AsyncContainer, routes: List[BaseRoute], *, has_request_middleware: bool) -> None:
+    inject_scoped = inject_from_container(container, get_request_container if has_request_middleware else None)
 
     for route in routes:
         if (
@@ -106,7 +109,7 @@ def _inject_routes(container: AsyncContainer, routes: List[BaseRoute]) -> None:
 
 
 async def _register_class_based_route(
-    app: FastAPI, container: AsyncContainer, cls: Type[_ClassBasedRouteProtocol]
+    app: FastAPI, container: AsyncContainer, cls: Type[_ClassBasedRouteProtocol], *, has_request_middleware: bool
 ) -> None:
     container._registry.register(cls)
     instance = await container.get(cls)
@@ -126,7 +129,7 @@ async def _register_class_based_route(
                 )
                 raise WireupError(msg)
 
-    _inject_routes(container, cls.router.routes)
+    _inject_routes(container, cls.router.routes, has_request_middleware=has_request_middleware)
     app.include_router(cls.router)
 
     # Now that the router is included revert the endpoints to the original ones
@@ -140,6 +143,8 @@ def _update_lifespan(
     container: AsyncContainer,
     app: FastAPI,
     class_based_routes: Optional[Iterable[Type[_ClassBasedRouteProtocol]]] = None,
+    *,
+    has_request_middleware: bool,
 ) -> None:
     old_lifespan = app.router.lifespan_context
 
@@ -147,7 +152,7 @@ def _update_lifespan(
     async def lifespan(app: FastAPI) -> AsyncIterator[Any]:
         if class_based_routes:
             for cbr in class_based_routes:
-                await _register_class_based_route(app, container, cbr)
+                await _register_class_based_route(app, container, cbr, has_request_middleware=has_request_middleware)
 
         async with old_lifespan(app) as state:
             yield state
@@ -160,7 +165,9 @@ def _update_lifespan(
 def setup(
     container: AsyncContainer,
     app: FastAPI,
+    *,
     class_based_routes: Optional[Iterable[Type[_ClassBasedRouteProtocol]]] = None,
+    enable_middleware: bool = True,
 ) -> None:
     """Integrate Wireup with FastAPI.
 
@@ -179,10 +186,12 @@ def setup(
             yield client
     ```
     """
+    middleware_enabled = enable_middleware
+    if middleware_enabled:
+        app.add_middleware(BaseHTTPMiddleware, dispatch=_wireup_request_middleware)
 
-    _update_lifespan(container, app, class_based_routes)
-    app.add_middleware(BaseHTTPMiddleware, dispatch=_wireup_request_middleware)
-    _inject_routes(container, app.routes)
+    _update_lifespan(container, app, class_based_routes, has_request_middleware=middleware_enabled)
+    _inject_routes(container, app.routes, has_request_middleware=middleware_enabled)
     app.state.wireup_container = container
 
 

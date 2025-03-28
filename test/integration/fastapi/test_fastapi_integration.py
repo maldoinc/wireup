@@ -1,7 +1,7 @@
 import asyncio
 import contextlib
 import uuid
-from typing import AsyncIterator, Iterator, NewType
+from typing import Any, AsyncIterator, Dict, Iterator, NewType
 
 import anyio.to_thread
 import pytest
@@ -10,7 +10,7 @@ import wireup.integration
 import wireup.integration.fastapi
 from fastapi import FastAPI, Request
 from fastapi.testclient import TestClient
-from wireup._annotations import service
+from wireup._annotations import Injected, service
 from wireup.errors import WireupError
 from wireup.integration.fastapi import get_app_container
 
@@ -95,7 +95,13 @@ async def test_current_request_service(client: TestClient):
 
 
 async def test_raises_request_outside_of_scope(app: FastAPI) -> None:
-    with pytest.raises(WireupError, match="fastapi.Request in wireup is only available during a request."):
+    with pytest.raises(
+        WireupError,
+        match=(
+            "The 'fastapi.Request' service in Wireup requires 'enable_middleware=True' during FastAPI integration. "
+            "This service is also only accessible within the context of a request."
+        ),
+    ):
         async with get_app_container(app).enter_scope() as scoped:
             await scoped.get(Request)
 
@@ -153,3 +159,19 @@ async def test_executes_fastapi_lifespan() -> None:
         ...
 
     assert cleanup_done
+
+
+async def test_middleware_disabled_does_not_add_middleware() -> None:
+    app = FastAPI()
+    container = wireup.create_async_container(services=[RandomService])
+
+    @app.get("/")
+    async def _(random: Injected[RandomService]) -> Dict[str, Any]:
+        return {"random": random.get_random()}
+
+    wireup.integration.fastapi.setup(container, app, enable_middleware=False)
+    assert len(app.user_middleware) == 0
+
+    with TestClient(app) as client:
+        res = client.get("/")
+        assert res.json() == {"random": 4}
