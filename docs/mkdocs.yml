@@ -25,6 +25,7 @@ nav:
 
   - Integrations:
     - Integrations: integrations/index.md
+    - AIOHTTP: integrations/aiohttp.md
     - Django: integrations/django.md
     - FastAPI: integrations/fastapi.md
     - Flask: integrations/flask.md
@@ -33,6 +34,7 @@ nav:
       - OverrideManager: class/override_manager.md
       - ParameterBag: class/parameter_bag.md
       - Integrations:
+        - AIOHTTP: class/aiohttp_integration.md
         - Django: class/django_integration.md
         - FastAPI: class/fastapi_integration.md
         - Flask: class/flask_integration.md
