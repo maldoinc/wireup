@@ -47,6 +47,7 @@ def assert_lifetime_valid(
 ) -> None:
     if (
         not dependency.is_parameter
+        and not container._registry.is_interface_known(dependency.klass)
         and container._registry.lifetime[impl] == "singleton"
         and (dep_lifetime := container._registry.lifetime[dependency.klass]) != "singleton"
     ):
