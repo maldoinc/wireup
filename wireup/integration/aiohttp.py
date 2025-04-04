@@ -108,3 +108,8 @@ def setup(
 
     app.on_startup.append(_get_startup_event(container, handlers))
     app.on_cleanup.append(_on_cleanup)
+    app["wireup_container"] = container
+
+
+def get_app_container(app: web.Application) -> wireup.AsyncContainer:
+    return app["wireup_container"]

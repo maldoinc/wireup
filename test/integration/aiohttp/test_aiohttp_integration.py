@@ -6,10 +6,12 @@ import wireup.integration
 import wireup.integration.aiohttp
 from aiohttp import web
 from aiohttp.test_utils import TestClient
+from wireup.integration.aiohttp import get_app_container
 
 from test.integration.aiohttp import handler, routes
 from test.integration.aiohttp import services as aio_test_services
 from test.shared import shared_services
+from test.shared.shared_services.greeter import GreeterService
 
 
 def create_app() -> web.Application:
@@ -63,3 +65,19 @@ async def test_handler(client: TestClient) -> None:
     res = await client.get("/handler/greet?name=Aio")
     body = await res.json()
     assert body == {"greeting": "Hello Aio", "counter": 2}
+
+
+async def test_handler_override(aiohttp_client: Callable[[web.Application], Awaitable[TestClient]]) -> None:
+    class CustomGreeter(GreeterService):
+        def greet(self, name: str) -> str:
+            return f"Hoi, {name}"
+
+    app = create_app()
+    container = get_app_container(app)
+
+    with container.override.service(GreeterService, new=CustomGreeter()):
+        client = await aiohttp_client(app())
+
+        res = await client.get("/handler/greet?name=Handler")
+        body = await res.json()
+        assert body == {"greeting": "Hoi, Handler", "counter": 1}
