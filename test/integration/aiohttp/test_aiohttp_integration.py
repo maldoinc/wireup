@@ -14,6 +14,11 @@ from test.shared import shared_services
 from test.shared.shared_services.greeter import GreeterService
 
 
+class CustomGreeter(GreeterService):
+    def greet(self, name: str) -> str:
+        return f"Hoi, {name}"
+
+
 def create_app() -> web.Application:
     app = web.Application()
 
@@ -57,6 +62,13 @@ async def test_webview(client: TestClient) -> None:
     assert body == {"greeting": "Hello webview"}
 
 
+async def test_override(client: TestClient, app: web.Application) -> None:
+    with get_app_container(app).override.service(GreeterService, new=CustomGreeter()):
+        res = await client.get("/webview")
+        body = await res.json()
+        assert body == {"greeting": "Hoi, webview"}
+
+
 async def test_handler(client: TestClient) -> None:
     res = await client.get("/handler/greet?name=Handler")
     body = await res.json()
@@ -68,10 +80,6 @@ async def test_handler(client: TestClient) -> None:
 
 
 async def test_handler_override(aiohttp_client: Callable[[web.Application], Awaitable[TestClient]]) -> None:
-    class CustomGreeter(GreeterService):
-        def greet(self, name: str) -> str:
-            return f"Hoi, {name}"
-
     app = create_app()
     container = get_app_container(app)
 

@@ -7,8 +7,10 @@ import wireup
 from wireup._annotations import service
 from wireup.errors import WireupError
 from wireup.integration.util import is_callable_using_wireup_dependencies
+from wireup.ioc.container.async_container import ScopedAsyncContainer
 
 current_request: ContextVar[web.Request] = ContextVar("wireup_aiohttp_request")
+_container_key = "wireup_container"
 
 
 class _WireupHandler(Protocol):
@@ -27,7 +29,9 @@ async def _wireup_middleware(
 ) -> web.StreamResponse:
     token = current_request.set(request)
     try:
-        return await handler(request)
+        async with request.app[_container_key].enter_scope() as scoped_container:
+            request[_container_key] = scoped_container
+            return await handler(request)
     finally:
         current_request.reset(token)
 
@@ -46,7 +50,7 @@ def aiohttp_request_factory() -> web.Request:
 
 
 def _inject_routes(container: wireup.AsyncContainer, app: web.Application) -> None:
-    inject_scoped = wireup.inject_from_container(container)
+    inject_scoped = wireup.inject_from_container(container, get_request_container)
 
     for route in app.router.routes():
         if is_callable_using_wireup_dependencies(route._handler):
@@ -108,8 +112,14 @@ def setup(
 
     app.on_startup.append(_get_startup_event(container, handlers))
     app.on_cleanup.append(_on_cleanup)
-    app["wireup_container"] = container
+    app[_container_key] = container
 
 
 def get_app_container(app: web.Application) -> wireup.AsyncContainer:
-    return app["wireup_container"]
+    """Return the container associated with the given AIOHTTP application."""
+    return app[_container_key]
+
+
+def get_request_container() -> ScopedAsyncContainer:
+    """When inside a request, returns the scoped container instance handling the current request."""
+    return current_request.get()[_container_key]
