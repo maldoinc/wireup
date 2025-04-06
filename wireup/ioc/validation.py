@@ -45,15 +45,20 @@ def assert_dependencies_valid(container: BaseContainer) -> None:
 def assert_lifetime_valid(
     container: BaseContainer, impl: Any, parameter_name: str, dependency: AnnotatedParameter, factory: AnyCallable
 ) -> None:
-    if (
-        not dependency.is_parameter
-        and not container._registry.is_interface_known(dependency.klass)
-        and container._registry.lifetime[impl] == "singleton"
-        and (dep_lifetime := container._registry.lifetime[dependency.klass]) != "singleton"
-    ):
+    if dependency.is_parameter:
+        return
+
+    dependency_class = (
+        container._registry.interface_resolve_impl(dependency.klass, dependency.qualifier_value)
+        if dependency.klass in container._registry.interfaces
+        else dependency.klass
+    )
+    dependency_lifetime = container._registry.lifetime[dependency_class]
+
+    if container._registry.lifetime[impl] == "singleton" and dependency_lifetime != "singleton":
         msg = (
             f"Parameter '{parameter_name}' of {stringify_type(factory)} "
-            f"depends on a service with a '{dep_lifetime}' lifetime which is not supported. "
+            f"depends on a service with a '{dependency_lifetime}' lifetime which is not supported. "
             "Singletons can only depend on other singletons."
         )
         raise WireupError(msg)
