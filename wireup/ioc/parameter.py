@@ -46,12 +46,32 @@ class ParameterBag:
 
         return self.__bag[name]
 
+    @classmethod
+    def __get_value_from_name_and_holder(cls, name: str, holder: Any) -> Any:
+        match holder:
+            case dict():
+                if name not in holder:
+                    raise UnknownParameterError(name)
+
+                return holder[name]
+            case object():
+                if getattr(holder, name, None) is None:
+                    raise UnknownParameterError(name)
+
+                return getattr(holder, name)
+
     def __interpolate(self, val: str) -> str:
         if val in self.__cache:
             return self.__cache[val]
 
         def replace_param(match: Match[str]) -> str:
-            return str(self.__get_value_from_name(match.group(1)))
+            match_parts = match.group(1).split(".")
+            parent = self.__get_value_from_name_and_holder(match_parts[0], self.__bag)
+
+            for part in match_parts[1:]:
+                parent = self.__get_value_from_name_and_holder(part, parent)
+
+            return str(parent)
 
         # Accept anything here as we don't impose any rules when adding params
         res = re.sub(r"\${(.*?)}", replace_param, val, flags=re.DOTALL)
