@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import builtins
 import inspect
 import typing
 from typing import Any
@@ -38,8 +39,9 @@ def assert_dependencies_valid(container: BaseContainer) -> None:
     """Assert that all required dependencies exist for this container instance."""
     for (impl, _), service_factory in container._registry.factories.items():
         for name, dependency in container._registry.dependencies[service_factory.factory].items():
-            assert_dependency_exists(container=container, parameter=dependency, target=impl, name=name)
-            assert_lifetime_valid(container, impl, name, dependency, service_factory.factory)
+            if dependency.klass.__name__ not in dir(builtins):
+                assert_dependency_exists(container=container, parameter=dependency, target=impl, name=name)
+                assert_lifetime_valid(container, impl, name, dependency, service_factory.factory)
 
 
 def assert_lifetime_valid(
