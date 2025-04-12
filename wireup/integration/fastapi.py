@@ -70,15 +70,18 @@ def fastapi_request_factory() -> Request:
 
 
 @service(lifetime="scoped")
-def fastapi_socket_factory() -> WebSocket:
-    """Provide the current FastAPI request as a dependency.
+def fastapi_websocket_factory() -> WebSocket:
+    """Provide the current FastAPI websocket as a dependency.
 
     Note that this requires the Wireup-FastAPI integration to be set up.
     """
     try:
-        return current_socket.get()
+        c = current_request_socket.get()
+        if not isinstance(c, WebSocket):
+            raise LookupError("Not a WebSocket instance")
+        return c
     except LookupError as e:
-        msg = "WEbsocket error"
+        msg = "fastapi.WebSocket in wireup is only available during a websocket connection."
         raise WireupError(msg) from e
 
 
