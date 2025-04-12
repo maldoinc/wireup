@@ -42,6 +42,25 @@ async def _wireup_request_middleware(request: Request, call_next: Callable[[Requ
         current_request.reset(token)
 
 
+class WireupSocketMiddleware:
+    def __init__(self, app: ASGIApp) -> None:
+        self.app = app
+
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+        if scope["type"] != "websocket":
+            return await self.app(scope, receive, send)
+
+        socket = WebSocket(scope, receive, send)
+
+        token = current_socket.set(socket)
+        try:
+            async with socket.app.state.wireup_container.enter_scope() as scoped_container:
+                socket.state.wireup_container = scoped_container
+                return await self.app(scope, receive, send)
+        finally:
+            current_socket.reset(token)
+
+
 @service(lifetime="scoped")
 def fastapi_request_factory() -> Request:
     """Provide the current FastAPI request as a dependency.
