@@ -60,7 +60,10 @@ def fastapi_request_factory() -> Request:
     Note that this requires the Wireup-FastAPI integration to be set up.
     """
     try:
-        return current_request.get()
+        c = current_request_socket.get()
+        if not isinstance(c, Request):
+            raise LookupError("Not a Request instance")
+        return c
     except LookupError as e:
         msg = "fastapi.Request in wireup is only available during a request."
         raise WireupError(msg) from e
