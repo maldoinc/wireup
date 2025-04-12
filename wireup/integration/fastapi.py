@@ -157,8 +157,7 @@ def setup(container: AsyncContainer, app: FastAPI) -> None:
     ```
     """
     _update_lifespan(container, app)
-    app.add_middleware(BaseHTTPMiddleware, dispatch=_wireup_request_middleware)
-    app.add_middleware(WireupSocketMiddleware)
+    app.add_middleware(WireupMiddleware)
     _inject_routes(container, app)
     app.state.wireup_container = container
 
