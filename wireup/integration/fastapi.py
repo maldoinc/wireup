@@ -4,15 +4,12 @@ from contextvars import ContextVar
 from typing import (
     Any,
     AsyncIterator,
-    Awaitable,
     Callable,
 )
 
-from fastapi import FastAPI, Request, Response
+from fastapi import FastAPI, Request, WebSocket
 from fastapi.routing import APIRoute, APIWebSocketRoute
-from starlette.middleware.base import BaseHTTPMiddleware
-from starlette.types import ASGIApp, Message, Receive, Scope, Send
-from starlette.websockets import WebSocket
+from starlette.types import ASGIApp, Receive, Scope, Send
 
 from wireup import inject_from_container, service
 from wireup.errors import WireupError
