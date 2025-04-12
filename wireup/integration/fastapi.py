@@ -11,6 +11,8 @@ from typing import (
 from fastapi import FastAPI, Request, Response
 from fastapi.routing import APIRoute, APIWebSocketRoute
 from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.types import ASGIApp, Message, Receive, Scope, Send
+from starlette.websockets import WebSocket
 
 from wireup import inject_from_container, service
 from wireup.errors import WireupError
