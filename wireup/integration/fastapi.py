@@ -31,33 +31,26 @@ class WireupRoute(APIRoute):
         super().__init__(path=path, endpoint=endpoint, **kwargs)
 
 
-async def _wireup_request_middleware(request: Request, call_next: Callable[[Request], Awaitable[Response]]) -> Response:
-    token = current_request.set(request)
-    try:
-        async with request.app.state.wireup_container.enter_scope() as scoped_container:
-            request.state.wireup_container = scoped_container
-            return await call_next(request)
-    finally:
-        current_request.reset(token)
-
-
-class WireupSocketMiddleware:
+class WireupMiddleware:
     def __init__(self, app: ASGIApp) -> None:
         self.app = app
 
     async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
-        if scope["type"] != "websocket":
+        if scope["type"] == "http":
+            c = Request(scope)
+        elif scope["type"] == "websocket":
+            c = WebSocket(scope, receive, send)
+        else:
             return await self.app(scope, receive, send)
 
-        socket = WebSocket(scope, receive, send)
+        token = current_request_socket.set(c)
 
-        token = current_socket.set(socket)
         try:
-            async with socket.app.state.wireup_container.enter_scope() as scoped_container:
-                socket.state.wireup_container = scoped_container
+            async with c.app.state.wireup_container.enter_scope() as scoped_container:
+                c.state.wireup_container = scoped_container
                 return await self.app(scope, receive, send)
         finally:
-            current_socket.reset(token)
+            current_request_socket.reset(token)
 
 
 @service(lifetime="scoped")
