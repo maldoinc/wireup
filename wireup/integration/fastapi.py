@@ -167,6 +167,6 @@ def get_app_container(app: FastAPI) -> AsyncContainer:
 def get_request_container() -> ScopedAsyncContainer:
     """When inside a request, returns the scoped container instance handling the current request."""
     try:
-        return current_request.get().state.wireup_container
+        return current_request_socket.get().state.wireup_container
     except LookupError:
         return current_ws_container.get()
