@@ -21,8 +21,7 @@ from wireup.ioc.container.async_container import AsyncContainer, ScopedAsyncCont
 from wireup.ioc.types import ParameterWrapper
 from wireup.ioc.validation import get_valid_injection_annotated_parameters, hide_annotated_names
 
-current_request: ContextVar[Request] = ContextVar("wireup_fastapi_request")
-current_socket: ContextVar[WebSocket] = ContextVar("wireup_fastapi_socket")
+current_request_socket: ContextVar[Request | WebSocket] = ContextVar("wireup_fastapi_request")
 current_ws_container: ContextVar[ScopedAsyncContainer] = ContextVar("wireup_fastapi_container")
 
 
