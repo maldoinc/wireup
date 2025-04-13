@@ -14,7 +14,7 @@ from wireup.ioc.container.async_container import AsyncContainer, ScopedAsyncCont
 from wireup.ioc.types import ParameterWrapper
 from wireup.ioc.validation import get_valid_injection_annotated_parameters, hide_annotated_names
 
-current_request_socket: ContextVar[Union[Request, WebSocket]] = ContextVar("wireup_fastapi_request")
+current_connection: ContextVar[Union[Request, WebSocket]] = ContextVar("wireup_fastapi_request")
 current_ws_container: ContextVar[ScopedAsyncContainer] = ContextVar("wireup_fastapi_container")
 
 
@@ -36,14 +36,14 @@ class WireupMiddleware:
         else:
             return await self.app(scope, receive, send)
 
-        token = current_request_socket.set(connection)
+        token = current_connection.set(connection)
 
         try:
             async with connection.app.state.wireup_container.enter_scope() as scoped_container:
                 connection.state.wireup_container = scoped_container
                 return await self.app(scope, receive, send)
         finally:
-            current_request_socket.reset(token)
+            current_connection.reset(token)
 
 
 @service(lifetime="scoped")
@@ -53,7 +53,7 @@ def fastapi_request_factory() -> Request:
     Note that this requires the Wireup-FastAPI integration to be set up.
     """
     try:
-        connection = current_request_socket.get()
+        connection = current_connection.get()
         if not isinstance(connection, Request):
             msg = "Not a Request instance"
             raise WireupError(msg)
@@ -70,7 +70,7 @@ def fastapi_websocket_factory() -> WebSocket:
     Note that this requires the Wireup-FastAPI integration to be set up.
     """
     try:
-        connection = current_request_socket.get()
+        connection = current_connection.get()
         if not isinstance(connection, WebSocket):
             msg = "Not a WebSocket instance"
             raise WireupError(msg)
@@ -164,6 +164,6 @@ def get_app_container(app: FastAPI) -> AsyncContainer:
 def get_request_container() -> ScopedAsyncContainer:
     """When inside a request, returns the scoped container instance handling the current request."""
     try:
-        return current_request_socket.get().state.wireup_container
+        return current_connection.get().state.wireup_container
     except LookupError:
         return current_ws_container.get()
