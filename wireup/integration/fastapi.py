@@ -82,7 +82,6 @@ def fastapi_websocket_factory() -> WebSocket:
         raise WireupError(msg) from e
 
 
-
 # We need to inject websocket routes separately as the regular fastapi middlewares work only for http.
 def _inject_websocket_route(container: AsyncContainer, target: Callable[..., Any]) -> Callable[..., Any]:
     names_to_inject = get_valid_injection_annotated_parameters(container, target)
