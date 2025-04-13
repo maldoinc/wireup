@@ -30,17 +30,17 @@ class WireupMiddleware:
 
     async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
         if scope["type"] == "http":
-            c = Request(scope)
+            connection = Request(scope)
         elif scope["type"] == "websocket":
-            c = WebSocket(scope, receive, send)
+            connection = WebSocket(scope, receive, send)
         else:
             return await self.app(scope, receive, send)
 
-        token = current_request_socket.set(c)
+        token = current_request_socket.set(connection)
 
         try:
-            async with c.app.state.wireup_container.enter_scope() as scoped_container:
-                c.state.wireup_container = scoped_container
+            async with connection.app.state.wireup_container.enter_scope() as scoped_container:
+                connection.state.wireup_container = scoped_container
                 return await self.app(scope, receive, send)
         finally:
             current_request_socket.reset(token)
@@ -53,11 +53,11 @@ def fastapi_request_factory() -> Request:
     Note that this requires the Wireup-FastAPI integration to be set up.
     """
     try:
-        c = current_request_socket.get()
-        if not isinstance(c, Request):
+        connection = current_request_socket.get()
+        if not isinstance(connection, Request):
             msg = "Not a Request instance"
             raise WireupError(msg)
-        return c
+        return connection
     except LookupError as e:
         msg = "fastapi.Request in wireup is only available during a request."
         raise WireupError(msg) from e
@@ -70,11 +70,11 @@ def fastapi_websocket_factory() -> WebSocket:
     Note that this requires the Wireup-FastAPI integration to be set up.
     """
     try:
-        c = current_request_socket.get()
-        if not isinstance(c, WebSocket):
+        connection = current_request_socket.get()
+        if not isinstance(connection, WebSocket):
             msg = "Not a WebSocket instance"
             raise WireupError(msg)
-        return c
+        return connection
     except LookupError as e:
         msg = "fastapi.WebSocket in wireup is only available during a websocket connection."
         raise WireupError(msg) from e
