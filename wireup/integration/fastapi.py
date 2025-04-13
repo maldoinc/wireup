@@ -1,11 +1,7 @@
 import contextlib
 import functools
 from contextvars import ContextVar
-from typing import (
-    Any,
-    AsyncIterator,
-    Callable,
-)
+from typing import Any, AsyncIterator, Callable, Union
 
 from fastapi import FastAPI, Request, WebSocket
 from fastapi.routing import APIRoute, APIWebSocketRoute
@@ -18,7 +14,7 @@ from wireup.ioc.container.async_container import AsyncContainer, ScopedAsyncCont
 from wireup.ioc.types import ParameterWrapper
 from wireup.ioc.validation import get_valid_injection_annotated_parameters, hide_annotated_names
 
-current_request_socket: ContextVar[Request | WebSocket] = ContextVar("wireup_fastapi_request")
+current_request_socket: ContextVar[Union[Request, WebSocket]] = ContextVar("wireup_fastapi_request")
 current_ws_container: ContextVar[ScopedAsyncContainer] = ContextVar("wireup_fastapi_container")
 
 
@@ -59,7 +55,8 @@ def fastapi_request_factory() -> Request:
     try:
         c = current_request_socket.get()
         if not isinstance(c, Request):
-            raise LookupError("Not a Request instance")
+            msg = "Not a Request instance"
+            raise WireupError(msg)
         return c
     except LookupError as e:
         msg = "fastapi.Request in wireup is only available during a request."
@@ -75,7 +72,8 @@ def fastapi_websocket_factory() -> WebSocket:
     try:
         c = current_request_socket.get()
         if not isinstance(c, WebSocket):
-            raise LookupError("Not a WebSocket instance")
+            msg = "Not a WebSocket instance"
+            raise WireupError(msg)
         return c
     except LookupError as e:
         msg = "fastapi.WebSocket in wireup is only available during a websocket connection."
