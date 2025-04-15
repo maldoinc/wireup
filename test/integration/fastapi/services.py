@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 
-from fastapi import Request
+from fastapi import Request, WebSocket
 from wireup import service
 
 
@@ -8,3 +8,9 @@ from wireup import service
 @dataclass
 class ServiceUsingFastapiRequest:
     req: Request
+
+
+@service(lifetime="scoped")
+@dataclass
+class WSService:
+    ws: WebSocket

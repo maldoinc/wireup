@@ -3,8 +3,9 @@ from typing import Any, Dict
 from fastapi import APIRouter, Depends, Request, WebSocket
 from typing_extensions import Annotated
 from wireup import Inject, Injected
+from wireup.integration.fastapi import get_request_container
 
-from test.integration.fastapi.services import ServiceUsingFastapiRequest
+from test.integration.fastapi.services import ServiceUsingFastapiRequest, WSService
 from test.shared.shared_services.greeter import GreeterService
 from test.shared.shared_services.rand import RandomService
 from test.shared.shared_services.scoped import ScopedService, ScopedServiceDependency
@@ -52,10 +53,33 @@ async def websocket_endpoint(
     scoped_service: Injected[ScopedService],
     scoped_service2: Injected[ScopedService],
     scoped_service_dependency: Injected[ScopedServiceDependency],
+    ws_service: Injected[WSService],
 ):
+    assert isinstance(await get_request_container().get(WebSocket), WebSocket)
     assert scoped_service is scoped_service2
     assert scoped_service.other is scoped_service_dependency
 
+    assert ws_service.ws is websocket
+
+    await websocket.accept()
+    data = await websocket.receive_text()
+    await websocket.send_text(greeter.greet(data))
+    await websocket.close()
+
+
+@router.websocket("/ws/no-websocket-in-signature")
+async def websocket_endpoint_wireup(
+    greeter: Injected[GreeterService],
+    scoped_service: Injected[ScopedService],
+    scoped_service2: Injected[ScopedService],
+    scoped_service_dependency: Injected[ScopedServiceDependency],
+    ws_service: Injected[WSService],
+):
+    assert isinstance(await get_request_container().get(WebSocket), WebSocket)
+    assert scoped_service is scoped_service2
+    assert scoped_service.other is scoped_service_dependency
+
+    websocket = ws_service.ws
     await websocket.accept()
     data = await websocket.receive_text()
     await websocket.send_text(greeter.greet(data))
