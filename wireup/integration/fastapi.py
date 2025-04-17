@@ -81,7 +81,11 @@ def fastapi_websocket_factory() -> WebSocket:
 
 
 # We need to inject websocket routes separately as the regular fastapi middlewares work only for http.
-def _inject_websocket_route(container: AsyncContainer, target: Callable[..., Any]) -> Callable[..., Any]:
+def _inject_websocket_route(
+        container: AsyncContainer,
+        target: Callable[..., Any],
+        websocket_param_name: Union[str, None]
+) -> Callable[..., Any]:
     names_to_inject = get_valid_injection_annotated_parameters(container, target)
 
     @functools.wraps(target)
@@ -95,6 +99,9 @@ def _inject_websocket_route(container: AsyncContainer, target: Callable[..., Any
                 for name, param in names_to_inject.items()
                 if param.annotation
             }
+
+            if websocket_param_name:
+                injected_names[websocket_param_name] = await scoped_container.get(WebSocket)
 
             try:
                 return await target(*args, **{**kwargs, **injected_names})
@@ -115,7 +122,9 @@ def _inject_routes(container: AsyncContainer, app: FastAPI) -> None:
         ):
             target = route.dependant.call
             route.dependant.call = (
-                inject_scoped(target) if isinstance(route, APIRoute) else _inject_websocket_route(container, target)
+                inject_scoped(target)
+                if isinstance(route, APIRoute)
+                else _inject_websocket_route(container, target, route.dependant.websocket_param_name)
             )
 
 
