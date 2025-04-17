@@ -30,7 +30,7 @@ class WireupMiddleware:
 
     async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
         if scope["type"] == "http":
-            connection = Request(scope)
+            connection = Request(scope, receive, send)
         elif scope["type"] == "websocket":
             connection = WebSocket(scope, receive, send)
         else:
