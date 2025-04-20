@@ -4,7 +4,7 @@ import inspect
 import typing
 from typing import Any
 
-from wireup.errors import WireupError
+from wireup.errors import DependencyParamTypeMismatchError, WireupError
 from wireup.ioc.types import AnnotatedParameter, AnyCallable, InjectableType
 from wireup.ioc.util import get_globals, param_get_annotation
 
@@ -68,7 +68,9 @@ def assert_dependency_exists(container: BaseContainer, parameter: AnnotatedParam
     """Assert that a dependency exists in the container for the given annotated parameter."""
     if isinstance(parameter.annotation, ParameterWrapper):
         try:
-            container.params.get(parameter.annotation.param)
+            dependency = container.params.get(parameter.annotation.param)
+            if not isinstance(dependency, parameter.klass):
+                raise DependencyParamTypeMismatchError(name, type(dependency), parameter)
         except UnknownParameterError as e:
             msg = (
                 f"Parameter '{name}' of {stringify_type(target)} "

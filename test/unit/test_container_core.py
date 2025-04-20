@@ -10,6 +10,7 @@ from typing_extensions import Annotated
 from wireup import ParameterBag
 from wireup._annotations import Inject, abstract, service
 from wireup.errors import (
+    DependencyParamTypeMismatchError,
     DuplicateQualifierForInterfaceError,
     DuplicateServiceRegistrationError,
     UnknownServiceRequestedError,
@@ -191,6 +192,48 @@ def test_get_class_with_param_bindings() -> None:
 
     assert svc.connection_str == "sqlite://memory"
     assert svc.cache_dir == "/var/cache/etc"
+
+
+def test_container_raises_when_having_dependencies_having_mismatch_types_with_injected_expression_params() -> None:
+    @service
+    class ServiceWithParams:
+        def __init__(
+            self,
+            connection_str: Annotated[float, Inject(expr="${connection_str}")],
+        ) -> None:
+            self.connection_str = connection_str
+
+    with pytest.raises(
+        DependencyParamTypeMismatchError,
+        match=re.escape(
+            f"Requested 'connection_str' with type {float}. However, the Wireup parameter requested in expression '${{connection_str}}' is of type {str}."
+        ),
+    ):
+        wireup.create_sync_container(
+            services=[ServiceWithParams],
+            parameters={"connection_str": "sqlite://memory"},
+        )
+
+
+def test_container_raises_when_having_dependencies_having_mismatch_types_with_injected_params() -> None:
+    @service
+    class ServiceWithParams:
+        def __init__(
+            self,
+            connection_str: Annotated[float, Inject(param="connection_str")],
+        ) -> None:
+            self.connection_str = connection_str
+
+    with pytest.raises(
+        DependencyParamTypeMismatchError,
+        match=re.escape(
+            f"Requested 'connection_str' with type {float}. However, the Wireup parameter is of type {str}."
+        ),
+    ):
+        wireup.create_sync_container(
+            services=[ServiceWithParams],
+            parameters={"connection_str": "sqlite://memory"},
+        )
 
 
 def test_raises_multiple_definitions():

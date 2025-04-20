@@ -176,7 +176,7 @@ def test_container_wires_none_values_from_parameter_bag():
     container = wireup.create_async_container(parameters={"foo": None})
 
     @inject_from_container(container)
-    def inner(name: Annotated[str, Inject(param="foo")], name2: Annotated[str, Inject(param="foo")]):
+    def inner(name: Annotated[str | None, Inject(param="foo")], name2: Annotated[str | None, Inject(param="foo")]):
         assert name is None
         assert name2 is None
 

@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any
 
+from wireup.ioc.types import AnnotatedParameter, ParameterWrapper
+
 if TYPE_CHECKING:
     from wireup.ioc.types import AnyCallable, Qualifier
 
@@ -90,6 +92,29 @@ class InvalidRegistrationTypeError(WireupError):
 
     def __init__(self, attempted: Any) -> None:
         super().__init__(f"Cannot register {attempted} with the container. Allowed types are callables and types.")
+
+
+class DependencyParamTypeMismatchError(WireupError):
+    """Raised when requesting a dependency param that exists yet annotated with a type that mismatches that of the dependency's.
+    For example: Annotated[str, Inject(param="foo")] is requested but foo is actually an int.
+    """
+
+    def __get_parameter_expression(self, parameter: AnnotatedParameter) -> str:
+        if not isinstance(parameter.annotation, ParameterWrapper):
+            return ""
+
+        return (
+            ""
+            if isinstance(parameter.annotation.param, str)
+            else f" requested in expression '{parameter.annotation.param.value}'"
+        )
+
+    def __init__(self, name: str, target: type, parameter: AnnotatedParameter) -> None:
+        super().__init__(
+            f"Requested '{name}' with type {parameter.klass}. However, the Wireup parameter"
+            + self.__get_parameter_expression(parameter)
+            + f" is of type {target}."
+        )
 
 
 class UnknownOverrideRequestedError(WireupError):
