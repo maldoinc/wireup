@@ -206,7 +206,8 @@ def test_container_raises_when_having_dependencies_having_mismatch_types_with_in
     with pytest.raises(
         DependencyParamTypeMismatchError,
         match=re.escape(
-            f"Requested 'connection_str' with type {float}. However, the Wireup parameter requested in expression '${{connection_str}}' is of type {str}."
+            f"Requested 'connection_str' with type {float}. "
+            f"However, the Wireup parameter requested in expression '${{connection_str}}' is of type {str}."
         ),
     ):
         wireup.create_sync_container(

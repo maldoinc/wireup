@@ -95,7 +95,7 @@ class InvalidRegistrationTypeError(WireupError):
 
 
 class DependencyParamTypeMismatchError(WireupError):
-    """Raised when requesting a dependency param that exists yet annotated with a type that mismatches that of the dependency's.
+    """Raised when the type of the requested existing dependency parameter mismatches with the annotation type.
     For example: Annotated[str, Inject(param="foo")] is requested but foo is actually an int.
     """
 
