@@ -16,7 +16,7 @@ from wireup.errors import (
     UnknownQualifiedServiceRequestedError,
     WireupError,
 )
-from wireup.ioc.types import AnnotatedParameter, EmptyContainerInjectionRequest, AnyCallable
+from wireup.ioc.types import AnnotatedParameter, AnyCallable, EmptyContainerInjectionRequest
 from wireup.ioc.util import ensure_is_type, get_globals, param_get_annotation
 
 if TYPE_CHECKING:
@@ -137,7 +137,9 @@ class ServiceRegistry:
                 raise WireupError(msg)
 
             if isinstance(annotated_param.annotation, EmptyContainerInjectionRequest):
-                warnings.warn(f"Injected[T] or Annotated[T, Inject()] is redundant in '{name}' of {target}.")
+                warnings.warn(
+                    f"Injected[T] or Annotated[T, Inject()] is redundant in '{name}' of {target}.", stacklevel=2
+                )
 
             self.dependencies[target][name] = annotated_param
 
