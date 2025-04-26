@@ -77,6 +77,43 @@ def test_lifetimes_match() -> None:
         wireup.create_sync_container(services=[SingletonService, ScopedService])
 
 
+def test_validates_dependencies_does_not_raise_correct_lifetime_via_interface() -> None:
+    @wireup.abstract
+    class Foo: ...
+
+    @wireup.service
+    class FooImpl(Foo): ...
+
+    @dataclass
+    @wireup.service
+    class ServiceB:
+        foo: Foo
+
+    wireup.create_sync_container(services=[ServiceB, FooImpl, Foo])
+
+
+def test_validates_dependencies_lifetimes_raises_when_using_interfaces() -> None:
+    @wireup.abstract
+    class Foo: ...
+
+    @wireup.service(lifetime="scoped")
+    class FooImpl(Foo): ...
+
+    @dataclass
+    @wireup.service
+    class ServiceB:
+        foo: Foo
+
+    with pytest.raises(
+        WireupError,
+        match=re.escape(
+            "Parameter 'foo' of Type test.unit.test_container_creation.ServiceB depends on a service "
+            "with a 'scoped' lifetime which is not supported. Singletons can only depend on other singletons."
+        ),
+    ):
+        wireup.create_sync_container(services=[ServiceB, FooImpl, Foo])
+
+
 def test_lifetimes_match_factories() -> None:
     class ScopedService: ...
 

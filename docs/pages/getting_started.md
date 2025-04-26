@@ -84,7 +84,7 @@ container = wireup.create_async_container(
 ### 2. Define services
 
 The container uses types and annotations to define services and the discover dependencies between them. This
-results in self-contained
+results in self-contained service declarations without having to create factories for every service.
 
 
 #### 🐍 `KeyValueStore`
@@ -130,7 +130,7 @@ async def make_http_client() -> AsyncIterator[aiohttp.ClientSession]:
 #### 🐍 `WeatherService`
 Creating `WeatherService` is also straightforward. The `@service` decorator is used to let Wireup know this is a service and we use the same syntax as above for the `api_key`. 
 
-Class dependencies do not need additional annotations, even tough the http client is created via an async generator. This is transparently handled by the container.
+Class dependencies do not need additional annotations, even though the http client is created via an async generator. This is transparently handled by the container.
 
 ```python title="services/weather_service.py" hl_lines="1 5 6 7"
 @service
