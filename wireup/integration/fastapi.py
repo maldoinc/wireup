@@ -91,6 +91,11 @@ def _inject_websocket_route(
     async def _inner(*args: Any, **kwargs: Any) -> Any:
         async with container.enter_scope() as scoped_container:
             token = current_ws_container.set(scoped_container)
+            if not websocket_param_name or websocket_param_name not in kwargs:
+                raise WireupError("Unable to determine websocket parameter")
+
+            token_websocket = current_websocket.set(kwargs[websocket_param_name])
+
             injected_names = {
                 name: container.params.get(param.annotation.param)
                 if isinstance(param.annotation, ParameterWrapper)
@@ -99,12 +104,10 @@ def _inject_websocket_route(
                 if param.annotation
             }
 
-            if websocket_param_name:
-                injected_names[websocket_param_name] = await scoped_container.get(WebSocket)
-
             try:
                 return await target(*args, **{**kwargs, **injected_names})
             finally:
+                current_websocket.reset(token_websocket)
                 current_ws_container.reset(token)
 
     return _inner
