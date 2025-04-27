@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import inspect
 import typing
+import warnings
 from collections import defaultdict
 from dataclasses import dataclass
 from enum import Enum, auto
@@ -15,8 +16,9 @@ from wireup.errors import (
     UnknownQualifiedServiceRequestedError,
     WireupError,
 )
-from wireup.ioc.types import AnnotatedParameter, AnyCallable
+from wireup.ioc.types import AnnotatedParameter, AnyCallable, EmptyContainerInjectionRequest
 from wireup.ioc.util import ensure_is_type, get_globals, param_get_annotation
+from wireup.ioc.validation import stringify_type
 
 if TYPE_CHECKING:
     from wireup.ioc.types import (
@@ -134,6 +136,14 @@ class ServiceRegistry:
             if not annotated_param:
                 msg = f"Wireup dependencies must have types. Please add a type to the '{name}' parameter in {target}."
                 raise WireupError(msg)
+
+            if isinstance(annotated_param.annotation, EmptyContainerInjectionRequest):
+                warnings.warn(
+                    f"Redundant Injected[T] or Annotated[T, Inject()] in parameter '{name}' of "
+                    f"{stringify_type(target)}. See: "
+                    "https://maldoinc.github.io/wireup/latest/annotations/",
+                    stacklevel=2,
+                )
 
             self.dependencies[target][name] = annotated_param
 
