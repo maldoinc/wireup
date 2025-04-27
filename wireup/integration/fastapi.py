@@ -69,7 +69,7 @@ def fastapi_websocket_factory() -> WebSocket:
     Note that this requires the Wireup-FastAPI integration to be set up.
     """
     try:
-        connection = current_connection.get()
+        connection = current_websocket.get()
         if not isinstance(connection, WebSocket):
             msg = "Not a WebSocket instance"
             raise WireupError(msg)
