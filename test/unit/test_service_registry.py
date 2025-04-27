@@ -72,7 +72,7 @@ def test_is_type_with_qualifier_known(registry: ServiceRegistry) -> None:
 
 
 def test_register_with_redundant_annotation(registry: ServiceRegistry) -> None:
-    with pytest.warns(UserWarning, match=r"Injected\[T\] or Annotated\[T, Inject\(\)\] is redundant"):
+    with pytest.warns(UserWarning, match=r"Redundant Injected\[T\] or Annotated\[T, Inject\(\)\] in parameter"):
         registry.register(FooImplWithInjected, lifetime="singleton")
 
 

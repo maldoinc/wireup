@@ -18,6 +18,7 @@ from wireup.errors import (
 )
 from wireup.ioc.types import AnnotatedParameter, AnyCallable, EmptyContainerInjectionRequest
 from wireup.ioc.util import ensure_is_type, get_globals, param_get_annotation
+from wireup.ioc.validation import stringify_type
 
 if TYPE_CHECKING:
     from wireup.ioc.types import (
@@ -138,7 +139,10 @@ class ServiceRegistry:
 
             if isinstance(annotated_param.annotation, EmptyContainerInjectionRequest):
                 warnings.warn(
-                    f"Injected[T] or Annotated[T, Inject()] is redundant in '{name}' of {target}.", stacklevel=2
+                    f"Redundant Injected[T] or Annotated[T, Inject()] in parameter '{name}' of "
+                    f"{stringify_type(target)}. See: "
+                    "https://maldoinc.github.io/wireup/latest/annotations/",
+                    stacklevel=2,
                 )
 
             self.dependencies[target][name] = annotated_param
