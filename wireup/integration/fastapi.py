@@ -119,6 +119,9 @@ def _inject_routes(container: AsyncContainer, app: FastAPI) -> None:
             and route.dependant.call
             and is_callable_using_wireup_dependencies(route.dependant.call)
         ):
+            if isinstance(route, APIWebSocketRoute) and route.dependant.websocket_param_name is None:
+                route.dependant.websocket_param_name = "_wireup_websocket"
+
             target = route.dependant.call
             route.dependant.call = (
                 inject_scoped(target)
