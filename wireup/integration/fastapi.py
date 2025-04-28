@@ -109,7 +109,9 @@ def _inject_routes(container: AsyncContainer, routes: List[BaseRoute], *, has_re
 
 
 async def _register_class_based_route(
-    app: FastAPI, container: AsyncContainer, cls: Type[_ClassBasedRouteProtocol], *, has_request_middleware: bool
+    app: FastAPI,
+    container: AsyncContainer,
+    cls: Type[_ClassBasedRouteProtocol],
 ) -> None:
     container._registry.register(cls)
     instance = await container.get(cls)
@@ -129,9 +131,7 @@ async def _register_class_based_route(
                 )
                 raise WireupError(msg)
 
-    _inject_routes(container, cls.router.routes, has_request_middleware=has_request_middleware)
     app.include_router(cls.router)
-
     # Now that the router is included revert the endpoints to the original ones
     # as fastapi will have made a copy of things.
     for route in cls.router.routes:
@@ -152,7 +152,9 @@ def _update_lifespan(
     async def lifespan(app: FastAPI) -> AsyncIterator[Any]:
         if class_based_routes:
             for cbr in class_based_routes:
-                await _register_class_based_route(app, container, cbr, has_request_middleware=has_request_middleware)
+                await _register_class_based_route(app, container, cbr)
+
+        _inject_routes(container, app.routes, has_request_middleware=has_request_middleware)
 
         async with old_lifespan(app) as state:
             yield state
