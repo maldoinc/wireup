@@ -7,7 +7,7 @@ from test.shared.shared_services.rand import RandomService
 
 
 class MyClassBasedRoute:
-    router = fastapi.APIRouter()
+    router = fastapi.APIRouter(prefix="/users")
 
     def __init__(self, random_service: RandomService) -> None:
         self.rng = random_service

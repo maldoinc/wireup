@@ -24,9 +24,12 @@ nav:
       - Upgrading: upgrading.md
 
   - Integrations:
-    - Integrations: integrations/index.md
+    - integrations/index.md
     - Django: integrations/django.md
-    - FastAPI: integrations/fastapi.md
+    - FastAPI: 
+      - integrations/fastapi/index.md
+      - Class-Based Routes: integrations/fastapi/cbr.md
+      - Zero Cost Dependency Injection: integrations/fastapi/zero_cost.md
     - Flask: integrations/flask.md
   - API Reference:
       - wireup: class/wireup.md
@@ -50,6 +53,8 @@ theme:
     - navigation.instant
     - navigation.tabs
     - navigation.footer
+    - navigation.indexes
+
   font:
     code: JetBrains Mono 
   palette:
