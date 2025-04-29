@@ -193,7 +193,11 @@ def setup(
         app.add_middleware(BaseHTTPMiddleware, dispatch=_wireup_request_middleware)
 
     _update_lifespan(container, app, class_based_routes, has_request_middleware=middleware_enabled)
-    _inject_routes(container, app.routes, has_request_middleware=middleware_enabled)
+
+    # When there are class based routes, we need to inject the routes in the lifespan.
+    # Otherwise, we can inject them right away.
+    if not class_based_routes:
+        _inject_routes(container, app.routes, has_request_middleware=middleware_enabled)
     app.state.wireup_container = container
 
 
