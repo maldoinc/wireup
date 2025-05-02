@@ -1,12 +1,41 @@
-Wireup allows you to achieve real zero-cost runtime dependency injection in FastAPI via class-based routes.
-Wireup will create all class-based routes and their dependencies once at startup and completely detach itself
-from other runtime behavior.
+Wireup enables zero-cost runtime dependency injection in FastAPI through class-based routes for singleton services.
+This approach eliminates the overhead of creating dependencies for each request, making your application more efficient.
+
+### Key Benefits
+- Zero runtime overhead for dependency injection.
+- Dependencies initialized only once at startup.
+- Class-based routes for better organization.
 
 
-Wireup class-based routes allow you to define dependencies where the objects are instantiated once on startup.
-This results in no overhead when making requests to `GET /users` as there are no dependencies on that method.
+!!! note
+    Note that zero-cost injection is only available for singleton services (or if coming from fastapi.Depends,
+    services which always result in the same instance and are possible decorated with `@lru_cache`/`@cache`.)
 
-## 1. Set up class-based routes
+    Services which need per-request scope will need to be initialized on every request.
+
+### Existing approach
+
+Existing approaches invoke the dependency injection mechanism even though it will always result in the same instance,
+resulting in increased processing overhead.
+
+```python
+router = fastapi.APIRouter(prefix="/users")
+
+
+# Using Wireup in regular routes.
+@router.get("/")
+async def get_users(user_service: Injected[UserService]):
+    return self.user_service.find_all()
+
+# Regular fastapi.Depends injection.
+@router.get("/")
+async def get_users(
+    user_service: Annotated[UserService, fastapi.Depends(get_user_service)]
+):
+    return self.user_service.find_all()
+```
+
+### Zero-Cost example
 
 ```python title="app/routes/greeter.py"
 class UsersController:
@@ -16,20 +45,32 @@ class UsersController:
         self.user_service = user_service
 
     @router.get("/")
-    def get_users(self):
+    async def get_users(self):
         return self.user_service.find_all()
 ```
+```python title="app/app.py"
 
-## 2. Disable middleware
+wireup.integration.fastapi.setup(
+    container, 
+    app, 
+    # Let Wireup know of all your class-based routes.
+    class_based_routes=[UsersController],
+    # Wireup adds its own middleware to enable the following features:
+    # - Provide Wireup with access to the current request
+    # - Allows you to retrieve Wireup container in middleware.
+    # If neither of those features is required, you can disable the middleware.
+    enable_middleware=False
+)
+```
 
-Wireup by default adds a middleware to the integration for it to properly enter/exit a scope per request as well as
-expose the current `fastapi.Request` as a Wireup dependency.
+### Middleware
 
-If all your services are singletons, and you don't need the request dependency then you can disable the middleware
-altogether.
+Wireup adds its own middleware to enable the following features:
+- Provide Wireup with access to the current request
+- Allows you to retrieve Wireup container in middleware.
 
-This results in Wireup only performing injection at startup and be completely detached from runtime behavior.
+If neither of those features is required, you can disable the middleware
+by passing `enable_middleware=False` to the `wireup.integration.fastapi` call.
 
 !!! tip
-    If you will need access to transient/scoped dependencies or the fastapi request in Wireup dependencies,
-    you can reenable the middleware at any time without it affecting the class-based routes.
+    You can re-enable middleware later if you need transient/scoped dependencies or request access.

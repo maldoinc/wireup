@@ -1,55 +1,63 @@
-Class-Based Routes powered by Wireup allow you to have real singleton routers in FastAPI.
+# Class-Based Routes
 
-These class-based routes (or controllers as commonly known), are regular classes that can define their dependencies
-in `__init__` *or* in the route handler method.
+Wireup provides true singleton controllers for FastAPI through Class-Based Routes.
 
-## Requirements
+This pattern allows you to define reusable controllers that are instantiated once at startup,
+improving code organization and performance by avoiding unnecessary runtime injection.
 
-* The class must have a field called `router` of type `fastapi.APIRoute`. This is a regular fastapi router that
-you can use as usual.
-* The routers must not be registered with fastapi but instead registered with Wireup by passing them to the
-`wireup.integration.fastapi.setup` method.
+### Implementation
 
+1. Request dependencies in the `__init__` method.
+1. Define a `router` field of type `fastapi.APIRouter` inside the class.
+1. Use the router to decorate routes like you normally do in FastAPI.
+2. If the routes need scoped/transient dependencies, you can ask for them in the route as usual. 
+3. Register the class when calling `wireup.integration.fastapi.setup` instead of including it in via FastAPI.
 
+Here's a complete example:
 
-```python title="app/routes/greeter.py"
-class UsersController: # (1)!
-    router = fastapi.APIRouter(prefix="/users") # (2)!
+```python title="app/routes/users.py"
+class UsersController:
+    router = fastapi.APIRouter(prefix="/users")
 
-    def __init__(self, user_service: UserService) -> None: # (3)!
+    # Constructor dependencies are injected once at startup
+    def __init__(self, user_service: UserService) -> None:
         self.user_service = user_service
 
     @router.get("/")
-    def get_users(self, request_context: Injected[RequestContext]): # (4)!
+    # Request-scoped dependencies must use the Injected[] annotation
+    async def get_users(self, request_context: Injected[RequestContext]):
         return self.user_service.find_all()
 
     @router.post("/")
-    def create_user(self, request: CreateUserRequest):
-        new_user = self.user_service.create_user(...)
+    async def create_user(self, request: CreateUserRequest):
+        return self.user_service.create_user(request)
 ```
 
-1. Define a class-based router.
-2. Instantiate a regular fastapi router in the class and use this to decorate your endpoints just like you normally would.
-3. Define shared dependencies in the initializer. These are injected only once during application startup.
-4. If you need request/transient scoped dependencies you can request them in the endpoint as usual.
-**Note**: In route handlers, you need to annotate Wireup dependencies with Injected like in any other route.
+```python title="app/app.py"
 
-## Advantages of Class-Based Routes
+# Let Wireup know of all your class-based routes.
+wireup.integration.fastapi.setup(
+    container, 
+    app, 
+    class_based_routes=[UsersController]
+)
+```
 
-**Zero-cost runtime injection**
+### Benefits
 
-They are instantiated by Wireup **once** and handle requests during the entire lifetime of the application. You pay the cost for the dependencies in the init only once at application startup. Normally with fastapi or other libraries that offer
-similar functionality, the route handler gets created on every request.
+1. **Startup-time Dependency Injection**
+    * Dependencies in `__init__` are injected once during startup.
+    * Significantly better performance compared to per-request injection.
 
-**Group related endpoints**
+2. **Logical Organization**
+    * Group related endpoints into cohesive controllers.
+    * Better code navigation and maintenance.
 
-For example, all endpoints related to "users" can be placed in a UserController, making the codebase more organized and easier to navigate.
+3. **Shared Dependencies**
+    * Constructor-injected dependencies are available to all endpoints.
+    * Reduces duplicate dependency declarations.
 
-**Dependency Sharing**
-
-Controllers can share dependencies (e.g., services, repositories) across multiple endpoints within the same controller. This avoids repetitive dependency injection in each function and promotes DRY (Don't Repeat Yourself) principles.
-
-**Reusability**
-
-By grouping endpoints into controllers, shared logic (e.g., authentication, validation) can be reused across multiple methods within the same controller.
+4. **Code Reuse**
+    * Share common logic between endpoints in the same controller.
+    * Perfect for cross-cutting concerns like validation or authentication.
 
