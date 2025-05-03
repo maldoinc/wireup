@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import contextlib
 import functools
 from contextlib import AsyncExitStack, ExitStack
 from typing import TYPE_CHECKING, Any, Callable, TypeVar
@@ -23,6 +24,11 @@ T = TypeVar("T", bound=Callable[..., Any])
 def inject_from_container(
     container: SyncContainer | AsyncContainer,
     scoped_container_supplier: Callable[[], ScopedSyncContainer | ScopedAsyncContainer] | None = None,
+    middleware: Callable[
+        [ScopedSyncContainer | ScopedAsyncContainer, tuple[Any, ...], dict[str, Any]],
+        contextlib.AbstractContextManager[None],
+    ]
+    | None = None,
 ) -> Callable[..., Any]:
     """Inject dependencies into the decorated function based on annotations.
 
@@ -54,6 +60,8 @@ def inject_from_container(
                         if scoped_container_supplier
                         else await cm.enter_async_context(container.enter_scope())  # type:ignore[reportArgumentType, unused-ignore]
                     )
+                    if middleware:
+                        cm.enter_context(middleware(scoped_container, args, kwargs))
 
                     injected_names = {
                         name: container.params.get(param.annotation.param)
@@ -79,6 +87,9 @@ def inject_from_container(
                         else async_container_force_sync_scope(container)
                     )
                 )
+                if middleware:
+                    cm.enter_context(middleware(scoped_container, *args, **kwargs))
+
                 get = scoped_container._synchronous_get
 
                 injected_names = {
