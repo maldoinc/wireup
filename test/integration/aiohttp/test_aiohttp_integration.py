@@ -23,7 +23,6 @@ def create_app() -> web.Application:
     app = web.Application()
 
     app.router.add_routes(routes.router)
-    app.router.add_routes(handler.WireupTestHandler.router)
 
     container = wireup.create_async_container(
         service_modules=[shared_services, aio_test_services, wireup.integration.aiohttp]

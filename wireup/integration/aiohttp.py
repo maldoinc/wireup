@@ -110,6 +110,10 @@ def setup(
     async def _on_cleanup(_app: web.Application) -> None:
         await container.close()
 
+    if handlers:
+        for handler_type in handlers:
+            app.router.add_routes(handler_type.router)
+
     app.on_startup.append(_get_startup_event(container, handlers))
     app.on_cleanup.append(_on_cleanup)
     app[_container_key] = container
