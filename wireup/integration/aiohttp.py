@@ -1,6 +1,6 @@
 import contextlib
 from contextvars import ContextVar
-from typing import Any, Awaitable, Callable, Iterable, Iterator, Optional, Protocol, Type
+from typing import Any, Awaitable, Callable, Dict, Iterable, Iterator, Optional, Protocol, Tuple, Type, Union
 
 from aiohttp import web
 
@@ -9,6 +9,7 @@ from wireup._annotations import service
 from wireup.errors import WireupError
 from wireup.integration.util import is_callable_using_wireup_dependencies
 from wireup.ioc.container.async_container import ScopedAsyncContainer
+from wireup.ioc.container.sync_container import ScopedSyncContainer
 
 current_request: ContextVar[web.Request] = ContextVar("wireup_aiohttp_request")
 _container_key = "wireup_container"
@@ -25,7 +26,11 @@ def route(
 
 
 @contextlib.contextmanager
-def _route_middleware(scoped_container: ScopedAsyncContainer, *args: Any, **_kwargs: Any) -> Iterator[None]:
+def _route_middleware(
+    scoped_container: Union[ScopedAsyncContainer, ScopedSyncContainer],
+    args: Tuple[Any],
+    _kwargs: Dict[str, Any],
+) -> Iterator[None]:
     request: web.Request = args[0]
     request[_container_key] = scoped_container
 

@@ -24,7 +24,11 @@ T = TypeVar("T", bound=Callable[..., Any])
 def inject_from_container(
     container: SyncContainer | AsyncContainer,
     scoped_container_supplier: Callable[[], ScopedSyncContainer | ScopedAsyncContainer] | None = None,
-    middleware: Callable[..., contextlib.AbstractContextManager[None]] | None = None,
+    middleware: Callable[
+        [ScopedSyncContainer | ScopedAsyncContainer, tuple[Any, ...], dict[str, Any]],
+        contextlib.AbstractContextManager[None],
+    ]
+    | None = None,
 ) -> Callable[..., Any]:
     """Inject dependencies into the decorated function based on annotations.
 
@@ -57,7 +61,7 @@ def inject_from_container(
                         else await cm.enter_async_context(container.enter_scope())  # type:ignore[reportArgumentType, unused-ignore]
                     )
                     if middleware:
-                        cm.enter_context(middleware(scoped_container, *args, **kwargs))
+                        cm.enter_context(middleware(scoped_container, args, kwargs))
 
                     injected_names = {
                         name: container.params.get(param.annotation.param)
@@ -84,7 +88,7 @@ def inject_from_container(
                     )
                 )
                 if middleware:
-                    cm.enter_context(middleware(scoped_container, *args, **kwargs))
+                    cm.enter_context(middleware(scoped_container, args, kwargs))
 
                 get = scoped_container._synchronous_get
 
