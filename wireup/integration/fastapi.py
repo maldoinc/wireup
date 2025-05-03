@@ -40,7 +40,7 @@ def fastapi_request_factory() -> Request:
     try:
         res = current_request.get()
         assert isinstance(res, Request)  # noqa: S101
-        return res  # noqa: TRY300
+        return res
     except LookupError as e:
         msg = "fastapi.Request in wireup is only available during a request."
         raise WireupError(msg) from e
@@ -55,7 +55,7 @@ def fastapi_websocket_factory() -> WebSocket:
     try:
         res = current_request.get()
         assert isinstance(res, WebSocket)  # noqa: S101
-        return res  # noqa: TRY300
+        return res
     except LookupError as e:
         msg = "fastapi.WebSocket in wireup is only available during a request."
         raise WireupError(msg) from e
@@ -129,14 +129,6 @@ def setup(container: AsyncContainer, app: FastAPI) -> None:
     * Closes the Wireup container upon app shutdown using the lifespan context.
 
     For more details, visit: https://maldoinc.github.io/wireup/latest/integrations/fastapi/
-
-    Note: To trigger lifespan events in the FastAPI test client, use the client as a context manager.
-    ```python
-    @pytest.fixture()
-    def client(app: FastAPI) -> Iterator[TestClient]:
-        with TestClient(app) as client:
-            yield client
-    ```
     """
     _update_lifespan(container, app)
     _inject_routes(container, app)

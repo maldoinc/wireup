@@ -88,7 +88,7 @@ def inject_from_container(
                     )
                 )
                 if middleware:
-                    cm.enter_context(middleware(scoped_container, *args, **kwargs))
+                    cm.enter_context(middleware(scoped_container, args, kwargs))
 
                 get = scoped_container._synchronous_get
 
