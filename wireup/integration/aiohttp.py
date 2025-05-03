@@ -1,5 +1,6 @@
+import contextlib
 from contextvars import ContextVar
-from typing import Awaitable, Callable, Iterable, Optional, Protocol, Type
+from typing import Any, Awaitable, Callable, Iterable, Iterator, Optional, Protocol, Type
 
 from aiohttp import web
 
@@ -23,15 +24,14 @@ def route(
     return fn  # type: ignore[reportReturnType]
 
 
-@web.middleware
-async def _wireup_middleware(
-    request: web.Request, handler: Callable[[web.Request], Awaitable[web.StreamResponse]]
-) -> web.StreamResponse:
+@contextlib.contextmanager
+def _route_middleware(scoped_container: ScopedAsyncContainer, *args: Any, **_kwargs: Any) -> Iterator[None]:
+    request: web.Request = args[0]
+    request[_container_key] = scoped_container
+
     token = current_request.set(request)
     try:
-        async with request.app[_container_key].enter_scope() as scoped_container:
-            request[_container_key] = scoped_container
-            return await handler(request)
+        yield
     finally:
         current_request.reset(token)
 
@@ -50,7 +50,7 @@ def aiohttp_request_factory() -> web.Request:
 
 
 def _inject_routes(container: wireup.AsyncContainer, app: web.Application) -> None:
-    inject_scoped = wireup.inject_from_container(container, get_request_container)
+    inject_scoped = wireup.inject_from_container(container, middleware=_route_middleware)
 
     for route in app.router.routes():
         if is_callable_using_wireup_dependencies(route._handler):
@@ -104,8 +104,6 @@ def setup(
     If you need access to `aiohttp.web.Request` in your services, add this module to the `service_modules` in your
     container or add `aiohttp_request_factory` to the `services` parameter.
     """
-
-    app.middlewares.append(_wireup_middleware)
 
     async def _on_cleanup(_app: web.Application) -> None:
         await container.close()
