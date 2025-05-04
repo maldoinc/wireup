@@ -96,6 +96,7 @@ def _inject_websocket_route(
                 raise WireupError("Unable to determine websocket parameter")
 
             token_websocket = current_websocket.set(kwargs[websocket_param_name])
+            kwargs = {key: value for key, value in kwargs.items() if key != fallback_websocket_param}
 
             injected_names = {
                 name: container.params.get(param.annotation.param)
