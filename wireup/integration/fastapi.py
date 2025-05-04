@@ -20,6 +20,7 @@ current_ws_container: ContextVar[ScopedAsyncContainer] = ContextVar("wireup_fast
 
 fallback_websocket_param = "_wireup_websocket"
 
+
 class WireupRoute(APIRoute):
     def __init__(self, path: str, endpoint: Callable[..., Any], **kwargs: Any) -> None:
         hide_annotated_names(endpoint)
@@ -82,9 +83,7 @@ def fastapi_websocket_factory() -> WebSocket:
 
 # We need to inject websocket routes separately as the regular fastapi middlewares work only for http.
 def _inject_websocket_route(
-        container: AsyncContainer,
-        target: Callable[..., Any],
-        websocket_param_name: Union[str, None]
+    container: AsyncContainer, target: Callable[..., Any], websocket_param_name: Union[str, None]
 ) -> Callable[..., Any]:
     names_to_inject = get_valid_injection_annotated_parameters(container, target)
 
