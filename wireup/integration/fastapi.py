@@ -104,29 +104,31 @@ def _inject_fastapi_route(
 
 def _inject_routes(container: AsyncContainer, app: FastAPI, *, add_custom_middleware: bool) -> None:
     for route in app.routes:
-        if (
+        if not (
             isinstance(route, (APIRoute, APIWebSocketRoute))
             and route.dependant.call
             and is_callable_using_wireup_dependencies(route.dependant.call)
         ):
-            if isinstance(route, APIRoute) and not add_custom_middleware:
-                route.dependant.call = inject_from_container(container)(route.dependant.call)
-                continue
+            continue
 
-            is_http_connection_in_signature = route.dependant.http_connection_param_name is not None
+        if isinstance(route, APIRoute) and not add_custom_middleware:
+            route.dependant.call = inject_from_container(container, get_request_container)(route.dependant.call)
+            continue
 
-            if not route.dependant.http_connection_param_name:
-                route.dependant.http_connection_param_name = "_fastapi_http_connection"
+        is_http_connection_in_signature = route.dependant.http_connection_param_name is not None
 
-            route.dependant.call = _inject_fastapi_route(
-                container=container,
-                target=route.dependant.call,
-                http_connection_param_name=route.dependant.http_connection_param_name,
-                is_http_connection_in_signature=is_http_connection_in_signature,
-                # For websocket routes we always add the middleware as the regular fastapi middleware
-                # only applies to http requests.
-                add_custom_middleware=add_custom_middleware or isinstance(route, APIWebSocketRoute),
-            )
+        if not route.dependant.http_connection_param_name:
+            route.dependant.http_connection_param_name = "_fastapi_http_connection"
+
+        route.dependant.call = _inject_fastapi_route(
+            container=container,
+            target=route.dependant.call,
+            http_connection_param_name=route.dependant.http_connection_param_name,
+            is_http_connection_in_signature=is_http_connection_in_signature,
+            # For websocket routes we always add the middleware as the regular fastapi middleware
+            # only applies to http requests.
+            add_custom_middleware=add_custom_middleware or isinstance(route, APIWebSocketRoute),
+        )
 
 
 def _update_lifespan(container: AsyncContainer, app: FastAPI) -> None:
