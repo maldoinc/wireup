@@ -18,6 +18,7 @@ current_request: ContextVar[Request] = ContextVar("wireup_fastapi_request")
 current_websocket: ContextVar[WebSocket] = ContextVar("wireup_fastapi_websocket")
 current_ws_container: ContextVar[ScopedAsyncContainer] = ContextVar("wireup_fastapi_container")
 
+fallback_websocket_param = "_wireup_websocket"
 
 class WireupRoute(APIRoute):
     def __init__(self, path: str, endpoint: Callable[..., Any], **kwargs: Any) -> None:
@@ -123,7 +124,7 @@ def _inject_routes(container: AsyncContainer, app: FastAPI) -> None:
             and is_callable_using_wireup_dependencies(route.dependant.call)
         ):
             if isinstance(route, APIWebSocketRoute) and route.dependant.websocket_param_name is None:
-                route.dependant.websocket_param_name = "_wireup_websocket"
+                route.dependant.websocket_param_name = fallback_websocket_param
 
             target = route.dependant.call
             route.dependant.call = (
