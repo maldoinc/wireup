@@ -54,12 +54,7 @@ def fastapi_request_factory() -> Request:
     Note that this requires the Wireup-FastAPI integration to be set up.
     """
     try:
-        connection = current_request.get()
-        if isinstance(connection, Request):
-            return connection
-
-        msg = "Not a Request instance"
-        raise WireupError(msg)
+        return current_request.get()
     except LookupError as e:
         msg = "fastapi.Request in wireup is only available during a request."
         raise WireupError(msg) from e
@@ -72,13 +67,7 @@ def fastapi_websocket_factory() -> WebSocket:
     Note that this requires the Wireup-FastAPI integration to be set up.
     """
     try:
-        connection = current_websocket.get()
-        if isinstance(connection, WebSocket):
-            return connection
-
-        msg = "Not a WebSocket instance"
-        raise WireupError(msg)
-
+        return current_websocket.get()
     except LookupError as e:
         msg = "fastapi.WebSocket in wireup is only available during a websocket connection."
         raise WireupError(msg) from e
