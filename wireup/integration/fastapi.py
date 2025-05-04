@@ -55,10 +55,11 @@ def fastapi_request_factory() -> Request:
     """
     try:
         connection = current_request.get()
-        if not isinstance(connection, Request):
-            msg = "Not a Request instance"
-            raise WireupError(msg)
-        return connection
+        if isinstance(connection, Request):
+            return connection
+
+        msg = "Not a Request instance"
+        raise WireupError(msg)
     except LookupError as e:
         msg = "fastapi.Request in wireup is only available during a request."
         raise WireupError(msg) from e
@@ -72,10 +73,12 @@ def fastapi_websocket_factory() -> WebSocket:
     """
     try:
         connection = current_websocket.get()
-        if not isinstance(connection, WebSocket):
-            msg = "Not a WebSocket instance"
-            raise WireupError(msg)
-        return connection
+        if isinstance(connection, WebSocket):
+            return connection
+
+        msg = "Not a WebSocket instance"
+        raise WireupError(msg)
+
     except LookupError as e:
         msg = "fastapi.WebSocket in wireup is only available during a websocket connection."
         raise WireupError(msg) from e
@@ -92,7 +95,8 @@ def _inject_websocket_route(
         async with container.enter_scope() as scoped_container:
             token = current_ws_container.set(scoped_container)
             if not websocket_param_name or websocket_param_name not in kwargs:
-                raise WireupError("Unable to determine websocket parameter")
+                msg = "Unable to determine websocket parameter"
+                raise WireupError(msg)
 
             token_websocket = current_websocket.set(kwargs[websocket_param_name])
             kwargs = {key: value for key, value in kwargs.items() if key != fallback_websocket_param}
