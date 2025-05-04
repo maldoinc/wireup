@@ -99,6 +99,8 @@ def _inject_fastapi_route(
         finally:
             current_request.reset(token)
 
+    # If no scoped_container_supplier is passed, inject_from_container will enter one for us.
+    # However we need to pass the custom middleware to set the request context variable.
     return inject_from_container(container, middleware=_request_middleware if add_custom_middleware else None)(target)
 
 
@@ -111,15 +113,24 @@ def _inject_routes(container: AsyncContainer, app: FastAPI, *, add_custom_middle
         ):
             continue
 
+        # If the setup has been done with expose_container_in_middleware=True,
+        # we don't need to pass the custom middleware to the inject_from_container call.
+        # As the request ContextVar and scoped container are already set in the FastAPI middleware.
         if isinstance(route, APIRoute) and not add_custom_middleware:
             route.dependant.call = inject_from_container(container, get_request_container)(route.dependant.call)
             continue
 
         is_http_connection_in_signature = route.dependant.http_connection_param_name is not None
 
+        # Setting http_connection_param_name forces FastAPI to pass the current HTTPConnection
+        # to the route handler regardless of whether it was in the signature.
+        # It is then extracted in the inject_from_container middleware to set the relevant context variable.
         if not route.dependant.http_connection_param_name:
             route.dependant.http_connection_param_name = "_fastapi_http_connection"
 
+        # This is now either a websocket route or an APIRoute but set up was called
+        # with expose_container_in_middleware=False.
+        # In this case we need to pass the wireup middleware inject_from_container to set the request context variable.
         route.dependant.call = _inject_fastapi_route(
             container=container,
             target=route.dependant.call,
