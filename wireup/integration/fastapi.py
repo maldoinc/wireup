@@ -18,7 +18,7 @@ current_request: ContextVar[Request] = ContextVar("wireup_fastapi_request")
 current_websocket: ContextVar[WebSocket] = ContextVar("wireup_fastapi_websocket")
 current_ws_container: ContextVar[ScopedAsyncContainer] = ContextVar("wireup_fastapi_container")
 
-fallback_websocket_param = "_wireup_websocket"
+_fallback_websocket_param = "_wireup_websocket"
 
 
 class WireupRoute(APIRoute):
@@ -88,7 +88,7 @@ def _inject_websocket_route(
                 raise WireupError(msg)
 
             token_websocket = current_websocket.set(kwargs[websocket_param_name])
-            kwargs = {key: value for key, value in kwargs.items() if key != fallback_websocket_param}
+            kwargs = {key: value for key, value in kwargs.items() if key != _fallback_websocket_param}
 
             injected_names = {
                 name: container.params.get(param.annotation.param)
@@ -117,7 +117,7 @@ def _inject_routes(container: AsyncContainer, app: FastAPI) -> None:
             and is_callable_using_wireup_dependencies(route.dependant.call)
         ):
             if isinstance(route, APIWebSocketRoute) and route.dependant.websocket_param_name is None:
-                route.dependant.websocket_param_name = fallback_websocket_param
+                route.dependant.websocket_param_name = _fallback_websocket_param
 
             target = route.dependant.call
             route.dependant.call = (
