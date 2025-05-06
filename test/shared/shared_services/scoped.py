@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+
 from fastapi import WebSocket
 from wireup import service
 
