@@ -74,7 +74,7 @@ def test_injects_parameters(client: TestClient):
     assert response.json() == {"foo": "bar", "foo_foo": "bar-bar"}
 
 
-@pytest.mark.parametrize("endpoint", ["/ws", "/ws/wireup_injected"])
+@pytest.mark.parametrize("endpoint", ["/ws", "/ws/wireup_injected", "/ws_in_service"])
 def test_websocket(client: TestClient, endpoint: str):
     with client.websocket_connect(endpoint) as websocket:
         websocket.send_text("World")
