@@ -1,7 +1,7 @@
 import contextlib
 import functools
 from contextvars import ContextVar
-from typing import Any, AsyncIterator, Callable, Union
+from typing import Any, AsyncIterator, Callable
 
 from fastapi import FastAPI, Request, WebSocket
 from fastapi.routing import APIRoute, APIWebSocketRoute
@@ -75,7 +75,7 @@ def fastapi_websocket_factory() -> WebSocket:
 
 # We need to inject websocket routes separately as the regular fastapi middlewares work only for http.
 def _inject_websocket_route(
-    container: AsyncContainer, target: Callable[..., Any], websocket_param_name: Union[str, None]
+    container: AsyncContainer, target: Callable[..., Any], websocket_param_name: str
 ) -> Callable[..., Any]:
     names_to_inject = get_valid_injection_annotated_parameters(container, target)
 
