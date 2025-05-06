@@ -70,10 +70,10 @@ See [Annotations](../annotations.md) for more details.
     The WireupRoute class optimizes this by making Wireup-specific parameters only visible to Wireup, 
     removing unnecessary processing by FastAPI's dependency injection system.
 
-### Inject FastAPI request
+### Inject FastAPI request or websocket
 
-A key feature of the integration is to expose `fastapi.Request` in Wireup.
-To allow injecting it in your services you must add `wireup.integration.fastapi` module to your service modules
+A key feature of the integration is to expose `fastapi.Request` and `fastapi.WebSocket`in Wireup.
+To allow injecting these in your services you must add `wireup.integration.fastapi` module to your service modules
 when creating a container.
 
 Services depending on it should be transient or scoped, so that these are not shared across requests.
@@ -86,6 +86,15 @@ class HttpAuthenticationService:
 
 @service(lifetime="scoped")
 def example_factory(request: fastapi.Request) -> ExampleService: ...
+
+
+@service(lifetime="scoped")
+class ChatService:
+    def __init__(self, websocket: fastapi.WebSocket) -> None: ...
+        await self.websocket.accept()
+
+    async def send(self, data: str):
+        await self.websocket.send_text(data)
 ```
 
 ### Accessing the Container
