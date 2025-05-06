@@ -16,7 +16,6 @@ from wireup.ioc.validation import get_valid_injection_annotated_parameters, hide
 
 current_request: ContextVar[Request] = ContextVar("wireup_fastapi_request")
 current_websocket: ContextVar[WebSocket] = ContextVar("wireup_fastapi_websocket")
-current_ws_container: ContextVar[ScopedAsyncContainer] = ContextVar("wireup_fastapi_container")
 
 _fallback_websocket_param = "_wireup_websocket"
 
@@ -82,7 +81,6 @@ def _inject_websocket_route(
     @functools.wraps(target)
     async def _inner(*args: Any, **kwargs: Any) -> Any:
         async with container.enter_scope() as scoped_container:
-            token = current_ws_container.set(scoped_container)
             token_websocket = current_websocket.set(kwargs[websocket_param_name])
             kwargs = {key: value for key, value in kwargs.items() if key != _fallback_websocket_param}
 
@@ -98,7 +96,6 @@ def _inject_websocket_route(
                 return await target(*args, **{**kwargs, **injected_names})
             finally:
                 current_websocket.reset(token_websocket)
-                current_ws_container.reset(token)
 
     return _inner
 
@@ -170,4 +167,4 @@ def get_request_container() -> ScopedAsyncContainer:
     try:
         return current_request.get().state.wireup_container
     except LookupError:
-        return current_ws_container.get()
+        return current_websocket.get().state.wireup_container
