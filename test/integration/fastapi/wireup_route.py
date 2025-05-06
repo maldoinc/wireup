@@ -3,7 +3,7 @@ from wireup import Injected
 from wireup.integration.fastapi import WireupRoute
 
 from test.shared.shared_services.greeter import GreeterService
-from test.shared.shared_services.scoped import ScopedService, ScopedServiceDependency
+from test.shared.shared_services.scoped import ScopedService, ScopedServiceDependency, ScopedWebsocketService
 
 router = APIRouter(route_class=WireupRoute)
 
@@ -29,9 +29,11 @@ async def websocket_endpoint_wireup_injected(
     scoped_service: Injected[ScopedService],
     scoped_service2: Injected[ScopedService],
     scoped_service_dependency: Injected[ScopedServiceDependency],
+    scoped_websocket_service: Injected[ScopedWebsocketService],
 ):
     assert scoped_service is scoped_service2
     assert scoped_service.other is scoped_service_dependency
+    assert scoped_websocket_service.other is websocket
 
     await websocket.accept()
     data = await websocket.receive_text()
