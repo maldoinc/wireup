@@ -83,10 +83,6 @@ def _inject_websocket_route(
     async def _inner(*args: Any, **kwargs: Any) -> Any:
         async with container.enter_scope() as scoped_container:
             token = current_ws_container.set(scoped_container)
-            if not websocket_param_name or websocket_param_name not in kwargs:
-                msg = "Unable to determine websocket parameter"
-                raise WireupError(msg)
-
             token_websocket = current_websocket.set(kwargs[websocket_param_name])
             kwargs = {key: value for key, value in kwargs.items() if key != _fallback_websocket_param}
 
