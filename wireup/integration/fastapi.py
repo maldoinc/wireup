@@ -1,11 +1,16 @@
 import contextlib
 import functools
 from contextvars import ContextVar
-from typing import Any, AsyncIterator, Callable
+from typing import (
+    Any,
+    AsyncIterator,
+    Awaitable,
+    Callable,
+)
 
-from fastapi import FastAPI, Request, WebSocket
+from fastapi import FastAPI, Request, Response, WebSocket
 from fastapi.routing import APIRoute, APIWebSocketRoute
-from starlette.types import ASGIApp, Receive, Scope, Send
+from starlette.middleware.base import BaseHTTPMiddleware
 
 from wireup import inject_from_container, service
 from wireup.errors import WireupError
@@ -26,24 +31,14 @@ class WireupRoute(APIRoute):
         super().__init__(path=path, endpoint=endpoint, **kwargs)
 
 
-class WireupMiddleware:
-    def __init__(self, app: ASGIApp) -> None:
-        self.app = app
-
-    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
-        if scope["type"] == "http":
-            connection = Request(scope, receive, send)
-        else:
-            return await self.app(scope, receive, send)
-
-        token = current_request.set(connection)
-
-        try:
-            async with connection.app.state.wireup_container.enter_scope() as scoped_container:
-                connection.state.wireup_container = scoped_container
-                return await self.app(scope, receive, send)
-        finally:
-            current_request.reset(token)
+async def _wireup_request_middleware(request: Request, call_next: Callable[[Request], Awaitable[Response]]) -> Response:
+    token = current_request.set(request)
+    try:
+        async with request.app.state.wireup_container.enter_scope() as scoped_container:
+            request.state.wireup_container = scoped_container
+            return await call_next(request)
+    finally:
+        current_request.reset(token)
 
 
 @service(lifetime="scoped")
@@ -152,7 +147,7 @@ def setup(container: AsyncContainer, app: FastAPI) -> None:
     ```
     """
     _update_lifespan(container, app)
-    app.add_middleware(WireupMiddleware)
+    app.add_middleware(BaseHTTPMiddleware, dispatch=_wireup_request_middleware)
     _inject_routes(container, app)
     app.state.wireup_container = container
 
