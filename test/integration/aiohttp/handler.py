@@ -1,5 +1,5 @@
 from aiohttp import web
-from wireup._annotations import Injected
+from wireup import Injected
 from wireup.integration.aiohttp import route
 
 from test.shared.shared_services.greeter import GreeterService
