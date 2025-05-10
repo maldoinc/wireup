@@ -8,7 +8,7 @@ from typing import (
     Callable,
 )
 
-from fastapi import FastAPI, Request, Response
+from fastapi import FastAPI, Request, Response, WebSocket
 from fastapi.routing import APIRoute, APIWebSocketRoute
 from starlette.middleware.base import BaseHTTPMiddleware
 
@@ -20,7 +20,9 @@ from wireup.ioc.types import ParameterWrapper
 from wireup.ioc.validation import get_valid_injection_annotated_parameters, hide_annotated_names
 
 current_request: ContextVar[Request] = ContextVar("wireup_fastapi_request")
-current_ws_container: ContextVar[ScopedAsyncContainer] = ContextVar("wireup_fastapi_container")
+current_websocket: ContextVar[WebSocket] = ContextVar("wireup_fastapi_websocket")
+
+_fallback_websocket_param = "_wireup_websocket"
 
 
 class WireupRoute(APIRoute):
@@ -52,14 +54,32 @@ def fastapi_request_factory() -> Request:
         raise WireupError(msg) from e
 
 
+@service(lifetime="scoped")
+def fastapi_websocket_factory() -> WebSocket:
+    """Provide the current FastAPI websocket as a dependency.
+
+    Note that this requires the Wireup-FastAPI integration to be set up.
+    """
+    try:
+        return current_websocket.get()
+    except LookupError as e:
+        msg = "fastapi.WebSocket in wireup is only available during a websocket connection."
+        raise WireupError(msg) from e
+
+
 # We need to inject websocket routes separately as the regular fastapi middlewares work only for http.
-def _inject_websocket_route(container: AsyncContainer, target: Callable[..., Any]) -> Callable[..., Any]:
+def _inject_websocket_route(
+    container: AsyncContainer, target: Callable[..., Any], websocket_param_name: str
+) -> Callable[..., Any]:
     names_to_inject = get_valid_injection_annotated_parameters(container, target)
 
     @functools.wraps(target)
     async def _inner(*args: Any, **kwargs: Any) -> Any:
         async with container.enter_scope() as scoped_container:
-            token = current_ws_container.set(scoped_container)
+            kwargs[websocket_param_name].state.wireup_container = scoped_container
+            token_websocket = current_websocket.set(kwargs[websocket_param_name])
+            kwargs = {key: value for key, value in kwargs.items() if key != _fallback_websocket_param}
+
             injected_names = {
                 name: container.params.get(param.annotation.param)
                 if isinstance(param.annotation, ParameterWrapper)
@@ -71,7 +91,7 @@ def _inject_websocket_route(container: AsyncContainer, target: Callable[..., Any
             try:
                 return await target(*args, **{**kwargs, **injected_names})
             finally:
-                current_ws_container.reset(token)
+                current_websocket.reset(token_websocket)
 
     return _inner
 
@@ -85,9 +105,14 @@ def _inject_routes(container: AsyncContainer, app: FastAPI) -> None:
             and route.dependant.call
             and is_callable_using_wireup_dependencies(route.dependant.call)
         ):
+            if isinstance(route, APIWebSocketRoute) and route.dependant.websocket_param_name is None:
+                route.dependant.websocket_param_name = _fallback_websocket_param
+
             target = route.dependant.call
             route.dependant.call = (
-                inject_scoped(target) if isinstance(route, APIRoute) else _inject_websocket_route(container, target)
+                inject_scoped(target)
+                if isinstance(route, APIRoute)
+                else _inject_websocket_route(container, target, route.dependant.websocket_param_name)
             )
 
 
@@ -138,4 +163,4 @@ def get_request_container() -> ScopedAsyncContainer:
     try:
         return current_request.get().state.wireup_container
     except LookupError:
-        return current_ws_container.get()
+        return current_websocket.get().state.wireup_container
