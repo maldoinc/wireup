@@ -76,6 +76,7 @@ def _inject_websocket_route(
     @functools.wraps(target)
     async def _inner(*args: Any, **kwargs: Any) -> Any:
         async with container.enter_scope() as scoped_container:
+            kwargs[websocket_param_name].state.wireup_container = scoped_container
             token_websocket = current_websocket.set(kwargs[websocket_param_name])
             kwargs = {key: value for key, value in kwargs.items() if key != _fallback_websocket_param}
 
