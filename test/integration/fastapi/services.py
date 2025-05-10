@@ -20,3 +20,9 @@ class WebsocketInjectedGreeterService:
         data = await self.websocket.receive_text()
         await self.websocket.send_text(f"Hello {data}")
         await self.websocket.close()
+
+
+@service(lifetime="scoped")
+@dataclass
+class ScopedWebsocketService:
+    other: WebSocket

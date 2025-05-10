@@ -2,8 +2,9 @@ from fastapi import APIRouter, WebSocket
 from wireup import Injected
 from wireup.integration.fastapi import WireupRoute
 
+from test.integration.fastapi.services import ScopedWebsocketService
 from test.shared.shared_services.greeter import GreeterService
-from test.shared.shared_services.scoped import ScopedService, ScopedServiceDependency, ScopedWebsocketService
+from test.shared.shared_services.scoped import ScopedService, ScopedServiceDependency
 
 router = APIRouter(route_class=WireupRoute)
 
