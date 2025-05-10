@@ -63,9 +63,7 @@ async def websocket_endpoint(
 
 
 @router.websocket("/ws_in_service")
-async def injected_websocket_endpoint(
-    greeter: Injected[WebsocketInjectedGreeterService],
-):
+async def injected_websocket_endpoint(greeter: Injected[WebsocketInjectedGreeterService]):
     await greeter.greet()
 
 
