@@ -90,7 +90,7 @@ def example_factory(request: fastapi.Request) -> ExampleService: ...
 
 @service(lifetime="scoped")
 class ChatService:
-    def __init__(self, websocket: fastapi.WebSocket) -> None: ...
+    def __init__(self, websocket: fastapi.WebSocket) -> None:
         await self.websocket.accept()
 
     async def send(self, data: str):
