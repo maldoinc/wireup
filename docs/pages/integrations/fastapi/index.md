@@ -3,7 +3,7 @@ Dependency injection for FastAPI is available in the `wireup.integration.fastapi
 **Features:**
 
 - [x] Inject dependencies in FastAPI routes.
-- [x] Expose `fastapi.Request` as a `scoped` Wireup dependency.
+- [x] Expose `fastapi.Request` and `fastapi.WebSocket` as `scoped` Wireup dependencies.
 - [x] Close the Wireup container upon application termination for proper resource cleanup.
 
 ---
@@ -18,7 +18,8 @@ container = wireup.create_async_container(
     service_modules=[
         # Top level module containing service registrations.
         services,
-        # Include the integration if you require `fastapi.Request` in Wireup services.
+        # Include the integration if you need `fastapi.Request`
+        # or `fastapi.WebSocket` in Wireup services.
         wireup.integration.fastapi
     ],
     # Expose parameters to Wireup as necessary. 
@@ -32,7 +33,7 @@ wireup.integration.fastapi.setup(container, app)
 ### Inject in HTTP and WebSocket routes
 
 To inject dependencies, add the type to the route's signature and annotate them as necessary.
-See [Annotations](../annotations.md) for more details.
+See [Annotations](../../annotations.md) for more details.
 
 === "HTTP"
 
@@ -99,7 +100,7 @@ class ChatService:
 
 ### Accessing the Container
 
-If you ever need to access the Wireup container directly, use the provided functions:
+To access the Wireup container directly, use the following functions:
 
 ```python
 from wireup.integration.fastapi import get_app_container, get_request_container
@@ -147,7 +148,7 @@ async def example_dependency(request: Request, other_dependency: Depends(...)):
 
 ### Testing
 
-For general testing tips with Wireup refer to the [test docs](../testing.md). 
+For general testing tips with Wireup refer to the [test docs](../../testing.md). 
 With the FastAPI integration, you can override dependencies in the container as follows.
 
 ```python title="test_thing.py"
@@ -177,6 +178,6 @@ for more examples.
             yield client
     ```
 
-## API Reference
+### API Reference
 
-* [fastapi_integration](../class/fastapi_integration.md)
+* [fastapi_integration](../../class/fastapi_integration.md)

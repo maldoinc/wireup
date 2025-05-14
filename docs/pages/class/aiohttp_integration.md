@@ -1,0 +1,1 @@
+::: wireup.integration.aiohttp

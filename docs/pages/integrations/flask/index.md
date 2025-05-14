@@ -34,7 +34,7 @@ wireup.integration.flask.setup(container, app)
 ### Inject in Flask Views
 
 To inject dependencies, add the type to the views' signature and annotate them as necessary.
-See [Annotations](../annotations.md) for more details.
+See [Annotations](../../annotations.md) for more details.
 
 ```python title="Flask View"
 @app.get("/random")
@@ -51,7 +51,7 @@ def get_environment(
 
 ### Accessing the Container
 
-If you ever need to access the Wireup container directly, use the provided functions:
+To access the Wireup container directly, use the following functions:
 
 ```python
 from wireup.integration.flask import get_app_container, get_request_container
@@ -65,7 +65,7 @@ request_container = get_request_container()
 
 ### Testing
 
-For general testing tips with Wireup refer to the [test docs](../testing.md). 
+For general testing tips with Wireup refer to the [test docs](../../testing.md). 
 With the Flask integration, you can override dependencies in the container as follows.
 
 ```python title="test_thing.py"
@@ -83,6 +83,6 @@ def test_override():
 See [Flask integration tests](https://github.com/maldoinc/wireup/blob/master/test/integration/flask/test_flask_integration.py)
 for more examples.
 
-## API Reference
+### API Reference
 
-* [flask_integration](../class/flask_integration.md)
+* [flask_integration](../../class/flask_integration.md)
