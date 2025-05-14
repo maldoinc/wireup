@@ -14,7 +14,6 @@ from starlette.middleware.base import BaseHTTPMiddleware
 
 from wireup import inject_from_container, service
 from wireup.errors import WireupError
-from wireup.integration.util import is_callable_using_wireup_dependencies
 from wireup.ioc.container.async_container import AsyncContainer, ScopedAsyncContainer
 from wireup.ioc.types import ParameterWrapper
 from wireup.ioc.validation import get_valid_injection_annotated_parameters, hide_annotated_names
@@ -100,11 +99,7 @@ def _inject_routes(container: AsyncContainer, app: FastAPI) -> None:
     inject_scoped = inject_from_container(container, get_request_container)
 
     for route in app.routes:
-        if (
-            isinstance(route, (APIRoute, APIWebSocketRoute))
-            and route.dependant.call
-            and is_callable_using_wireup_dependencies(route.dependant.call)
-        ):
+        if isinstance(route, (APIRoute, APIWebSocketRoute)) and route.dependant.call:
             if isinstance(route, APIWebSocketRoute) and route.dependant.websocket_param_name is None:
                 route.dependant.websocket_param_name = _fallback_websocket_param
 
