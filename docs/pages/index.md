@@ -200,7 +200,7 @@ Wireup provides its own Dependency Injection mechanism and is not tied to specif
 
 Share the service layer between your web application and its accompanying CLI using Wireup.
 
-### 🔌 Native Integration with Django, FastAPI, or Flask
+### 🔌 Native Integration with Django, FastAPI, Flask and AIOHTTP
 
 Integrate with popular frameworks for a smoother developer experience.
 Integrations manage request scopes, injection in endpoints, and lifecycle of services.

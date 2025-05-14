@@ -5,7 +5,7 @@ from typing_extensions import Annotated
 from wireup import Inject, Injected
 from wireup.integration.fastapi import get_request_container
 
-from test.integration.fastapi.services import ServiceUsingFastapiRequest, WSService
+from test.integration.fastapi.services import ServiceUsingFastapiRequest, WebsocketInjectedGreeterService, WSService
 from test.shared.shared_services.greeter import GreeterService
 from test.shared.shared_services.rand import RandomService
 from test.shared.shared_services.scoped import ScopedService, ScopedServiceDependency
@@ -84,6 +84,11 @@ async def websocket_endpoint_wireup(
     data = await websocket.receive_text()
     await websocket.send_text(greeter.greet(data))
     await websocket.close()
+
+
+@router.websocket("/ws_in_service")
+async def injected_websocket_endpoint(greeter: Injected[WebsocketInjectedGreeterService]):
+    await greeter.greet()
 
 
 @router.get("/scoped")

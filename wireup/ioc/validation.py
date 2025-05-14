@@ -20,6 +20,10 @@ def hide_annotated_names(func: AnyCallable) -> None:
         return
 
     names_to_hide = get_inject_annotated_parameters(func)
+
+    if not names_to_hide:
+        return
+
     orig_sig = inspect.signature(func)
     filtered_params = {name: param for name, param in orig_sig.parameters.items() if param.name not in names_to_hide}
     new_sig = inspect.Signature(parameters=list(filtered_params.values()), return_annotation=orig_sig.return_annotation)

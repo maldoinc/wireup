@@ -191,7 +191,7 @@ All that's left now is to retrieve services from the container.
         return await weather_service.get_forecast(...)
     ```
 
-    Learn More: [FastAPI Integration](integrations/fastapi.md).
+    Learn More: [FastAPI Integration](integrations/fastapi/index.md).
 
 
 === "Flask"
@@ -206,7 +206,7 @@ All that's left now is to retrieve services from the container.
         return await weather_service.get_forecast(...)
     ```
 
-    Learn More: [Flask Integration](integrations/flask.md).
+    Learn More: [Flask Integration](integrations/flask/index.md).
 
 
 === "Django"
@@ -215,14 +215,14 @@ All that's left now is to retrieve services from the container.
     support for async views, regular views as well as class-based views.
 
 
-    ```python title="views/posts.py"  hl_lines="4"
+    ```python title="views/posts.py"  hl_lines="3"
     from wireup import Injected
 
     async def get_forecast(weather_service: Injected[WeatherService]):
         return await weather_service.get_forecast(...)
     ```
 
-    Learn More: [Django Integration](integrations/django.md).
+    Learn More: [Django Integration](integrations/django/index.md).
 
 
 #### 3.5 Integrate
@@ -237,9 +237,9 @@ Key benefits of the integrations are:
 
 ##### Integrations
 
-- [x] [Django](integrations/django.md)
-- [x] [FastAPI](integrations/fastapi.md)
-- [x] [Flask](integrations/flask.md)
+- [x] [Django](integrations/django/index.md)
+- [x] [FastAPI](integrations/fastapi/index.md)
+- [x] [Flask](integrations/flask/index.md)
 
 ### 4. Test
 
