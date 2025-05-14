@@ -9,6 +9,7 @@ from wireup.errors import (
 from wireup.ioc.service_registry import ServiceRegistry
 
 from test.unit.services.no_annotations.random.random_service import RandomService
+from test.unit.services.with_annotations.services import FooImplWithInjected
 
 
 @pytest.fixture
@@ -68,6 +69,11 @@ def test_is_type_with_qualifier_known(registry: ServiceRegistry) -> None:
 
     registry.register(MyService, qualifier="default", lifetime="singleton")
     assert registry.is_type_with_qualifier_known(MyService, "default")
+
+
+def test_register_with_redundant_annotation(registry: ServiceRegistry) -> None:
+    with pytest.warns(UserWarning, match=r"Redundant Injected\[T\] or Annotated\[T, Inject\(\)\] in parameter"):
+        registry.register(FooImplWithInjected, lifetime="singleton")
 
 
 def test_is_interface_known(registry: ServiceRegistry) -> None:

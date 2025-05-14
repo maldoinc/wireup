@@ -1,7 +1,7 @@
 import abc
 
 from typing_extensions import Annotated
-from wireup import Inject, abstract, service
+from wireup import Inject, Injected, abstract, service
 
 from test.unit.services.no_annotations.random.random_service import RandomService
 from test.unit.services.no_annotations.random.truly_random_service import TrulyRandomService
@@ -43,6 +43,12 @@ class FooImpl(Foo):
 class OtherFooImpl(Foo):
     def get_foo(self) -> str:
         return "other foo"
+
+
+@service
+class FooImplWithInjected:
+    def __init__(self, foo: Injected[Foo]) -> None:
+        self.foo = foo
 
 
 @service(lifetime="scoped")

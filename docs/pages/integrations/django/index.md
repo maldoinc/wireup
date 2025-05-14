@@ -106,7 +106,7 @@ For more examples, see the [Wireup Django integration tests](https://github.com/
 
 ### Accessing the container
 
-Access the Wireup container using the provided functions:
+To access the Wireup container directly, use the following functions:
 
 ```python
 from wireup.integration.django import get_app_container, get_request_container
@@ -120,7 +120,7 @@ request_container = get_request_container()
 
 ### Testing
 
-For general testing tips with Wireup refer to the [test docs](../testing.md). 
+For general testing tips with Wireup refer to the [test docs](../../testing.md). 
 With Django you can override dependencies in the container as follows:
 
 ```python title="test_thing.py"
@@ -136,6 +136,6 @@ def test_override():
         assert res.status_code == 200
 ```
 
-## API Reference
+### API Reference
 
-* [django_integration](../class/django_integration.md)
+* [django_integration](../../class/django_integration.md)
