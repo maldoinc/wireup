@@ -29,6 +29,7 @@ nav:
       - integrations/django/index.md
     - FastAPI: 
       - integrations/fastapi/index.md
+      - Class-Based Routes: integrations/fastapi/cbr.md
     - Flask: 
       - integrations/flask/index.md
     - AIOHTTP: 
