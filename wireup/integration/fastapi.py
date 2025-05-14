@@ -18,7 +18,6 @@ from starlette.middleware.base import BaseHTTPMiddleware
 
 from wireup import inject_from_container, service
 from wireup.errors import WireupError
-from wireup.integration.util import is_callable_using_wireup_dependencies
 from wireup.ioc.container.async_container import AsyncContainer, ScopedAsyncContainer
 from wireup.ioc.container.sync_container import ScopedSyncContainer
 from wireup.ioc.types import AnyCallable
@@ -106,11 +105,7 @@ def _inject_fastapi_route(
 
 def _inject_routes(container: AsyncContainer, app: FastAPI, *, add_custom_middleware: bool) -> None:
     for route in app.routes:
-        if not (
-            isinstance(route, (APIRoute, APIWebSocketRoute))
-            and route.dependant.call
-            and is_callable_using_wireup_dependencies(route.dependant.call)
-        ):
+        if not (isinstance(route, (APIRoute, APIWebSocketRoute)) and route.dependant.call):
             continue
 
         # If the setup has been done with expose_container_in_middleware=True,

@@ -7,7 +7,6 @@ from aiohttp import web
 import wireup
 from wireup._annotations import service
 from wireup.errors import WireupError
-from wireup.integration.util import is_callable_using_wireup_dependencies
 from wireup.ioc.container.async_container import ScopedAsyncContainer
 from wireup.ioc.container.sync_container import ScopedSyncContainer
 
@@ -56,8 +55,7 @@ def _inject_routes(container: wireup.AsyncContainer, app: web.Application) -> No
     inject_scoped = wireup.inject_from_container(container, middleware=_route_middleware)
 
     for route in app.router.routes():
-        if is_callable_using_wireup_dependencies(route._handler):
-            route._handler = inject_scoped(route._handler)
+        route._handler = inject_scoped(route._handler)
 
 
 async def _setup_handlers(

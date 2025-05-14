@@ -45,6 +45,9 @@ def inject_from_container(
     def _decorator(target: Callable[..., Any]) -> Callable[..., Any]:
         names_to_inject = get_valid_injection_annotated_parameters(container, target)
 
+        if not names_to_inject:
+            return target
+
         if asyncio.iscoroutinefunction(target):
             if isinstance(container, SyncContainer):
                 msg = (
