@@ -36,8 +36,13 @@ async def rng_route(random_service: Injected[RandomService]):
 
 
 @router.get("/params")
-async def params_route(foo: Annotated[str, Inject(param="foo")], foo_foo: Annotated[str, Inject(expr="${foo}-${foo}")]):
-    return {"foo": foo, "foo_foo": foo_foo}
+async def params_route(
+    version: Annotated[str, Inject(expr="${config.version}")],
+    baz: Annotated[str, Inject(expr="${baz.foo_foo}")],
+    foo: Annotated[str, Inject(param="foo")],
+    foo_foo: Annotated[str, Inject(expr="${foo}-${foo}")],
+):
+    return {"foo": foo, "foo_foo": foo_foo, "baz": baz, "version": version}
 
 
 @router.get("/current-request")
