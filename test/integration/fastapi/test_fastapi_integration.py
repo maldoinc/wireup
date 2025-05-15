@@ -1,14 +1,14 @@
 import asyncio
 import contextlib
 import uuid
-from typing import AsyncIterator, Iterator, NewType
+from typing import Any, AsyncIterator, Iterator, NewType
 
 import anyio.to_thread
 import pytest
 import wireup
 import wireup.integration
 import wireup.integration.fastapi
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, WebSocket
 from fastapi.testclient import TestClient
 from wireup._annotations import service
 from wireup.errors import WireupError
@@ -16,12 +16,12 @@ from wireup.integration.fastapi import get_app_container
 
 from test.integration.fastapi import services as fastapi_test_services
 from test.integration.fastapi import wireup_route
-from test.integration.fastapi.router import router
+from test.integration.fastapi.router import get_lucky_number, router
 from test.shared import shared_services
 from test.shared.shared_services.rand import RandomService
 
 
-def create_app() -> FastAPI:
+def create_app(*, expose_container_in_middleware: bool) -> FastAPI:
     app = FastAPI()
     app.include_router(router)
     app.include_router(wireup_route.router)
@@ -29,14 +29,19 @@ def create_app() -> FastAPI:
     container = wireup.create_async_container(
         service_modules=[fastapi_test_services, shared_services, wireup.integration.fastapi], parameters={"foo": "bar"}
     )
-    wireup.integration.fastapi.setup(container, app)
+    wireup.integration.fastapi.setup(container, app, expose_container_in_middleware=expose_container_in_middleware)
 
     return app
 
 
+@pytest.fixture(params=[True, False])
+def expose_container_in_middleware(request: pytest.FixtureRequest) -> bool:
+    return request.param
+
+
 @pytest.fixture()
-def app() -> FastAPI:
-    return create_app()
+def app(*, expose_container_in_middleware: bool) -> FastAPI:
+    return create_app(expose_container_in_middleware=expose_container_in_middleware)
 
 
 @pytest.fixture()
@@ -46,9 +51,16 @@ def client(app: FastAPI) -> Iterator[TestClient]:
 
 
 def test_injects_service(client: TestClient):
+    get_lucky_number._called = 0  # type: ignore[reportFunctionMemberAccess]
     response = client.get("/lucky-number")
     assert response.status_code == 200
     assert response.json() == {"number": 4, "lucky_number": 42}
+    # Raise if this will be invoked more than once
+    # That would be the case if wireup also "unwraps" and tries
+    # to resolve dependencies it doesn't own.
+    get_lucky_number._called = True  # type: ignore[reportFunctionMemberAccess]
+
+    assert get_lucky_number._called == 1  # type: ignore[reportFunctionMemberAccess]
 
 
 @pytest.mark.parametrize("endpoint", ["/scoped", "/scoped/wireup_injected"])
@@ -94,10 +106,11 @@ async def test_current_request_service(client: TestClient):
     await asyncio.gather(*(_make_request() for _ in range(100)))
 
 
-async def test_raises_request_outside_of_scope(app: FastAPI) -> None:
-    with pytest.raises(WireupError, match="fastapi.Request in wireup is only available during a request."):
+@pytest.mark.parametrize("t", [Request, WebSocket])
+async def test_raises_request_outside_of_scope(app: FastAPI, t: Any) -> None:
+    with pytest.raises(WireupError, match=f"fastapi.{t.__name__} in wireup is only available during a request."):
         async with get_app_container(app).enter_scope() as scoped:
-            await scoped.get(Request)
+            await scoped.get(t)
 
 
 async def test_closes_container_on_lifespan_close() -> None:

@@ -39,9 +39,7 @@ def fastapi_request_factory() -> Request:
     Note that this requires the Wireup-FastAPI integration to be set up.
     """
     try:
-        res = current_request.get()
-        assert isinstance(res, Request)  # noqa: S101
-        return res
+        return current_request.get()  # type:ignore[return-value]
     except LookupError as e:
         msg = "fastapi.Request in wireup is only available during a request."
         raise WireupError(msg) from e
@@ -49,20 +47,17 @@ def fastapi_request_factory() -> Request:
 
 @service(lifetime="scoped")
 def fastapi_websocket_factory() -> WebSocket:
-    """Provide the current FastAPI request as a dependency.
+    """Provide the current FastAPI WebSocket as a dependency.
 
     Note that this requires the Wireup-FastAPI integration to be set up.
     """
     try:
-        res = current_request.get()
-        assert isinstance(res, WebSocket)  # noqa: S101
-        return res
+        return current_request.get()  # type: ignore[return-value]
     except LookupError as e:
         msg = "fastapi.WebSocket in wireup is only available during a request."
         raise WireupError(msg) from e
 
 
-# Warn: Make sure the logic evolves with the _request_middleware function.
 async def _wireup_request_middleware(request: Request, call_next: Callable[[Request], Awaitable[Response]]) -> Response:
     token = current_request.set(request)
     try:
@@ -78,7 +73,7 @@ def _inject_fastapi_route(
     container: AsyncContainer,
     target: AnyCallable,
     http_connection_param_name: str,
-    is_http_connection_in_signature: bool,
+    remove_http_connection_from_arguments: bool,
     add_custom_middleware: bool,
 ) -> AnyCallable:
     # Warn: Make sure the logic evolves with the _wireup_request_middleware function.
@@ -92,7 +87,7 @@ def _inject_fastapi_route(
         request.state.wireup_container = scoped_container
         token = current_request.set(request)
         try:
-            if not is_http_connection_in_signature:
+            if remove_http_connection_from_arguments:
                 del kwargs[http_connection_param_name]
             yield
         finally:
@@ -109,8 +104,8 @@ def _inject_routes(container: AsyncContainer, app: FastAPI, *, add_custom_middle
             continue
 
         # If the setup has been done with expose_container_in_middleware=True,
-        # we don't need to pass the custom middleware to the inject_from_container call.
-        # As the request ContextVar and scoped container are already set in the FastAPI middleware.
+        # the request context variable is already set in the middleware.
+        # and we can get the scoped container from the request.
         if isinstance(route, APIRoute) and not add_custom_middleware:
             route.dependant.call = inject_from_container(container, get_request_container)(route.dependant.call)
             continue
@@ -130,7 +125,9 @@ def _inject_routes(container: AsyncContainer, app: FastAPI, *, add_custom_middle
             container=container,
             target=route.dependant.call,
             http_connection_param_name=route.dependant.http_connection_param_name,
-            is_http_connection_in_signature=is_http_connection_in_signature,
+            # If the HTTPConnection was not in the signature, it needs to be removed from the arguments
+            # when calling the route handler.
+            remove_http_connection_from_arguments=not is_http_connection_in_signature,
             # For websocket routes we always add the middleware as the regular fastapi middleware
             # only applies to http requests.
             add_custom_middleware=add_custom_middleware or isinstance(route, APIWebSocketRoute),
@@ -157,6 +154,11 @@ def setup(container: AsyncContainer, app: FastAPI, *, expose_container_in_middle
     * Injects dependencies into HTTP and WebSocket routes.
     * Creates a new container scope for each request, with a scoped lifetime matching the request duration.
     * Closes the Wireup container upon app shutdown using the lifespan context.
+
+    :param container: An async container created via `wireup.create_async_container`.
+    :param app: The FastAPI application to integrate with.
+    :param expose_container_in_middleware: If True, the container is exposed in fastapi middleware.
+    Note, for this to work correctly, there should be no more middleware added after the call to this function.
 
     For more details, visit: https://maldoinc.github.io/wireup/latest/integrations/fastapi/
     """

@@ -14,13 +14,7 @@ router = APIRouter()
 
 
 def get_lucky_number() -> int:
-    # Raise if this will be invoked more than once
-    # That would be the case if wireup also "unwraps" and tries
-    # to resolve dependencies it doesn't own.
-    if hasattr(get_lucky_number, "_called"):
-        raise Exception("Lucky Number was already invoked")
-
-    get_lucky_number._called = True  # type: ignore[reportFunctionMemberAccess]
+    get_lucky_number._called += 1  # type: ignore[reportFunctionMemberAccess]
     return 42
 
 
