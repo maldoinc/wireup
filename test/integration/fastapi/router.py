@@ -1,9 +1,12 @@
+import functools
 from typing import Any, Dict
 
+import fastapi
 from fastapi import APIRouter, Depends, Request, WebSocket
 from typing_extensions import Annotated
 from wireup import Inject, Injected
 from wireup.integration.fastapi import get_request_container
+from wireup.ioc.types import AnyCallable
 
 from test.integration.fastapi.services import ServiceUsingFastapiRequest, WebsocketInjectedGreeterService, WSService
 from test.shared.shared_services.greeter import GreeterService
@@ -93,3 +96,21 @@ async def scoped_route(
 ):
     assert scoped_service is scoped_service2
     assert scoped_service.other is scoped_service_dependency
+
+
+def require_not_bob(fn: AnyCallable) -> AnyCallable:
+    @functools.wraps(fn)
+    async def wrapper(*args: Any, **kwargs: Any) -> Any:
+        request = await get_request_container().get(Request)
+
+        if request.query_params.get("name") == "Bob":
+            raise fastapi.exceptions.HTTPException(status_code=401, detail="Bob is not allowed")
+        return await fn(*args, **kwargs)
+
+    return wrapper
+
+
+@router.get("/401_for_bob")
+@require_not_bob
+async def decorated_fn_route(random_service: Injected[RandomService]):
+    return {"number": random_service.get_random()}

@@ -86,6 +86,14 @@ def test_injects_parameters(client: TestClient):
     assert response.json() == {"foo": "bar", "foo_foo": "bar-bar"}
 
 
+def test_request_container_in_decorator(client: TestClient):
+    response = client.get("/401_for_bob?name=Bob")
+    assert response.status_code == 401
+
+    response = client.get("/401_for_bob?name=NotBob")
+    assert response.json() == {"number": 4}
+
+
 @pytest.mark.parametrize("endpoint", ["/ws", "/ws/wireup_injected", "/ws_in_service", "/ws/no-websocket-in-signature"])
 def test_websocket(client: TestClient, endpoint: str):
     with client.websocket_connect(endpoint) as websocket:
