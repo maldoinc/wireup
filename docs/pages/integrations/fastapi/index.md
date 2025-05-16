@@ -54,23 +54,6 @@ See [Annotations](../../annotations.md) for more details.
     async def ws(websocket: WebSocket, greeter: Injected[GreeterService]): ...
     ```
 
-!!! tip "Optional Performance Optimization"
-    Optimize dependency injection performance by using a custom APIRoute class. 
-    This reduces overhead in endpoints that use Wireup injection by avoiding redundant processing.
-
-    ```python
-    from fastapi import APIRouter
-    from wireup.integration.fastapi import WireupRoute
-
-    router = APIRouter(route_class=WireupRoute)
-    ```
-
-    If you already have a custom route class, you can inherit from WireupRoute instead.
-
-    **Under the hood**: FastAPI processes all route parameters, including ones meant for Wireup. 
-    The WireupRoute class optimizes this by making Wireup-specific parameters only visible to Wireup, 
-    removing unnecessary processing by FastAPI's dependency injection system.
-
 ### Inject FastAPI request or websocket
 
 A key feature of the integration is to expose `fastapi.Request` and `fastapi.WebSocket`in Wireup.
@@ -98,53 +81,6 @@ class ChatService:
         await self.websocket.send_text(data)
 ```
 
-### Accessing the Container
-
-To access the Wireup container directly, use the following functions:
-
-```python
-from wireup.integration.fastapi import get_app_container, get_request_container
-
-# Get application-wide container.
-app_container: AsyncContainer = get_app_container(app)
-
-# Get request-scoped container.
-# This is what is currently injecting services on the active request.
-request_container: ScopedAsyncContainer = get_request_container()
-```
-
-### Get dependencies in middleware
-
-Wireup integration performs injection only in FastAPI routes. If the container is not stored globally, you can get a reference to it using `get_app_container` and `get_request_container` from the `wireup.integration.fastapi` module.
-
-```python title="example_middleware.py"
-from wireup.integration.fastapi import get_request_container
-
-async def example_middleware(request: Request, call_next) -> Response:
-    container = get_request_container()
-    ...
-
-    return await call_next(request)
-```
-
-### Get dependencies in `Depends`.
-
-Similarly, you can get a reference to the container in a FastAPI dependency.
-
-```python
-from wireup.integration.fastapi import get_request_container
-
-async def example_dependency(request: Request, other_dependency: Depends(...)):
-    container = get_request_container()
-    ...
-```
-
-!!! warning
-    Use `fastapi.Depends` only for specific cases.
-    When using Wireup, let it manage all dependencies instead of mixing it with `fastapi.Depends`.
-
-    Note that while this approach works, the reverse does not.
-    You cannot require `fastapi.Depends` objects in Wireup services.
 
 ### Testing
 
