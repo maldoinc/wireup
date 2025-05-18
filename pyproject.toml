@@ -44,11 +44,8 @@ Documentation = "https://maldoinc.github.io/wireup/"
 Changelog = "https://github.com/maldoinc/wireup/releases"
 
 [tool.poetry.dependencies]
-python = "^3.9"
+python = "^3.8"
 typing_extensions = "^4.7"
-fastapi = "^0.115.12"
-pydantic = "^2.11.1"
-pydantic-settings = "^2.8.1"
 
 [tool.poetry.group.dev.dependencies]
 ruff = "0.11.0"

@@ -55,7 +55,7 @@ class ParameterBag:
 
                 return holder[name]
             case object():
-                if getattr(holder, name, None) is None:
+                if not hasattr(holder, name):
                     raise UnknownParameterError(name)
 
                 return getattr(holder, name)
@@ -66,9 +66,9 @@ class ParameterBag:
 
         def replace_param(match: Match[str]) -> str:
             match_parts = match.group(1).split(".")
-            parent = self.__get_value_from_name_and_holder(match_parts[0], self.__bag)
+            parent = self.__bag
 
-            for part in match_parts[1:]:
+            for part in match_parts:
                 parent = self.__get_value_from_name_and_holder(part, parent)
 
             return str(parent)
