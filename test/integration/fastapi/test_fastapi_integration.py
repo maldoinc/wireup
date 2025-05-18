@@ -10,6 +10,7 @@ import wireup.integration
 import wireup.integration.fastapi
 from fastapi import FastAPI, Request
 from fastapi.testclient import TestClient
+from pydantic_settings import BaseSettings
 from wireup._annotations import service
 from wireup.errors import WireupError
 from wireup.integration.fastapi import get_app_container
@@ -19,7 +20,6 @@ from test.integration.fastapi import wireup_route
 from test.integration.fastapi.router import router
 from test.shared import shared_services
 from test.shared.shared_services.rand import RandomService
-from pydantic_settings import BaseSettings
 
 
 class PydanticSettingsTest(BaseSettings):

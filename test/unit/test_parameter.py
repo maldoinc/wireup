@@ -40,7 +40,9 @@ def test_get_templated_string_with_dot_notation():
         "param1": {
             "nested1": "value1",
         },
-        "param2": "value2",
+        "param2": {
+            "nested2": None,
+        },
     }
     bag = ParameterBag(values)
     templated_string = TemplatedString("${param1.nested1} and ${param2.nested2}")
