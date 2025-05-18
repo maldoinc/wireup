@@ -79,7 +79,7 @@ async def test_injects_parameters_dataclass():
     @dataclass
     class MyDbService:
         connection_str: Annotated[str, Inject(param="connection_str")]
-        cache_dir: Annotated[str, Inject(expr="${cache_dir}/${auth.user}/db")]
+        cache_dir: Annotated[str, Inject(expr="${cache_dir}/${auth_user}/db")]
 
     container = wireup.create_async_container(
         services=[MyDbService],
@@ -87,7 +87,7 @@ async def test_injects_parameters_dataclass():
             "env_name": "test",
             "cache_dir": "/var/cache",
             "connection_str": "sqlite://memory",
-            "auth.user": "anon",
+            "auth_user": "anon",
         },
     )
     db = await container.get(MyDbService)

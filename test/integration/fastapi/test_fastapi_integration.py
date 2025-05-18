@@ -10,6 +10,7 @@ import wireup.integration
 import wireup.integration.fastapi
 from fastapi import FastAPI, Request
 from fastapi.testclient import TestClient
+from pydantic_settings import BaseSettings
 from wireup._annotations import service
 from wireup.errors import WireupError
 from wireup.integration.fastapi import get_app_container
@@ -21,13 +22,18 @@ from test.shared import shared_services
 from test.shared.shared_services.rand import RandomService
 
 
+class PydanticSettingsTest(BaseSettings):
+    version: str = "v1"
+
+
 def create_app() -> FastAPI:
     app = FastAPI()
     app.include_router(router)
     app.include_router(wireup_route.router)
 
     container = wireup.create_async_container(
-        service_modules=[fastapi_test_services, shared_services, wireup.integration.fastapi], parameters={"foo": "bar"}
+        service_modules=[fastapi_test_services, shared_services, wireup.integration.fastapi],
+        parameters={"config": PydanticSettingsTest(), "foo": "bar", "baz": {"foo_foo": "bar_bar"}},
     )
     wireup.integration.fastapi.setup(container, app)
 
@@ -71,7 +77,7 @@ def test_override(app: FastAPI, client: TestClient):
 def test_injects_parameters(client: TestClient):
     response = client.get("/params")
     assert response.status_code == 200
-    assert response.json() == {"foo": "bar", "foo_foo": "bar-bar"}
+    assert response.json() == {"version": "v1", "foo": "bar", "foo_foo": "bar-bar", "baz": "bar_bar"}
 
 
 @pytest.mark.parametrize("endpoint", ["/ws", "/ws/wireup_injected", "/ws_in_service"])
