@@ -10,6 +10,12 @@ class ServiceUsingFastapiRequest:
     req: Request
 
 
+@service(lifetime="scoped")
+@dataclass
+class WSService:
+    ws: WebSocket
+
+
 @dataclass
 @service(lifetime="scoped")
 class WebsocketInjectedGreeterService:

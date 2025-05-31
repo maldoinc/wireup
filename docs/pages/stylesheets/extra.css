@@ -38,3 +38,16 @@ body[data-md-color-scheme="slate"] .grid.cards>ul>li {
 .grid.cards>ul>li span.twemoji {
     vertical-align: text-bottom;
 }
+
+
+.grid .twemoji {
+    vertical-align: middle !important;
+}
+
+.color-fastapi {
+    color: rgb(0, 148, 133) !important
+}
+
+.color-django {
+    color: #0C4B33 !important;
+}

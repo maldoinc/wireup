@@ -1,15 +1,39 @@
-# AIOHTTP Integration
+# :simple-aiohttp: AIOHTTP Integration
 
 Dependency injection for AIOHTTP is available in the `wireup.integration.aiohttp` module.
 
-**Features:**
+<div class="grid cards annotate" markdown>
 
-- [x] Inject dependencies in AIOHTTP handlers.
-- [x] Expose `web.Request` as a `scoped` Wireup dependency.
-- [x] Close the Wireup container on application termination for proper resource cleanup.
-- [x] Class-based handlers in AIOHTTP.
+-   :material-cog-refresh:{ .lg .middle } __Automatic Dependency Management__
 
----
+    ---
+
+    Inject dependencies in routes and automatically manage container lifecycle.
+
+
+-   :material-web-check:{ .lg .middle } __Request Objects__
+
+    ---
+
+    Use request and websocket objects in Wireup dependencies.
+
+
+-   :material-clock-fast:{ .lg .middle } __Zero Runtime Overhead__
+
+    ---
+
+    Inject dependencies with __zero__ runtime overhead in Class-Based Handlers.
+
+    [:octicons-arrow-right-24: Learn more](class_based_handlers.md)
+
+
+-   :material-share-circle:{ .lg .middle } __Shared business logic__
+
+    ---
+
+    Wireup is framework-agnostic. Share the service layer between your web application and other interfaces, such as a CLI.
+</div>
+
 
 ### Initialize the integration
 
@@ -65,7 +89,7 @@ See [Annotations](../../annotations.md) for more details.
 ### Inject AIOHTTP request
 
 A key feature of the integration is to expose `web.Request` in Wireup.
-To allow injecting it in your services you must add `wireup.integration.aiohttp` module to your service modules
+To inject it in your services you must add `wireup.integration.aiohttp` module to your service modules
 when creating a container.
 
 ### Accessing the Container

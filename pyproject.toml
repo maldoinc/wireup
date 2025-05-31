@@ -70,7 +70,7 @@ src = ["wireup"]
 lint.fixable = ["ALL"]
 lint.select = ["ALL"]
 lint.ignore = [
-    "ANN401", # Allow returning any. Parameter bag has to store/retrieve arbitraty types.
+    "ANN401", # Allow returning any. Parameter bag has to store/retrieve arbitrary types.
     "PT009",  # Prefer using assertEqual instead of plain asserts
     "TD003",  # Exclude "missing issue link for todos",
     "FIX002", # Disable "Line contains to do, consider resolving the issue". It will be done, in due time.
@@ -84,6 +84,7 @@ lint.ignore = [
     # Disable as they may cause conflicts with ruff formatter
     "COM812",
     "ISC001",
+    "TRY300",
 ]
 [tool.ruff.lint.per-file-ignores]
 "test/*" = [

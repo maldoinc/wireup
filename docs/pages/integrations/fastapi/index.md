@@ -1,14 +1,39 @@
-Dependency injection for FastAPI is available in the `wireup.integration.fastapi` module.
+# :simple-fastapi: FastAPI Integration
 
-**Features:**
+<div class="grid cards annotate" markdown>
 
-- [x] Inject dependencies in FastAPI routes.
-- [x] Expose `fastapi.Request` and `fastapi.WebSocket` as `scoped` Wireup dependencies.
-- [x] Close the Wireup container upon application termination for proper resource cleanup.
+-   :material-cog-refresh:{ .lg .middle } __Automatic Dependency Management__
 
----
+    ---
 
-### Initialize the integration
+    Inject dependencies in routes and automatically manage container lifecycle.
+
+
+-   :material-clock-fast:{ .lg .middle } __Zero Runtime Overhead__
+
+    ---
+
+    Inject dependencies with __zero__ runtime overhead in Class-Based Routes.
+
+    [:octicons-arrow-right-24: Learn more](class_based_routes.md)
+
+
+-   :octicons-package-dependents-24:{ .lg .middle } __Global Access__
+
+    ---
+
+    Use dependencies in middleware and route handler decorators where they are normally unavailable in FastAPI.
+
+    [:octicons-arrow-right-24: Learn more](direct_container_access.md#middleware-mode-middleware_modetrue)
+
+-   :material-share-circle:{ .lg .middle } __Shared business logic__
+
+    ---
+
+    Wireup is framework-agnostic. Share the service layer between your web application and other interfaces, such as a CLI.
+</div>
+
+### Getting started
 
 To initialize the integration, call `wireup.integration.fastapi.setup` after adding all routers.
 
@@ -25,7 +50,9 @@ container = wireup.create_async_container(
     # Expose parameters to Wireup as necessary. 
     parameters={
         "debug": settings.DEBUG
-    }
+    },
+    # Include here any Wireup Class-Based Routes.
+    class_based_routes=[...],
 )
 wireup.integration.fastapi.setup(container, app)
 ```
@@ -54,8 +81,8 @@ See [Annotations](../../annotations.md) for more details.
     async def ws(websocket: WebSocket, greeter: Injected[GreeterService]): ...
     ```
 
-!!! tip "Optional Performance Optimization"
-    Optimize dependency injection performance by using a custom APIRoute class. 
+!!! tip
+    Improve performance by using a custom APIRoute class. 
     This reduces overhead in endpoints that use Wireup injection by avoiding redundant processing.
 
     ```python
@@ -71,24 +98,19 @@ See [Annotations](../../annotations.md) for more details.
     The WireupRoute class optimizes this by making Wireup-specific parameters only visible to Wireup, 
     removing unnecessary processing by FastAPI's dependency injection system.
 
+
 ### Inject FastAPI request or websocket
 
-A key feature of the integration is to expose `fastapi.Request` and `fastapi.WebSocket`in Wireup.
-To allow injecting these in your services you must add `wireup.integration.fastapi` module to your service modules
-when creating a container.
-
-Services depending on it should be transient or scoped, so that these are not shared across requests.
+To inject the current request/websocket in your services you must add `wireup.integration.fastapi` 
+module to your service modules when creating a container.
 
 ```python
 @service(lifetime="scoped")
 class HttpAuthenticationService:
     def __init__(self, request: fastapi.Request) -> None: ...
+```
 
-
-@service(lifetime="scoped")
-def example_factory(request: fastapi.Request) -> ExampleService: ...
-
-
+```python
 @service(lifetime="scoped")
 class ChatService:
     def __init__(self, websocket: fastapi.WebSocket) -> None:
@@ -98,53 +120,6 @@ class ChatService:
         await self.websocket.send_text(data)
 ```
 
-### Accessing the Container
-
-To access the Wireup container directly, use the following functions:
-
-```python
-from wireup.integration.fastapi import get_app_container, get_request_container
-
-# Get application-wide container.
-app_container: AsyncContainer = get_app_container(app)
-
-# Get request-scoped container.
-# This is what is currently injecting services on the active request.
-request_container: ScopedAsyncContainer = get_request_container()
-```
-
-### Get dependencies in middleware
-
-Wireup integration performs injection only in FastAPI routes. If the container is not stored globally, you can get a reference to it using `get_app_container` and `get_request_container` from the `wireup.integration.fastapi` module.
-
-```python title="example_middleware.py"
-from wireup.integration.fastapi import get_request_container
-
-async def example_middleware(request: Request, call_next) -> Response:
-    container = get_request_container()
-    ...
-
-    return await call_next(request)
-```
-
-### Get dependencies in `Depends`.
-
-Similarly, you can get a reference to the container in a FastAPI dependency.
-
-```python
-from wireup.integration.fastapi import get_request_container
-
-async def example_dependency(request: Request, other_dependency: Depends(...)):
-    container = get_request_container()
-    ...
-```
-
-!!! warning
-    Use `fastapi.Depends` only for specific cases.
-    When using Wireup, let it manage all dependencies instead of mixing it with `fastapi.Depends`.
-
-    Note that while this approach works, the reverse does not.
-    You cannot require `fastapi.Depends` objects in Wireup services.
 
 ### Testing
 
@@ -167,9 +142,9 @@ See [FastAPI integration tests](https://github.com/maldoinc/wireup/blob/master/t
 for more examples.
 
 !!! warning
-    The Wireup integration relies on FastAPI's lifespan events to close the container upon termination.
-    To ensure these events are triggered during testing, instantiate the test client as a context manager.
-    This is a requirement due to FastAPI's design, not a limitation of Wireup.
+    FastAPI's lifespan events are required to close the Wireup container properly. 
+    Use a context manager when instantiating the test client if you're using class-based routes or generator
+    factories in your application.
 
     ```python
     @pytest.fixture()

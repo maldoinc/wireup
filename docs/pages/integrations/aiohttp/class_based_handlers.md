@@ -6,9 +6,9 @@ Dependencies injected in the init method are zero-cost.
 
 ### Key Benefits
 
-- **Startup-Time Injection**: Dependencies in handlers are resolved once when the application starts.
 - **Request Performance**: Zero overhead from dependency resolution during request handling.
 - **Stateful Handlers**: Maintain state across requests.
+- **Route set**: Group relevant resource endpoints together
 
 ### Example
 

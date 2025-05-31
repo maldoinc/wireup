@@ -1,11 +1,21 @@
+# :simple-flask: Flask Integration
+
 Dependency injection for Flask is available in the `wireup.integration.flask` module.
 
-**Features:**
+<div class="grid cards annotate" markdown>
 
-- [x] Dependency injection in function-based and class-based views (sync and async)
-- [x] Request-scoped container lifecycle management.
+-   :material-cog-refresh:{ .lg .middle } __Automatic Dependency Management__
 
----
+    ---
+
+    Inject dependencies in routes and automatically manage container lifecycle.
+
+-   :material-share-circle:{ .lg .middle } __Shared business logic__
+
+    ---
+
+    Wireup is framework-agnostic. Share the service layer between your web application and other interfaces, such as a CLI.
+</div>
 
 ### Initialize the integration
 

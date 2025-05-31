@@ -113,6 +113,9 @@ def get_inject_annotated_parameters(target: AnyCallable) -> dict[str, AnnotatedP
         and the values are the annotated parameters that are instances of `InjectableType`.
 
     """
+    if hasattr(target, "__wireup_names__"):
+        return target.__wireup_names__  # type:ignore[attr-defined]
+
     return {
         name: param
         for name, parameter in inspect.signature(target).parameters.items()
@@ -124,11 +127,7 @@ def get_inject_annotated_parameters(target: AnyCallable) -> dict[str, AnnotatedP
 def get_valid_injection_annotated_parameters(
     container: BaseContainer, target: AnyCallable
 ) -> dict[str, AnnotatedParameter]:
-    names_to_inject: dict[str, AnnotatedParameter] = (
-        getattr(target, "__wireup_names__")  # noqa: B009
-        if hasattr(target, "__wireup_names__")
-        else get_inject_annotated_parameters(target)
-    )
+    names_to_inject = get_inject_annotated_parameters(target)
 
     for name, parameter in names_to_inject.items():
         assert_dependency_exists(container, parameter=parameter, target=target, name=name)

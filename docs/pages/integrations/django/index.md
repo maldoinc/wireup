@@ -1,16 +1,38 @@
-# Django Integration
+# :simple-django: Django Integration
 
 Wireup provides seamless integration with Django through the `wireup.integration.django` module, enabling
 dependency injection in Django applications.
 
-**Features:**
 
-- [x] Dependency injection in function-based and class-based views (sync and async).
-- [x] Access to `django.http.HttpRequest` as an injectable dependency.
-- [x] Django settings available as Wireup parameters.
-- [x] Request-scoped container lifecycle management.
+<div class="grid cards annotate" markdown>
 
----
+-   :material-cog-refresh:{ .lg .middle } __Automatic Dependency Management__
+
+    ---
+
+    Inject dependencies in routes and automatically manage container lifecycle.
+
+
+-   :material-web-check:{ .lg .middle } __Request Objects__
+
+    ---
+
+    Use Django request in Wireup dependencies.
+
+
+-   :material-clock-fast:{ .lg .middle } __Zero Runtime Overhead__
+
+    ---
+
+    Django settings available as Wireup parameters.
+
+
+-   :material-share-circle:{ .lg .middle } __Shared business logic__
+
+    ---
+
+    Wireup is framework-agnostic. Share the service layer between your web application and other interfaces, such as a CLI.
+</div>
 
 ### Initialize the integration
 
@@ -48,8 +70,11 @@ from typing import Annotated
 
 @service
 class S3Manager:
-    # Reference configuration by name
-    def __init__(self, token: Annotated[str, Inject(param="S3_BUCKET_TOKEN")]) -> None: ...
+    def __init__(
+        self,
+        # Reference configuration by name
+        token: Annotated[str, Inject(param="S3_BUCKET_TOKEN")],
+    ) -> None: ...
 
     def upload(self, file: File) -> None: ...
 ```
