@@ -18,9 +18,7 @@ app_container: AsyncContainer = get_app_container(app)
 
 ### Container Availability
 
-The app container can always be retrieved.
-
-The exact point when the request-scoped container is created,
+The app container can always be retrieved. The exact point when the request-scoped container is created,
 depends on the `middleware_mode` setting in the `setup` call.
 
 #### Default (`middleware_mode=False`)
@@ -29,7 +27,7 @@ The container is created just before the route handler is called and is only acc
 
 ```python
 @router.get("/users")
-@require_authn  # Container is available here
+@require_authn  # Request container is available here
 async def get_users(user_service: Injected[UserService]):  # And here
     pass
 ```
@@ -38,7 +36,7 @@ async def get_users(user_service: Injected[UserService]):  # And here
 
 The container is created at the start of the request lifecycle, making it accessible throughout,
 including in middleware and fastapi's own dependencies. While this mode offers greater flexibility,
-it is off by default as the middleware will run on every request as opposed to only when strictly necessary.
+it is off by default as the middleware will run on every request to create a scoped container, as opposed to only when strictly necessary.
 
 ### Usage Examples
 
@@ -63,9 +61,7 @@ async def get_users(user_service: Injected[UserService]):
     ...
 ```
 
-#### In Middleware
-
-> Requires Middleware Mode.
+#### In Middleware (Requires Middleware Mode)
 
 ```python
 from wireup.integration.fastapi import get_request_container
@@ -76,9 +72,7 @@ async def example_middleware(request: Request, call_next) -> Response:
     return await call_next(request)
 ```
 
-#### In FastAPI Dependencies
-
-> Requires Middleware Mode.
+#### In FastAPI Dependencies (Requires Middleware Mode)
 
 ```python
 from wireup.integration.fastapi import get_request_container

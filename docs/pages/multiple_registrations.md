@@ -36,10 +36,12 @@ def replica_db(
 
 ```python title="repository.py"
 @service
-@dataclass
 class Repository:
-    primary: DatabaseService  # Default connection
-    replica: Annotated[DatabaseService, Inject(qualifier="replica")]
+    def __init__(
+        self,
+        primary: DatabaseService,  # Default connection
+        replica: Annotated[DatabaseService, Inject(qualifier="replica")],
+    ): ...
 
     def save(self, data: dict) -> None:
         return self.primary.query(...)  # Write operations

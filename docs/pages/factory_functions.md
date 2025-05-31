@@ -72,7 +72,7 @@ from wireup import service
 # Create a distinct type for the authenticated user
 AuthenticatedUser = NewType("AuthenticatedUser", User)
 
-@service(lifetime="transient")
+@service(lifetime="scoped")
 def get_current_user(auth_service: AuthService) -> AuthenticatedUser:
     return AuthenticatedUser(auth_service.get_current_user())
 

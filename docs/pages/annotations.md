@@ -41,7 +41,7 @@ def configure(
     log_path: Annotated[str, Inject(expr="${data_dir}/logs")],
     
     # Inject service
-    service: Injected[MyService, Inject()],
+    service: Annotated[MyService, Inject()],
 
     # Injected is an alias of Annotated[T, Inject()]
     service: Injected[MyService],

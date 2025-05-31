@@ -10,10 +10,10 @@ Wireup supports string type annotations and `from __future__ import annotations`
 ## Example
 
 ```python
-from typing import TYPE_CHECKING  # Don't do this!
+from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from collections.abc import Iterator
+    from collections.abc import Iterator  # Don't do this!
 
 
 @service
@@ -21,9 +21,9 @@ def create_thing() -> Iterator[Thing]:  # This needs the import at runtime
     yield Thing()
 
 @service
-@dataclass
 class Service:
-    thing: Thing  # This too needs the import at runtime
+    def __init__(self, thing: Thing): # This too needs the import at runtime
+        pass
 ```
 
 !!! warning

@@ -4,7 +4,7 @@ Wireup introduces **class-based routes** for FastAPI, offering a **zero-cost dep
 
 ### Key Features
 
-- **Zero-Cost Injection**: No runtime overhead for resolving dependencies during request handling.
+- **Zero-Cost Injection**: No runtime overhead for dependencies defined in the init method.
 - **Stateful Handlers**: Persist state across requests for enhanced functionality.
 - **Logical Grouping**: Organize related endpoints within a single class.
 
@@ -26,14 +26,12 @@ class UserProfileHandler:
 ```
 
 1. Define a router for this class. Tip: Use `route_class=WireupRoute` if you have dependencies being injected in route handlers (methods decorated with `@router`).
-2. Inject dependencies directly in the constructor. Here, `UserProfileService` is a singleton dependency.
+2. Inject dependencies directly in the constructor. This is a one-time operation and has no runtime overhead.
 3. Request dependencies as usual in FastAPI routes. `AuthenticationService` is a request-scoped dependency, injected using `Injected[T]`.
 
 
-
-!!! tip
-    The router instance is a regular FastAPI router so you can handle any connections in your class-based routes,
-    including WebSockets.
+The router instance is a regular FastAPI router so you can handle any connections in your class-based routes,
+including WebSockets.
 
 
 ### Integration
@@ -52,12 +50,12 @@ wireup.integration.fastapi.setup(
 
 - **Constructor Injection**: Dependencies injected into the constructor do not require the `Injected` syntax.
 - **Route-Specific Injection**: Use `Injected[T]` for transient or scoped dependencies within route methods.
-- **Overriding**: Dependencies injected into the constructor cannot be overridden after application startup. Ensure all overrides are applied before initialization.
+- **Overriding**: Dependencies injected into the constructor cannot be overridden after application startup. Ensure overrides happen before the application starts.
 
 
 !!! warning
     This feature makes use of FastAPI's lifespan events. For this to properly function in your tests you must create
-    the test client as a context manager like shown below.
+    the test client as a context manager.
 
     ```python
     @pytest.fixture()
