@@ -2,20 +2,21 @@
 
 <div class="grid cards annotate" markdown>
 
--   :material-cog-refresh:{ .lg .middle } __Automatic Dependency Management__
-
-    ---
-
-    Inject dependencies in routes and automatically manage container lifecycle.
-
-
--   :material-clock-fast:{ .lg .middle } __Zero Runtime Overhead__
+-   :material-speedometer:{ .lg .middle } __Zero Runtime Overhead__
 
     ---
 
     Inject dependencies with __zero__ runtime overhead in Class-Based Routes.
 
     [:octicons-arrow-right-24: Learn more](class_based_routes.md)
+
+
+-   :material-cog-refresh:{ .lg .middle } __Automatic Dependency Management__
+
+    ---
+
+    Inject dependencies in routes and automatically manage container lifecycle.
+
 
 
 -   :octicons-package-dependents-24:{ .lg .middle } __Global Access__

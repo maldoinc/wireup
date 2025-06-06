@@ -31,6 +31,7 @@ nav:
       - FastAPI Integration: integrations/fastapi/index.md
       - Class Based Routes: integrations/fastapi/class_based_routes.md
       - Direct container access: integrations/fastapi/direct_container_access.md
+      - Comparison: integrations/fastapi/comparison.md
     - Flask: 
       - Flask Integration: integrations/flask/index.md
     - AIOHTTP: 
