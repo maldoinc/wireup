@@ -6,9 +6,9 @@
 
     ---
 
-    Inject dependencies with __zero__ runtime overhead in Class-Based Routes.
+    Inject dependencies with __zero__ runtime overhead in Class-Based Handlers.
 
-    [:octicons-arrow-right-24: Learn more](class_based_routes.md)
+    [:octicons-arrow-right-24: Learn more](class_based_handlers.md)
 
 
 -   :material-cog-refresh:{ .lg .middle } __Automatic Dependency Management__
@@ -52,8 +52,8 @@ container = wireup.create_async_container(
     parameters={
         "debug": settings.DEBUG
     },
-    # Include here any Wireup Class-Based Routes.
-    class_based_routes=[...],
+    # Include here any Wireup Class-Based Handlers.
+    class_based_handlers=[...],
 )
 wireup.integration.fastapi.setup(container, app)
 ```
@@ -144,7 +144,7 @@ for more examples.
 
 !!! warning
     FastAPI's lifespan events are required to close the Wireup container properly. 
-    Use a context manager when instantiating the test client if you're using class-based routes or generator
+    Use a context manager when instantiating the test client if you're using class-based handlers or generator
     factories in your application.
 
     ```python

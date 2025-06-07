@@ -32,7 +32,7 @@ def create_app(*, expose_container_in_middleware: bool) -> FastAPI:
     wireup.integration.fastapi.setup(
         container,
         app,
-        class_based_routes=[cbr.MyClassBasedRoute],
+        class_based_handlers=[cbr.MyClassBasedRoute],
         middleware_mode=expose_container_in_middleware,
     )
 

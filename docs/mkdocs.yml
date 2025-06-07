@@ -29,9 +29,8 @@ nav:
       - Django Integration: integrations/django/index.md
     - FastAPI: 
       - FastAPI Integration: integrations/fastapi/index.md
-      - Class Based Routes: integrations/fastapi/class_based_routes.md
+      - Class Based Handlers: integrations/fastapi/class_based_handlers.md
       - Direct container access: integrations/fastapi/direct_container_access.md
-      - Comparison: integrations/fastapi/comparison.md
     - Flask: 
       - Flask Integration: integrations/flask/index.md
     - AIOHTTP: 
