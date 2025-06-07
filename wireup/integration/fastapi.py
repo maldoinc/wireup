@@ -29,6 +29,7 @@ from wireup.ioc.container.async_container import AsyncContainer, ScopedAsyncCont
 from wireup.ioc.container.sync_container import ScopedSyncContainer
 from wireup.ioc.types import AnyCallable
 from wireup.ioc.validation import (
+    assert_dependencies_valid,
     get_inject_annotated_parameters,
     hide_annotated_names,
 )
@@ -156,12 +157,11 @@ def _inject_routes(container: AsyncContainer, routes: List[BaseRoute], *, is_usi
         )
 
 
-async def _register_class_based_route(
+async def _instantiate_class_based_route(
     app: FastAPI,
     container: AsyncContainer,
     cls: Type[_ClassBasedRouteProtocol],
 ) -> None:
-    container._registry.register(cls)
     instance = await container.get(cls)
 
     for route in cls.router.routes:
@@ -200,7 +200,11 @@ def _update_lifespan(
     async def lifespan(app: FastAPI) -> AsyncIterator[Any]:
         if class_based_routes:
             for cbr in class_based_routes:
-                await _register_class_based_route(app, container, cbr)
+                container._registry.register(cbr)
+            assert_dependencies_valid(container)
+
+            for cbr in class_based_routes:
+                await _instantiate_class_based_route(app, container, cbr)
 
             _inject_routes(container, app.routes, is_using_asgi_middleware=is_using_asgi_middleware)
 
