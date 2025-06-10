@@ -114,7 +114,7 @@ def get_inject_annotated_parameters(target: AnyCallable) -> dict[str, AnnotatedP
 
     """
     if hasattr(target, "__wireup_names__"):
-        return target.__wireup_names__  # type:ignore[attr-defined]
+        return target.__wireup_names__  # type:ignore[no-any-return]
 
     return {
         name: param
