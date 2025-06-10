@@ -1,6 +1,7 @@
 # Class-Based Handlers for FastAPI
 
-Wireup provides class-based handlers for FastAPI that enables dependency injection with zero runtime overhead.
+Wireup provides class-based handlers for FastAPI allowing grouping of related endpoints
+and dependency injection with zero runtime overhead.
 
 ### Benefits
 
@@ -35,8 +36,7 @@ class UserHandler:
 
 1. Define a router for this class. Tip: Use `route_class=WireupRoute` if you have dependencies being injected in route handlers (methods decorated with `@router`).
 2. Inject dependencies directly in the constructor. This is a one-time operation and has no runtime overhead.
-3. Request dependencies as usual in FastAPI routes. `AuthenticationService` is a request-scoped dependency, injected using `Injected[T]`.
-
+3. This is treated just like any other FastAPI route and as such, use of `Injected[T]` is required. `AuthenticationService` is a request-scoped dependency.
 
 The router instance is a regular FastAPI router so you can handle any connections in your class-based handlers,
 including WebSockets.
@@ -62,8 +62,10 @@ wireup.integration.fastapi.setup(
 
 1. **Route Dependencies**
       - Use `Injected[T]` syntax
-      - Supports all scopes
+      - Supports all scopes*
       - Injected per-request
+
+\*  Injecting parameters and singletons here has no benefit and is not zero-cost. Inject those in `__init__` instead.
 
 !!! note "Testing"
     FastAPI lifespan events are used for initialization. When testing, create clients as context managers:
