@@ -13,24 +13,6 @@
 
 Dependency Injection (DI) is a design pattern where dependencies are provided externally rather than created within objects. Wireup automates dependency management using Python's type system, with support for async, generators and modern Python features.
 
-> [!NOTE]  
-> Wireup now supports zero-cost runtime dependency injection for FastAPI.
-> Here's how it fares against FastAPI Depends.
-> 
-> | Implementation      | Requests/sec | Time (s) | P50 (ms) | P95 (ms) |
-> | ------------------- | ------------ | -------- | -------- | -------- |
-> | Baseline*           | 13,845       | 0.722    | 3.6      | 5.3      |
-> | Wireup Zero-Cost    | 13,290       | 0.752    | 3.6      | 5.5      |
-> | Wireup              | 11,035       | 0.906    | 4.5      | 6.4      |
-> | FastAPI Depends     | 4,870        | 2.053    | 10.1     | 11.8     |
->
-> \* Baseline uses global variables instead of performing any sort of injection.
-> <details>
-> <summary>Setup</summary>
-> 10,000 requests using hey, fastapi 0.115.12, uvicorn 0.34.3, single worker, Python 3.13. Best of 5.
-> https://github.com/maldoinc/wireup/tree/benchmarks/benchmarks
-> </details>
-
 ## Features
 
 ### ✨ Simple & Type-Safe DI
