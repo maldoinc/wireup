@@ -22,7 +22,6 @@ Dependency Injection (DI) is a design pattern where dependencies are provided ex
 > | Baseline*           | 13,845       | 0.722    | 3.6      | 5.3      |
 > | Wireup Zero-Cost    | 13,290       | 0.752    | 3.6      | 5.5      |
 > | Wireup              | 11,035       | 0.906    | 4.5      | 6.4      |
-> | Dependency Injector | 5868         | 1.704    | 8.2      | 10.3     |
 > | FastAPI Depends     | 4,870        | 2.053    | 10.1     | 11.8     |
 >
 > \* Baseline uses global variables instead of performing any sort of injection.
