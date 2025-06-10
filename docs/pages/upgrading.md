@@ -1,3 +1,11 @@
+## Upgrade 1.x to 2.0.0
+
+* Wireup container itself has no breaking changes. The major version bump is due to a breaking change in the FastAPI
+integration.
+* Added new `middleware_mode` parameter to the `wireup.integration.fastapi.setup` call. Default value is `False`,
+Wireup 1.x default is the equivalent of `middleware_mode=True`. See FastAPI integration docs for when to enable this
+setting.
+
 ## Upgrade 0.16.0 to 1.0
 
 With the API now stable, deprecated features have been removed. Refer to the deprecation notices for upgrade guidance.
