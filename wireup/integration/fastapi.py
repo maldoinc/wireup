@@ -37,7 +37,7 @@ from wireup.ioc.validation import (
 current_request: ContextVar[HTTPConnection] = ContextVar("wireup_fastapi_request")
 
 
-class _ClassBasedRouteProtocol(Protocol):
+class _ClassBasedHandlersProtocol(Protocol):
     router: fastapi.APIRouter
 
 
@@ -160,7 +160,7 @@ def _inject_routes(container: AsyncContainer, routes: List[BaseRoute], *, is_usi
 async def _instantiate_class_based_route(
     app: FastAPI,
     container: AsyncContainer,
-    cls: Type[_ClassBasedRouteProtocol],
+    cls: Type[_ClassBasedHandlersProtocol],
 ) -> None:
     instance = await container.get(cls)
 
@@ -174,7 +174,7 @@ async def _instantiate_class_based_route(
             else:
                 msg = (
                     f"Method {route_handler_name} of {cls} has been modified, possibly by the router's APIRoute."
-                    "Class-Based Routes require the endpoint be unmodified! "
+                    "Class-Based Handlers require the endpoint be unmodified! "
                     "If you want to decorate specific methods you need to place a decorator before the @router one."
                 )
                 raise WireupError(msg)
@@ -189,7 +189,7 @@ async def _instantiate_class_based_route(
 
 def _update_lifespan(
     app: FastAPI,
-    class_based_routes: Optional[Iterable[Type[_ClassBasedRouteProtocol]]] = None,
+    class_based_routes: Optional[Iterable[Type[_ClassBasedHandlersProtocol]]] = None,
     *,
     is_using_asgi_middleware: bool,
 ) -> None:
@@ -220,14 +220,13 @@ def setup(
     container: AsyncContainer,
     app: FastAPI,
     *,
-    class_based_handlers: Optional[Iterable[Type[_ClassBasedRouteProtocol]]] = None,
+    class_based_handlers: Optional[Iterable[Type[_ClassBasedHandlersProtocol]]] = None,
     middleware_mode: bool = False,
 ) -> None:
     """Integrate Wireup with FastAPI.
 
     Setup performs the following:
     * Injects dependencies into HTTP and WebSocket routes.
-    * Creates a new container scope for each request, with a scoped lifetime matching the request duration.
     * Closes the Wireup container upon app shutdown using the lifespan context.
 
     :param container: An async container created via `wireup.create_async_container`.
@@ -248,9 +247,9 @@ def setup(
         class_based_routes=class_based_handlers,
         is_using_asgi_middleware=middleware_mode,
     )
-    # With class-based routes, injection happens in the lifespan context
-    # and the routes are injected there since some of the dependencies of the class-based routes may be async.
-    # If no class-based routes are used, we inject them immediately.
+    # With class-based handlers, injection happens in the lifespan context
+    # and the routes are injected there since some of the dependencies of the class-based handlers may be async.
+    # If no class-based handlers are used, we inject them immediately.
     if not class_based_handlers:
         _inject_routes(container, app.routes, is_using_asgi_middleware=middleware_mode)
 
