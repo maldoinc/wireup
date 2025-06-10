@@ -24,19 +24,15 @@ class RentalService:
 
 ## Factory Services
 
-For complex initialization, use factories. These are regular functions
-decorated with `@service` that construct and return service instances. The function must have a return
+For cases that require initialization, cleanup or classes that you don't control and cannot annotate, use factories. 
+These are regular functions decorated with `@service` that construct and return service instances. The function must have a return
 type. Wireup uses this to figure out what kind of service the factory creates.
 
 ```python
 @service
-def create_payment_processor(
-    api_key: Annotated[str, Inject(param="STRIPE_API_KEY")]
-) -> PaymentProcessor:
-    processor = PaymentProcessor()
-    processor.configure(api_key)
-
-    return processor
+def weather_client_factory() -> Iterator[WeatherClient]:
+    with requests.Session() as session:
+        yield WeatherClient(client=session)
 ```
 
 ## Dependency Resolution
