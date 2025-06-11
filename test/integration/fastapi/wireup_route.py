@@ -9,10 +9,6 @@ from test.shared.shared_services.scoped import ScopedService, ScopedServiceDepen
 router = APIRouter(route_class=WireupRoute)
 
 
-def get_int() -> int:
-    return 1
-
-
 @router.get("/scoped/wireup_injected")
 async def scoped_route_wireup_injected(
     scoped_service: Injected[ScopedService],

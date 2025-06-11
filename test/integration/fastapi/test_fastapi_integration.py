@@ -27,7 +27,8 @@ def create_app(*, expose_container_in_middleware: bool) -> FastAPI:
     app.include_router(wireup_route.router)
 
     container = wireup.create_async_container(
-        service_modules=[fastapi_test_services, shared_services, wireup.integration.fastapi], parameters={"foo": "bar"}
+        service_modules=[fastapi_test_services, shared_services, wireup.integration.fastapi],
+        parameters={"foo": "bar"},
     )
     wireup.integration.fastapi.setup(
         container,
@@ -39,7 +40,7 @@ def create_app(*, expose_container_in_middleware: bool) -> FastAPI:
     return app
 
 
-@pytest.fixture(params=[True, False])
+@pytest.fixture(params=[True, False], ids=["middleware_mode=True", "middleware_mode=False"])
 def expose_container_in_middleware(request: pytest.FixtureRequest) -> bool:
     return request.param
 
@@ -63,8 +64,6 @@ def test_injects_service(client: TestClient):
     # Raise if this will be invoked more than once
     # That would be the case if wireup also "unwraps" and tries
     # to resolve dependencies it doesn't own.
-    get_lucky_number._called = True  # type: ignore[reportFunctionMemberAccess]
-
     assert get_lucky_number._called == 1  # type: ignore[reportFunctionMemberAccess]
 
 
