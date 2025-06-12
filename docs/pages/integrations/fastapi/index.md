@@ -6,7 +6,7 @@
 
     ---
 
-    Inject dependencies with __zero__ runtime overhead in Class-Based Handlers.
+    Inject dependencies with __zero__ runtime overhead using Class-Based Handlers.
 
     [:octicons-arrow-right-24: Learn more](class_based_handlers.md)
 
@@ -23,7 +23,7 @@
 
     ---
 
-    Use dependencies in middleware and route handler decorators where they are normally unavailable in FastAPI.
+    Retrieve dependencies in middleware and route handler decorators where they are normally unavailable in FastAPI.
 
     [:octicons-arrow-right-24: Learn more](direct_container_access.md#middleware-mode-middleware_modetrue)
 
@@ -31,7 +31,7 @@
 
     ---
 
-    Wireup is framework-agnostic. Share the service layer between your web application and other interfaces, such as a CLI.
+    Wireup is framework-agnostic. Use it to share the service layer between your web application and other interfaces, such as a CLI.
 </div>
 
 ### Getting started

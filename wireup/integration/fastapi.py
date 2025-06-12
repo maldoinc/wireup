@@ -230,7 +230,7 @@ def setup(
     * Closes the Wireup container upon app shutdown using the lifespan context.
 
     :param container: An async container created via `wireup.create_async_container`.
-    :param app: The FastAPI application to integrate with.
+    :param app: The FastAPI application to integrate with. All routes must have been added to the app before this call.
     :param class_based_handlers: A list of class-based handlers to register.
     These classes must have a `router` attribute of type `fastapi.APIRouter`.
     Warning: Do not include these with fastapi directly.
