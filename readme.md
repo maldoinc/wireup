@@ -11,7 +11,7 @@
 <p><a target="_blank" href="https://maldoinc.github.io/wireup">📚 Documentation</a> | <a target="_blank" href="https://github.com/maldoinc/wireup-demo">🎮 Demo Application</a></p>
 </div>
 
-Dependency Injection (DI) is a design pattern where dependencies are provided externally rather than created within objects. Wireup automates dependency management using Python's type system, with support for async, generators and modern Python features.
+Dependency Injection (DI) is a design pattern where dependencies are provided externally rather than created within objects. Wireup automates dependency management using Python's type system, with support for async, generators, modern Python features and integrations for FastAPI, Django, Flask and AIOHTTP out of the box
 
 ## Features
 
