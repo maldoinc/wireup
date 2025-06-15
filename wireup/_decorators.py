@@ -39,7 +39,7 @@ def inject_from_container(
     enter a scope. Provide a scoped_container_supplier if you need to manage the container's scope manually. For
     example, in web frameworks, you might enter the scope at the start of a request in middleware so that other
     middlewares can access the scoped container if needed.
-    :param middleware: A list of context manager functions that wrap the execution of the target function.
+    :param middleware: A context manager that wraps the execution of the target function.
     """
 
     def _decorator(target: Callable[..., Any]) -> Callable[..., Any]:
