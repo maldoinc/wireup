@@ -6,7 +6,7 @@ import unittest
 num_runs = 10 if len(sys.argv) == 1 else int(sys.argv[1])
 combined_stats = pstats.Stats()
 
-for i in range(num_runs):
+for _ in range(num_runs):
     current_run = cProfile.Profile()
 
     with current_run:
