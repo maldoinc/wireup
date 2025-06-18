@@ -32,6 +32,7 @@ from wireup.ioc.types import (
 
 T = TypeVar("T")
 logger = logging.getLogger(__name__)
+_ASYNC_FACTORY_TYPES = FactoryType.ASYNC_GENERATOR, FactoryType.COROUTINE_FN
 
 
 class BaseContainer:
@@ -146,7 +147,7 @@ class BaseContainer:
 
         ctor, resolved_type, factory_type = ctor_and_type
 
-        if factory_type in {FactoryType.ASYNC_GENERATOR, FactoryType.COROUTINE_FN}:
+        if factory_type in _ASYNC_FACTORY_TYPES:
             msg = (
                 f"{klass} is an async dependency and it cannot be created in a synchronous context. "
                 "Create and use an async container via wireup.create_async_container. "
