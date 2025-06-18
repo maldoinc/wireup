@@ -24,7 +24,6 @@ from wireup.ioc.types import (
     ContainerObjectIdentifier,
     ContainerScope,
     CreationResult,
-    EmptyContainerInjectionRequest,
     InjectionResult,
     ParameterWrapper,
     Qualifier,
@@ -101,8 +100,6 @@ class BaseContainer:
                 result[name] = creation.instance
             elif param.annotation and isinstance(param.annotation, ParameterWrapper):
                 result[name] = self._params.get(param.annotation.param)
-            elif param.klass and isinstance(param.annotation, EmptyContainerInjectionRequest):
-                raise UnknownServiceRequestedError(param.klass)
 
         return InjectionResult(kwargs=result, exit_stack=exit_stack)
 
