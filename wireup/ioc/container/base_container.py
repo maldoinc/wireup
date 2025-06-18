@@ -6,7 +6,6 @@ from typing import (
     Generator,
     List,
     Optional,
-    Tuple,
     Type,
     TypeVar,
     Union,
@@ -26,7 +25,6 @@ from wireup.ioc.types import (
     ContainerScope,
     CreationResult,
     EmptyContainerInjectionRequest,
-    InjectableType,
     InjectionResult,
     ParameterWrapper,
     Qualifier,
@@ -72,42 +70,37 @@ class BaseContainer:
         """Override registered container services with new values."""
         return self._override_mgr
 
-    def _try_get_existing_value(
-        self, klass: Type[T], qualifier: Qualifier, annotation: Optional[InjectableType] = None
-    ) -> Tuple[Any, bool]:
+    def _try_get_existing_instance(self, klass: Type[T], qualifier: Qualifier) -> Optional[Any]:
         obj_id = klass, qualifier
 
         if res := self._overrides.get(obj_id):
-            return res, True
+            return res
 
         if self._registry.is_interface_known(klass):
             resolved_type: type = self._registry.interface_resolve_impl(klass, qualifier)
             obj_id = resolved_type, qualifier
 
         if res := self._global_scope.objects.get(obj_id):
-            return res, True
+            return res
 
         if self._current_scope is not None and (res := self._current_scope.objects.get(obj_id)):
-            return res, True
+            return res
 
-        if isinstance(annotation, ParameterWrapper):
-            return self._params.get(annotation.param), True
-
-        return None, False
+        return None
 
     async def _async_callable_get_params_to_inject(self, fn: AnyCallable) -> InjectionResult:
         result: Dict[str, Any] = {}
         exit_stack: List[Union[Generator[Any, Any, Any], AsyncGenerator[Any, Any]]] = []
 
         for name, param in self._registry.dependencies[fn].items():
-            obj, value_found = self._try_get_existing_value(param.klass, param.qualifier_value, param.annotation)
-
-            if value_found:
+            if obj := self._try_get_existing_instance(param.klass, param.qualifier_value):
                 result[name] = obj
             elif param.klass and (creation := await self._async_create_instance(param.klass, param.qualifier_value)):
                 if creation.exit_stack:
                     exit_stack.extend(creation.exit_stack)
                 result[name] = creation.instance
+            elif param.annotation and isinstance(param.annotation, ParameterWrapper):
+                result[name] = self._params.get(param.annotation.param)
             elif param.klass and isinstance(param.annotation, EmptyContainerInjectionRequest):
                 raise UnknownServiceRequestedError(param.klass)
 
@@ -237,9 +230,8 @@ class BaseContainer:
         :param klass: Class of the dependency already registered in the container.
         :return: An instance of the requested object. Always returns an existing instance when one is available.
         """
-        res, found = self._try_get_existing_value(klass, qualifier)
 
-        if found:
+        if res := self._try_get_existing_instance(klass, qualifier):
             return res  # type: ignore[no-any-return]
 
         if res := await self._async_create_instance(klass, qualifier):
