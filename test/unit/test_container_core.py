@@ -13,7 +13,6 @@ from wireup.errors import (
     DuplicateQualifierForInterfaceError,
     DuplicateServiceRegistrationError,
     UnknownServiceRequestedError,
-    UsageOfQualifierOnUnknownObjectError,
     WireupError,
 )
 
@@ -256,9 +255,9 @@ def test_services_from_multiple_bases_are_injected():
 
 def test_inject_qualifier_on_unknown_type():
     with pytest.raises(
-        UsageOfQualifierOnUnknownObjectError,
+        UnknownServiceRequestedError,
         match=re.escape(
-            f"Cannot use qualifier {__name__} on type {str} that is not managed by the container.",
+            "Cannot inject unknown service <class 'str'>. Make sure it is registered with the container.",
         ),
     ):
         wireup.create_sync_container().get(str, qualifier=__name__)

@@ -2,7 +2,6 @@ import logging
 from typing import (
     Any,
     AsyncGenerator,
-    Callable,
     Dict,
     Generator,
     List,
@@ -15,9 +14,7 @@ from typing import (
 
 from wireup._async_to_sync import async_to_sync
 from wireup.errors import (
-    UnknownQualifiedServiceRequestedError,
     UnknownServiceRequestedError,
-    UsageOfQualifierOnUnknownObjectError,
     WireupError,
 )
 from wireup.ioc.override_manager import OverrideManager
@@ -75,32 +72,6 @@ class BaseContainer:
         """Override registered container services with new values."""
         return self._override_mgr
 
-    def _get_ctor(
-        self, klass: Type[T], qualifier: Optional[Qualifier]
-    ) -> Optional[Tuple[Callable[..., Any], Type[T], FactoryType]]:
-        if self._registry.is_interface_known(klass):
-            klass = self._registry.interface_resolve_impl(klass, qualifier)
-
-        if ctor := self._registry.factories.get((klass, qualifier)):
-            return ctor.factory, klass, ctor.factory_type
-
-        # Raise if the current impl is known but not necessarily with this qualifier.
-        if klass in self._registry.impls:
-            if not self._registry.is_impl_with_qualifier_known(klass, qualifier):
-                raise UnknownQualifiedServiceRequestedError(
-                    klass,
-                    qualifier,
-                    self._registry.impls[klass],
-                )
-
-            return klass, klass, FactoryType.REGULAR
-
-        # Throw if a qualifier is being used on an unknown type.
-        if qualifier:
-            raise UsageOfQualifierOnUnknownObjectError(klass, qualifier)
-
-        return None
-
     def _try_get_existing_value(
         self, klass: Type[T], qualifier: Qualifier, annotation: Optional[InjectableType] = None
     ) -> Tuple[Any, bool]:
@@ -143,7 +114,7 @@ class BaseContainer:
         return InjectionResult(kwargs=result, exit_stack=exit_stack)
 
     async def _async_create_instance(self, klass: Type[T], qualifier: Optional[Qualifier]) -> Optional[CreationResult]:
-        ctor_and_type = self._get_ctor(klass=klass, qualifier=qualifier)
+        ctor_and_type = self._registry.ctors.get((klass, qualifier))
 
         if not ctor_and_type:
             return None
@@ -178,7 +149,7 @@ class BaseContainer:
         )
 
     def _create_instance(self, klass: Type[T], qualifier: Optional[Qualifier]) -> Optional[CreationResult]:
-        ctor_and_type = self._get_ctor(klass=klass, qualifier=qualifier)
+        ctor_and_type = self._registry.ctors.get((klass, qualifier))
 
         if not ctor_and_type:
             return None

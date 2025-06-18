@@ -76,15 +76,6 @@ class UnknownServiceRequestedError(WireupError):
         )
 
 
-class UsageOfQualifierOnUnknownObjectError(WireupError):
-    """Raised when using a qualifier on an unknown type that is not managed by the container."""
-
-    def __init__(self, klass: type, qualifier_value: Qualifier | None) -> None:
-        super().__init__(
-            f"Cannot use qualifier {qualifier_value} on type {klass} that is not managed by the container."
-        )
-
-
 class InvalidRegistrationTypeError(WireupError):
     """Raised when attempting to register an invalid object type as a service."""
 
