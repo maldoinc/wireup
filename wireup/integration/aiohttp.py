@@ -5,7 +5,7 @@ from typing import Any, Awaitable, Callable, Dict, Iterable, Iterator, Optional,
 from aiohttp import web
 
 import wireup
-from wireup._annotations import service
+from wireup._annotations import ServiceDeclaration, service
 from wireup.errors import WireupError
 from wireup.ioc.container.async_container import ScopedAsyncContainer
 from wireup.ioc.container.sync_container import ScopedSyncContainer
@@ -76,7 +76,7 @@ def _get_startup_event(
     container: wireup.AsyncContainer, handlers: Optional[Iterable[Type[_WireupHandler]]]
 ) -> Callable[[web.Application], Awaitable[None]]:
     for handler_type in handlers or []:
-        container._registry.register(handler_type)
+        container._registry._extend_with_services(abstracts=[], impls=[ServiceDeclaration(handler_type)])
 
     async def _inner(app: web.Application) -> None:
         if handlers:

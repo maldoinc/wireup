@@ -21,6 +21,7 @@ from wireup.ioc.util import ensure_is_type, get_globals, param_get_annotation
 from wireup.ioc.validation import stringify_type
 
 if TYPE_CHECKING:
+    from wireup._annotations import AbstractDeclaration, ServiceDeclaration
     from wireup.ioc.types import (
         Qualifier,
         ServiceLifetime,
@@ -74,14 +75,38 @@ def _function_get_unwrapped_return_type(fn: Callable[..., T]) -> tuple[type[T], 
 class ServiceRegistry:
     """Container class holding service registration info and dependencies among them."""
 
-    __slots__ = ("dependencies", "factories", "impls", "interfaces", "lifetime")
+    __slots__ = ("ctors", "dependencies", "factories", "impls", "interfaces", "lifetime")
 
-    def __init__(self) -> None:
+    def __init__(
+        self, abstracts: list[AbstractDeclaration] | None = None, impls: list[ServiceDeclaration] | None = None
+    ) -> None:
         self.interfaces: dict[type, dict[Qualifier, type]] = {}
         self.impls: dict[type, set[Qualifier]] = defaultdict(set)
         self.factories: dict[tuple[type, Qualifier], ServiceFactory] = {}
         self.dependencies: dict[InjectionTarget, dict[str, AnnotatedParameter]] = defaultdict(defaultdict)
         self.lifetime: dict[InjectionTarget, ServiceLifetime] = {}
+        self.ctors: dict[tuple[type, Qualifier], tuple[Callable[..., Any], type, FactoryType]] = {}
+        self._extend_with_services(abstracts or [], impls or [])
+
+    def _extend_with_services(self, abstracts: list[AbstractDeclaration], impls: list[ServiceDeclaration]) -> None:
+        for abstract in abstracts:
+            self.register_abstract(abstract.obj)
+
+        for impl in impls:
+            self.register(obj=impl.obj, lifetime=impl.lifetime, qualifier=impl.qualifier)
+
+        self._precompute_ctors()
+
+    def _precompute_ctors(self) -> None:
+        for interface, impls in self.interfaces.items():
+            for qualifier, impl in impls.items():
+                factory = self.factories[impl, qualifier]
+                self.ctors[interface, qualifier] = factory.factory, impl, factory.factory_type
+
+        for impl, qualifiers in self.impls.items():
+            for qualifier in qualifiers:
+                factory = self.factories[impl, qualifier]
+                self.ctors[impl, qualifier] = factory.factory, impl, factory.factory_type
 
     def register(
         self,
@@ -114,7 +139,7 @@ class ServiceRegistry:
         if hasattr(klass, "__bases__"):
             discover_interfaces(klass.__bases__)
 
-        self.target_init_context(obj)
+        self._target_init_context(obj)
         self.lifetime[klass] = lifetime
         self.factories[klass, qualifier] = ServiceFactory(
             factory=obj,
@@ -125,7 +150,7 @@ class ServiceRegistry:
     def register_abstract(self, klass: type) -> None:
         self.interfaces[klass] = {}
 
-    def target_init_context(
+    def _target_init_context(
         self,
         target: InjectionTarget,
     ) -> None:

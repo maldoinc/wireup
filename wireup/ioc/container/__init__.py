@@ -57,17 +57,11 @@ def _create_container(
         impls.extend(discovered_services)
 
     container = klass(
-        registry=ServiceRegistry(),
+        registry=ServiceRegistry(abstracts=abstracts, impls=impls),
         parameters=ParameterBag(parameters),
         global_scope=ContainerScope(),
         overrides={},
     )
-
-    for abstract in abstracts:
-        container._registry.register_abstract(abstract.obj)
-
-    for impl in impls:
-        container._registry.register(obj=impl.obj, lifetime=impl.lifetime, qualifier=impl.qualifier)
 
     assert_dependencies_valid(container)
 

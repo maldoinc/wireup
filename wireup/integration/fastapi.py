@@ -24,6 +24,7 @@ from starlette.routing import BaseRoute
 from typing_extensions import Protocol
 
 from wireup import inject_from_container, service
+from wireup._annotations import ServiceDeclaration
 from wireup.errors import WireupError
 from wireup.ioc.container.async_container import AsyncContainer, ScopedAsyncContainer
 from wireup.ioc.container.sync_container import ScopedSyncContainer
@@ -200,7 +201,7 @@ def _update_lifespan(
     async def lifespan(app: FastAPI) -> AsyncIterator[Any]:
         if class_based_routes:
             for cbr in class_based_routes:
-                container._registry.register(cbr)
+                container._registry._extend_with_services(abstracts=[], impls=[ServiceDeclaration(cbr)])
             assert_dependencies_valid(container)
 
             for cbr in class_based_routes:

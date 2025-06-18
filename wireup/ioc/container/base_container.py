@@ -24,17 +24,16 @@ from wireup.ioc.override_manager import OverrideManager
 from wireup.ioc.parameter import ParameterBag
 from wireup.ioc.service_registry import GENERATOR_FACTORY_TYPES, FactoryType, ServiceRegistry
 from wireup.ioc.types import (
-    AnnotatedParameter,
     AnyCallable,
     ContainerObjectIdentifier,
     ContainerScope,
     CreationResult,
     EmptyContainerInjectionRequest,
+    InjectableType,
     InjectionResult,
     ParameterWrapper,
     Qualifier,
     ServiceLifetime,
-    ServiceQualifier,
 )
 
 T = TypeVar("T")
@@ -102,25 +101,26 @@ class BaseContainer:
 
         return None
 
-    def _try_get_existing_value(self, param: AnnotatedParameter) -> Tuple[Any, bool]:
-        if param.klass:
-            obj_id = param.klass, param.qualifier_value
+    def _try_get_existing_value(
+        self, klass: Type[T], qualifier: Qualifier, annotation: Optional[InjectableType] = None
+    ) -> Tuple[Any, bool]:
+        obj_id = klass, qualifier
 
-            if res := self._overrides.get(obj_id):
-                return res, True
+        if res := self._overrides.get(obj_id):
+            return res, True
 
-            if self._registry.is_interface_known(param.klass):
-                resolved_type = self._registry.interface_resolve_impl(param.klass, param.qualifier_value)
-                obj_id = resolved_type, param.qualifier_value
+        if self._registry.is_interface_known(klass):
+            resolved_type: type = self._registry.interface_resolve_impl(klass, qualifier)
+            obj_id = resolved_type, qualifier
 
-            if res := self._global_scope.objects.get(obj_id):
-                return res, True
+        if res := self._global_scope.objects.get(obj_id):
+            return res, True
 
-            if self._current_scope is not None and (res := self._current_scope.objects.get(obj_id)):
-                return res, True
+        if self._current_scope is not None and (res := self._current_scope.objects.get(obj_id)):
+            return res, True
 
-        if isinstance(param.annotation, ParameterWrapper):
-            return self._params.get(param.annotation.param), True
+        if isinstance(annotation, ParameterWrapper):
+            return self._params.get(annotation.param), True
 
         return None, False
 
@@ -129,7 +129,7 @@ class BaseContainer:
         exit_stack: List[Union[Generator[Any, Any, Any], AsyncGenerator[Any, Any]]] = []
 
         for name, param in self._registry.dependencies[fn].items():
-            obj, value_found = self._try_get_existing_value(param)
+            obj, value_found = self._try_get_existing_value(param.klass, param.qualifier_value, param.annotation)
 
             if value_found:
                 result[name] = obj
@@ -266,9 +266,7 @@ class BaseContainer:
         :param klass: Class of the dependency already registered in the container.
         :return: An instance of the requested object. Always returns an existing instance when one is available.
         """
-        res, found = self._try_get_existing_value(
-            AnnotatedParameter(klass=klass, annotation=ServiceQualifier(qualifier))
-        )
+        res, found = self._try_get_existing_value(klass, qualifier)
 
         if found:
             return res  # type: ignore[no-any-return]
