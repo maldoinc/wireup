@@ -105,13 +105,12 @@ class BaseContainer:
         return result
 
     async def _async_create_instance(self, klass: Type[T], qualifier: Optional[Qualifier]) -> Optional[T]:
-        ctor_and_type = self._registry.ctors.get((klass, qualifier))
+        ctor_details = self._registry.ctors.get((klass, qualifier))
 
-        if not ctor_and_type:
+        if not ctor_details:
             return None
 
-        ctor, resolved_type, factory_type = ctor_and_type
-        lifetime = self._registry.lifetime[resolved_type]
+        ctor, resolved_type, factory_type, lifetime = ctor_details
         object_storage, exit_stack = self._get_object_storage_and_exit_stack(lifetime)
         kwargs = await self._async_callable_get_params_to_inject(ctor)
         instance_or_generator = await ctor(**kwargs) if factory_type == FactoryType.COROUTINE_FN else ctor(**kwargs)
@@ -132,12 +131,12 @@ class BaseContainer:
         return instance
 
     def _create_instance(self, klass: Type[T], qualifier: Optional[Qualifier]) -> Optional[T]:
-        ctor_and_type = self._registry.ctors.get((klass, qualifier))
+        ctor_details = self._registry.ctors.get((klass, qualifier))
 
-        if not ctor_and_type:
+        if not ctor_details:
             return None
 
-        ctor, resolved_type, factory_type = ctor_and_type
+        ctor, resolved_type, factory_type, lifetime = ctor_details
 
         if factory_type in _ASYNC_FACTORY_TYPES:
             msg = (
@@ -146,7 +145,6 @@ class BaseContainer:
             )
             raise WireupError(msg)
 
-        lifetime = self._registry.lifetime[resolved_type]
         object_storage, exit_stack = self._get_object_storage_and_exit_stack(lifetime)
 
         instance_or_generator = ctor(**self._callable_get_params_to_inject(ctor))
