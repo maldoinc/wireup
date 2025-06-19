@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from collections.abc import Hashable
 from dataclasses import dataclass, field
-from typing import Any, AsyncGenerator, Callable, Generator, NamedTuple, Optional, Tuple, Union
+from typing import Any, AsyncGenerator, Callable, Generator, Optional, Tuple, Union
 
 from typing_extensions import Literal
 
@@ -108,16 +108,6 @@ class ServiceOverride:
     target: type[Any]
     new: Any
     qualifier: Qualifier | None = None
-
-
-class CreationResult(NamedTuple):
-    instance: Any
-    exit_stack: list[Generator[Any, Any, Any] | AsyncGenerator[Any, Any]]
-
-
-class InjectionResult(NamedTuple):
-    kwargs: dict[str, Any]
-    exit_stack: list[Generator[Any, Any, Any] | AsyncGenerator[Any, Any]]
 
 
 @dataclass(frozen=True)

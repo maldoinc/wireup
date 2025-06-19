@@ -23,8 +23,6 @@ from wireup.ioc.types import (
     AnyCallable,
     ContainerObjectIdentifier,
     ContainerScope,
-    CreationResult,
-    InjectionResult,
     ParameterWrapper,
     Qualifier,
     ServiceLifetime,
@@ -33,6 +31,7 @@ from wireup.ioc.types import (
 T = TypeVar("T")
 logger = logging.getLogger(__name__)
 _ASYNC_FACTORY_TYPES = FactoryType.ASYNC_GENERATOR, FactoryType.COROUTINE_FN
+ContainerExitStack = List[Union[Generator[Any, Any, Any], AsyncGenerator[Any, Any]]]
 
 
 class BaseContainer:
@@ -70,41 +69,41 @@ class BaseContainer:
         """Override registered container services with new values."""
         return self._override_mgr
 
-    def _try_get_existing_instance(self, klass: Type[T], qualifier: Qualifier) -> Optional[Any]:
+    def _try_get_existing_instance(self, klass: Type[T], qualifier: Qualifier) -> Optional[T]:
         obj_id = klass, qualifier
 
         if res := self._overrides.get(obj_id):
-            return res
+            return res  # type: ignore[no-any-return]
 
         if self._registry.is_interface_known(klass):
             resolved_type: type = self._registry.interface_resolve_impl(klass, qualifier)
             obj_id = resolved_type, qualifier
 
         if res := self._global_scope.objects.get(obj_id):
-            return res
+            return res  # type: ignore[no-any-return]
 
         if self._current_scope is not None and (res := self._current_scope.objects.get(obj_id)):
-            return res
+            return res  # type: ignore[no-any-return]
 
         return None
 
-    async def _async_callable_get_params_to_inject(self, fn: AnyCallable) -> InjectionResult:
+    async def _async_callable_get_params_to_inject(
+        self,
+        fn: AnyCallable,
+    ) -> Dict[str, Any]:
         result: Dict[str, Any] = {}
-        exit_stack: List[Union[Generator[Any, Any, Any], AsyncGenerator[Any, Any]]] = []
 
         for name, param in self._registry.dependencies[fn].items():
             if obj := self._try_get_existing_instance(param.klass, param.qualifier_value):
                 result[name] = obj
-            elif param.klass and (creation := await self._async_create_instance(param.klass, param.qualifier_value)):
-                if creation.exit_stack:
-                    exit_stack.extend(creation.exit_stack)
-                result[name] = creation.instance
+            elif param.klass and (instance := await self._async_create_instance(param.klass, param.qualifier_value)):
+                result[name] = instance
             elif param.annotation and isinstance(param.annotation, ParameterWrapper):
                 result[name] = self._params.get(param.annotation.param)
 
-        return InjectionResult(kwargs=result, exit_stack=exit_stack)
+        return result
 
-    async def _async_create_instance(self, klass: Type[T], qualifier: Optional[Qualifier]) -> Optional[CreationResult]:
+    async def _async_create_instance(self, klass: Type[T], qualifier: Optional[Qualifier]) -> Optional[T]:
         ctor_and_type = self._registry.ctors.get((klass, qualifier))
 
         if not ctor_and_type:
@@ -112,13 +111,9 @@ class BaseContainer:
 
         ctor, resolved_type, factory_type = ctor_and_type
         lifetime = self._registry.lifetime[resolved_type]
-        self._assert_lifetime_is_valid(lifetime)
-        injection_result = await self._async_callable_get_params_to_inject(ctor)
-        instance_or_generator = (
-            await ctor(**injection_result.kwargs)
-            if factory_type == FactoryType.COROUTINE_FN
-            else ctor(**injection_result.kwargs)
-        )
+        scope = self._get_scope(lifetime)
+        kwargs = await self._async_callable_get_params_to_inject(ctor)
+        instance_or_generator = await ctor(**kwargs) if factory_type == FactoryType.COROUTINE_FN else ctor(**kwargs)
 
         if factory_type in GENERATOR_FACTORY_TYPES:
             generator = instance_or_generator
@@ -131,15 +126,15 @@ class BaseContainer:
             generator = None
             instance = instance_or_generator
 
-        return self._wrap_result(
-            lifetime=lifetime,
+        return self._wrap_result(  # type: ignore[no-any-return]
+            scope=scope,
             generator=generator,
+            lifetime=lifetime,
             instance=instance,
             object_identifier=(resolved_type, qualifier),
-            injection_result=injection_result,
         )
 
-    def _create_instance(self, klass: Type[T], qualifier: Optional[Qualifier]) -> Optional[CreationResult]:
+    def _create_instance(self, klass: Type[T], qualifier: Optional[Qualifier]) -> Optional[T]:
         ctor_and_type = self._registry.ctors.get((klass, qualifier))
 
         if not ctor_and_type:
@@ -155,10 +150,9 @@ class BaseContainer:
             raise WireupError(msg)
 
         lifetime = self._registry.lifetime[resolved_type]
-        self._assert_lifetime_is_valid(lifetime)
+        scope = self._get_scope(lifetime)
 
-        injection_result = self._callable_get_params_to_inject(ctor)
-        instance_or_generator = ctor(**injection_result.kwargs)
+        instance_or_generator = ctor(**self._callable_get_params_to_inject(ctor))
 
         if factory_type == FactoryType.GENERATOR:
             generator = instance_or_generator
@@ -167,12 +161,12 @@ class BaseContainer:
             instance = instance_or_generator
             generator = None
 
-        return self._wrap_result(
+        return self._wrap_result(  # type: ignore[no-any-return]
+            scope=scope,
             lifetime=lifetime,
             generator=generator,
             instance=instance,
             object_identifier=(resolved_type, qualifier),
-            injection_result=injection_result,
         )
 
     _callable_get_params_to_inject = async_to_sync(
@@ -185,41 +179,32 @@ class BaseContainer:
         self,
         *,
         lifetime: ServiceLifetime,
+        scope: ContainerScope,
         generator: Optional[Any],
-        instance: Any,
+        instance: T,
         object_identifier: ContainerObjectIdentifier,
-        injection_result: InjectionResult,
-    ) -> CreationResult:
-        is_singleton = lifetime == "singleton"
+    ) -> T:
+        if lifetime != "transient":
+            scope.objects[object_identifier] = instance
 
-        if is_singleton:
-            self._global_scope.objects[object_identifier] = instance
-        elif self._current_scope is not None and lifetime == "scoped":
-            self._current_scope.objects[object_identifier] = instance
+        if generator:
+            scope.exit_stack.append(generator)
 
-        if not generator:
-            return CreationResult(instance=instance, exit_stack=injection_result.exit_stack)
+        return instance
 
-        result_exit_stack = injection_result.exit_stack
-        if is_singleton:
-            self._global_scope.exit_stack.append(generator)
-            result_exit_stack = []
-        elif self._current_scope is not None:
-            self._current_scope.exit_stack.append(generator)
-            result_exit_stack = []
-        else:
-            result_exit_stack.append(generator)
+    def _get_scope(self, lifetime: ServiceLifetime) -> ContainerScope:
+        if lifetime == "singleton":
+            return self._global_scope
 
-        return CreationResult(instance=instance, exit_stack=result_exit_stack)
-
-    def _assert_lifetime_is_valid(self, lifetime: ServiceLifetime) -> None:
-        if lifetime != "singleton" and self._current_scope is None:
+        if self._current_scope is None:
             msg = (
                 "Cannot create 'transient' or 'scoped' lifetime objects from the base container. "
                 "Please enter a scope using container.enter_scope. "
                 "If you are within a scope, use the scoped container instance to create dependencies."
             )
             raise WireupError(msg)
+
+        return self._current_scope
 
     async def _async_get(self, klass: Type[T], qualifier: Optional[Qualifier] = None) -> T:
         """Get an instance of the requested type.
@@ -230,10 +215,10 @@ class BaseContainer:
         """
 
         if res := self._try_get_existing_instance(klass, qualifier):
-            return res  # type: ignore[no-any-return]
+            return res
 
         if res := await self._async_create_instance(klass, qualifier):
-            return res.instance  # type: ignore[no-any-return]
+            return res
 
         raise UnknownServiceRequestedError(klass)
 
