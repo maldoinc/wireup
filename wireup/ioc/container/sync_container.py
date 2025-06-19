@@ -19,7 +19,7 @@ class ScopedSyncContainer(BareSyncContainer): ...
 class SyncContainer(BareSyncContainer):
     @contextlib.contextmanager
     def enter_scope(self) -> Iterator[ScopedSyncContainer]:
-        scope = ContainerScope()
+        scope = ContainerScope(objects={}, exit_stack=[])
         scoped_container = ScopedSyncContainer(
             registry=self._registry,
             parameters=self._params,

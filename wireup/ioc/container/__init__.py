@@ -59,7 +59,7 @@ def _create_container(
     container = klass(
         registry=ServiceRegistry(abstracts=abstracts, impls=impls),
         parameters=ParameterBag(parameters),
-        global_scope=ContainerScope(),
+        global_scope=ContainerScope(objects={}, exit_stack=[]),
         overrides={},
     )
 

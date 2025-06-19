@@ -20,7 +20,7 @@ class ScopedAsyncContainer(BareAsyncContainer): ...
 class AsyncContainer(BareAsyncContainer):
     @contextlib.asynccontextmanager
     async def enter_scope(self) -> AsyncIterator[ScopedAsyncContainer]:
-        scope = ContainerScope()
+        scope = ContainerScope(objects={}, exit_stack=[])
         scoped_container = ScopedAsyncContainer(
             registry=self._registry,
             parameters=self._params,
@@ -41,7 +41,7 @@ def async_container_force_sync_scope(container: AsyncContainer) -> Iterator[Scop
     This can be useful when you need to inject synchronous functions
     in an environment that supports both sync and async.
     """
-    scope = ContainerScope()
+    scope = ContainerScope(objects={}, exit_stack=[])
     scoped_container = ScopedSyncContainer(
         registry=container._registry,
         parameters=container._params,

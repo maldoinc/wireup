@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 from collections.abc import Hashable
-from dataclasses import dataclass, field
-from typing import Any, AsyncGenerator, Callable, Generator, Optional, Tuple, Union
+from dataclasses import dataclass
+from typing import Any, AsyncGenerator, Callable, Generator, NamedTuple, Optional, Tuple, Union
 
 from typing_extensions import Literal
 
@@ -110,7 +110,6 @@ class ServiceOverride:
     qualifier: Qualifier | None = None
 
 
-@dataclass(frozen=True)
-class ContainerScope:
-    objects: dict[ContainerObjectIdentifier, Any] = field(default_factory=dict)
-    exit_stack: list[Generator[Any, Any, Any] | AsyncGenerator[Any, Any]] = field(default_factory=list)
+class ContainerScope(NamedTuple):
+    objects: dict[ContainerObjectIdentifier, Any]
+    exit_stack: list[Generator[Any, Any, Any] | AsyncGenerator[Any, Any]]
