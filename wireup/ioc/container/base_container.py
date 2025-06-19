@@ -6,6 +6,7 @@ from typing import (
     Generator,
     List,
     Optional,
+    Tuple,
     Type,
     TypeVar,
     Union,
@@ -111,28 +112,24 @@ class BaseContainer:
 
         ctor, resolved_type, factory_type = ctor_and_type
         lifetime = self._registry.lifetime[resolved_type]
-        scope = self._get_scope(lifetime)
+        object_storage, exit_stack = self._get_object_storage_and_exit_stack(lifetime)
         kwargs = await self._async_callable_get_params_to_inject(ctor)
         instance_or_generator = await ctor(**kwargs) if factory_type == FactoryType.COROUTINE_FN else ctor(**kwargs)
 
         if factory_type in GENERATOR_FACTORY_TYPES:
-            generator = instance_or_generator
+            exit_stack.append(instance_or_generator)
             instance = (
                 next(instance_or_generator)
                 if factory_type == FactoryType.GENERATOR
                 else await instance_or_generator.__anext__()
             )
         else:
-            generator = None
             instance = instance_or_generator
 
-        return self._wrap_result(  # type: ignore[no-any-return]
-            scope=scope,
-            generator=generator,
-            lifetime=lifetime,
-            instance=instance,
-            object_identifier=(resolved_type, qualifier),
-        )
+        if object_storage is not None:
+            object_storage[(resolved_type, qualifier)] = instance
+
+        return instance
 
     def _create_instance(self, klass: Type[T], qualifier: Optional[Qualifier]) -> Optional[T]:
         ctor_and_type = self._registry.ctors.get((klass, qualifier))
@@ -150,24 +147,20 @@ class BaseContainer:
             raise WireupError(msg)
 
         lifetime = self._registry.lifetime[resolved_type]
-        scope = self._get_scope(lifetime)
+        object_storage, exit_stack = self._get_object_storage_and_exit_stack(lifetime)
 
         instance_or_generator = ctor(**self._callable_get_params_to_inject(ctor))
 
         if factory_type == FactoryType.GENERATOR:
-            generator = instance_or_generator
+            exit_stack.append(instance_or_generator)
             instance = next(instance_or_generator)
         else:
             instance = instance_or_generator
-            generator = None
 
-        return self._wrap_result(  # type: ignore[no-any-return]
-            scope=scope,
-            lifetime=lifetime,
-            generator=generator,
-            instance=instance,
-            object_identifier=(resolved_type, qualifier),
-        )
+        if object_storage is not None:
+            object_storage[(resolved_type, qualifier)] = instance
+
+        return instance
 
     _callable_get_params_to_inject = async_to_sync(
         "_callable_get_params_to_inject",
@@ -175,26 +168,11 @@ class BaseContainer:
         {_async_create_instance: _create_instance},
     )
 
-    def _wrap_result(
-        self,
-        *,
-        lifetime: ServiceLifetime,
-        scope: ContainerScope,
-        generator: Optional[Any],
-        instance: T,
-        object_identifier: ContainerObjectIdentifier,
-    ) -> T:
-        if lifetime != "transient":
-            scope.objects[object_identifier] = instance
-
-        if generator:
-            scope.exit_stack.append(generator)
-
-        return instance
-
-    def _get_scope(self, lifetime: ServiceLifetime) -> ContainerScope:
+    def _get_object_storage_and_exit_stack(
+        self, lifetime: ServiceLifetime
+    ) -> Tuple[Optional[Dict[ContainerObjectIdentifier, Any]], ContainerExitStack]:
         if lifetime == "singleton":
-            return self._global_scope
+            return self._global_scope.objects, self._global_scope.exit_stack
 
         if self._current_scope is None:
             msg = (
@@ -204,7 +182,7 @@ class BaseContainer:
             )
             raise WireupError(msg)
 
-        return self._current_scope
+        return self._current_scope.objects if lifetime == "scoped" else None, self._current_scope.exit_stack
 
     async def _async_get(self, klass: Type[T], qualifier: Optional[Qualifier] = None) -> T:
         """Get an instance of the requested type.
