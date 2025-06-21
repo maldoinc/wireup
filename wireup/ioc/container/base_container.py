@@ -70,12 +70,11 @@ class BaseContainer:
         """Override registered container services with new values."""
         return self._override_mgr
 
-    def _try_get_existing_instance(self, klass: Type[T], qualifier: Qualifier) -> Optional[T]:
-        obj_id = klass, qualifier
-
+    def _try_get_existing_instance(self, obj_id: ContainerObjectIdentifier) -> Optional[T]:
         if res := self._overrides.get(obj_id):
             return res  # type: ignore[no-any-return]
 
+        klass, qualifier = obj_id
         if self._registry.is_interface_known(klass):
             resolved_type: type = self._registry.interface_resolve_impl(klass, qualifier)
             obj_id = resolved_type, qualifier
@@ -95,17 +94,18 @@ class BaseContainer:
         result: Dict[str, Any] = {}
 
         for name, param in self._registry.dependencies[fn].items():
-            if obj := self._try_get_existing_instance(param.klass, param.qualifier_value):
+            obj_id = param.klass, param.qualifier_value
+            if obj := self._try_get_existing_instance(obj_id):
                 result[name] = obj
-            elif param.klass and (instance := await self._async_create_instance(param.klass, param.qualifier_value)):
+            elif param.klass and (instance := await self._async_create_instance(obj_id)):
                 result[name] = instance
             elif param.annotation and isinstance(param.annotation, ParameterWrapper):
                 result[name] = self._params.get(param.annotation.param)
 
         return result
 
-    async def _async_create_instance(self, klass: Type[T], qualifier: Optional[Qualifier]) -> Optional[T]:
-        ctor_details = self._registry.ctors.get((klass, qualifier))
+    async def _async_create_instance(self, obj_id: ContainerObjectIdentifier) -> Optional[T]:
+        ctor_details = self._registry.ctors.get(obj_id)
 
         if not ctor_details:
             return None
@@ -126,12 +126,12 @@ class BaseContainer:
             instance = instance_or_generator
 
         if object_storage is not None:
-            object_storage[(resolved_type, qualifier)] = instance
+            object_storage[(resolved_type, obj_id[1])] = instance
 
         return instance
 
-    def _create_instance(self, klass: Type[T], qualifier: Optional[Qualifier]) -> Optional[T]:
-        ctor_details = self._registry.ctors.get((klass, qualifier))
+    def _create_instance(self, obj_id: ContainerObjectIdentifier) -> Optional[T]:
+        ctor_details = self._registry.ctors.get(obj_id)
 
         if not ctor_details:
             return None
@@ -140,7 +140,7 @@ class BaseContainer:
 
         if factory_type in _ASYNC_FACTORY_TYPES:
             msg = (
-                f"{klass} is an async dependency and it cannot be created in a synchronous context. "
+                f"{obj_id[0]} is an async dependency and it cannot be created in a synchronous context. "
                 "Create and use an async container via wireup.create_async_container. "
             )
             raise WireupError(msg)
@@ -156,7 +156,7 @@ class BaseContainer:
             instance = instance_or_generator
 
         if object_storage is not None:
-            object_storage[(resolved_type, qualifier)] = instance
+            object_storage[(resolved_type, obj_id[1])] = instance
 
         return instance
 
@@ -189,11 +189,12 @@ class BaseContainer:
         :param klass: Class of the dependency already registered in the container.
         :return: An instance of the requested object. Always returns an existing instance when one is available.
         """
+        obj_id = klass, qualifier
 
-        if res := self._try_get_existing_instance(klass, qualifier):
+        if res := self._try_get_existing_instance(obj_id):
             return res
 
-        if res := await self._async_create_instance(klass, qualifier):
+        if res := await self._async_create_instance(obj_id):
             return res
 
         raise UnknownServiceRequestedError(klass)
