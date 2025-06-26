@@ -94,7 +94,8 @@ class BaseContainer:
         result: Dict[str, Any] = {}
 
         for name, param in self._registry.dependencies[fn].items():
-            obj_id = param.klass, param.qualifier_value
+            obj_id = param.obj_id
+
             if obj := self._try_get_existing_instance(obj_id):
                 result[name] = obj
             elif param.klass and (instance := await self._async_create_instance(obj_id)):
