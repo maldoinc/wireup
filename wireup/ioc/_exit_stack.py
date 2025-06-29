@@ -7,6 +7,9 @@ from wireup.errors import ContainerCloseError, WireupError
 
 
 def clean_exit_stack(exit_stack: list[Generator[Any, Any, Any] | AsyncGenerator[Any, Any]]) -> None:
+    if not exit_stack:
+        return
+
     errors: list[Exception] = []
 
     if async_gen := [gen for gen in exit_stack if inspect.isasyncgen(gen)]:
