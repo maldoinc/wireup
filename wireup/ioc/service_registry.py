@@ -16,7 +16,7 @@ from wireup.errors import (
     UnknownQualifiedServiceRequestedError,
     WireupError,
 )
-from wireup.ioc.types import AnnotatedParameter, AnyCallable, EmptyContainerInjectionRequest
+from wireup.ioc.types import AnnotatedParameter, AnyCallable, ContainerObjectIdentifier, EmptyContainerInjectionRequest
 from wireup.ioc.util import ensure_is_type, get_globals, param_get_annotation
 from wireup.ioc.validation import stringify_type
 
@@ -82,11 +82,12 @@ class ServiceRegistry:
     ) -> None:
         self.interfaces: dict[type, dict[Qualifier, type]] = {}
         self.impls: dict[type, set[Qualifier]] = defaultdict(set)
-        self.factories: dict[tuple[type, Qualifier], ServiceFactory] = {}
+        self.factories: dict[ContainerObjectIdentifier, ServiceFactory] = {}
         self.dependencies: dict[InjectionTarget, dict[str, AnnotatedParameter]] = defaultdict(defaultdict)
         self.lifetime: dict[InjectionTarget, ServiceLifetime] = {}
         self.ctors: dict[
-            tuple[type, Qualifier], tuple[Callable[..., Any], tuple[type, Qualifier], FactoryType, ServiceLifetime]
+            ContainerObjectIdentifier,
+            tuple[Callable[..., Any], ContainerObjectIdentifier, FactoryType, ServiceLifetime],
         ] = {}
         self._extend_with_services(abstracts or [], impls or [])
 
