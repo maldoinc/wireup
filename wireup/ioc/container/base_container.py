@@ -19,7 +19,7 @@ from wireup.errors import (
 )
 from wireup.ioc.override_manager import OverrideManager
 from wireup.ioc.parameter import ParameterBag
-from wireup.ioc.service_registry import GENERATOR_FACTORY_TYPES, FactoryType, ServiceRegistry
+from wireup.ioc.service_registry import GENERATOR_FACTORY_TYPES, FactoryType, ServiceCreationDetails, ServiceRegistry
 from wireup.ioc.types import (
     AnyCallable,
     ContainerObjectIdentifier,
@@ -70,15 +70,15 @@ class BaseContainer:
         """Override registered container services with new values."""
         return self._override_mgr
 
-    def _try_get_existing_instance(self, obj_id: ContainerObjectIdentifier) -> Optional[T]:
+    def _try_get_existing_instance(self, obj_id: ContainerObjectIdentifier) -> Any:
         if res := self._overrides.get(obj_id):
-            return res  # type: ignore[no-any-return]
+            return res
 
         if res := self._global_scope.objects.get(obj_id):
-            return res  # type: ignore[no-any-return]
+            return res
 
         if self._current_scope is not None and (res := self._current_scope.objects.get(obj_id)):
-            return res  # type: ignore[no-any-return]
+            return res
 
         return None
 
@@ -93,19 +93,18 @@ class BaseContainer:
 
             if obj := self._try_get_existing_instance(obj_id):
                 result[name] = obj
-            elif param.klass and (instance := await self._async_create_instance(obj_id)):
-                result[name] = instance
+            elif not param.is_parameter:
+                result[name] = await self._async_create_instance(obj_id, self._registry.ctors[obj_id])
             elif param.annotation and isinstance(param.annotation, ParameterWrapper):
                 result[name] = self._params.get(param.annotation.param)
 
         return result
 
-    async def _async_create_instance(self, obj_id: ContainerObjectIdentifier) -> Optional[T]:
-        ctor_details = self._registry.ctors.get(obj_id)
-
-        if not ctor_details:
-            return None
-
+    async def _async_create_instance(
+        self,
+        obj_id: ContainerObjectIdentifier,
+        ctor_details: ServiceCreationDetails,
+    ) -> Any:
         ctor, resolved_obj_id, factory_type, lifetime = ctor_details
         object_storage, exit_stack = self._get_object_storage_and_exit_stack(lifetime)
         kwargs = await self._async_callable_get_params_to_inject(ctor)
@@ -127,12 +126,7 @@ class BaseContainer:
 
         return instance
 
-    def _create_instance(self, obj_id: ContainerObjectIdentifier) -> Optional[T]:
-        ctor_details = self._registry.ctors.get(obj_id)
-
-        if not ctor_details:
-            return None
-
+    def _create_instance(self, obj_id: ContainerObjectIdentifier, ctor_details: ServiceCreationDetails) -> Any:
         ctor, resolved_obj_id, factory_type, lifetime = ctor_details
 
         if factory_type in _ASYNC_FACTORY_TYPES:
@@ -190,10 +184,10 @@ class BaseContainer:
         obj_id = klass, qualifier
 
         if res := self._try_get_existing_instance(obj_id):
-            return res
+            return res  # type: ignore[no-any-return]
 
-        if res := await self._async_create_instance(obj_id):
-            return res
+        if ctor := self._registry.ctors.get(obj_id):
+            return await self._async_create_instance(obj_id, ctor)  # type: ignore[no-any-return]
 
         raise UnknownServiceRequestedError(klass)
 

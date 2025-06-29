@@ -16,7 +16,13 @@ from wireup.errors import (
     UnknownQualifiedServiceRequestedError,
     WireupError,
 )
-from wireup.ioc.types import AnnotatedParameter, AnyCallable, ContainerObjectIdentifier, EmptyContainerInjectionRequest
+from wireup.ioc.types import (
+    AnnotatedParameter,
+    AnyCallable,
+    ContainerObjectIdentifier,
+    EmptyContainerInjectionRequest,
+    ServiceLifetime,
+)
 from wireup.ioc.util import ensure_is_type, get_globals, param_get_annotation
 from wireup.ioc.validation import stringify_type
 
@@ -24,7 +30,6 @@ if TYPE_CHECKING:
     from wireup._annotations import AbstractDeclaration, ServiceDeclaration
     from wireup.ioc.types import (
         Qualifier,
-        ServiceLifetime,
     )
 
 
@@ -47,6 +52,9 @@ GENERATOR_FACTORY_TYPES = {FactoryType.GENERATOR, FactoryType.ASYNC_GENERATOR}
 class ServiceFactory:
     factory: Callable[..., Any]
     factory_type: FactoryType
+
+
+ServiceCreationDetails = tuple[Callable[..., Any], ContainerObjectIdentifier, FactoryType, ServiceLifetime]
 
 
 def _function_get_unwrapped_return_type(fn: Callable[..., T]) -> tuple[type[T], FactoryType] | None:
@@ -85,10 +93,7 @@ class ServiceRegistry:
         self.factories: dict[ContainerObjectIdentifier, ServiceFactory] = {}
         self.dependencies: dict[InjectionTarget, dict[str, AnnotatedParameter]] = defaultdict(defaultdict)
         self.lifetime: dict[InjectionTarget, ServiceLifetime] = {}
-        self.ctors: dict[
-            ContainerObjectIdentifier,
-            tuple[Callable[..., Any], ContainerObjectIdentifier, FactoryType, ServiceLifetime],
-        ] = {}
+        self.ctors: dict[ContainerObjectIdentifier, ServiceCreationDetails] = {}
         self._extend_with_services(abstracts or [], impls or [])
 
     def _extend_with_services(self, abstracts: list[AbstractDeclaration], impls: list[ServiceDeclaration]) -> None:
