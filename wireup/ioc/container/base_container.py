@@ -74,11 +74,6 @@ class BaseContainer:
         if res := self._overrides.get(obj_id):
             return res  # type: ignore[no-any-return]
 
-        klass, qualifier = obj_id
-        if self._registry.is_interface_known(klass):
-            resolved_type: type = self._registry.interface_resolve_impl(klass, qualifier)
-            obj_id = resolved_type, qualifier
-
         if res := self._global_scope.objects.get(obj_id):
             return res  # type: ignore[no-any-return]
 
@@ -111,7 +106,7 @@ class BaseContainer:
         if not ctor_details:
             return None
 
-        ctor, resolved_type, factory_type, lifetime = ctor_details
+        ctor, resolved_obj_id, factory_type, lifetime = ctor_details
         object_storage, exit_stack = self._get_object_storage_and_exit_stack(lifetime)
         kwargs = await self._async_callable_get_params_to_inject(ctor)
         instance_or_generator = await ctor(**kwargs) if factory_type == FactoryType.COROUTINE_FN else ctor(**kwargs)
@@ -127,7 +122,8 @@ class BaseContainer:
             instance = instance_or_generator
 
         if object_storage is not None:
-            object_storage[(resolved_type, obj_id[1])] = instance
+            object_storage[resolved_obj_id] = instance
+            object_storage[obj_id] = instance
 
         return instance
 
@@ -137,7 +133,7 @@ class BaseContainer:
         if not ctor_details:
             return None
 
-        ctor, resolved_type, factory_type, lifetime = ctor_details
+        ctor, resolved_obj_id, factory_type, lifetime = ctor_details
 
         if factory_type in _ASYNC_FACTORY_TYPES:
             msg = (
@@ -157,7 +153,8 @@ class BaseContainer:
             instance = instance_or_generator
 
         if object_storage is not None:
-            object_storage[(resolved_type, obj_id[1])] = instance
+            object_storage[resolved_obj_id] = instance
+            object_storage[obj_id] = instance
 
         return instance
 

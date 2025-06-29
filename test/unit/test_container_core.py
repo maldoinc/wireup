@@ -111,7 +111,7 @@ async def test_container_get_interface_without_impls_raises(container: Container
     with pytest.raises(
         WireupError,
         match=re.escape(
-            f"Cannot create {InterfaceWithoutImpls} as qualifier 'None' is unknown. Available qualifiers: []."
+            f"Cannot inject {InterfaceWithoutImpls} as qualifier 'None' is unknown. Available qualifiers: []."
         ),
     ):
         await run(container.get(InterfaceWithoutImpls))
@@ -125,6 +125,14 @@ async def test_container_get_interface_unknown_impl_errors_known_impls(container
         ),
     ):
         await run(container.get(Foo, qualifier="does-not-exist"))
+
+
+async def test_container_get_interface_returns_same_instance_as_get_type(container: Container) -> None:
+    assert await run(container.get(Foo)) is await run(container.get(FooImpl))
+
+
+async def test_container_get_interface_returns_same_instance(container: Container) -> None:
+    assert await run(container.get(Foo)) is await run(container.get(Foo))
 
 
 async def test_container_get_returns_service(container: Container) -> None:

@@ -85,7 +85,9 @@ class ServiceRegistry:
         self.factories: dict[tuple[type, Qualifier], ServiceFactory] = {}
         self.dependencies: dict[InjectionTarget, dict[str, AnnotatedParameter]] = defaultdict(defaultdict)
         self.lifetime: dict[InjectionTarget, ServiceLifetime] = {}
-        self.ctors: dict[tuple[type, Qualifier], tuple[Callable[..., Any], type, FactoryType, ServiceLifetime]] = {}
+        self.ctors: dict[
+            tuple[type, Qualifier], tuple[Callable[..., Any], tuple[type, Qualifier], FactoryType, ServiceLifetime]
+        ] = {}
         self._extend_with_services(abstracts or [], impls or [])
 
     def _extend_with_services(self, abstracts: list[AbstractDeclaration], impls: list[ServiceDeclaration]) -> None:
@@ -101,12 +103,22 @@ class ServiceRegistry:
         for interface, impls in self.interfaces.items():
             for qualifier, impl in impls.items():
                 factory = self.factories[impl, qualifier]
-                self.ctors[interface, qualifier] = factory.factory, impl, factory.factory_type, self.lifetime[impl]
+                self.ctors[interface, qualifier] = (
+                    factory.factory,
+                    (impl, qualifier),
+                    factory.factory_type,
+                    self.lifetime[impl],
+                )
 
         for impl, qualifiers in self.impls.items():
             for qualifier in qualifiers:
                 factory = self.factories[impl, qualifier]
-                self.ctors[impl, qualifier] = factory.factory, impl, factory.factory_type, self.lifetime[impl]
+                self.ctors[impl, qualifier] = (
+                    factory.factory,
+                    (impl, qualifier),
+                    factory.factory_type,
+                    self.lifetime[impl],
+                )
 
     def register(
         self,
