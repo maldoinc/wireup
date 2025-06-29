@@ -37,7 +37,8 @@ ContainerExitStack = List[Union[Generator[Any, Any, Any], AsyncGenerator[Any, An
 
 class BaseContainer:
     __slots__ = (
-        "_current_scope",
+        "_current_scope_exit_stack",
+        "_current_scope_objects",
         "_global_scope",
         "_override_mgr",
         "_overrides",
@@ -45,20 +46,22 @@ class BaseContainer:
         "_registry",
     )
 
-    def __init__(
+    def __init__(  # noqa: PLR0913
         self,
         registry: ServiceRegistry,
         parameters: ParameterBag,
         override_manager: OverrideManager,
         global_scope: ContainerScope,
-        current_scope: Optional[ContainerScope] = None,
+        current_scope_objects: Optional[Dict[ContainerObjectIdentifier, Any]] = None,
+        current_scope_exit_stack: Optional[List[Union[Generator[Any, Any, Any], AsyncGenerator[Any, Any]]]] = None,
     ) -> None:
         self._registry = registry
         self._params = parameters
         self._overrides = override_manager.active_overrides
         self._override_mgr = override_manager
         self._global_scope = global_scope
-        self._current_scope = current_scope
+        self._current_scope_objects = current_scope_objects
+        self._current_scope_exit_stack = current_scope_exit_stack
 
     @property
     def params(self) -> ParameterBag:
@@ -77,7 +80,7 @@ class BaseContainer:
         if res := self._global_scope.objects.get(obj_id):
             return res
 
-        if self._current_scope is not None and (res := self._current_scope.objects.get(obj_id)):
+        if self._current_scope_objects is not None and (res := self._current_scope_objects.get(obj_id)):
             return res
 
         return None
@@ -164,7 +167,7 @@ class BaseContainer:
         if lifetime == "singleton":
             return self._global_scope.objects, self._global_scope.exit_stack
 
-        if self._current_scope is None:
+        if self._current_scope_objects is None or self._current_scope_exit_stack is None:
             msg = (
                 "Cannot create 'transient' or 'scoped' lifetime objects from the base container. "
                 "Please enter a scope using container.enter_scope. "
@@ -172,7 +175,7 @@ class BaseContainer:
             )
             raise WireupError(msg)
 
-        return self._current_scope.objects if lifetime == "scoped" else None, self._current_scope.exit_stack
+        return self._current_scope_objects if lifetime == "scoped" else None, self._current_scope_exit_stack
 
     async def _async_get(self, klass: Type[T], qualifier: Optional[Qualifier] = None) -> T:
         """Get an instance of the requested type.

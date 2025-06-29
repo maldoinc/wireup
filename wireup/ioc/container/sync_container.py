@@ -1,9 +1,7 @@
-import contextlib
-from typing import Iterator
+from typing_extensions import Self
 
 from wireup.ioc._exit_stack import clean_exit_stack
 from wireup.ioc.container.base_container import BaseContainer
-from wireup.ioc.types import ContainerScope
 
 
 class BareSyncContainer(BaseContainer):
@@ -13,21 +11,21 @@ class BareSyncContainer(BaseContainer):
         clean_exit_stack(self._global_scope.exit_stack)
 
 
-class ScopedSyncContainer(BareSyncContainer): ...
+class ScopedSyncContainer(BareSyncContainer):
+    def __enter__(self) -> Self:
+        return self
+
+    def __exit__(self, *exc_info: object) -> None:
+        clean_exit_stack(self._current_scope_exit_stack)
 
 
 class SyncContainer(BareSyncContainer):
-    @contextlib.contextmanager
-    def enter_scope(self) -> Iterator[ScopedSyncContainer]:
-        scope = ContainerScope(objects={}, exit_stack=[])
-        scoped_container = ScopedSyncContainer(
+    def enter_scope(self) -> ScopedSyncContainer:
+        return ScopedSyncContainer(
             registry=self._registry,
             parameters=self._params,
             override_manager=self._override_mgr,
             global_scope=self._global_scope,
-            current_scope=scope,
+            current_scope_objects={},
+            current_scope_exit_stack=[],
         )
-        try:
-            yield scoped_container
-        finally:
-            clean_exit_stack(scope.exit_stack)
