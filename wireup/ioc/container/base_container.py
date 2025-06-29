@@ -189,6 +189,6 @@ class BaseContainer:
         if ctor := self._registry.ctors.get(obj_id):
             return await self._async_create_instance(obj_id, ctor)  # type: ignore[no-any-return]
 
-        raise UnknownServiceRequestedError(klass)
+        raise UnknownServiceRequestedError(klass, qualifier)
 
     _synchronous_get = async_to_sync("_synchronous_get", _async_get, {_async_create_instance: _create_instance})

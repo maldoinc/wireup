@@ -265,7 +265,8 @@ def test_inject_qualifier_on_unknown_type():
     with pytest.raises(
         UnknownServiceRequestedError,
         match=re.escape(
-            "Cannot inject unknown service <class 'str'>. Make sure it is registered with the container.",
+            f"Cannot inject unknown service {str} with qualifier '{__name__}'. "
+            "Make sure it is registered with the container."
         ),
     ):
         wireup.create_sync_container().get(str, qualifier=__name__)
