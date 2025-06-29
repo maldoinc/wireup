@@ -23,7 +23,7 @@ class SyncContainer(BareSyncContainer):
         scoped_container = ScopedSyncContainer(
             registry=self._registry,
             parameters=self._params,
-            overrides=self._overrides,
+            override_manager=self._override_mgr,
             global_scope=self._global_scope,
             current_scope=scope,
         )

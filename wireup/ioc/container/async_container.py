@@ -24,7 +24,7 @@ class AsyncContainer(BareAsyncContainer):
         scoped_container = ScopedAsyncContainer(
             registry=self._registry,
             parameters=self._params,
-            overrides=self._overrides,
+            override_manager=self._override_mgr,
             global_scope=self._global_scope,
             current_scope=scope,
         )
@@ -45,7 +45,7 @@ def async_container_force_sync_scope(container: AsyncContainer) -> Iterator[Scop
     scoped_container = ScopedSyncContainer(
         registry=container._registry,
         parameters=container._params,
-        overrides=container._overrides,
+        override_manager=container._override_mgr,
         global_scope=container._global_scope,
         current_scope=scope,
     )

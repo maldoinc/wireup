@@ -49,14 +49,14 @@ class BaseContainer:
         self,
         registry: ServiceRegistry,
         parameters: ParameterBag,
-        overrides: Dict[ContainerObjectIdentifier, Any],
+        override_manager: OverrideManager,
         global_scope: ContainerScope,
         current_scope: Optional[ContainerScope] = None,
     ) -> None:
         self._registry = registry
         self._params = parameters
-        self._overrides = overrides
-        self._override_mgr = OverrideManager(overrides, self._registry.is_type_with_qualifier_known)
+        self._overrides = override_manager.active_overrides
+        self._override_mgr = override_manager
         self._global_scope = global_scope
         self._current_scope = current_scope
 

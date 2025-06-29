@@ -8,6 +8,7 @@ from wireup.errors import WireupError
 from wireup.ioc.container.async_container import AsyncContainer
 from wireup.ioc.container.base_container import BaseContainer
 from wireup.ioc.container.sync_container import SyncContainer
+from wireup.ioc.override_manager import OverrideManager
 from wireup.ioc.parameter import ParameterBag
 from wireup.ioc.service_registry import ServiceRegistry
 from wireup.ioc.types import ContainerScope
@@ -56,11 +57,12 @@ def _create_container(
         abstracts.extend(discovered_abstracts)
         impls.extend(discovered_services)
 
+    registry = ServiceRegistry(abstracts=abstracts, impls=impls)
     container = klass(
-        registry=ServiceRegistry(abstracts=abstracts, impls=impls),
+        registry=registry,
         parameters=ParameterBag(parameters),
         global_scope=ContainerScope(objects={}, exit_stack=[]),
-        overrides={},
+        override_manager=OverrideManager({}, registry.is_type_with_qualifier_known),
     )
 
     assert_dependencies_valid(container)
