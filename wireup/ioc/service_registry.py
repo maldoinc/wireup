@@ -23,8 +23,7 @@ from wireup.ioc.types import (
     EmptyContainerInjectionRequest,
     ServiceLifetime,
 )
-from wireup.ioc.util import ensure_is_type, get_globals, param_get_annotation
-from wireup.ioc.validation import stringify_type
+from wireup.ioc.util import ensure_is_type, get_globals, param_get_annotation, stringify_type
 
 if TYPE_CHECKING:
     from wireup._annotations import AbstractDeclaration, ServiceDeclaration

@@ -6,7 +6,7 @@ from inspect import Parameter
 from typing import Any, TypeVar
 
 from wireup.errors import WireupError
-from wireup.ioc.types import AnnotatedParameter, InjectableType
+from wireup.ioc.types import AnnotatedParameter, AnyCallable, InjectableType
 
 if typing.TYPE_CHECKING:
     from collections.abc import Callable
@@ -75,3 +75,7 @@ def ensure_is_type(value: type[T] | str, globalns: dict[str, Any] | None = None)
             raise WireupError(msg) from e
 
     return value
+
+
+def stringify_type(target: type | AnyCallable) -> str:
+    return f"{type(target).__name__.capitalize()} {target.__module__}.{target.__name__}"
