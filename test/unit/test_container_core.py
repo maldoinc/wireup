@@ -128,8 +128,14 @@ async def test_container_get_interface_unknown_impl_errors_known_impls(container
         await run(container.get(Foo, qualifier="does-not-exist"))
 
 
-async def test_container_get_interface_returns_same_instance_as_get_type(container: Container) -> None:
-    assert await run(container.get(Foo)) is await run(container.get(FooImpl))
+@pytest.mark.parametrize("first", [Foo, FooImpl])
+@pytest.mark.parametrize("second", [FooImpl, Foo])
+async def test_container_get_interface_returns_same_instance_as_get_type(
+    container: Container,
+    first: type[Foo],
+    second: type[FooImpl],
+) -> None:
+    assert await run(container.get(first)) is await run(container.get(second))
 
 
 async def test_container_get_interface_returns_same_instance(container: Container) -> None:
