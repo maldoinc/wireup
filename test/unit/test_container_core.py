@@ -109,9 +109,9 @@ async def test_get_unknown_class(container: Container):
 
 async def test_container_get_interface_without_impls_raises(container: Container) -> None:
     with pytest.raises(
-        UnknownServiceRequestedError,
+        WireupError,
         match=re.escape(
-            f"Cannot create unknown service {InterfaceWithoutImpls}. Make sure it is registered with the container."
+            f"Cannot create {InterfaceWithoutImpls} as qualifier 'None' is unknown. Available qualifiers: []."
         ),
     ):
         await run(container.get(InterfaceWithoutImpls))
@@ -119,10 +119,9 @@ async def test_container_get_interface_without_impls_raises(container: Container
 
 async def test_container_get_interface_unknown_impl_errors_known_impls(container: Container) -> None:
     with pytest.raises(
-        UnknownServiceRequestedError,
+        WireupError,
         match=re.escape(
-            f"Cannot create unknown service {Foo} with qualifier 'does-not-exist'. "
-            "Make sure it is registered with the container."
+            f"Cannot create {Foo} as qualifier 'does-not-exist' is unknown. Available qualifiers: ['None', 'other']."
         ),
     ):
         await run(container.get(Foo, qualifier="does-not-exist"))
