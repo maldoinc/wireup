@@ -102,7 +102,7 @@ async def test_get_unknown_class(container: Container):
 
     with pytest.raises(
         UnknownServiceRequestedError,
-        match=f"Cannot inject unknown service {TestGetUnknown}. Make sure it is registered with the container.",
+        match=f"Cannot create unknown service {TestGetUnknown}. Make sure it is registered with the container.",
     ):
         await run(container.get(TestGetUnknown))
 
@@ -111,7 +111,7 @@ async def test_container_get_interface_without_impls_raises(container: Container
     with pytest.raises(
         UnknownServiceRequestedError,
         match=re.escape(
-            f"Cannot inject unknown service {InterfaceWithoutImpls}. Make sure it is registered with the container."
+            f"Cannot create unknown service {InterfaceWithoutImpls}. Make sure it is registered with the container."
         ),
     ):
         await run(container.get(InterfaceWithoutImpls))
@@ -121,7 +121,7 @@ async def test_container_get_interface_unknown_impl_errors_known_impls(container
     with pytest.raises(
         UnknownServiceRequestedError,
         match=re.escape(
-            f"Cannot inject unknown service {Foo} with qualifier 'does-not-exist'. "
+            f"Cannot create unknown service {Foo} with qualifier 'does-not-exist'. "
             "Make sure it is registered with the container."
         ),
     ):
@@ -266,7 +266,7 @@ def test_inject_qualifier_on_unknown_type():
     with pytest.raises(
         UnknownServiceRequestedError,
         match=re.escape(
-            f"Cannot inject unknown service {str} with qualifier '{__name__}'. "
+            f"Cannot create unknown service {str} with qualifier '{__name__}'. "
             "Make sure it is registered with the container."
         ),
     ):

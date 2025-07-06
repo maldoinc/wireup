@@ -72,7 +72,7 @@ class UnknownServiceRequestedError(WireupError):
 
     def __init__(self, klass: type[Any], qualifier: Qualifier | None = None) -> None:
         qualifier_str = f" with qualifier '{qualifier}'" if qualifier else ""
-        msg = f"Cannot inject unknown service {klass}{qualifier_str}. Make sure it is registered with the container."
+        msg = f"Cannot create unknown service {klass}{qualifier_str}. Make sure it is registered with the container."
         super().__init__(msg)
 
 
