@@ -17,7 +17,8 @@ class ScopedAsyncContainer(BareAsyncContainer):
         return self
 
     async def __aexit__(self, *exc_info: object) -> None:
-        await async_clean_exit_stack(self._current_scope_exit_stack)
+        if self._current_scope_exit_stack:
+            await async_clean_exit_stack(self._current_scope_exit_stack)
 
 
 class AsyncContainer(BareAsyncContainer):

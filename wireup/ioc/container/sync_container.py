@@ -16,7 +16,8 @@ class ScopedSyncContainer(BareSyncContainer):
         return self
 
     def __exit__(self, *exc_info: object) -> None:
-        clean_exit_stack(self._current_scope_exit_stack)
+        if self._current_scope_exit_stack:
+            clean_exit_stack(self._current_scope_exit_stack)
 
 
 class SyncContainer(BareSyncContainer):

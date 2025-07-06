@@ -34,9 +34,6 @@ def clean_exit_stack(exit_stack: list[Generator[Any, Any, Any] | AsyncGenerator[
 
 
 async def async_clean_exit_stack(exit_stack: list[Generator[Any, Any, Any] | AsyncGenerator[Any, Any]]) -> None:
-    if not exit_stack:
-        return
-
     errors: list[Exception] = []
 
     for gen in reversed(exit_stack):
