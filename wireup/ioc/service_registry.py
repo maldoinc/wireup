@@ -56,25 +56,38 @@ class ServiceFactory:
 ServiceCreationDetails = tuple[Callable[..., Any], ContainerObjectIdentifier, FactoryType, ServiceLifetime]
 
 
-def _function_get_unwrapped_return_type(fn: Callable[..., T]) -> tuple[type[T], FactoryType] | None:
+def _get_factory_type(fn: Callable[..., T]) -> FactoryType:
+    """Determine the type of factory based on the function signature."""
+    if inspect.iscoroutinefunction(fn):
+        return FactoryType.COROUTINE_FN
+
+    if inspect.isgeneratorfunction(fn):
+        return FactoryType.GENERATOR
+
+    if inspect.isasyncgenfunction(fn):
+        return FactoryType.ASYNC_GENERATOR
+
+    return FactoryType.REGULAR
+
+
+def _function_get_unwrapped_return_type(fn: Callable[..., T]) -> type[T] | None:
     if isinstance(fn, type):
-        return fn, FactoryType.REGULAR
+        return fn
 
     if ret := fn.__annotations__.get("return"):
         ret = ensure_is_type(ret, globalns=get_globals(fn))
         if not ret:
             return None
 
-        is_gen = inspect.isgeneratorfunction(fn)
-        if is_gen or inspect.isasyncgenfunction(fn):
+        if inspect.isgeneratorfunction(fn) or inspect.isasyncgenfunction(fn):
             args = typing.get_args(ret)
 
             if not args:
                 return None
 
-            return args[0], FactoryType.GENERATOR if is_gen else FactoryType.ASYNC_GENERATOR
+            return args[0]
 
-        return ret, FactoryType.COROUTINE_FN if inspect.iscoroutinefunction(fn) else FactoryType.REGULAR
+        return ret
 
     return None
 
@@ -97,10 +110,10 @@ class ServiceRegistry:
 
     def _extend_with_services(self, abstracts: list[AbstractDeclaration], impls: list[ServiceDeclaration]) -> None:
         for abstract in abstracts:
-            self.register_abstract(abstract.obj)
+            self._register_abstract(abstract.obj)
 
         for impl in impls:
-            self.register(obj=impl.obj, lifetime=impl.lifetime, qualifier=impl.qualifier)
+            self._register(obj=impl.obj, lifetime=impl.lifetime, qualifier=impl.qualifier)
 
         self._precompute_ctors()
 
@@ -125,7 +138,7 @@ class ServiceRegistry:
                     self.lifetime[impl],
                 )
 
-    def register(
+    def _register(
         self,
         obj: Callable[..., Any],
         lifetime: ServiceLifetime = "singleton",
@@ -134,12 +147,10 @@ class ServiceRegistry:
         if not callable(obj):
             raise InvalidRegistrationTypeError(obj)
 
-        return_type_result = _function_get_unwrapped_return_type(obj)
+        klass = _function_get_unwrapped_return_type(obj)
 
-        if return_type_result is None:
+        if klass is None:
             raise FactoryReturnTypeIsEmptyError(obj)
-
-        klass, factory_type = return_type_result
 
         if self.is_type_with_qualifier_known(klass, qualifier):
             raise DuplicateServiceRegistrationError(klass, qualifier=qualifier)
@@ -160,11 +171,11 @@ class ServiceRegistry:
         self.lifetime[klass] = lifetime
         self.factories[klass, qualifier] = ServiceFactory(
             factory=obj,
-            factory_type=factory_type,
+            factory_type=_get_factory_type(obj),
         )
         self.impls[klass].add(qualifier)
 
-    def register_abstract(self, klass: type) -> None:
+    def _register_abstract(self, klass: type) -> None:
         self.interfaces[klass] = {}
 
     def _target_init_context(
@@ -210,7 +221,7 @@ class ServiceRegistry:
     def is_interface_known(self, klass: type) -> bool:
         return klass in self.interfaces
 
-    def interface_resolve_impl(self, klass: type[T], qualifier: Qualifier | None) -> type[T]:
+    def interface_resolve_impl(self, klass: type, qualifier: Qualifier | None) -> type:
         """Given an interface and qualifier return the concrete implementation."""
         impls = self.interfaces.get(klass, {})
 
