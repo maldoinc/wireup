@@ -85,9 +85,9 @@ def _function_get_unwrapped_return_type(fn: Callable[..., T]) -> type[T] | None:
             if not args:
                 return None
 
-            return args[0]
+            return args[0]  # type:ignore[no-any-return]
 
-        return ret
+        return ret  # type:ignore[no-any-return]
 
     return None
 
