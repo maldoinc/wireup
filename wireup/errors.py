@@ -7,7 +7,7 @@ if TYPE_CHECKING:
 
 
 class WireupError(Exception):
-    """Base type for all exceptions raised by wrireup."""
+    """Base type for all exceptions raised by Wireup."""
 
 
 class DuplicateServiceRegistrationError(WireupError):

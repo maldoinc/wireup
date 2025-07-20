@@ -201,7 +201,7 @@ class ServiceRegistry:
             self.dependencies[target][name] = annotated_param
 
     def is_impl_with_qualifier_known(self, klass: type, qualifier_value: Qualifier | None) -> bool:
-        """Determine if klass represending a concrete implementation + qualifier is known by the registry."""
+        """Determine if klass representing a concrete implementation + qualifier is known by the registry."""
         return klass in self.impls and qualifier_value in self.impls[klass]
 
     def is_type_with_qualifier_known(self, klass: type, qualifier: Qualifier | None) -> bool:
