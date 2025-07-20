@@ -6,7 +6,7 @@ import warnings
 from collections import defaultdict
 from dataclasses import dataclass
 from enum import Enum, auto
-from typing import TYPE_CHECKING, Any, Callable, TypeVar, Union
+from typing import TYPE_CHECKING, Any, Callable, Tuple, TypeVar, Union
 
 from wireup.errors import (
     DuplicateQualifierForInterfaceError,
@@ -53,7 +53,7 @@ class ServiceFactory:
     factory_type: FactoryType
 
 
-ServiceCreationDetails = tuple[Callable[..., Any], ContainerObjectIdentifier, FactoryType, ServiceLifetime]
+ServiceCreationDetails = Tuple[Callable[..., Any], ContainerObjectIdentifier, FactoryType, ServiceLifetime]
 
 
 def _get_factory_type(fn: Callable[..., T]) -> FactoryType:
