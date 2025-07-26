@@ -322,7 +322,7 @@ version = "0.2.2"
 description = "Like `typing._eval_type`, but lets older Python versions use newer typing features."
 optional = false
 python-versions = ">=3.8"
-groups = ["dev"]
+groups = ["main", "dev"]
 files = [
     {file = "eval_type_backport-0.2.2-py3-none-any.whl", hash = "sha256:cb6ad7c393517f476f96d456d0412ea80f0a8cf96f6892834cd9340149111b0a"},
     {file = "eval_type_backport-0.2.2.tar.gz", hash = "sha256:f0576b4cf01ebb5bd358d02314d31846af5e07678387486e2c798af0e7d849c1"},
@@ -1455,7 +1455,10 @@ enabler = ["pytest-enabler (>=2.2)"]
 test = ["big-O", "importlib-resources ; python_version < \"3.9\"", "jaraco.functools", "jaraco.itertools", "jaraco.test", "more-itertools", "pytest (>=6,!=8.1.*)", "pytest-ignore-flaky"]
 type = ["pytest-mypy"]
 
+[extras]
+eval-type = ["eval-type-backport"]
+
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.8"
-content-hash = "0db85aac3d1ea1bd96f81b01545a29c0ba09a93e99f303443270ee3b2d552e0f"
+content-hash = "1662af406cb87db26a500b053aaf01b4d893910740c39527a8b9e9118387d7be"
