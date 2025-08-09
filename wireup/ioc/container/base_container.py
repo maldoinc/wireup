@@ -1,4 +1,3 @@
-import logging
 from typing import (
     Any,
     AsyncGenerator,
@@ -30,7 +29,6 @@ from wireup.ioc.types import (
 )
 
 T = TypeVar("T")
-logger = logging.getLogger(__name__)
 _ASYNC_FACTORY_TYPES = FactoryType.ASYNC_GENERATOR, FactoryType.COROUTINE_FN
 ContainerExitStack = List[Union[Generator[Any, Any, Any], AsyncGenerator[Any, Any]]]
 
