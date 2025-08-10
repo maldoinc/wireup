@@ -5,29 +5,69 @@ from fastapi.responses import PlainTextResponse
 from starlette.applications import Starlette
 from starlette.endpoints import HTTPEndpoint
 from starlette.requests import Request
-from starlette.routing import Route
+from starlette.routing import Route, WebSocketRoute
 from starlette.testclient import TestClient
-from wireup._annotations import Injected
+from starlette.websockets import WebSocket
+from wireup._annotations import Injected, service
 from wireup.integration.starlette import get_app_container, inject
 
 from test.shared import shared_services
 from test.shared.shared_services.greeter import GreeterService
 
 
+@service(lifetime="scoped")
+class RequestContext:
+    def __init__(self, request: Request):
+        self.request = request
+
+    @property
+    def name(self) -> str:
+        return self.request.query_params.get("name", "World")
+
+
+@service(lifetime="scoped")
+class WebSocketContext:
+    def __init__(self, websocket: WebSocket, greeter: GreeterService):
+        self.websocket = websocket
+        self.greeter = greeter
+
+    async def handle(self) -> None:
+        await self.websocket.accept()
+
+        data = await self.websocket.receive_text()
+        await self.websocket.send_text(self.greeter.greet(data))
+        await self.websocket.close()
+
+
 class HelloEndpoint(HTTPEndpoint):
     @inject
-    async def get(self, request: Request, greeter: Injected[GreeterService]) -> PlainTextResponse:
-        return PlainTextResponse(greeter.greet(request.query_params.get("name", "World")))
+    async def get(
+        self,
+        _request: Request,
+        request_context: Injected[RequestContext],
+        greeter: Injected[GreeterService],
+    ) -> PlainTextResponse:
+        return PlainTextResponse(greeter.greet(request_context.name))
 
 
 @inject
-async def hello(request: Request, greeter: Injected[GreeterService]) -> PlainTextResponse:
-    return PlainTextResponse(greeter.greet(request.query_params.get("name", "World")))
+async def hello(
+    _request: Request,
+    request_context: Injected[RequestContext],
+    greeter: Injected[GreeterService],
+) -> PlainTextResponse:
+    return PlainTextResponse(greeter.greet(request_context.name))
+
+
+@inject
+async def hello_websocket(_websocket: WebSocket, websocket_context: Injected[WebSocketContext]) -> None:
+    await websocket_context.handle()
 
 
 def create_app():
     container = wireup.create_async_container(
-        service_modules=[shared_services],
+        services=[RequestContext, WebSocketContext],
+        service_modules=[shared_services, wireup.integration.starlette],
         parameters={"foo": "bar"},
     )
 
@@ -35,6 +75,7 @@ def create_app():
         routes=[
             Route("/hello", hello, methods=["GET"]),
             Route("/hello_endpoint", HelloEndpoint, methods=["GET"]),
+            WebSocketRoute("/ws", hello_websocket),
         ],
     )
 
@@ -54,10 +95,17 @@ def client(app: Starlette) -> TestClient:
 
 
 @pytest.mark.parametrize("endpoint", ["/hello", "/hello_endpoint"])
-def test_app(client: TestClient, endpoint: str) -> None:
+def test_injects_routes(client: TestClient, endpoint: str) -> None:
     response = client.get(endpoint, params={"name": "Starlette"})
     assert response.text == "Hello Starlette"
     assert response.status_code == 200
+
+
+def test_injects_websocket(client: TestClient) -> None:
+    with client.websocket_connect("/ws") as websocket:
+        websocket.send_text("World")
+        data = websocket.receive_text()
+        assert data == "Hello World"
 
 
 def test_override(app: Starlette, client: TestClient):
