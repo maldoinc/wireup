@@ -7,6 +7,7 @@ from starlette.types import ASGIApp, Receive, Scope, Send
 from starlette.websockets import WebSocket
 
 from wireup._annotations import service
+from wireup._decorators import inject_from_container_unchecked
 from wireup.errors import WireupError
 from wireup.ioc.container.async_container import AsyncContainer, ScopedAsyncContainer
 
@@ -81,3 +82,6 @@ def get_app_container(app: Starlette) -> AsyncContainer:
 def get_request_container() -> ScopedAsyncContainer:
     """When inside a request, returns the scoped container instance handling the current request."""
     return current_request.get().state.wireup_container
+
+
+inject = inject_from_container_unchecked(get_request_container)
