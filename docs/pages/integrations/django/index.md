@@ -20,11 +20,11 @@ dependency injection in Django applications.
     Use Django request in Wireup dependencies.
 
 
--   :material-clock-fast:{ .lg .middle } __Zero Runtime Overhead__
+-   :material-clock-fast:{ .lg .middle } __Django Settings__
 
     ---
 
-    Django settings available as Wireup parameters.
+    The integration exposes Django settings to Wireup as parameters.
 
 
 -   :material-share-circle:{ .lg .middle } __Shared business logic__
