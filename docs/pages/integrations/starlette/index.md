@@ -41,14 +41,13 @@ wireup.integration.starlette.setup(container, app)
 
 ### Inject in Starlette Endpoints
 
-To inject dependencies, add the type to the endpoint's signature decorate them with `@inject` 
-from the `wireup.integration.starlette` module.and annotate them as necessary.
-See [Annotations](../../annotations.md) for more details.
+To inject dependencies decorate endpoints with `@inject` from the `wireup.integration.starlette` module
+and annotate parameters as necessary. See [Annotations](../../annotations.md) for more details.
 
-```python title="Starlette Endpoint"
+```python title="Starlette Endpoint" hl_lines="3 5 8 14 17"
 from starlette.requests import Request
 from starlette.responses import JSONResponse
-from wireup.integration.starlette import inject
+from wireup.integration.starlette import Injected, inject
 
 @inject
 async def get_random(
