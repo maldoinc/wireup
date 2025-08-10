@@ -13,7 +13,6 @@ from wireup.errors import (
     DuplicateQualifierForInterfaceError,
     DuplicateServiceRegistrationError,
     UnknownServiceRequestedError,
-    UsageOfQualifierOnUnknownObjectError,
     WireupError,
 )
 
@@ -103,7 +102,7 @@ async def test_get_unknown_class(container: Container):
 
     with pytest.raises(
         UnknownServiceRequestedError,
-        match=f"Cannot inject unknown service {TestGetUnknown}. Make sure it is registered with the container.",
+        match=f"Cannot create unknown service {TestGetUnknown}. Make sure it is registered with the container.",
     ):
         await run(container.get(TestGetUnknown))
 
@@ -126,6 +125,20 @@ async def test_container_get_interface_unknown_impl_errors_known_impls(container
         ),
     ):
         await run(container.get(Foo, qualifier="does-not-exist"))
+
+
+@pytest.mark.parametrize("first", [Foo, FooImpl])
+@pytest.mark.parametrize("second", [FooImpl, Foo])
+async def test_container_get_interface_returns_same_instance_as_get_type(
+    container: Container,
+    first: type[Foo],
+    second: type[FooImpl],
+) -> None:
+    assert await run(container.get(first)) is await run(container.get(second))
+
+
+async def test_container_get_interface_returns_same_instance(container: Container) -> None:
+    assert await run(container.get(Foo)) is await run(container.get(Foo))
 
 
 async def test_container_get_returns_service(container: Container) -> None:
@@ -256,9 +269,10 @@ def test_services_from_multiple_bases_are_injected():
 
 def test_inject_qualifier_on_unknown_type():
     with pytest.raises(
-        UsageOfQualifierOnUnknownObjectError,
+        UnknownServiceRequestedError,
         match=re.escape(
-            f"Cannot use qualifier {__name__} on type {str} that is not managed by the container.",
+            f"Cannot create unknown service {str} with qualifier '{__name__}'. "
+            "Make sure it is registered with the container."
         ),
     ):
         wireup.create_sync_container().get(str, qualifier=__name__)

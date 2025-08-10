@@ -7,7 +7,7 @@ if TYPE_CHECKING:
 
 
 class WireupError(Exception):
-    """Base type for all exceptions raised by wrireup."""
+    """Base type for all exceptions raised by Wireup."""
 
 
 class DuplicateServiceRegistrationError(WireupError):
@@ -70,19 +70,10 @@ class UnknownQualifiedServiceRequestedError(WireupError):
 class UnknownServiceRequestedError(WireupError):
     """Raised when requesting an unknown type."""
 
-    def __init__(self, klass: type[Any]) -> None:
-        super().__init__(
-            f"Cannot inject unknown service {klass}. Make sure it is registered with the container.",
-        )
-
-
-class UsageOfQualifierOnUnknownObjectError(WireupError):
-    """Raised when using a qualifier on an unknown type that is not managed by the container."""
-
-    def __init__(self, klass: type, qualifier_value: Qualifier | None) -> None:
-        super().__init__(
-            f"Cannot use qualifier {qualifier_value} on type {klass} that is not managed by the container."
-        )
+    def __init__(self, klass: type[Any], qualifier: Qualifier | None = None) -> None:
+        qualifier_str = f" with qualifier '{qualifier}'" if qualifier else ""
+        msg = f"Cannot create unknown service {klass}{qualifier_str}. Make sure it is registered with the container."
+        super().__init__(msg)
 
 
 class InvalidRegistrationTypeError(WireupError):

@@ -6,7 +6,7 @@ from typing import Any
 
 from wireup.errors import WireupError
 from wireup.ioc.types import AnnotatedParameter, AnyCallable, InjectableType
-from wireup.ioc.util import get_globals, param_get_annotation
+from wireup.ioc.util import get_globals, param_get_annotation, stringify_type
 
 if typing.TYPE_CHECKING:
     from wireup.ioc.container.base_container import BaseContainer
@@ -92,10 +92,6 @@ def assert_dependency_exists(container: BaseContainer, parameter: AnnotatedParam
             f"with qualifier {parameter.qualifier_value}."
         )
         raise WireupError(msg)
-
-
-def stringify_type(target: type | AnyCallable) -> str:
-    return f"{type(target).__name__.capitalize()} {target.__module__}.{target.__name__}"
 
 
 def get_inject_annotated_parameters(target: AnyCallable) -> dict[str, AnnotatedParameter]:

@@ -5,7 +5,7 @@ from typing import Any, Awaitable, Callable, Dict, Iterable, Iterator, Optional,
 from aiohttp import web
 
 import wireup
-from wireup._annotations import service
+from wireup._annotations import ServiceDeclaration, service
 from wireup.errors import WireupError
 from wireup.ioc.container.async_container import ScopedAsyncContainer
 from wireup.ioc.container.sync_container import ScopedSyncContainer
@@ -58,18 +58,13 @@ def _inject_routes(container: wireup.AsyncContainer, app: web.Application) -> No
         route._handler = inject_scoped(route._handler)
 
 
-async def _setup_handlers(
-    container: wireup.AsyncContainer, app: web.Application, handlers: Iterable[Type[_WireupHandler]]
+async def _instantiate_class_based_handlers(
+    container: wireup.AsyncContainer,
+    app: web.Application,
+    handlers: Iterable[Type[_WireupHandler]],
 ) -> None:
     for handler_type in handlers:
         instance = await container.get(handler_type)
-
-        if not (hasattr(handler_type, "router") and isinstance(handler_type.router, web.RouteTableDef)):  # type: ignore[reportUnnecessaryIsInstance]
-            msg = (
-                f"Handler {handler_type} does not have an attribute named 'router'. "
-                "Your handlers must be classes that have an attribute named 'router'."
-            )
-            raise WireupError(msg)
 
         for class_route in handler_type.router:
             for app_route in app.router.routes():
@@ -80,13 +75,12 @@ async def _setup_handlers(
 def _get_startup_event(
     container: wireup.AsyncContainer, handlers: Optional[Iterable[Type[_WireupHandler]]]
 ) -> Callable[[web.Application], Awaitable[None]]:
-    if handlers:
-        for handler_type in handlers:
-            container._registry.register(handler_type)
+    for handler_type in handlers or []:
+        container._registry._extend_with_services(abstracts=[], impls=[ServiceDeclaration(handler_type)])
 
     async def _inner(app: web.Application) -> None:
         if handlers:
-            await _setup_handlers(container, app, handlers)
+            await _instantiate_class_based_handlers(container, app, handlers)
 
         _inject_routes(container, app)
 

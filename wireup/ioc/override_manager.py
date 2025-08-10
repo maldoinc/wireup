@@ -20,7 +20,7 @@ class OverrideManager:
         is_valid_override: Callable[[type, Qualifier], bool],
     ) -> None:
         self.__is_valid_override = is_valid_override
-        self.__active_overrides = active_overrides
+        self.active_overrides = active_overrides
 
     def set(self, target: type, new: Any, qualifier: Qualifier | None = None) -> None:
         """Override the `target` service with `new`.
@@ -35,16 +35,16 @@ class OverrideManager:
         if not self.__is_valid_override(target, qualifier):
             raise UnknownOverrideRequestedError(klass=target, qualifier=qualifier)
 
-        self.__active_overrides[target, qualifier] = new
+        self.active_overrides[target, qualifier] = new
 
     def delete(self, target: type, qualifier: Qualifier | None = None) -> None:
         """Clear active override for the `target` service."""
-        if (target, qualifier) in self.__active_overrides:
-            del self.__active_overrides[target, qualifier]
+        if (target, qualifier) in self.active_overrides:
+            del self.active_overrides[target, qualifier]
 
     def clear(self) -> None:
         """Clear active service overrides."""
-        self.__active_overrides.clear()
+        self.active_overrides.clear()
 
     @contextmanager
     def service(self, target: type, new: Any, qualifier: Qualifier | None = None) -> Iterator[None]:

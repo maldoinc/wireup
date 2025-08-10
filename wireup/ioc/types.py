@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 from collections.abc import Hashable
-from dataclasses import dataclass, field
-from typing import Any, AsyncGenerator, Callable, Generator, Optional, Tuple, Union
+from dataclasses import dataclass
+from typing import Any, AsyncGenerator, Callable, Generator, NamedTuple, Optional, Tuple, Union
 
 from typing_extensions import Literal
 
@@ -67,7 +67,7 @@ ServiceLifetime = Literal["singleton", "scoped", "transient"]
 class AnnotatedParameter:
     """Represent an annotated dependency parameter."""
 
-    __slots__ = ("annotation", "is_parameter", "klass", "qualifier_value")
+    __slots__ = ("annotation", "is_parameter", "klass", "obj_id", "qualifier_value")
 
     def __init__(
         self,
@@ -85,6 +85,7 @@ class AnnotatedParameter:
         self.annotation = annotation
         self.qualifier_value = self.annotation.qualifier if isinstance(self.annotation, ServiceQualifier) else None
         self.is_parameter = isinstance(self.annotation, ParameterWrapper)
+        self.obj_id = self.klass, self.qualifier_value
 
     def __eq__(self, other: object) -> bool:
         """Check if two things are equal."""
@@ -110,19 +111,6 @@ class ServiceOverride:
     qualifier: Qualifier | None = None
 
 
-@dataclass(frozen=True)
-class CreationResult:
-    instance: Any
+class ContainerScope(NamedTuple):
+    objects: dict[ContainerObjectIdentifier, Any]
     exit_stack: list[Generator[Any, Any, Any] | AsyncGenerator[Any, Any]]
-
-
-@dataclass(frozen=True)
-class InjectionResult:
-    kwargs: dict[str, Any]
-    exit_stack: list[Generator[Any, Any, Any] | AsyncGenerator[Any, Any]]
-
-
-@dataclass(frozen=True)
-class ContainerScope:
-    objects: dict[ContainerObjectIdentifier, Any] = field(default_factory=dict)
-    exit_stack: list[Generator[Any, Any, Any] | AsyncGenerator[Any, Any]] = field(default_factory=list)

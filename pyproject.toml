@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "wireup"
-version = "2.0.0"
+version = "2.0.1"
 description = "Python Dependency Injection Library"
 authors = ["Aldo Mateli <aldo.mateli@gmail.com>"]
 license = "MIT"
@@ -46,6 +46,10 @@ Changelog = "https://github.com/maldoinc/wireup/releases"
 [tool.poetry.dependencies]
 python = "^3.8"
 typing_extensions = "^4.7"
+eval-type-backport = { version="^0.2.0", optional = true }
+
+[tool.poetry.extras]
+eval-type = ["eval-type-backport"]
 
 [tool.poetry.group.dev.dependencies]
 ruff = "0.11.0"
