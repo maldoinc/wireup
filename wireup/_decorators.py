@@ -129,7 +129,7 @@ def inject_from_container_util(  # noqa: C901
         with ExitStack() as cm:
             if scoped_container_supplier:
                 scoped_container = scoped_container_supplier()
-            elif isinstance(container, ScopedAsyncContainer):
+            elif container:
                 scoped_container = cm.enter_context(
                     container.enter_scope()
                     if isinstance(container, SyncContainer)
