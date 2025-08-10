@@ -4,7 +4,7 @@ import asyncio
 import contextlib
 import functools
 from contextlib import AsyncExitStack, ExitStack
-from typing import TYPE_CHECKING, Any, Callable, TypeVar
+from typing import TYPE_CHECKING, Any, Callable
 
 from wireup.errors import WireupError
 from wireup.ioc.container.async_container import AsyncContainer, ScopedAsyncContainer, async_container_force_sync_scope
@@ -17,8 +17,6 @@ from wireup.ioc.validation import (
 
 if TYPE_CHECKING:
     from wireup.ioc.container.sync_container import ScopedSyncContainer
-
-T = TypeVar("T", bound=Callable[..., Any])
 
 
 def inject_from_container_unchecked(
