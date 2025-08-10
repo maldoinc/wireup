@@ -200,12 +200,12 @@ Wireup provides its own Dependency Injection mechanism and is not tied to specif
 
 Share the service layer between your web application and its accompanying CLI using Wireup.
 
-### 🔌 Native Integration with Django, FastAPI, Flask and AIOHTTP
+### 🔌 Native Integration with popular frameworks
 
 Integrate with popular frameworks for a smoother developer experience.
 Integrations manage request scopes, injection in endpoints, and lifecycle of services.
 
-```python
+```python title="FastAPI example"
 app = FastAPI()
 container = wireup.create_async_container(services=[UserService, Database])
 
@@ -215,6 +215,13 @@ def users_list(user_service: Injected[UserService]):
 
 wireup.integration.fastapi.setup(container, app)
 ```
+
+- [x] [AIOHTTP](integrations/aiohttp/index.md)
+- [x] [Django](integrations/django/index.md)
+- [x] [FastAPI](integrations/fastapi/index.md)
+- [x] [Flask](integrations/flask/index.md)
+- [x] [Starlette](integrations/starlette/index.md)
+
 
 ### 🧪 Simplified Testing
 

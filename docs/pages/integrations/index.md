@@ -6,3 +6,4 @@ Wireup is framework-agnostic and can be used in any project, but it also provide
 - [x] [Django](django/index.md)
 - [x] [FastAPI](fastapi/index.md)
 - [x] [Flask](flask/index.md)
+- [x] [Starlette](starlette/index.md)
