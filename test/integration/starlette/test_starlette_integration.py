@@ -1,15 +1,17 @@
 import pytest
 import wireup
 import wireup.integration.starlette
+from fastapi.middleware import Middleware
 from fastapi.responses import PlainTextResponse
 from starlette.applications import Starlette
 from starlette.endpoints import HTTPEndpoint
 from starlette.requests import Request
 from starlette.routing import Route, WebSocketRoute
 from starlette.testclient import TestClient
+from starlette.types import ASGIApp, Receive, Scope, Send
 from starlette.websockets import WebSocket
 from wireup._annotations import Injected, service
-from wireup.integration.starlette import get_app_container, inject
+from wireup.integration.starlette import get_app_container, get_request_container, inject
 
 from test.shared import shared_services
 from test.shared.shared_services.greeter import GreeterService
@@ -118,3 +120,34 @@ def test_override(app: Starlette, client: TestClient):
 
     assert response.text == "HELLO TEST"
     assert response.status_code == 200
+
+
+def test_get_request_container_in_middleware() -> None:
+    class StarletteTestMiddleware:
+        def __init__(self, app: ASGIApp) -> None:
+            self.app = app
+
+        async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+            if scope["type"] not in {"http", "websocket"}:
+                return await self.app(scope, receive, send)
+
+            container = get_request_container()
+            ctx = await container.get(RequestContext)
+            msg = f"RequestContext name: {ctx.name}"
+            raise ValueError(msg)
+
+    container = wireup.create_async_container(
+        services=[RequestContext, WebSocketContext],
+        service_modules=[shared_services, wireup.integration.starlette],
+    )
+
+    app = Starlette(
+        routes=[Route("/hello", hello, methods=["GET"])],
+        middleware=[Middleware(StarletteTestMiddleware)],
+    )
+
+    wireup.integration.starlette.setup(container, app)
+
+    client = TestClient(app)
+    with pytest.raises(ValueError, match="RequestContext name: World"):
+        client.get("/hello", params={"name": "World"})
