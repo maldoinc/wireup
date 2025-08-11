@@ -70,17 +70,32 @@ class WireupAsgiMiddleware:
 
 
 def setup(container: AsyncContainer, app: Starlette) -> None:
+    """Integrate Wireup with a Starlette application.
+
+    This sets up the application to use Wireup's dependency injection system.
+    It adds the WireupAsgiMiddleware to the application and associates the container with the app state.
+    Note, for this to work correctly, there should be no more middleware added after the call to this function.
+    """
+
     app.state.wireup_container = container
     app.add_middleware(WireupAsgiMiddleware)
 
 
 def get_app_container(app: Starlette) -> AsyncContainer:
-    """Return the container associated with the given application."""
+    """Return the container associated with the given application.
+
+    This is the instance created via `wireup.create_async_container`.
+    Use this when you need the container outside of the request context lifecycle.
+    """
     return app.state.wireup_container
 
 
 def get_request_container() -> ScopedAsyncContainer:
-    """When inside a request, returns the scoped container instance handling the current request."""
+    """When inside a request, returns the scoped container instance handling the current request.
+
+    This is what you almost always want.It has all the information the app container has in addition
+    to data specific to the current request.
+    """
     return current_request.get().state.wireup_container
 
 

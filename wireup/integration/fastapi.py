@@ -67,7 +67,6 @@ def _inject_fastapi_route(
     remove_http_connection_from_arguments: bool,
     add_custom_middleware: bool,
 ) -> AnyCallable:
-    # Warn: Make sure the logic evolves with the _wireup_request_middleware function.
     @contextlib.contextmanager
     def _request_middleware(
         scoped_container: Union[ScopedAsyncContainer, ScopedSyncContainer],
@@ -102,8 +101,7 @@ def _inject_routes(container: AsyncContainer, routes: List[BaseRoute], *, is_usi
             route.dependant.call = inject_from_container(container, get_request_container)(route.dependant.call)
             continue
 
-        # This is now either a websocket route
-        # or an APIRoute but the asgi middleware is not used.
+        # This is now either a websocket route or an APIRoute but the asgi middleware is not used.
         # In this case we need to use the custom route middleware to extract the current request/websocket.
         add_custom_middleware = isinstance(route, APIWebSocketRoute) or not is_using_asgi_middleware
         is_http_connection_in_signature = route.dependant.http_connection_param_name is not None
