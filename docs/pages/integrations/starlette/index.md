@@ -1,6 +1,6 @@
 # Starlette Integration
 
-Dependency injection for Starlette is available in the `wireup.integration.starlette` module.
+The `wireup.integration.starlette` module provides dependency injection for Starlette applications.
 
 <div class="grid cards annotate" markdown>
 
@@ -8,18 +8,18 @@ Dependency injection for Starlette is available in the `wireup.integration.starl
 
     ---
 
-    Inject dependencies in endpoints and automatically manage container lifecycle.
+    Automatically manage the container lifecycle and inject dependencies into endpoints.
 
--   :material-share-circle:{ .lg .middle } __Shared business logic__
+-   :material-share-circle:{ .lg .middle } __Shared Business Logic__
 
     ---
 
-    Wireup is framework-agnostic. Share the service layer between your web application and other interfaces, such as a CLI.
+    Wireup is framework-agnostic, allowing you to share your service layer across web applications and other interfaces, such as CLIs.
 </div>
 
-### Initialize the integration
+### Setting Up the Integration
 
-To initialize the integration, call `wireup.integration.starlette.setup`.
+To set up the integration, use the `wireup.integration.starlette.setup` function.
 
 ```python
 from starlette.applications import Starlette
@@ -29,20 +29,19 @@ import wireup
 app = Starlette()
 
 container = wireup.create_async_container(
-    # service_modules is a list of top-level modules with service registrations.
+    # A list of top-level modules containing service registrations.
     service_modules=[services],
-    # Optionally expose custom parameters to the container.
+    # Optionally, expose custom parameters to the container.
     parameters={"DEBUG": True}
 )
 
-# Initialize the integration.
+# Set up the integration.
 wireup.integration.starlette.setup(container, app)
 ```
 
-### Inject in Starlette Endpoints
+### Injecting Dependencies into Endpoints
 
-To inject dependencies decorate endpoints with `@inject` from the `wireup.integration.starlette` module
-and annotate parameters as necessary. See [Annotations](../../annotations.md) for more details.
+To inject dependencies, use the `@inject` decorator from the `wireup.integration.starlette` module and annotate parameters accordingly. Refer to [Annotations](../../annotations.md) for more details.
 
 ```python title="Starlette Endpoint" hl_lines="3 5 8 14 17"
 from starlette.requests import Request
@@ -68,9 +67,9 @@ class HelloEndpoint(HTTPEndpoint):
         return PlainTextResponse(greeting)
 ```
 
-### Accessing the Container
+### Accessing the Dependency Container
 
-To access the Wireup container directly, use the following functions:
+You can directly access the Wireup container using the following functions:
 
 ```python
 from wireup.integration.starlette import get_app_container, get_request_container
@@ -79,32 +78,31 @@ from wireup.integration.starlette import get_app_container, get_request_containe
 # This is what you almost always want.
 # It has all the information the app container has in addition
 # to data specific to the current request.
+# You can get an instance of the request container in decorators or other middleware.
 request_container = get_request_container()
 
-# Access the application-wide container (created via `wireup.create_async_container`).
-# Use this when you need the container outside of the request context lifecycle.
+# Access the application-wide container created with `wireup.create_async_container`.
+# Use this for operations outside the request lifecycle.
 app_container = get_app_container(app)
 ```
 
 ### Testing
 
-For general testing tips with Wireup refer to the [test docs](../../testing.md). 
-With the Starlette integration, you can override dependencies in the container as follows.
+For general testing tips, see the [testing documentation](../../testing.md). To override dependencies in the container during tests, use the following approach:
 
 ```python title="test_thing.py"
 from wireup.integration.starlette import get_app_container
 
 def test_override():
-    class DummyGreeter(GreeterService):
+    class UppercaseGreeter(GreeterService):
         def greet(self, name: str) -> str:
-            return f"Hi, {name}"
+            return super().greet(name).upper()
 
-    with get_app_container(app).override.service(GreeterService, new=DummyGreeter()):
+    with get_app_container(app).override.service(GreeterService, new=UppercaseGreeter()):
         response = client.get("/hello", params={"name": "Test"})
 ```
 
-See [Starlette integration tests](https://github.com/maldoinc/wireup/blob/master/test/integration/starlette/test_starlette_integration.py)
-for more examples.
+For more examples, see the [Starlette integration tests](https://github.com/maldoinc/wireup/blob/master/test/integration/starlette/test_starlette_integration.py).
 
 ### API Reference
 
