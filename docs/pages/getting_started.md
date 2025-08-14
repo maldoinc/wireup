@@ -135,7 +135,7 @@ Class dependencies do not need additional annotations, even though the http clie
 ```python title="services/weather_service.py" hl_lines="1 5 6 7"
 @service
 class WeatherService:
-    def __init(
+    def __init__(
         self,
         api_key: Annotated[str, Inject(param="weather_api_key")], #(1)!
         kv_store: KeyValueStore, #(2)!
