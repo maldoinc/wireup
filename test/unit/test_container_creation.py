@@ -113,6 +113,30 @@ def test_validates_dependencies_lifetimes_raises_when_using_interfaces() -> None
     ):
         wireup.create_sync_container(services=[ServiceB, FooImpl, Foo])
 
+def test_validates_container_raises_when_cyclical_dependencies() -> None:
+    class Foo:
+        def __init__(self, bar): ...
+
+    class Bar:
+        def __init__(self, foo: Foo): ...
+
+    @wireup.service
+    def make_foo(bar: Bar) -> Foo:
+        return Foo(bar)
+
+    @wireup.service
+    def make_bar(baz: Foo) -> Bar:
+        return Bar(baz)
+
+    with pytest.raises(
+        WireupError,
+        match=re.escape(
+            "Cyclical dependency detected: make_foo -> make_bar -> make_foo"
+        ),
+    ):
+        container = wireup.create_sync_container(services=[make_foo, make_bar])
+        container.get(Foo)
+
 
 def test_lifetimes_match_factories() -> None:
     class ScopedService: ...

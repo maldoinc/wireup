@@ -97,7 +97,7 @@ class BaseContainer:
             elif not param.is_parameter:
                 if (ctor := self._registry.ctors[obj_id])[0] in resolution_path:
                     raise WireupError(
-                        f"Recursive dependency detected! {' -> '.join([dep.__name__ for dep in resolution_path[resolution_path.index(ctor[0]):] + [fn, ctor[0]]])}"
+                        f"Cyclical dependency detected: {' -> '.join([dep.__name__ for dep in resolution_path[resolution_path.index(ctor[0]):] + [fn, ctor[0]]])}"
                     )
                 result[name] = await self._async_create_instance(ctor, resolution_path + [fn])
             elif param.annotation and isinstance(param.annotation, ParameterWrapper):
