@@ -86,7 +86,7 @@ class BaseContainer:
 
         return None
 
-    async def _async_callable_get_params_to_inject(self, fn: AnyCallable) -> Dict[str, Any]:
+    async def _async_callable_get_params_to_inject(self, fn: AnyCallable, resolution_path: List[AnyCallable]) -> Dict[str, Any]:
         result: Dict[str, Any] = {}
 
         for name, param in self._registry.dependencies[fn].items():
@@ -95,16 +95,20 @@ class BaseContainer:
             if obj := self._try_get_existing_instance(obj_id):
                 result[name] = obj
             elif not param.is_parameter:
-                result[name] = await self._async_create_instance(self._registry.ctors[obj_id])
+                if (ctor := self._registry.ctors[obj_id])[0] in resolution_path:
+                    raise WireupError(
+                        f"Recursive dependency detected! {' -> '.join([dep.__name__ for dep in resolution_path[resolution_path.index(ctor[0]):] + [fn, ctor[0]]])}"
+                    )
+                result[name] = await self._async_create_instance(ctor, resolution_path + [fn])
             elif param.annotation and isinstance(param.annotation, ParameterWrapper):
                 result[name] = self._params.get(param.annotation.param)
 
         return result
 
-    async def _async_create_instance(self, ctor_details: ServiceCreationDetails) -> Any:
+    async def _async_create_instance(self, ctor_details: ServiceCreationDetails, resolution_path: List[AnyCallable]) -> Any:
         ctor, resolved_obj_id, factory_type, lifetime = ctor_details
         object_storage, exit_stack = self._get_object_storage_and_exit_stack(lifetime)
-        kwargs = await self._async_callable_get_params_to_inject(ctor)
+        kwargs = await self._async_callable_get_params_to_inject(ctor, resolution_path)
         instance_or_generator = await ctor(**kwargs) if factory_type == FactoryType.COROUTINE_FN else ctor(**kwargs)
 
         if factory_type in GENERATOR_FACTORY_TYPES:
@@ -122,7 +126,7 @@ class BaseContainer:
 
         return instance
 
-    def _create_instance(self, ctor_details: ServiceCreationDetails) -> Any:
+    def _create_instance(self, ctor_details: ServiceCreationDetails, resolution_path: List[AnyCallable]) -> Any:
         ctor, resolved_obj_id, factory_type, lifetime = ctor_details
 
         if factory_type in _ASYNC_FACTORY_TYPES:
@@ -134,7 +138,7 @@ class BaseContainer:
 
         object_storage, exit_stack = self._get_object_storage_and_exit_stack(lifetime)
 
-        instance_or_generator = ctor(**self._callable_get_params_to_inject(ctor))
+        instance_or_generator = ctor(**self._callable_get_params_to_inject(ctor, resolution_path))
 
         if factory_type == FactoryType.GENERATOR:
             exit_stack.append(instance_or_generator)
@@ -182,7 +186,7 @@ class BaseContainer:
             return res  # type: ignore[no-any-return]
 
         if ctor := self._registry.ctors.get(obj_id):
-            return await self._async_create_instance(ctor)  # type: ignore[no-any-return]
+            return await self._async_create_instance(ctor, [])  # type: ignore[no-any-return]
 
         raise UnknownServiceRequestedError(klass, qualifier)
 
