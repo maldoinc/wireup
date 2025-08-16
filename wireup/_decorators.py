@@ -13,6 +13,7 @@ from wireup.ioc.types import AnnotatedParameter, ParameterWrapper
 from wireup.ioc.validation import (
     get_inject_annotated_parameters,
     get_valid_injection_annotated_parameters,
+    hide_annotated_names,
 )
 
 if TYPE_CHECKING:
@@ -95,6 +96,8 @@ def inject_from_container_util(  # noqa: C901
 
     if not names_to_inject:
         return target
+
+    hide_annotated_names(target)
 
     if asyncio.iscoroutinefunction(target):
 
