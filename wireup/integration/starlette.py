@@ -11,7 +11,7 @@ from wireup._decorators import inject_from_container_unchecked
 from wireup.errors import WireupError
 from wireup.ioc.container.async_container import AsyncContainer, ScopedAsyncContainer
 
-current_request: ContextVar[Union[Request, WebSocket]] = ContextVar("wireup_fastapi_request")
+current_request: ContextVar[Union[Request, WebSocket]] = ContextVar("wireup_starlette_request")
 
 
 @service(lifetime="scoped")
