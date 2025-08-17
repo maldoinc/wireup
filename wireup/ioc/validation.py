@@ -110,19 +110,14 @@ def assert_valid_resolution_path(container: BaseContainer, dependency: Annotated
         if dependency.klass in container._registry.interfaces
         else dependency.klass
     )
-    exception = None
+    dependency_service_factory = None
     for (impl, qualifier), service_factory in container._registry.factories.items():
         if impl is dependency_class and (qualifier == dependency.qualifier_value):
             dependency_service_factory = service_factory
-            try:
-                for name, next_dependency in container._registry.dependencies[dependency_service_factory.factory].items():
-                    assert_valid_resolution_path(container, next_dependency, [*path, dependency])
-            except WireupError as e:
-                exception = e
-                continue
-            return
-    if exception:
-        raise exception
+            break
+    if dependency_service_factory:
+        for name, next_dependency in container._registry.dependencies[dependency_service_factory.factory].items():
+            assert_valid_resolution_path(container, next_dependency, [*path, dependency])
 
 def get_inject_annotated_parameters(target: AnyCallable) -> dict[str, AnnotatedParameter]:
     """Retrieve annotated parameters from a given callable target.
