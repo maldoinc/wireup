@@ -69,7 +69,23 @@ class HelloEndpoint(HTTPEndpoint):
         return PlainTextResponse(greeting)
 ```
 
-### Accessing the Dependency Container
+### Inject Starlette request or WebSocket
+
+To inject the current request/websocket in your services you must add `wireup.integration.starlette` module to your
+service modules when creating a container.
+
+```python title="Example Service using Starlette Request"
+@service(lifetime="scoped")
+class RequestContext:
+    def __init__(self, request: Request):
+        self.request = request
+
+    @property
+    def name(self) -> str:
+        return self.request.query_params.get("name", "World")
+```
+
+### Accessing the Container Directly
 
 You can directly access the Wireup container using the following functions:
 

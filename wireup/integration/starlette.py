@@ -95,3 +95,6 @@ def get_request_container() -> ScopedAsyncContainer:
 
 
 inject = inject_from_container_unchecked(get_request_container)
+"""Inject dependencies into Starlette endpoints. Decorate your endpoint functions with this to use Wireup's
+dependency injection and use `Injected[T]` or `Annotated[T, Inject()]` to specify dependencies.
+"""
