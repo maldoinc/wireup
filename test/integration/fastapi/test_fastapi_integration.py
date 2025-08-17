@@ -126,7 +126,7 @@ async def test_current_request_service(client: TestClient):
 
 @pytest.mark.parametrize("t", [Request, WebSocket])
 async def test_raises_request_outside_of_scope(app: FastAPI, t: Any) -> None:
-    with pytest.raises(WireupError, match=f"fastapi.{t.__name__} in Wireup is only available."):
+    with pytest.raises(WireupError, match=f"{t.__name__} in Wireup is only available."):
         async with get_app_container(app).enter_scope() as scoped:
             await scoped.get(t)
 

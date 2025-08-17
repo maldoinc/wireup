@@ -9,11 +9,11 @@ from wireup.integration.fastapi import get_app_container, get_request_container
 # This is what you almost always want.
 # It has all the information the app container has in addition
 # to data specific to the current request.
-request_container: ScopedAsyncContainer = get_request_container()
+request_container = get_request_container()
 
 # Access the application-wide container (created via `wireup.create_async_container`).
 # Use this when you need the container outside of the request context lifecycle.
-app_container: AsyncContainer = get_app_container(app)
+app_container = get_app_container(app)
 ```
 
 ### Container Availability

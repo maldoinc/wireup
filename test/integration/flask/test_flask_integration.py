@@ -48,7 +48,7 @@ def test_get_env_injects_from_params(client: FlaskClient) -> None:
     assert res.json == {"debug": False, "test": True}
 
 
-def test_scoped_depenencies(client: FlaskClient) -> None:
+def test_scoped_dependencies(client: FlaskClient) -> None:
     res = client.get("/scoped")
     assert res.status_code == 200
     assert res.json == {}
