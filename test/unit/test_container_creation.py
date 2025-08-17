@@ -4,7 +4,7 @@ from dataclasses import dataclass
 import pytest
 import wireup
 from typing_extensions import Annotated
-from wireup._annotations import abstract, service, Inject
+from wireup._annotations import Inject, abstract, service
 from wireup.errors import WireupError
 
 from test.unit.services.no_annotations.random.random_service import RandomService
@@ -113,6 +113,7 @@ def test_validates_dependencies_lifetimes_raises_when_using_interfaces() -> None
     ):
         wireup.create_sync_container(services=[ServiceB, FooImpl, Foo])
 
+
 def test_validates_container_raises_when_cyclical_dependencies() -> None:
     class Foo:
         def __init__(self, bar): ...
@@ -131,10 +132,12 @@ def test_validates_container_raises_when_cyclical_dependencies() -> None:
     with pytest.raises(
         WireupError,
         match=re.escape(
-            "Cyclical dependencies detected: Type test.unit.test_container_creation.Bar[None] -> Type test.unit.test_container_creation.Foo[None] -> Type test.unit.test_container_creation.Bar[None]"
+            "Cyclical dependencies detected: Type test.unit.test_container_creation.Bar[None] -> Type "
+            "test.unit.test_container_creation.Foo[None] -> Type test.unit.test_container_creation.Bar[None]"
         ),
     ):
         wireup.create_sync_container(services=[make_foo, make_bar])
+
 
 def test_validates_container_does_not_raise_when_no_dependency_cycle() -> None:
     class Foo:
@@ -156,6 +159,7 @@ def test_validates_container_does_not_raise_when_no_dependency_cycle() -> None:
         return Foo(None)
 
     wireup.create_sync_container(services=[make_foo, make_bar, make_foo_no_dependency])
+
 
 def test_lifetimes_match_factories() -> None:
     class ScopedService: ...
