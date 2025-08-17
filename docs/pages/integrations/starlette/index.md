@@ -41,9 +41,11 @@ wireup.integration.starlette.setup(container, app)
 
 ### Injecting Dependencies into Endpoints
 
-To inject dependencies, use the `@inject` decorator from the `wireup.integration.starlette` module and annotate parameters accordingly. Refer to [Annotations](../../annotations.md) for more details.
+To inject dependencies, apply the `@inject` decorator from the `wireup.integration.starlette` module to endpoints
+and annotate parameters accordingly. Refer to [Annotations](../../annotations.md) for more details.
 
-```python title="Starlette Endpoint" hl_lines="3 5 8 14 17"
+```python title="Starlette Endpoint" hl_lines="4 6 9 15 18"
+from starlette.endpoints import HTTPEndpoint
 from starlette.requests import Request
 from starlette.responses import JSONResponse
 from wireup.integration.starlette import Injected, inject
@@ -67,7 +69,23 @@ class HelloEndpoint(HTTPEndpoint):
         return PlainTextResponse(greeting)
 ```
 
-### Accessing the Dependency Container
+### Inject Starlette request or WebSocket
+
+To inject the current request/websocket in your services you must add `wireup.integration.starlette` module to your
+service modules when creating a container.
+
+```python title="Example Service using Starlette Request"
+@service(lifetime="scoped")
+class RequestContext:
+    def __init__(self, request: Request):
+        self.request = request
+
+    @property
+    def name(self) -> str:
+        return self.request.query_params.get("name", "World")
+```
+
+### Accessing the Container Directly
 
 You can directly access the Wireup container using the following functions:
 
@@ -93,13 +111,19 @@ For general testing tips, see the [testing documentation](../../testing.md). To 
 ```python title="test_thing.py"
 from wireup.integration.starlette import get_app_container
 
-def test_override():
-    class UppercaseGreeter(GreeterService):
-        def greet(self, name: str) -> str:
-            return super().greet(name).upper()
 
-    with get_app_container(app).override.service(GreeterService, new=UppercaseGreeter()):
-        response = client.get("/hello", params={"name": "Test"})
+class UppercaseGreeter(GreeterService):
+    def greet(self, name: str) -> str:
+        return super().greet(name).upper()
+
+
+def test_override():
+    container = get_app_container(app)
+
+    with container.override.service(GreeterService, new=UppercaseGreeter()):
+        response = client.get("/hello", params={"name": "world"})
+
+    assert response.text == "HELLO WORLD"
 ```
 
 For more examples, see the [Starlette integration tests](https://github.com/maldoinc/wireup/blob/master/test/integration/starlette/test_starlette_integration.py).

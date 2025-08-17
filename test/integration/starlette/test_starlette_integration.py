@@ -1,11 +1,11 @@
 import pytest
 import wireup
 import wireup.integration.starlette
-from fastapi.middleware import Middleware
-from fastapi.responses import PlainTextResponse
 from starlette.applications import Starlette
 from starlette.endpoints import HTTPEndpoint
+from starlette.middleware import Middleware
 from starlette.requests import Request
+from starlette.responses import PlainTextResponse
 from starlette.routing import Route, WebSocketRoute
 from starlette.testclient import TestClient
 from starlette.types import ASGIApp, Receive, Scope, Send
