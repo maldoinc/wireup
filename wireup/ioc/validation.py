@@ -112,7 +112,7 @@ def assert_valid_resolution_path(container: BaseContainer, dependency: Annotated
     )
     dependency_service_factory = None
     for (impl, qualifier), service_factory in container._registry.factories.items():
-        if impl is dependency_class and (qualifier == dependency.qualifier_value):
+        if impl is dependency_class and qualifier == dependency.qualifier_value:
             dependency_service_factory = service_factory
             break
     if dependency_service_factory:
