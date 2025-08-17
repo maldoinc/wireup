@@ -44,6 +44,7 @@ def assert_dependencies_valid(container: BaseContainer) -> None:
         for name, dependency in container._registry.dependencies[service_factory.factory].items():
             assert_dependency_exists(container=container, parameter=dependency, target=impl, name=name)
             assert_lifetime_valid(container, impl, name, dependency, service_factory.factory)
+            assert_valid_resolution_path(container=container, dependency=dependency, path=[])
 
 
 def assert_lifetime_valid(
@@ -93,6 +94,35 @@ def assert_dependency_exists(container: BaseContainer, parameter: AnnotatedParam
         )
         raise WireupError(msg)
 
+def assert_valid_resolution_path(container: BaseContainer, dependency: AnnotatedParameter, path: list[AnnotatedParameter]) -> None:
+    """Assert that the resolution path for a dependency does not create a cycle."""
+    if any(
+            p.klass == dependency.klass and p.qualifier_value == dependency.qualifier_value
+            for p in path
+    ):
+        cycle_path = " -> ".join(
+            f"{stringify_type(p.klass)}[{p.qualifier_value}]" for p in [*path, dependency]
+        )
+        msg = f"Cyclical dependencies detected: {cycle_path}"
+        raise WireupError(msg)
+    dependency_class = (
+        container._registry.interface_resolve_impl(dependency.klass, dependency.qualifier_value)
+        if dependency.klass in container._registry.interfaces
+        else dependency.klass
+    )
+    exception = None
+    for (impl, qualifier), service_factory in container._registry.factories.items():
+        if impl is dependency_class and (qualifier == dependency.qualifier_value):
+            dependency_service_factory = service_factory
+            try:
+                for name, next_dependency in container._registry.dependencies[dependency_service_factory.factory].items():
+                    assert_valid_resolution_path(container, next_dependency, [*path, dependency])
+            except WireupError as e:
+                exception = e
+                continue
+            return
+    if exception:
+        raise exception
 
 def get_inject_annotated_parameters(target: AnyCallable) -> dict[str, AnnotatedParameter]:
     """Retrieve annotated parameters from a given callable target.
