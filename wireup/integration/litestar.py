@@ -24,6 +24,9 @@ def request_factory() -> Request[Any, Any, Any]:
 
 def wireup_middleware(app: ASGIApp) -> ASGIApp:
     async def _middleware(scope: Scope, receive: Receive, send: Send) -> None:
+        if scope["type"] != "http":
+            return await app(scope, receive, send)
+
         request: Request[Any, Any, Any] = Request(scope, receive, send)
         token = current_request.set(request)
         try:
