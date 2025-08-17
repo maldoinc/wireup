@@ -1,3 +1,5 @@
+from typing import Iterator
+
 import pytest
 import wireup
 import wireup.integration.starlette
@@ -151,3 +153,29 @@ def test_get_request_container_in_middleware() -> None:
     client = TestClient(app)
     with pytest.raises(ValueError, match="RequestContext name: World"):
         client.get("/hello", params={"name": "World"})
+
+
+async def test_executes_closes_container_lifespan() -> None:
+    cleanup_done = False
+
+    class Thing: ...
+
+    @service
+    def make_thing() -> Iterator[Thing]:
+        yield Thing()
+        nonlocal cleanup_done
+        cleanup_done = True
+
+    @inject
+    def hello(_request: Request, thing: Injected[Thing]) -> PlainTextResponse:
+        assert isinstance(thing, Thing)
+        return PlainTextResponse("Hello World")
+
+    app = Starlette(routes=[Route("/hello", hello, methods=["GET"])])
+    container = wireup.create_async_container(services=[make_thing])
+    wireup.integration.starlette.setup(container, app)
+
+    with TestClient(app) as client:
+        client.get("/hello")
+
+    assert cleanup_done
