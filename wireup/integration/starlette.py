@@ -1,5 +1,6 @@
+import contextlib
 from contextvars import ContextVar
-from typing import Union
+from typing import Any, AsyncIterator, Union
 
 from starlette.applications import Starlette
 from starlette.requests import Request
@@ -64,14 +65,28 @@ class WireupAsgiMiddleware:
             current_request.reset(token)
 
 
+def _update_lifespan(app: Starlette) -> None:
+    old_lifespan = app.router.lifespan_context
+
+    @contextlib.asynccontextmanager
+    async def lifespan(app: Starlette) -> AsyncIterator[Any]:
+        async with old_lifespan(app) as state:
+            yield state
+
+        await get_app_container(app).close()
+
+    app.router.lifespan_context = lifespan
+
+
 def setup(container: AsyncContainer, app: Starlette) -> None:
     """Integrate Wireup with a Starlette application.
 
-    This sets up the application to use Wireup's dependency injection system.
-    It adds the WireupAsgiMiddleware to the application and associates the container with the app state.
-    Note, for this to work correctly, there should be no more middleware added after the call to this function.
+    This sets up the application to use Wireup's dependency injection system and closes the container
+    on application shutdown. Note, for this to work correctly, there should be no more middleware added after the call
+    to this function.
     """
 
+    _update_lifespan(app)
     app.state.wireup_container = container
     app.add_middleware(WireupAsgiMiddleware)
 
