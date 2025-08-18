@@ -22,7 +22,7 @@ def request_factory() -> Request[Any, Any, Any]:
         raise WireupError(msg) from e
 
 
-def wireup_middleware(app: ASGIApp) -> ASGIApp:
+def _wireup_middleware(app: ASGIApp) -> ASGIApp:
     async def _middleware(scope: Scope, receive: Receive, send: Send) -> None:
         if scope["type"] != "http":
             return await app(scope, receive, send)
@@ -45,6 +45,7 @@ def setup(container: AsyncContainer, app: Litestar) -> None:
     This sets up the application to use Wireup's dependency injection system.
     """
     app.state.wireup_container = container
+    app.asgi_handler = _wireup_middleware(app.asgi_handler)
 
 
 def get_app_container(app: Litestar) -> AsyncContainer:

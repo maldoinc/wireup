@@ -40,7 +40,7 @@ async def websocket_handler(greeter: Injected[GreeterService], socket: WebSocket
 
 @pytest.fixture
 def app() -> Litestar:
-    app = Litestar([index, websocket_handler], middleware=[wireup.integration.litestar.wireup_middleware])
+    app = Litestar([index, websocket_handler])
     container = wireup.create_async_container(
         services=[RequestContext],
         service_modules=[shared_services, wireup.integration.litestar],
