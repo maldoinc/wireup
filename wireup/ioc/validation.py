@@ -107,13 +107,13 @@ def assert_valid_resolution_path(
         def stringify_dependency(p: AnnotatedParameter, factory: Any) -> str:
             return (
                 f"{p.klass.__module__}.{p.klass.__name__}"
-                f"{
-                    f' (with qualifier {p.qualifier_value})'
+                f"""{
+                    f" (with qualifier {p.qualifier_value})"
                     if p.qualifier_value
-                    else f' (created via {factory.factory.__module__}.{factory.factory.__name__})'
+                    else f" (created via {factory.factory.__module__}.{factory.factory.__name__})"
                     if factory
-                    else ''
-                }"
+                    else ""
+                }"""
             )
 
         cycle_path = "\n -> ".join(
