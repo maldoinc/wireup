@@ -132,8 +132,10 @@ def test_validates_container_raises_when_cyclical_dependencies() -> None:
     with pytest.raises(
         WireupError,
         match=re.escape(
-            "Cyclical dependencies detected: Type test.unit.test_container_creation.Bar[None] -> Type "
-            "test.unit.test_container_creation.Foo[None] -> Type test.unit.test_container_creation.Bar[None]"
+            "Circular dependency detected for test.unit.test_container_creation.Bar "
+            "(created via test.unit.test_container_creation.make_bar)"
+            "\n -> test.unit.test_container_creation.Foo (created via test.unit.test_container_creation.make_foo)"
+            "\n -> test.unit.test_container_creation.Bar (created via test.unit.test_container_creation.make_bar)"
         ),
     ):
         wireup.create_sync_container(services=[make_foo, make_bar])

@@ -96,23 +96,34 @@ def assert_dependency_exists(container: BaseContainer, parameter: AnnotatedParam
 
 
 def assert_valid_resolution_path(
-    container: BaseContainer, dependency: AnnotatedParameter, path: list[AnnotatedParameter]
+    container: BaseContainer, dependency: AnnotatedParameter, path: list[tuple[AnnotatedParameter, Any]]
 ) -> None:
     """Assert that the resolution path for a dependency does not create a cycle."""
-    if any(p.klass == dependency.klass and p.qualifier_value == dependency.qualifier_value for p in path):
-        cycle_path = " -> ".join(f"{stringify_type(p.klass)}[{p.qualifier_value}]" for p in [*path, dependency])
-        msg = f"Cyclical dependencies detected: {cycle_path}"
-        raise WireupError(msg)
-    dependency_service_factory = None
     if dependency.klass in container._registry.interfaces:
         return
-    for (impl, qualifier), service_factory in container._registry.factories.items():
-        if impl is dependency.klass and qualifier == dependency.qualifier_value:
-            dependency_service_factory = service_factory
-            break
+    dependency_service_factory = container._registry.factories.get((dependency.klass, dependency.qualifier_value))
+    if any(p.klass == dependency.klass and p.qualifier_value == dependency.qualifier_value for p, _ in path):
+
+        def stringify_dependency(p: AnnotatedParameter, factory: Any) -> str:
+            return (
+                f"{p.klass.__module__}.{p.klass.__name__}"
+                f"{
+                    f' (with qualifier {p.qualifier_value})'
+                    if p.qualifier_value
+                    else f' (created via {factory.factory.__module__}.{factory.factory.__name__})'
+                    if factory
+                    else ''
+                }"
+            )
+
+        cycle_path = "\n -> ".join(
+            f"{stringify_dependency(p, factory)}" for p, factory in [*path, (dependency, dependency_service_factory)]
+        )
+        msg = f"Circular dependency detected for {cycle_path}"
+        raise WireupError(msg)
     if dependency_service_factory:
         for next_dependency in container._registry.dependencies[dependency_service_factory.factory].values():
-            assert_valid_resolution_path(container, next_dependency, [*path, dependency])
+            assert_valid_resolution_path(container, next_dependency, [*path, (dependency, dependency_service_factory)])
 
 
 def get_inject_annotated_parameters(target: AnyCallable) -> dict[str, AnnotatedParameter]:
