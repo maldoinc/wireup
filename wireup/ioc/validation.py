@@ -99,7 +99,7 @@ def assert_valid_resolution_path(
     container: BaseContainer, dependency: AnnotatedParameter, path: list[tuple[AnnotatedParameter, Any]]
 ) -> None:
     """Assert that the resolution path for a dependency does not create a cycle."""
-    if dependency.klass in container._registry.interfaces:
+    if dependency.klass in container._registry.interfaces or dependency.is_parameter:
         return
     dependency_service_factory = container._registry.factories.get((dependency.klass, dependency.qualifier_value))
     if any(p.klass == dependency.klass and p.qualifier_value == dependency.qualifier_value for p, _ in path):
