@@ -119,7 +119,7 @@ def assert_valid_resolution_path(
         cycle_path = "\n -> ".join(
             f"{stringify_dependency(p, factory)}" for p, factory in [*path, (dependency, dependency_service_factory)]
         )
-        msg = f"Circular dependency detected for {cycle_path}"
+        msg = f"Circular dependency detected for {cycle_path} ! Cycle here"
         raise WireupError(msg)
     if dependency_service_factory:
         for next_dependency in container._registry.dependencies[dependency_service_factory.factory].values():
