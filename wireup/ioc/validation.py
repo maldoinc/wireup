@@ -101,29 +101,23 @@ def assert_valid_resolution_path(
     """Assert that the resolution path for a dependency does not create a cycle."""
     if dependency.klass in container._registry.interfaces or dependency.is_parameter:
         return
-    dependency_service_factory = container._registry.factories.get((dependency.klass, dependency.qualifier_value))
+    dependency_service_factory = container._registry.factories[dependency.klass, dependency.qualifier_value]
     if any(p.klass == dependency.klass and p.qualifier_value == dependency.qualifier_value for p, _ in path):
 
         def stringify_dependency(p: AnnotatedParameter, factory: Any) -> str:
-            return (
-                f"{p.klass.__module__}.{p.klass.__name__}"
-                f"""{
-                    f" (with qualifier {p.qualifier_value})"
-                    if p.qualifier_value
-                    else f" (created via {factory.factory.__module__}.{factory.factory.__name__})"
-                    if factory
-                    else ""
-                }"""
-            )
+            descriptors = [
+                f'with qualifier "{p.qualifier_value}"' if p.qualifier_value else None,
+                f"created via {factory.factory.__module__}.{factory.factory.__name__}" if factory else None,
+            ]
+            return f"{p.klass.__module__}.{p.klass.__name__} ({', '.join([d for d in descriptors if d is not None])})"
 
         cycle_path = "\n -> ".join(
             f"{stringify_dependency(p, factory)}" for p, factory in [*path, (dependency, dependency_service_factory)]
         )
         msg = f"Circular dependency detected for {cycle_path} ! Cycle here"
         raise WireupError(msg)
-    if dependency_service_factory:
-        for next_dependency in container._registry.dependencies[dependency_service_factory.factory].values():
-            assert_valid_resolution_path(container, next_dependency, [*path, (dependency, dependency_service_factory)])
+    for next_dependency in container._registry.dependencies[dependency_service_factory.factory].values():
+        assert_valid_resolution_path(container, next_dependency, [*path, (dependency, dependency_service_factory)])
 
 
 def get_inject_annotated_parameters(target: AnyCallable) -> dict[str, AnnotatedParameter]:

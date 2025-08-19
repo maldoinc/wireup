@@ -122,10 +122,10 @@ def test_validates_container_raises_when_cyclical_dependencies() -> None:
         def __init__(self, foo: Foo): ...
 
     @wireup.service
-    def make_foo(bar: Bar) -> Foo:
+    def make_foo(bar: Annotated[Bar, Inject(qualifier="qualifier_name")]) -> Foo:
         return Foo(bar)
 
-    @wireup.service
+    @wireup.service(qualifier="qualifier_name")
     def make_bar(baz: Foo) -> Bar:
         return Bar(baz)
 
@@ -133,9 +133,10 @@ def test_validates_container_raises_when_cyclical_dependencies() -> None:
         WireupError,
         match=re.escape(
             "Circular dependency detected for test.unit.test_container_creation.Bar "
-            "(created via test.unit.test_container_creation.make_bar)"
+            '(with qualifier "qualifier_name", created via test.unit.test_container_creation.make_bar)'
             "\n -> test.unit.test_container_creation.Foo (created via test.unit.test_container_creation.make_foo)"
-            "\n -> test.unit.test_container_creation.Bar (created via test.unit.test_container_creation.make_bar)"
+            '\n -> test.unit.test_container_creation.Bar (with qualifier "qualifier_name", '
+            "created via test.unit.test_container_creation.make_bar)"
             " ! Cycle here"
         ),
     ):
