@@ -155,7 +155,7 @@ def test_get_request_container_in_middleware() -> None:
         client.get("/hello", params={"name": "World"})
 
 
-async def test_executes_fastapi_lifespan() -> None:
+async def test_executes_closes_container_lifespan() -> None:
     cleanup_done = False
 
     class Thing: ...
