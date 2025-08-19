@@ -3,7 +3,7 @@ from __future__ import annotations
 import importlib
 import typing
 from inspect import Parameter
-from typing import Any, TypeVar
+from typing import Any, Sequence, TypeVar
 
 from wireup.errors import WireupError
 from wireup.ioc.types import AnnotatedParameter, AnyCallable, InjectableType
@@ -23,6 +23,19 @@ def _get_injectable_type(metadata: Any) -> InjectableType | None:
     return metadata if isinstance(metadata, InjectableType) else None
 
 
+def _get_wireup_annotation(metadata: Sequence[Any]) -> InjectableType | None:
+    annotations = list(filter(None, (_get_injectable_type(ann) for ann in metadata)))
+
+    if not annotations:
+        return None
+
+    if len(annotations) > 1:
+        msg = f"Multiple Wireup annotations used: {annotations}"
+        raise WireupError(msg)
+
+    return annotations[0]
+
+
 def param_get_annotation(parameter: Parameter, *, globalns: dict[str, Any]) -> AnnotatedParameter | None:
     """Get the annotation injection type from a signature's Parameter.
 
@@ -35,7 +48,7 @@ def param_get_annotation(parameter: Parameter, *, globalns: dict[str, Any]) -> A
 
     if resolved_type and hasattr(resolved_type, "__metadata__") and hasattr(resolved_type, "__args__"):
         klass = resolved_type.__args__[0]
-        annotation = next(_get_injectable_type(ann) for ann in resolved_type.__metadata__)
+        annotation = _get_wireup_annotation(resolved_type.__metadata__)
 
         return AnnotatedParameter(klass, annotation)
 

@@ -1,8 +1,10 @@
 import inspect
 import unittest
 
+import pytest
 from typing_extensions import Annotated
 from wireup import Inject
+from wireup.errors import WireupError
 from wireup.ioc.types import AnnotatedParameter, InjectableType, ParameterWrapper, ServiceQualifier
 from wireup.ioc.util import (
     param_get_annotation,
@@ -27,9 +29,7 @@ class TestUtilityFunctions(unittest.TestCase):
         ): ...
 
         params = inspect.signature(inner)
-        self.assertEqual(
-            param_get_annotation(params.parameters["_a"], globalns=globals()), AnnotatedParameter(str, None)
-        )
+        self.assertEqual(param_get_annotation(params.parameters["_a"], globalns=globals()), AnnotatedParameter(str, d1))
         self.assertEqual(param_get_annotation(params.parameters["_b"], globalns=globals()), None)
         self.assertEqual(
             param_get_annotation(params.parameters["_c"], globalns=globals()), AnnotatedParameter(str, None)
@@ -52,6 +52,15 @@ class TestUtilityFunctions(unittest.TestCase):
             hash(AnnotatedParameter(AnnotatedParameter, ServiceQualifier("wow"))),
             hash(AnnotatedParameter(AnnotatedParameter, ServiceQualifier("wow"))),
         )
+
+
+def test_raises_multiple_annotations() -> None:
+    def inner(_a: Annotated[str, Inject(), Inject(param="foo")]): ...
+
+    params = inspect.signature(inner)
+
+    with pytest.raises(WireupError, match="Multiple Wireup annotations used"):
+        param_get_annotation(params.parameters["_a"], globalns=globals())
 
 
 class MyCustomClass:
