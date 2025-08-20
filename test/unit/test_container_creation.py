@@ -4,7 +4,7 @@ from dataclasses import dataclass
 import pytest
 import wireup
 from typing_extensions import Annotated
-from wireup._annotations import abstract, service
+from wireup._annotations import Inject, abstract, service
 from wireup.errors import WireupError
 
 from test.unit.services.no_annotations.random.random_service import RandomService
@@ -112,6 +112,57 @@ def test_validates_dependencies_lifetimes_raises_when_using_interfaces() -> None
         ),
     ):
         wireup.create_sync_container(services=[ServiceB, FooImpl, Foo])
+
+
+def test_validates_container_raises_when_cyclical_dependencies() -> None:
+    class Foo:
+        def __init__(self, bar): ...
+
+    class Bar:
+        def __init__(self, foo: Foo): ...
+
+    @wireup.service
+    def make_foo(bar: Annotated[Bar, Inject(qualifier="qualifier_name")]) -> Foo:
+        return Foo(bar)
+
+    @wireup.service(qualifier="qualifier_name")
+    def make_bar(baz: Foo) -> Bar:
+        return Bar(baz)
+
+    with pytest.raises(
+        WireupError,
+        match=re.escape(
+            "Circular dependency detected for test.unit.test_container_creation.Bar "
+            '(with qualifier "qualifier_name", created via test.unit.test_container_creation.make_bar)'
+            "\n -> test.unit.test_container_creation.Foo (created via test.unit.test_container_creation.make_foo)"
+            '\n -> test.unit.test_container_creation.Bar (with qualifier "qualifier_name", '
+            "created via test.unit.test_container_creation.make_bar)"
+            " ! Cycle here"
+        ),
+    ):
+        wireup.create_sync_container(services=[make_foo, make_bar])
+
+
+def test_validates_container_does_not_raise_when_no_dependency_cycle() -> None:
+    class Foo:
+        def __init__(self, bar): ...
+
+    class Bar:
+        def __init__(self, foo: Foo): ...
+
+    @wireup.service
+    def make_foo(bar: Bar) -> Foo:
+        return Foo(bar)
+
+    @wireup.service
+    def make_bar(baz: Annotated[Foo, Inject(qualifier="no_dependency")]) -> Bar:
+        return Bar(baz)
+
+    @wireup.service(qualifier="no_dependency")
+    def make_foo_no_dependency() -> Foo:
+        return Foo(None)
+
+    wireup.create_sync_container(services=[make_foo, make_bar, make_foo_no_dependency])
 
 
 def test_lifetimes_match_factories() -> None:
