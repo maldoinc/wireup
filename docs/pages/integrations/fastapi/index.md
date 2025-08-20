@@ -49,13 +49,14 @@ container = wireup.create_async_container(
         wireup.integration.fastapi
     ],
     # Expose parameters to Wireup as necessary. 
-    parameters={
-        "debug": settings.DEBUG
-    },
-    # Include here any Wireup Class-Based Handlers.
-    class_based_handlers=[...],
+    parameters={"debug": settings.DEBUG},
 )
-wireup.integration.fastapi.setup(container, app)
+wireup.integration.fastapi.setup(
+    container, 
+    app, 
+    # Include here any Wireup Class-Based Handlers.
+    class_based_handlers=[...]
+)
 ```
 
 ### Inject in HTTP and WebSocket routes

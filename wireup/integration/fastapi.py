@@ -1,9 +1,7 @@
 import contextlib
-from contextvars import ContextVar
 from typing import (
     Any,
     AsyncIterator,
-    Awaitable,
     Callable,
     Dict,
     Iterable,
@@ -16,16 +14,22 @@ from typing import (
 )
 
 import fastapi
-from fastapi import FastAPI, Request, Response, WebSocket
-from fastapi.requests import HTTPConnection
+from fastapi import FastAPI
 from fastapi.routing import APIRoute, APIWebSocketRoute
-from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.routing import BaseRoute
 from typing_extensions import Protocol
 
-from wireup import inject_from_container, service
+from wireup import inject_from_container
 from wireup._annotations import ServiceDeclaration
 from wireup.errors import WireupError
+from wireup.integration.starlette import (
+    WireupAsgiMiddleware,
+    current_request,
+    get_app_container,
+    get_request_container,
+    request_factory,
+    websocket_factory,
+)
 from wireup.ioc.container.async_container import AsyncContainer, ScopedAsyncContainer
 from wireup.ioc.container.sync_container import ScopedSyncContainer
 from wireup.ioc.types import AnyCallable
@@ -35,7 +39,14 @@ from wireup.ioc.validation import (
     hide_annotated_names,
 )
 
-current_request: ContextVar[HTTPConnection] = ContextVar("wireup_fastapi_request")
+__all__ = [
+    "WireupRoute",
+    "get_app_container",
+    "get_request_container",
+    "request_factory",
+    "setup",
+    "websocket_factory",
+]
 
 
 class _ClassBasedHandlersProtocol(Protocol):
@@ -48,50 +59,6 @@ class WireupRoute(APIRoute):
         super().__init__(path=path, endpoint=endpoint, **kwargs)
 
 
-@service(lifetime="scoped")
-def fastapi_request_factory() -> Request:
-    """Provide the current FastAPI request as a dependency.
-
-    Note that this requires the Wireup-FastAPI integration to be set up.
-    """
-    msg = "fastapi.Request in Wireup is only available during a request."
-    try:
-        res = current_request.get()
-        if not isinstance(res, Request):
-            raise WireupError(msg)
-
-        return res
-    except LookupError as e:
-        raise WireupError(msg) from e
-
-
-@service(lifetime="scoped")
-def fastapi_websocket_factory() -> WebSocket:
-    """Provide the current FastAPI WebSocket as a dependency.
-
-    Note that this requires the Wireup-FastAPI integration to be set up.
-    """
-    msg = "fastapi.WebSocket in Wireup is only available in a websocket connection."
-    try:
-        res = current_request.get()
-        if not isinstance(res, WebSocket):
-            raise WireupError(msg)
-
-        return res
-    except LookupError as e:
-        raise WireupError(msg) from e
-
-
-async def _wireup_request_middleware(request: Request, call_next: Callable[[Request], Awaitable[Response]]) -> Response:
-    token = current_request.set(request)
-    try:
-        async with request.app.state.wireup_container.enter_scope() as scoped_container:
-            request.state.wireup_container = scoped_container
-            return await call_next(request)
-    finally:
-        current_request.reset(token)
-
-
 def _inject_fastapi_route(
     *,
     container: AsyncContainer,
@@ -100,14 +67,13 @@ def _inject_fastapi_route(
     remove_http_connection_from_arguments: bool,
     add_custom_middleware: bool,
 ) -> AnyCallable:
-    # Warn: Make sure the logic evolves with the _wireup_request_middleware function.
     @contextlib.contextmanager
     def _request_middleware(
         scoped_container: Union[ScopedAsyncContainer, ScopedSyncContainer],
         _args: Tuple[Any, ...],
         kwargs: Dict[str, Any],
     ) -> Iterator[None]:
-        request: HTTPConnection = kwargs[http_connection_param_name]
+        request = kwargs[http_connection_param_name]
         request.state.wireup_container = scoped_container
         token = current_request.set(request)
         try:
@@ -135,8 +101,7 @@ def _inject_routes(container: AsyncContainer, routes: List[BaseRoute], *, is_usi
             route.dependant.call = inject_from_container(container, get_request_container)(route.dependant.call)
             continue
 
-        # This is now either a websocket route
-        # or an APIRoute but the asgi middleware is not used.
+        # This is now either a websocket route or an APIRoute but the asgi middleware is not used.
         # In this case we need to use the custom route middleware to extract the current request/websocket.
         add_custom_middleware = isinstance(route, APIWebSocketRoute) or not is_using_asgi_middleware
         is_http_connection_in_signature = route.dependant.http_connection_param_name is not None
@@ -242,7 +207,7 @@ def setup(
     """
     app.state.wireup_container = container
     if middleware_mode:
-        app.add_middleware(BaseHTTPMiddleware, dispatch=_wireup_request_middleware)
+        app.add_middleware(WireupAsgiMiddleware)
     _update_lifespan(
         app,
         class_based_routes=class_based_handlers,
@@ -253,13 +218,3 @@ def setup(
     # If no class-based handlers are used, we inject them immediately.
     if not class_based_handlers:
         _inject_routes(container, app.routes, is_using_asgi_middleware=middleware_mode)
-
-
-def get_app_container(app: FastAPI) -> AsyncContainer:
-    """Return the container associated with the given FastAPI application."""
-    return app.state.wireup_container
-
-
-def get_request_container() -> ScopedAsyncContainer:
-    """When inside a request, returns the scoped container instance handling the current request."""
-    return current_request.get().state.wireup_container

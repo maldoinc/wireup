@@ -36,6 +36,8 @@ nav:
     - AIOHTTP: 
       - Flask Integration: integrations/aiohttp/index.md
       - Class-Based Handlers: integrations/aiohttp/class_based_handlers.md
+    - Starlette: 
+      - Starlette Integration: integrations/starlette/index.md
   - API Reference:
       - wireup: class/wireup.md
       - OverrideManager: class/override_manager.md
@@ -45,6 +47,7 @@ nav:
         - FastAPI: class/fastapi_integration.md
         - Flask: class/flask_integration.md
         - AIOHTTP: class/aiohttp_integration.md
+        - Starlette: class/starlette_integration.md
 repo_url: https://github.com/maldoinc/wireup
 repo_name: maldoinc/wireup
 theme:

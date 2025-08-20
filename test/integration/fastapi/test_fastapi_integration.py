@@ -126,7 +126,7 @@ async def test_current_request_service(client: TestClient):
 
 @pytest.mark.parametrize("t", [Request, WebSocket])
 async def test_raises_request_outside_of_scope(app: FastAPI, t: Any) -> None:
-    with pytest.raises(WireupError, match=f"fastapi.{t.__name__} in Wireup is only available."):
+    with pytest.raises(WireupError, match=f"{t.__name__} in Wireup is only available."):
         async with get_app_container(app).enter_scope() as scoped:
             await scoped.get(t)
 
@@ -139,26 +139,29 @@ def test_cbr(client: TestClient):
 
 
 async def test_closes_container_on_lifespan_close() -> None:
-    app = FastAPI()
     cleanup_done = False
 
-    NewRandom = NewType("NewRandom", RandomService)
+    class Thing: ...
 
     @service
-    def random_service_factory() -> Iterator[NewRandom]:
-        yield NewRandom(RandomService())
-
+    def make_thing() -> Iterator[Thing]:
+        yield Thing()
         nonlocal cleanup_done
         cleanup_done = True
 
-    container = wireup.create_async_container(
-        service_modules=[fastapi_test_services, shared_services, wireup.integration.fastapi],
-        services=[random_service_factory],
-    )
-    wireup.integration.fastapi.setup(container, app)
+    app = FastAPI()
+    container = wireup.create_async_container(services=[make_thing])
 
-    with TestClient(app) as _:
-        assert isinstance(await container.get(NewRandom), RandomService)
+    @app.get("/")
+    async def _(thing: Injected[Thing]) -> Dict[str, Any]:
+        assert isinstance(thing, Thing)
+        return {}
+
+    wireup.integration.fastapi.setup(container, app, middleware_mode=False)
+    assert len(app.user_middleware) == 0
+
+    with TestClient(app) as client:
+        client.get("/")
 
     assert cleanup_done
 
