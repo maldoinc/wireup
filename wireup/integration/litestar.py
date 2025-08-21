@@ -66,4 +66,4 @@ def get_request_container() -> ScopedAsyncContainer:
     return current_request.get().state.wireup_container
 
 
-inject = inject_from_container_unchecked(get_request_container)
+inject = inject_from_container_unchecked(get_request_container, hide_wireup_params=True)

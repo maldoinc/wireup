@@ -22,10 +22,17 @@ if TYPE_CHECKING:
 
 def inject_from_container_unchecked(
     scoped_container_supplier: Callable[[], ScopedSyncContainer | ScopedAsyncContainer],
+    *,
+    hide_wireup_params: bool = False,
 ) -> Callable[..., Any]:
     """Inject dependencies into the decorated function. The "unchecked" part of the name refers to the fact that
     this cannot perform validation on the parameters to inject on module import time due to the absence of a container
-    instance."""
+    instance.
+
+    :param scoped_container_supplier: A callable that returns the current scoped container instance.
+    :param hide_wireup_params: If True, the annotated parameters used for injection will be removed from the function's
+    signature. This is to avoid issues with frameworks that introspect function signatures, such as Litestar.
+    """
 
     def _decorator(target: Callable[..., Any]) -> Callable[..., Any]:
         return inject_from_container_util(
@@ -34,6 +41,7 @@ def inject_from_container_unchecked(
             container=None,
             scoped_container_supplier=scoped_container_supplier,
             middleware=None,
+            hide_wireup_params=hide_wireup_params,
         )
 
     return _decorator
@@ -47,6 +55,8 @@ def inject_from_container(
         contextlib.AbstractContextManager[None],
     ]
     | None = None,
+    *,
+    hide_wireup_params: bool = False,
 ) -> Callable[..., Any]:
     """Inject dependencies into the decorated function based on annotations.
 
@@ -58,6 +68,8 @@ def inject_from_container(
     example, in web frameworks, you might enter the scope at the start of a request in middleware so that other
     middlewares can access the scoped container if needed.
     :param middleware: A context manager that wraps the execution of the target function.
+    :param hide_wireup_params: If True, the annotated parameters used for injection will be removed from the function's
+    signature. This is to avoid issues with frameworks that introspect function signatures, such as Litestar.
     """
 
     def _decorator(target: Callable[..., Any]) -> Callable[..., Any]:
@@ -74,12 +86,13 @@ def inject_from_container(
             container=container,
             scoped_container_supplier=scoped_container_supplier,
             middleware=middleware,
+            hide_wireup_params=hide_wireup_params,
         )
 
     return _decorator
 
 
-def inject_from_container_util(  # noqa: C901
+def inject_from_container_util(  # noqa: C901, PLR0913
     target: Callable[..., Any],
     names_to_inject: dict[str, AnnotatedParameter],
     container: SyncContainer | AsyncContainer | None,
@@ -89,6 +102,8 @@ def inject_from_container_util(  # noqa: C901
         contextlib.AbstractContextManager[None],
     ]
     | None = None,
+    *,
+    hide_wireup_params: bool = False,
 ) -> Callable[..., Any]:
     if not (container or scoped_container_supplier):
         msg = "Container or scoped_container_supplier must be provided for injection."
@@ -97,7 +112,8 @@ def inject_from_container_util(  # noqa: C901
     if not names_to_inject:
         return target
 
-    hide_annotated_names(target)
+    if hide_wireup_params:
+        hide_annotated_names(target)
 
     if asyncio.iscoroutinefunction(target):
 
