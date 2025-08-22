@@ -1,7 +1,8 @@
 from contextvars import ContextVar
 from typing import Any
 
-from litestar import Litestar, Request
+from litestar import Litestar, Request, WebSocket
+from litestar.connection.base import ASGIConnection
 from litestar.types import ASGIApp, Receive, Scope, Send
 
 from wireup._annotations import service
@@ -9,16 +10,34 @@ from wireup._decorators import inject_from_container_unchecked
 from wireup.errors import WireupError
 from wireup.ioc.container.async_container import AsyncContainer, ScopedAsyncContainer
 
-current_request: ContextVar[Request[Any, Any, Any]] = ContextVar("wireup_fastapi_request")
+current_request: ContextVar[ASGIConnection[Any, Any, Any, Any]] = ContextVar("wireup_fastapi_request")
 
 
 @service(lifetime="scoped")
 def request_factory() -> Request[Any, Any, Any]:
     """Provide the current request as a dependency."""
+    msg = "Request in Wireup is only available during a request."
     try:
-        return current_request.get()
+        res = current_request.get()
+        if not isinstance(res, Request):
+            raise WireupError(msg)
+
+        return res
     except LookupError as e:
-        msg = "Request in Wireup is only available during a request."
+        raise WireupError(msg) from e
+
+
+@service(lifetime="scoped")
+def websocket_factory() -> WebSocket[Any, Any, Any]:
+    """Provide the current WebSocket as a dependency."""
+    msg = "WebSocket in Wireup is only available in a websocket connection."
+    try:
+        res = current_request.get()
+        if not isinstance(res, WebSocket):
+            raise WireupError(msg)
+
+        return res
+    except LookupError as e:
         raise WireupError(msg) from e
 
 
@@ -27,7 +46,11 @@ def _wireup_middleware(app: ASGIApp) -> ASGIApp:
         if scope["type"] not in ("http", "websocket"):
             return await app(scope, receive, send)
 
-        request: Request[Any, Any, Any] = Request(scope, receive, send)
+        if scope["type"] == "http":
+            request: Request[Any, Any, Any] = Request(scope, receive, send)
+        else:
+            request: WebSocket[Any, Any, Any] = WebSocket(scope, receive, send)
+
         token = current_request.set(request)
         try:
             async with request.app.state.wireup_container.enter_scope() as scoped_container:

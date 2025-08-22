@@ -23,6 +23,12 @@ class RequestContext:
         return self.request.query_params["name"]
 
 
+@service(lifetime="scoped")
+class WebSocketContext:
+    def __init__(self, socket: WebSocket[Any, Any, Any]) -> None:
+        self.socket = socket
+
+
 @get("/")
 @inject
 async def index(greeter: Injected[GreeterService], ctx: Injected[RequestContext]) -> str:
@@ -38,11 +44,24 @@ async def websocket_handler(greeter: Injected[GreeterService], socket: WebSocket
     await socket.close()
 
 
+@websocket(path="/ws/wireup-websocket")
+@inject
+async def websocket_handler_wireup(
+    socket: WebSocket[Any, Any, State],
+    greeter: Injected[GreeterService],
+    ctx: Injected[WebSocketContext],
+) -> None:
+    await ctx.socket.accept()
+    recv = await ctx.socket.receive_json()
+    await ctx.socket.send_json({"message": greeter.greet(recv["name"])})
+    await ctx.socket.close()
+
+
 @pytest.fixture
 def app() -> Litestar:
-    app = Litestar([index, websocket_handler])
+    app = Litestar([index, websocket_handler, websocket_handler_wireup])
     container = wireup.create_async_container(
-        services=[RequestContext],
+        services=[RequestContext, WebSocketContext],
         service_modules=[shared_services, wireup.integration.litestar],
     )
     wireup.integration.litestar.setup(container, app)
@@ -61,8 +80,9 @@ def test_index(client: TestClient[Litestar]) -> None:
     assert response.text == "Hello World"
 
 
-def test_websocket(client: TestClient[Litestar]) -> None:
-    with client.websocket_connect("/ws") as ws:
+@pytest.mark.parametrize("endpoint", ["/ws", "/ws/wireup-websocket"])
+def test_websocket(endpoint: str, client: TestClient[Litestar]) -> None:
+    with client.websocket_connect(endpoint) as ws:
         ws.send_json({"name": "websockets"})
         data = ws.receive_json()
         assert data == {"message": "Hello websockets"}
