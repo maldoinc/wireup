@@ -47,7 +47,7 @@ async def websocket_handler(greeter: Injected[GreeterService], socket: WebSocket
 @websocket(path="/ws/wireup-websocket")
 @inject
 async def websocket_handler_wireup(
-    socket: WebSocket[Any, Any, State],
+    socket: WebSocket[Any, Any, State],  # noqa: ARG001
     greeter: Injected[GreeterService],
     ctx: Injected[WebSocketContext],
 ) -> None:
