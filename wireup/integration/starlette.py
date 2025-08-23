@@ -103,7 +103,7 @@ def get_app_container(app: Starlette) -> AsyncContainer:
 def get_request_container() -> ScopedAsyncContainer:
     """When inside a request, returns the scoped container instance handling the current request.
 
-    This is what you almost always want.It has all the information the app container has in addition
+    This is what you almost always want. It has all the information the app container has in addition
     to data specific to the current request.
     """
     return current_request.get().state.wireup_container
