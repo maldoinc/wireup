@@ -23,7 +23,7 @@ from wireup.ioc.types import (
     EmptyContainerInjectionRequest,
     ServiceLifetime,
 )
-from wireup.ioc.util import ensure_is_type, get_globals, param_get_annotation, stringify_type
+from wireup.ioc.util import ensure_is_type, get_globals, param_get_annotation, stringify_type, unwrap_optional_type
 
 if TYPE_CHECKING:
     from wireup._annotations import AbstractDeclaration, ServiceDeclaration
@@ -81,13 +81,11 @@ def _function_get_unwrapped_return_type(fn: Callable[..., T]) -> type[T] | None:
 
         if inspect.isgeneratorfunction(fn) or inspect.isasyncgenfunction(fn):
             args = typing.get_args(ret)
-
             if not args:
                 return None
+            ret = args[0]  # Extract the yield type from the generator
 
-            return args[0]  # type:ignore[no-any-return]
-
-        return ret  # type:ignore[no-any-return]
+        return unwrap_optional_type(ret)  # type: ignore[no-any-return]
 
     return None
 

@@ -136,3 +136,43 @@ def authenticated_username_factory(auth: SomeAuthService) -> AuthenticatedUserna
 ```
 
 This can now be injected as usual by annotating the dependency with the new type.
+
+### Optional Dependencies and Factories
+
+You can both request Optional dependencies and create factories that return Optional values. This is useful when a service might not be available or when you want to make a dependency optional.
+
+#### Requesting Optional Dependencies
+
+When a service has an optional dependency, simply annotate it with `Optional[T]`:
+
+```python
+@service
+class UserService:
+    def __init__(self, cache: Optional[Cache]) -> None:
+        self.cache = cache
+
+    def get_user(self, id: str) -> User:
+        if self.cache:
+            cached = self.cache.get(id)
+            if cached:
+                return cached
+        # Fallback to database
+        ...
+```
+
+#### Factories Returning Optional Values
+
+Sometimes you want a factory to return `None` when certain conditions aren't met. A common example is a service that requires configuration to be available:
+
+```python
+@service
+def make_cache(
+    dsn: Annotated[str, Inject(param="REDIS_DSN")],
+) -> Optional[RedisCache]:
+    """Create a Redis cache connection if DSN is configured, otherwise return None."""
+    return RedisCache(dsn) if dsn else None
+```
+
+!!! warning
+    Optional types can be injected into services or targets, but you cannot do `container.get(Optional[T])`; 
+    use `container.get(T)` instead.

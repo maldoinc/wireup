@@ -1,12 +1,15 @@
 from __future__ import annotations
 
 import importlib
+import types
 import typing
 from inspect import Parameter
 from typing import Any, Sequence, TypeVar
 
 from wireup.errors import WireupError
 from wireup.ioc.types import AnnotatedParameter, AnyCallable, InjectableType
+
+_OPTIONAL_UNION_ARG_COUNT = 2
 
 if typing.TYPE_CHECKING:
     from collections.abc import Callable
@@ -40,19 +43,35 @@ def param_get_annotation(parameter: Parameter, *, globalns: dict[str, Any]) -> A
     """Get the annotation injection type from a signature's Parameter.
 
     Returns the first injectable annotation for an Annotated type or the default value.
+    Also handles Optional types by marking them as optional in the AnnotatedParameter.
+    Supports both Annotated[Optional[T], ...] and Optional[Annotated[T, ...]] patterns.
     """
     resolved_type: type[Any] | None = ensure_is_type(parameter.annotation, globalns=globalns)
 
     if resolved_type is Parameter.empty:
         resolved_type = None
 
-    if resolved_type and hasattr(resolved_type, "__metadata__") and hasattr(resolved_type, "__args__"):
-        klass = resolved_type.__args__[0]
+    if not resolved_type:
+        return None
+
+    annotation = None
+    inner_type = resolved_type
+
+    # Handle Annotated[Optional[T], ...] pattern
+    if hasattr(resolved_type, "__metadata__") and hasattr(resolved_type, "__args__"):
         annotation = _get_wireup_annotation(resolved_type.__metadata__)
+        inner_type = resolved_type.__args__[0]
+        unwrapped_type = unwrap_optional_type(inner_type)
+        inner_type = unwrapped_type
+    else:
+        # Handle Optional[T] or Optional[Annotated[T, ...]] pattern
+        unwrapped_type = unwrap_optional_type(resolved_type)
+        inner_type = unwrapped_type
+        if hasattr(inner_type, "__metadata__") and hasattr(inner_type, "__args__"):
+            annotation = _get_wireup_annotation(inner_type.__metadata__)
+            inner_type = inner_type.__args__[0]
 
-        return AnnotatedParameter(klass, annotation)
-
-    return None if not resolved_type else AnnotatedParameter(klass=resolved_type)
+    return AnnotatedParameter(klass=inner_type, annotation=annotation)
 
 
 def get_globals(obj: type[Any] | Callable[..., Any]) -> dict[str, Any]:
@@ -88,6 +107,23 @@ def ensure_is_type(value: type[T] | str, globalns: dict[str, Any] | None = None)
             raise WireupError(msg) from e
 
     return value
+
+
+def unwrap_optional_type(type_: Any) -> Any:
+    """If the given type is Optional[T], returns T. Otherwise returns type_."""
+    valid_origins = [typing.Union]
+
+    # types.UnionType requires py310+
+    if union_type := getattr(types, "UnionType", None):
+        valid_origins.append(union_type)
+
+    origin = typing.get_origin(type_) or type_
+    if origin in valid_origins:
+        args = typing.get_args(type_)
+        if len(args) == _OPTIONAL_UNION_ARG_COUNT and type(None) in args:
+            return next(arg for arg in args if arg is not type(None))
+
+    return type_
 
 
 def stringify_type(target: type | AnyCallable) -> str:
