@@ -219,6 +219,7 @@ wireup.integration.fastapi.setup(container, app)
 - [x] [Django](integrations/django/index.md)
 - [x] [FastAPI](integrations/fastapi/index.md)
 - [x] [Flask](integrations/flask/index.md)
+- [x] [Litestar](integrations/litestar/index.md)
 - [x] [Starlette](integrations/starlette/index.md)
 
 
