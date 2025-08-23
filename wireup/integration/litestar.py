@@ -10,7 +10,7 @@ from wireup._decorators import inject_from_container_unchecked
 from wireup.errors import WireupError
 from wireup.ioc.container.async_container import AsyncContainer, ScopedAsyncContainer
 
-current_request: ContextVar[ASGIConnection[Any, Any, Any, Any]] = ContextVar("wireup_fastapi_request")
+current_request: ContextVar[ASGIConnection[Any, Any, Any, Any]] = ContextVar("wireup_litestar_request")
 
 
 @service(lifetime="scoped")
@@ -66,8 +66,10 @@ def setup(container: AsyncContainer, app: Litestar) -> None:
     """Integrate Wireup with a Litestar application.
 
     This sets up the application to use Wireup's dependency injection system.
+    It also closes the container on shutdown for proper resource cleanup of singleton generator factories.
     """
     app.state.wireup_container = container
+    app.on_shutdown.append(container.close)
     app.asgi_handler = _wireup_middleware(app.asgi_handler)
 
 

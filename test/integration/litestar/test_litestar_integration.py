@@ -113,3 +113,34 @@ def test_controller(client: TestClient[Litestar]) -> None:
     response = client.get("/greet")
     assert response.status_code == 200
     assert response.text == "Hello User"
+
+
+async def test_executes_closes_container_lifespan() -> None:
+    cleanup_done = False
+
+    class Thing: ...
+
+    @service
+    def make_thing() -> Iterator[Thing]:
+        yield Thing()
+        nonlocal cleanup_done
+        cleanup_done = True
+
+    @get("/")
+    @inject
+    async def _thing_endpoint(thing: Injected[Thing]) -> str:
+        assert isinstance(thing, Thing)
+        return "Hello Thing"
+
+    app = Litestar([_thing_endpoint])
+    container = wireup.create_async_container(
+        services=[make_thing],
+        service_modules=[shared_services, wireup.integration.litestar],
+    )
+    wireup.integration.litestar.setup(container, app)
+
+    with TestClient(app) as client:
+        res = client.get("/")
+        assert res.text == "Hello Thing"
+
+    assert cleanup_done
