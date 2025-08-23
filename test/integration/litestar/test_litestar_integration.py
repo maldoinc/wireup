@@ -7,7 +7,7 @@ from litestar import Controller, Litestar, Request, WebSocket, get, websocket
 from litestar.datastructures import State
 from litestar.testing import TestClient
 from wireup._annotations import Injected, service
-from wireup.integration.litestar import get_app_container, inject
+from wireup.integration.litestar import get_app_container, get_request_container, inject
 
 from test.shared import shared_services
 from test.shared.shared_services.greeter import GreeterService
@@ -32,6 +32,7 @@ class WebSocketContext:
 @get("/")
 @inject
 async def index(greeter: Injected[GreeterService], ctx: Injected[RequestContext]) -> str:
+    assert await get_request_container().get(Request) is ctx.request
     return greeter.greet(ctx.name)
 
 

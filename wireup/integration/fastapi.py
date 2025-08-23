@@ -23,12 +23,12 @@ from wireup import inject_from_container
 from wireup._annotations import ServiceDeclaration
 from wireup.errors import WireupError
 from wireup.integration.starlette import (
-    WireupAsgiMiddleware,
     current_request,
     get_app_container,
     get_request_container,
     request_factory,
     websocket_factory,
+    wireup_asgi_middleware,
 )
 from wireup.ioc.container.async_container import AsyncContainer, ScopedAsyncContainer
 from wireup.ioc.container.sync_container import ScopedSyncContainer
@@ -207,7 +207,7 @@ def setup(
     """
     app.state.wireup_container = container
     if middleware_mode:
-        app.add_middleware(WireupAsgiMiddleware)
+        app.add_middleware(wireup_asgi_middleware)
     _update_lifespan(
         app,
         class_based_routes=class_based_handlers,
