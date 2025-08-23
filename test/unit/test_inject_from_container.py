@@ -1,4 +1,5 @@
 import re
+from typing import Optional
 
 import pytest
 import wireup
@@ -201,3 +202,24 @@ def test_injects_ctor():
 
     dummy = Dummy()
     assert dummy.do_thing() == "Running in test with a result of 4"
+
+
+def test_inject_from_container_handles_optionals() -> None:
+    class MaybeThing: ...
+
+    def make_maybe_thing() -> Optional[MaybeThing]:
+        return None
+
+    class Thing: ...
+
+    def make_thing(_thing2: Optional[MaybeThing]) -> Thing:
+        return Thing()
+
+    container = wireup.create_sync_container(services=[wireup.service(make_maybe_thing), wireup.service(make_thing)])
+
+    @wireup.inject_from_container(container)
+    def main(maybe_thing: Injected[Optional[MaybeThing]], thing: Injected[Thing]):
+        assert maybe_thing is None
+        assert isinstance(thing, Thing)
+
+    main()
