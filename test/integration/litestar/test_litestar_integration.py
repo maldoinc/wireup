@@ -3,7 +3,7 @@ from typing import Any, Iterator
 import pytest
 import wireup
 import wireup.integration.litestar
-from litestar import Litestar, Request, WebSocket, get, websocket
+from litestar import Controller, Litestar, Request, WebSocket, get, websocket
 from litestar.datastructures import State
 from litestar.testing import TestClient
 from wireup._annotations import Injected, service
@@ -57,9 +57,18 @@ async def websocket_handler_wireup(
     await ctx.socket.close()
 
 
+class UserController(Controller):
+    path = "/greet"
+
+    @get()
+    @inject
+    async def greet(self, greeter: Injected[GreeterService]) -> str:
+        return greeter.greet("User")
+
+
 @pytest.fixture
 def app() -> Litestar:
-    app = Litestar([index, websocket_handler, websocket_handler_wireup])
+    app = Litestar([index, websocket_handler, websocket_handler_wireup, UserController])
     container = wireup.create_async_container(
         services=[RequestContext, WebSocketContext],
         service_modules=[shared_services, wireup.integration.litestar],
@@ -98,3 +107,9 @@ def test_override(app: Litestar, client: TestClient[Litestar]):
 
     assert response.text == "HELLO TEST"
     assert response.status_code == 200
+
+
+def test_controller(client: TestClient[Litestar]) -> None:
+    response = client.get("/greet")
+    assert response.status_code == 200
+    assert response.text == "Hello User"
