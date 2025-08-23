@@ -70,6 +70,27 @@ async def websocket_handler(
     await socket.close()
 ```
 
+### Using Controllers
+
+Litestar also supports class-based controllers. The `@inject` decorator works on controller methods the same way it
+works on standalone route handlers. Here's a small example that greets users from a controller method:
+
+```python title="Controller Example"
+from litestar import Controller, get
+from wireup.integration.litestar import Injected, inject
+
+class UserController(Controller):
+    path = "/greet"
+
+    @get()
+    @inject
+    async def greet(self, greeter: Injected[GreeterService]) -> str:
+        return greeter.greet("User")
+```
+
+Register controllers the same way you register handlers when constructing the `Litestar` app.
+
+
 ### Inject Litestar Request or WebSocket
 
 To inject the current request/websocket in your services you must add `wireup.integration.litestar` module to your
@@ -125,7 +146,9 @@ class UppercaseGreeter(GreeterService):
 
 
 def test_override(app: Litestar, client: TestClient[Litestar]):
-    with get_app_container(app).override.service(GreeterService, new=UppercaseGreeter()):
+    container = get_app_container(app)
+
+    with container.override.service(GreeterService, new=UppercaseGreeter()):
         response = client.get("/", params={"name": "Test"})
 
     assert response.text == "HELLO TEST"
