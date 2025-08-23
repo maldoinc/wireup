@@ -24,6 +24,7 @@ To set up the integration, use the `wireup.integration.litestar.setup` function.
 ```python
 from litestar import Litestar
 import wireup
+import wireup.integration.litestar
 
 app = Litestar([...])  # Your route handlers here
 
@@ -31,7 +32,9 @@ container = wireup.create_async_container(
     # A list of top-level modules containing service registrations.
     service_modules=[services],
     # Optionally, expose custom parameters to the container.
-    parameters={"DEBUG": True}
+    parameters={"DEBUG": True},
+    # The Litestar type normalizer is required when using the Litestar integration.
+    type_normalizer=wireup.integration.litestar.litestar_type_normalizer,
 )
 
 # Set up the integration.

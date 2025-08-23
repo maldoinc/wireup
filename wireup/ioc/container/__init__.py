@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Iterable, TypeVar
+from typing import TYPE_CHECKING, Any, Callable, Iterable, TypeVar
 
 from wireup._annotations import AbstractDeclaration, ServiceDeclaration
 from wireup._discovery import discover_wireup_registrations
@@ -26,6 +26,7 @@ def _create_container(
     service_modules: Iterable[ModuleType] | None = None,
     services: Iterable[Any] | None = None,
     parameters: dict[str, Any] | None = None,
+    type_normalizer: Callable[[type[Any]], type[Any]] | None = None,
 ) -> _ContainerT:
     """Create a Wireup container.
 
@@ -57,7 +58,7 @@ def _create_container(
         abstracts.extend(discovered_abstracts)
         impls.extend(discovered_services)
 
-    registry = ServiceRegistry(abstracts=abstracts, impls=impls)
+    registry = ServiceRegistry(abstracts=abstracts, impls=impls, type_normalizer=type_normalizer)
     container = klass(
         registry=registry,
         parameters=ParameterBag(parameters),
@@ -74,6 +75,7 @@ def create_sync_container(
     service_modules: list[ModuleType] | None = None,
     services: list[Any] | None = None,
     parameters: dict[str, Any] | None = None,
+    type_normalizer: Callable[[type[Any]], type[Any]] | None = None,
 ) -> SyncContainer:
     """Create a Wireup container.
 
@@ -83,15 +85,23 @@ def create_sync_container(
     container instance. Use this when you want to explicitly list services.
     :param parameters: Dict containing parameters you want to expose to the container. Services or factories can
     request parameters via the `Inject(param="name")` syntax.
+    :param type_normalizer: Optional function to normalize types during dependency resolution.
     :raises WireupError: Raised if the dependencies cannot be fully resolved.
     """
-    return _create_container(SyncContainer, service_modules=service_modules, services=services, parameters=parameters)
+    return _create_container(
+        SyncContainer,
+        service_modules=service_modules,
+        services=services,
+        parameters=parameters,
+        type_normalizer=type_normalizer,
+    )
 
 
 def create_async_container(
     service_modules: list[ModuleType] | None = None,
     services: list[Any] | None = None,
     parameters: dict[str, Any] | None = None,
+    type_normalizer: Callable[[type[Any]], type[Any]] | None = None,
 ) -> AsyncContainer:
     """Create a Wireup container.
 
@@ -101,6 +111,13 @@ def create_async_container(
     container instance. Use this when you want to explicitly list services.
     :param parameters: Dict containing parameters you want to expose to the container. Services or factories can
     request parameters via the `Inject(param="name")` syntax.
+    :param type_normalizer: Optional function to normalize types during dependency resolution.
     :raises WireupError: Raised if the dependencies cannot be fully resolved.
     """
-    return _create_container(AsyncContainer, service_modules=service_modules, services=services, parameters=parameters)
+    return _create_container(
+        AsyncContainer,
+        service_modules=service_modules,
+        services=services,
+        parameters=parameters,
+        type_normalizer=type_normalizer,
+    )

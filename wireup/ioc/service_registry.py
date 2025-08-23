@@ -93,10 +93,13 @@ def _function_get_unwrapped_return_type(fn: Callable[..., T]) -> type[T] | None:
 class ServiceRegistry:
     """Container class holding service registration info and dependencies among them."""
 
-    __slots__ = ("ctors", "dependencies", "factories", "impls", "interfaces", "lifetime")
+    __slots__ = ("ctors", "dependencies", "factories", "impls", "interfaces", "lifetime", "type_normalizer")
 
     def __init__(
-        self, abstracts: list[AbstractDeclaration] | None = None, impls: list[ServiceDeclaration] | None = None
+        self,
+        abstracts: list[AbstractDeclaration] | None = None,
+        impls: list[ServiceDeclaration] | None = None,
+        type_normalizer: Callable[[type[Any]], type[Any]] | None = None,
     ) -> None:
         self.interfaces: dict[type, dict[Qualifier, type]] = {}
         self.impls: dict[type, set[Qualifier]] = defaultdict(set)
@@ -104,6 +107,7 @@ class ServiceRegistry:
         self.dependencies: dict[InjectionTarget, dict[str, AnnotatedParameter]] = defaultdict(defaultdict)
         self.lifetime: dict[InjectionTarget, ServiceLifetime] = {}
         self.ctors: dict[ContainerObjectIdentifier, ServiceCreationDetails] = {}
+        self.type_normalizer = type_normalizer
         self._extend_with_services(abstracts or [], impls or [])
 
     def _extend_with_services(self, abstracts: list[AbstractDeclaration], impls: list[ServiceDeclaration]) -> None:
@@ -182,7 +186,12 @@ class ServiceRegistry:
     ) -> None:
         """Init and collect all the necessary dependencies to initialize the specified target."""
         for name, parameter in inspect.signature(target).parameters.items():
-            annotated_param = param_get_annotation(parameter, globalns=get_globals(target))
+            annotated_param = param_get_annotation(
+                parameter,
+                globalns=get_globals(target),
+            )
+            if self.type_normalizer and annotated_param and annotated_param.klass:
+                annotated_param = AnnotatedParameter(klass=self.type_normalizer(annotated_param.klass))
 
             if not annotated_param:
                 msg = f"Wireup dependencies must have types. Please add a type to the '{name}' parameter in {target}."

@@ -72,6 +72,7 @@ def app() -> Litestar:
     container = wireup.create_async_container(
         services=[RequestContext, WebSocketContext],
         service_modules=[shared_services, wireup.integration.litestar],
+        type_normalizer=wireup.integration.litestar.litestar_type_normalizer,
     )
     wireup.integration.litestar.setup(container, app)
     return app

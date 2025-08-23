@@ -1,5 +1,6 @@
+import typing
 from contextvars import ContextVar
-from typing import Any
+from typing import Any, Type
 
 from litestar import Litestar, Request, WebSocket
 from litestar.connection.base import ASGIConnection
@@ -13,8 +14,25 @@ from wireup.ioc.container.async_container import AsyncContainer, ScopedAsyncCont
 current_request: ContextVar[ASGIConnection[Any, Any, Any, Any]] = ContextVar("wireup_litestar_request")
 
 
+def litestar_type_normalizer(type_: Type[Any]) -> Type[Any]:
+    """Normalize litestar's generic Request and WebSocket types to their origin types.
+
+    This allows users to inject Request[Any, Any, Any] and have it resolve to the same
+    factory as the non-generic Request type.
+    """
+    origin_type = typing.get_origin(type_) or type_
+    if (
+        hasattr(origin_type, "__module__")
+        and hasattr(origin_type, "__name__")
+        and origin_type.__module__ in ("litestar.connection.request", "litestar.connection.websocket")
+        and origin_type.__name__ in ("Request", "WebSocket")
+    ):
+        return origin_type
+    return type_
+
+
 @service(lifetime="scoped")
-def request_factory() -> Request[Any, Any, Any]:
+def request_factory() -> Request:  # type: ignore[reportMissingTypeArgument]
     """Provide the current request as a dependency."""
     msg = "Request in Wireup is only available during a request."
     try:
@@ -28,7 +46,7 @@ def request_factory() -> Request[Any, Any, Any]:
 
 
 @service(lifetime="scoped")
-def websocket_factory() -> WebSocket[Any, Any, Any]:
+def websocket_factory() -> WebSocket:  # type: ignore[reportMissingTypeArgument]
     """Provide the current WebSocket as a dependency."""
     msg = "WebSocket in Wireup is only available in a websocket connection."
     try:
