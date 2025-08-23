@@ -238,6 +238,7 @@ Key benefits of the integrations are:
 ##### Integrations
 
 - [x] [AIOHTTP](integrations/aiohttp/index.md)
+- [x] [Click](integrations/click/index.md)
 - [x] [Django](integrations/django/index.md)
 - [x] [FastAPI](integrations/fastapi/index.md)
 - [x] [Flask](integrations/flask/index.md)

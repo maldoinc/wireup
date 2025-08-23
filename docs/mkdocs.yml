@@ -25,19 +25,23 @@ nav:
 
   - Integrations:
     - Integrations: integrations/index.md
-    - Django: 
-      - Django Integration: integrations/django/index.md
-    - FastAPI: 
-      - FastAPI Integration: integrations/fastapi/index.md
-      - Class Based Handlers: integrations/fastapi/class_based_handlers.md
-      - Direct container access: integrations/fastapi/direct_container_access.md
-    - Flask: 
-      - Flask Integration: integrations/flask/index.md
-    - AIOHTTP: 
-      - Flask Integration: integrations/aiohttp/index.md
-      - Class-Based Handlers: integrations/aiohttp/class_based_handlers.md
-    - Starlette: 
-      - Starlette Integration: integrations/starlette/index.md
+    - Web Frameworks:
+      - Django: 
+        - Django Integration: integrations/django/index.md
+      - FastAPI: 
+        - FastAPI Integration: integrations/fastapi/index.md
+        - Class Based Handlers: integrations/fastapi/class_based_handlers.md
+        - Direct container access: integrations/fastapi/direct_container_access.md
+      - Flask: 
+        - Flask Integration: integrations/flask/index.md
+      - AIOHTTP: 
+        - Flask Integration: integrations/aiohttp/index.md
+        - Class-Based Handlers: integrations/aiohttp/class_based_handlers.md
+      - Starlette: 
+        - Starlette Integration: integrations/starlette/index.md
+    - Command Line Interfaces:
+      - Click:
+        - Click Integration: integrations/click/index.md
   - API Reference:
       - wireup: class/wireup.md
       - OverrideManager: class/override_manager.md
@@ -48,6 +52,7 @@ nav:
         - Flask: class/flask_integration.md
         - AIOHTTP: class/aiohttp_integration.md
         - Starlette: class/starlette_integration.md
+        - Click: class/click_integration.md
 repo_url: https://github.com/maldoinc/wireup
 repo_name: maldoinc/wireup
 theme:
