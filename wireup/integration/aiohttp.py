@@ -73,7 +73,8 @@ async def _instantiate_class_based_handlers(
 
 
 def _get_startup_event(
-    container: wireup.AsyncContainer, handlers: Optional[Iterable[Type[_WireupHandler]]]
+    container: wireup.AsyncContainer,
+    handlers: Optional[Iterable[Type[_WireupHandler]]],
 ) -> Callable[[web.Application], Awaitable[None]]:
     for handler_type in handlers or []:
         container._registry._extend_with_services(abstracts=[], impls=[ServiceDeclaration(handler_type)])
@@ -88,7 +89,9 @@ def _get_startup_event(
 
 
 def setup(
-    container: wireup.AsyncContainer, app: web.Application, handlers: Optional[Iterable[Type[_WireupHandler]]] = None
+    container: wireup.AsyncContainer,
+    app: web.Application,
+    handlers: Optional[Iterable[Type[_WireupHandler]]] = None,
 ) -> None:
     """Integrate Wireup with AIOHTTP.
 
