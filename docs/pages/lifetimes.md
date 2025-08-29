@@ -58,6 +58,13 @@ Best for:
     The Wireup `@wireup.inject_from_container(container)` decorator can also enter/exit a scope after the decorated function returns.
     [Learn More](apply_container_as_decorator.md).
 
+!!! tip "Error Handling in Scoped Services"
+    When using [generator factory functions](factory_functions.md#generator-functions-for-resource-management) 
+    with scoped lifetime, errors that occur anywhere within the scope are automatically propagated to the factories. 
+    This enables proper error handling, such as rolling back database transactions or cleaning up resources
+    when operations fail.
+    [Learn more about error propagation](factory_functions.md#error-handling-and-rollback).
+
 ### Transient
 New instance created on every request.
 

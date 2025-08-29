@@ -107,7 +107,7 @@
                 self.model = self._load_model()
                 
             def _load_model(self):
-                # Simulate loading a large ML model (e.g., 500MB+ model file)
+                # Simulate loading a large ML model
                 import pickle
                 with open("models/large_recommendation_model.pkl", "rb") as f:
                     return pickle.load(f)

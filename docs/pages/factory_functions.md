@@ -28,38 +28,102 @@ When the container needs to inject a dependency, it checks known factories to se
 
 When your service requires cleanup (like database connections or network resources), use generator functions:
 
+=== "Generators"
+
+    ```python
+    @service
+    def db_session_factory() -> Iterator[Session]:
+        db = Session()
+        try:
+            yield db
+        finally:
+            db.close()
+    ```
+
+=== "Context Manager"
+
+    ```python
+    @service
+    def db_session_factory() -> Iterator[Session]:
+        with contextlib.closing(Session()) as db:
+            yield db
+    ```
+
+=== "Async Context Manager"
+
+    ```python
+    @service
+    async def client_session_factory() -> ClientSession:
+        async with ClientSession() as sess:
+            yield sess
+    ```
+
+### Error Handling
+
+When using generator factory functions with scoped or transient lifetimes, unhandled errors that occur within the 
+scope are  automatically propagated to the factories. This enables proper error handling, such as rolling back 
+database transactions or cleaning up resources when operations fail.
+
 ```python
-@service
-def db_session_factory() -> Iterator[Session]:
-    db = Session()
+@service(lifetime="scoped")
+def db_session_factory(engine: Engine) -> Iterator[Session]:
+    session = Session(engine)
     try:
-        yield db
+        yield session
+    except Exception as e:
+        # Error occurred somewhere in the scope - rollback the transaction
+        session.rollback()
+        raise
+    else:
+        # No errors - commit the transaction
+        session.commit()
     finally:
-        db.close()
+        # Always close the session
+        session.close()
 ```
 
-Or with context managers:
+!!! note "Suppressing Errors"
+    Factory functions may perform cleanup (for example, rolling back a transaction), but they cannot suppress
+    the original error — that exception will still be propagated. Wireup enforces this so cleanup code cannot
+    change the program's control flow by swallowing errors.
+
+    If a factory raises additional exceptions during teardown, Wireup will temporarily catch those exceptions
+    so it can finish cleaning up all generator factories. After cleanup completes, the teardown exceptions are
+    re-raised alongside the primary exception.
+
+
+#### Practical Example with Database Transactions
+
 ```python
-@service
-def db_session_factory() -> Iterator[Session]:
-    with contextlib.closing(Session()) as db:
-        yield db
-```
+from typing import Iterator
+from sqlalchemy.orm import Session
+from wireup import service, Injected
 
-For async services:
-```python
-@service
-async def client_session_factory() -> ClientSession:
-    async with ClientSession() as sess:
-        yield sess
-```
-
-!!! note "Resource Cleanup"
-    The container performs cleanup automatically when:
+@service(lifetime="scoped")
+class UserService:
+    # Uses Session as defined above.
+    def __init__(self, db: Injected[Session]) -> None:
+        self.db = db
     
-    * A context manager exits (`container.enter_scope()`)
-    * An injected function returns
-    * A request completes (when using framework integrations)
+    def create_user(self, user_data: UserCreate) -> User:
+        # Database operations here
+        ...
+
+# Usage in a web framework (FastAPI example)
+@app.post("/users")
+def create_user(
+    user_data: UserCreate, 
+    user_service: Injected[UserService]
+) -> User:
+    # If this raises an exception, the database transaction
+    # will automatically be rolled back
+    return user_service.create_user(user_data)
+```
+
+!!! tip "Framework Integration"
+    When using Wireup with web frameworks, each request automatically gets its own scope. 
+    When using this feature, database transactions and other resources are automatically managed per request,
+    with automatic rollback on any unhandled exception.
 
 ### Inject Models
 

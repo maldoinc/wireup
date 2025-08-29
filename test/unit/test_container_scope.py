@@ -1,11 +1,11 @@
 from typing import Iterator
 
+import pytest
 import wireup
 from wireup._annotations import service
+from wireup.errors import ContainerCloseError
 
-from test.conftest import Container
-from test.unit.services.no_annotations.random.truly_random_service import TrulyRandomService
-from test.unit.services.with_annotations.services import TransientService, truly_random_service_factory
+from test.unit.services.with_annotations.services import TransientService
 
 
 @service
@@ -100,3 +100,75 @@ def test_scoped_container_cleansup_container_get() -> None:
         assert scoped.get(SomeService)
 
     assert done
+
+
+def test_scoped_container_exit_with_exception_primary_exception_close_container_exceptions() -> None:
+    """Test that when closing a scoped container with an exception, the primary exception is preserved
+    and container close exceptions are chained"""
+
+    class SomeService: ...
+
+    cleanup_error = False
+
+    @service(lifetime="transient")
+    def factory() -> Iterator[SomeService]:
+        try:
+            yield SomeService()
+        except ValueError:
+            nonlocal cleanup_error
+            cleanup_error = True
+            raise RuntimeError("cleanup failed") from None
+
+    c = wireup.create_sync_container(services=[factory])
+
+    with pytest.raises(ValueError, match="original error") as exc_info:
+        with c.enter_scope() as scoped:
+            scoped.get(SomeService)
+            raise ValueError("original error")
+
+    # The cleanup should have been attempted
+    assert cleanup_error
+    # The original exception should be raised, chained with ContainerCloseError
+    assert exc_info.value.__cause__ is not None
+    assert isinstance(exc_info.value.__cause__, ContainerCloseError)
+    cause = exc_info.value.__cause__
+    assert isinstance(cause, ContainerCloseError)
+    assert len(cause.errors) == 1
+    assert isinstance(cause.errors[0], RuntimeError)
+    assert str(cause.errors[0]) == "cleanup failed"
+
+
+async def test_scoped_async_container_exit_with_exception_primary_exception_close_container_exceptions() -> None:
+    """Test that when closing a scoped container with an exception, the primary exception is preserved
+    and container close exceptions are chained"""
+
+    class SomeService: ...
+
+    cleanup_error = False
+
+    @service(lifetime="transient")
+    def factory() -> Iterator[SomeService]:
+        try:
+            yield SomeService()
+        except ValueError:
+            nonlocal cleanup_error
+            cleanup_error = True
+            raise RuntimeError("async cleanup failed") from None
+
+    c = wireup.create_async_container(services=[factory])
+
+    with pytest.raises(ValueError, match="original async error") as exc_info:
+        async with c.enter_scope() as scoped:
+            await scoped.get(SomeService)
+            raise ValueError("original async error")
+
+    # The cleanup should have been attempted
+    assert cleanup_error
+    # The original exception should be raised, chained with ContainerCloseError
+    assert exc_info.value.__cause__ is not None
+    assert isinstance(exc_info.value.__cause__, ContainerCloseError)
+    cause = exc_info.value.__cause__
+    assert isinstance(cause, ContainerCloseError)
+    assert len(cause.errors) == 1
+    assert isinstance(cause.errors[0], RuntimeError)
+    assert str(cause.errors[0]) == "async cleanup failed"
