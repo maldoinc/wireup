@@ -63,7 +63,7 @@ Best for:
     with scoped lifetime, errors that occur anywhere within the scope are automatically propagated to the factories. 
     This enables proper error handling, such as rolling back database transactions or cleaning up resources
     when operations fail.
-    [Learn more about error propagation](factory_functions.md#error-handling-and-rollback).
+    [Learn more about error propagation](factory_functions.md#error-handling).
 
 ### Transient
 New instance created on every request.

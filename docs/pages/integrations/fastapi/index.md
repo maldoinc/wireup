@@ -25,7 +25,7 @@
 
     Retrieve dependencies in middleware and route handler decorators where they are normally unavailable in FastAPI.
 
-    [:octicons-arrow-right-24: Learn more](direct_container_access.md#middleware-mode-middleware_modetrue)
+    [:octicons-arrow-right-24: Learn more](direct_container_access.md)
 
 -   :material-share-circle:{ .lg .middle } __Shared business logic__
 
