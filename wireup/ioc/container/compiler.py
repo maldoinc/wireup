@@ -71,10 +71,6 @@ class FactoryCompiler:
         maybe_async = "async " if factory.is_async else ""
         code = f"{maybe_async}def {self._get_fn_name(impl, qualifier)}(container):\n"
 
-        if lifetime != "singleton":
-            code += "    if container._current_scope_objects is None:\n"
-            code += "        raise WireupError(_CONTAINER_SCOPE_ERROR_MSG)\n"
-
         code += "    if res := container._overrides.get(CURRENT_OBJ_ID):\n"
         code += "        return res\n"
 
@@ -89,9 +85,11 @@ class FactoryCompiler:
             code += "    if res := container._global_scope.objects.get(resolved_obj_id):\n"
             code += "        return res\n"
         else:
-            code += "    if container._current_scope_objects is not None:\n"
-            code += "        if res := container._current_scope_objects.get(resolved_obj_id):\n"
-            code += "            return res\n"
+            code += "    scope_objects = container._current_scope_objects\n"
+            code += "    if scope_objects is None:\n"
+            code += "        raise WireupError(_CONTAINER_SCOPE_ERROR_MSG)\n"
+            code += "    elif res := scope_objects.get(resolved_obj_id):\n"
+            code += "        return res\n"
 
         kwargs = ""
         for name, dep in self.registry.dependencies[factory.factory].items():
@@ -132,13 +130,12 @@ class FactoryCompiler:
             if is_interface:
                 code += "    container._global_scope.objects[resolved_obj_id] = instance\n"
         elif lifetime == "scoped":
-            code += "    container._current_scope_objects[CURRENT_OBJ_ID] = instance\n"
+            # Use the cached scope_objects reference instead of accessing container attribute again
+            code += "    scope_objects[CURRENT_OBJ_ID] = instance\n"
             if is_interface:
-                code += "    container._current_scope_objects[resolved_obj_id] = instance\n"
+                code += "    scope_objects[resolved_obj_id] = instance\n"
 
         code += "    return instance\n"
-
-        print(code)
 
         return code
 
