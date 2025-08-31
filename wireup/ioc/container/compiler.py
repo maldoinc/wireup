@@ -83,18 +83,17 @@ class FactoryCompiler:
         code += "    if res := container._overrides.get(CURRENT_OBJ_ID):\n"
         code += "        return res\n"
 
-        if self.registry.is_interface_known(impl):
-            code += "    resolved_obj_id = container._registry.interface_resolve_impl(\n"
-            code += "        CURRENT_OBJ_ID[0], CURRENT_OBJ_ID[1]), CURRENT_OBJ_ID[1]\n"
+        if is_interface:
+            code += "    obj_id = RESOLVED_OBJ_ID\n"
         else:
-            code += "    resolved_obj_id = CURRENT_OBJ_ID\n"
+            code += "    obj_id = CURRENT_OBJ_ID\n"
 
         if lifetime == "singleton":
-            code += "    if res := container._global_scope.objects.get(resolved_obj_id):\n"
+            code += "    if res := container._global_scope.objects.get(obj_id):\n"
             code += "        return res\n"
         else:
             code += "    scope_objects = container._current_scope_objects\n"
-            code += "    if res := scope_objects.get(resolved_obj_id):\n"
+            code += "    if res := scope_objects.get(obj_id):\n"
             code += "        return res\n"
 
         kwargs = ""
@@ -134,12 +133,11 @@ class FactoryCompiler:
         if lifetime == "singleton":
             code += "    container._global_scope.objects[CURRENT_OBJ_ID] = instance\n"
             if is_interface:
-                code += "    container._global_scope.objects[resolved_obj_id] = instance\n"
+                code += "    container._global_scope.objects[obj_id] = instance\n"
         elif lifetime == "scoped":
-            # Use the cached scope_objects reference instead of accessing container attribute again
             code += "    scope_objects[CURRENT_OBJ_ID] = instance\n"
             if is_interface:
-                code += "    scope_objects[resolved_obj_id] = instance\n"
+                code += "    scope_objects[obj_id] = instance\n"
 
         code += "    return instance\n"
 
@@ -147,6 +145,12 @@ class FactoryCompiler:
 
     def _compile_and_create_function(self, factory: ServiceFactory, impl: type, qualifier: Hashable) -> CompiledFactory:
         obj_id = impl, qualifier
+        resolved_obj_id = (
+            (self.registry.interface_resolve_impl(impl, qualifier), qualifier)
+            if self.registry.is_interface_known(impl)
+            else None
+        )
+
         source, is_async = self._get_factory_code(factory, impl, qualifier)
 
         try:
@@ -154,6 +158,7 @@ class FactoryCompiler:
             namespace: dict[str, Any] = {
                 "self": self,
                 "CURRENT_OBJ_ID": obj_id,
+                "RESOLVED_OBJ_ID": resolved_obj_id,
                 "ORIGINAL_FACTORY": self.registry.ctors[obj_id][0],
                 "TemplatedString": TemplatedString,
                 "WireupError": WireupError,
