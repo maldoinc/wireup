@@ -41,5 +41,6 @@ class SyncContainer(BareSyncContainer):
             global_scope=self._global_scope,
             current_scope_objects={},
             current_scope_exit_stack=[],
-            factory_compiler=self._compiler,
+            factory_compiler=self._scoped_compiler,
+            scoped_compiler=self._scoped_compiler,
         )

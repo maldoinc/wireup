@@ -38,6 +38,7 @@ class BaseContainer:
         "_overrides",
         "_params",
         "_registry",
+        "_scoped_compiler",
     )
 
     def __init__(  # noqa: PLR0913
@@ -47,6 +48,7 @@ class BaseContainer:
         override_manager: OverrideManager,
         global_scope: ContainerScope,
         factory_compiler: FactoryCompiler,
+        scoped_compiler: FactoryCompiler,
         current_scope_objects: Optional[Dict[ContainerObjectIdentifier, Any]] = None,
         current_scope_exit_stack: Optional[List[Union[Generator[Any, Any, Any], AsyncGenerator[Any, Any]]]] = None,
     ) -> None:
@@ -58,6 +60,7 @@ class BaseContainer:
         self._current_scope_objects = current_scope_objects
         self._current_scope_exit_stack = current_scope_exit_stack
         self._compiler = factory_compiler
+        self._scoped_compiler = scoped_compiler
 
     @property
     def params(self) -> ParameterBag:

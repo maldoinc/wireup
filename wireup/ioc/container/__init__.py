@@ -60,17 +60,20 @@ def _create_container(
 
     bag = ParameterBag(parameters)
     registry = ServiceRegistry(abstracts=abstracts, impls=impls)
-    compiler = FactoryCompiler(registry, bag)
+    compiler = FactoryCompiler(registry, bag, is_scoped_container=False)
+    scoped_compiler = FactoryCompiler(registry, bag, is_scoped_container=True)
     container = klass(
         registry=registry,
         parameters=bag,
         factory_compiler=compiler,
+        scoped_compiler=scoped_compiler,
         global_scope=ContainerScope(objects={}, exit_stack=[]),
         override_manager=OverrideManager({}, registry.is_type_with_qualifier_known),
     )
 
     assert_dependencies_valid(container)
     compiler.compile()
+    scoped_compiler.compile()
 
     return container
 

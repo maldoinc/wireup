@@ -42,7 +42,8 @@ class AsyncContainer(BareAsyncContainer):
             global_scope=self._global_scope,
             current_scope_objects={},
             current_scope_exit_stack=[],
-            factory_compiler=self._compiler,
+            factory_compiler=self._scoped_compiler,
+            scoped_compiler=self._scoped_compiler,
         )
 
 
@@ -59,5 +60,6 @@ def async_container_force_sync_scope(container: AsyncContainer) -> ScopedSyncCon
         global_scope=container._global_scope,
         current_scope_objects={},
         current_scope_exit_stack=[],
-        factory_compiler=container._compiler,
+        factory_compiler=container._scoped_compiler,
+        scoped_compiler=container._scoped_compiler,
     )

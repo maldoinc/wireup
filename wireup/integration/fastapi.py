@@ -169,6 +169,7 @@ def _update_lifespan(
                 container._registry._extend_with_services(abstracts=[], impls=[ServiceDeclaration(cbr)])
             assert_dependencies_valid(container)
             container._compiler.compile()
+            container._scoped_compiler.compile()
 
             for cbr in class_based_routes:
                 await _instantiate_class_based_route(app, container, cbr)

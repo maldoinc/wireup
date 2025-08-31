@@ -30,11 +30,12 @@ _CONTAINER_SCOPE_ERROR_MSG = (
 class FactoryCompiler:
     """Compiles factory functions for dependency injection."""
 
-    def __init__(self, registry: ServiceRegistry, params: ParameterBag) -> None:
+    def __init__(self, registry: ServiceRegistry, params: ParameterBag, *, is_scoped_container: bool) -> None:
         self.registry = registry
         self.params = params
         self.factories: dict[ContainerObjectIdentifier, CompiledFactory] = {}
         self.named_factories: dict[str, CompiledFactory] = {}
+        self.is_scoped_container = is_scoped_container
 
     def compile(self) -> None:
         self.registry.update_factories_async_flag()
@@ -61,21 +62,28 @@ class FactoryCompiler:
         sanitized_impl = impl.__module__.replace(".", "_") + "_" + impl.__name__.replace(".", "_")
         return f"get_{sanitized_impl}_{qualifier}"
 
-    def _get_factory_code(self, factory: ServiceFactory, impl: type, qualifier: Hashable) -> str:  # noqa: C901, PLR0912, PLR0915
+    def _get_factory_code(self, factory: ServiceFactory, impl: type, qualifier: Hashable) -> tuple[str, bool]:  # noqa: C901, PLR0912, PLR0915
         is_interface = self.registry.is_interface_known(impl)
         if is_interface:
             lifetime = self.registry.lifetime[self.registry.interface_resolve_impl(impl, qualifier)]
         else:
             lifetime = self.registry.lifetime[impl]
 
+        generated_function_name = self._get_fn_name(impl, qualifier)
+
+        if lifetime != "singleton" and not self.is_scoped_container:
+            code = f"def {generated_function_name}(container):\n"
+            code += "    raise WireupError(_CONTAINER_SCOPE_ERROR_MSG)\n"
+
+            return code, False
+
         maybe_async = "async " if factory.is_async else ""
-        code = f"{maybe_async}def {self._get_fn_name(impl, qualifier)}(container):\n"
+        code = f"{maybe_async}def {generated_function_name}(container):\n"
 
         code += "    if res := container._overrides.get(CURRENT_OBJ_ID):\n"
         code += "        return res\n"
 
         if self.registry.is_interface_known(impl):
-            code += "    # Interface resolution inlined\n"
             code += "    resolved_obj_id = container._registry.interface_resolve_impl(\n"
             code += "        CURRENT_OBJ_ID[0], CURRENT_OBJ_ID[1]), CURRENT_OBJ_ID[1]\n"
         else:
@@ -86,9 +94,7 @@ class FactoryCompiler:
             code += "        return res\n"
         else:
             code += "    scope_objects = container._current_scope_objects\n"
-            code += "    if scope_objects is None:\n"
-            code += "        raise WireupError(_CONTAINER_SCOPE_ERROR_MSG)\n"
-            code += "    elif res := scope_objects.get(resolved_obj_id):\n"
+            code += "    if res := scope_objects.get(resolved_obj_id):\n"
             code += "        return res\n"
 
         kwargs = ""
@@ -137,11 +143,11 @@ class FactoryCompiler:
 
         code += "    return instance\n"
 
-        return code
+        return code, factory.is_async
 
     def _compile_and_create_function(self, factory: ServiceFactory, impl: type, qualifier: Hashable) -> CompiledFactory:
         obj_id = impl, qualifier
-        source = self._get_factory_code(factory, impl, qualifier)
+        source, is_async = self._get_factory_code(factory, impl, qualifier)
 
         try:
             # Create a namespace with necessary references
@@ -157,7 +163,7 @@ class FactoryCompiler:
             compiled_code = compile(source, f"<generated_{obj_id}>", "exec")
             exec(compiled_code, namespace)  # noqa: S102
 
-            return CompiledFactory(factory=namespace[self._get_fn_name(impl, qualifier)], is_async=factory.is_async)
+            return CompiledFactory(factory=namespace[self._get_fn_name(impl, qualifier)], is_async=is_async)
 
         except Exception as e:
             msg = f"Failed to compile generated factory {obj_id}: {e}"

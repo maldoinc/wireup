@@ -79,6 +79,7 @@ def _get_startup_event(
     for handler_type in handlers or []:
         container._registry._extend_with_services(abstracts=[], impls=[ServiceDeclaration(handler_type)])
         container._compiler.compile()
+        container._scoped_compiler.compile()
 
     async def _inner(app: web.Application) -> None:
         if handlers:
