@@ -70,22 +70,6 @@ class BaseContainer:
         """Override registered container services with new values."""
         return self._override_mgr
 
-    async def _async_get(self, klass: Type[T], qualifier: Optional[Qualifier] = None) -> T:
-        """Get an instance of the requested type.
-
-        :param qualifier: Qualifier for the class if it was registered with one.
-        :param klass: Class of the dependency already registered in the container.
-        :return: An instance of the requested object. Always returns an existing instance when one is available.
-        """
-        obj_id = klass if qualifier is None else (klass, qualifier)
-
-        if compiled_factory := self._compiler.factories.get(obj_id):
-            res = compiled_factory.factory(self)
-
-            return await res if compiled_factory.is_async else res  # type:ignore[no-any-return]
-
-        raise UnknownServiceRequestedError(klass, qualifier)
-
     def _synchronous_get(self, klass: Type[T], qualifier: Optional[Qualifier] = None) -> T:
         """Get an instance of the requested type.
 

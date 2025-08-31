@@ -1,9 +1,10 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, TypeVar
 
 from typing_extensions import Self
 
+from wireup.errors import UnknownServiceRequestedError
 from wireup.ioc._exit_stack import async_clean_exit_stack
 from wireup.ioc.container.base_container import BaseContainer
 from wireup.ioc.container.sync_container import ScopedSyncContainer
@@ -11,9 +12,27 @@ from wireup.ioc.container.sync_container import ScopedSyncContainer
 if TYPE_CHECKING:
     from types import TracebackType
 
+    from wireup.ioc.types import Qualifier
+
+T = TypeVar("T")
+
 
 class BareAsyncContainer(BaseContainer):
-    get = BaseContainer._async_get
+    async def get(self, klass: type[T], qualifier: Qualifier | None = None) -> T:
+        """Get an instance of the requested type.
+
+        :param qualifier: Qualifier for the class if it was registered with one.
+        :param klass: Class of the dependency already registered in the container.
+        :return: An instance of the requested object. Always returns an existing instance when one is available.
+        """
+        obj_id = klass if qualifier is None else (klass, qualifier)
+
+        if compiled_factory := self._compiler.factories.get(obj_id):
+            res = compiled_factory.factory(self)
+
+            return await res if compiled_factory.is_async else res  # type:ignore[no-any-return]
+
+        raise UnknownServiceRequestedError(klass, qualifier)
 
     async def close(self) -> None:
         await async_clean_exit_stack(self._global_scope.exit_stack)
