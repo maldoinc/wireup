@@ -11,7 +11,6 @@ if TYPE_CHECKING:
     from wireup.ioc.container.base_container import BaseContainer
     from wireup.ioc.parameter import ParameterBag
     from wireup.ioc.service_registry import ServiceFactory
-    from wireup.ioc.types import ContainerObjectIdentifier
 
 
 @dataclass
@@ -33,30 +32,38 @@ class FactoryCompiler:
     def __init__(self, registry: ServiceRegistry, params: ParameterBag, *, is_scoped_container: bool) -> None:
         self.registry = registry
         self.params = params
-        self.factories: dict[ContainerObjectIdentifier, CompiledFactory] = {}
+        self.factories: dict[Hashable, CompiledFactory] = {}
         self.named_factories: dict[str, CompiledFactory] = {}
         self.is_scoped_container = is_scoped_container
+
+    @classmethod
+    def get_object_id(cls, impl: type, qualifier: Hashable) -> Hashable:
+        return impl if qualifier is None else (impl, qualifier)
 
     def compile(self) -> None:
         self.registry.update_factories_async_flag()
 
         for impl, qualifiers in self.registry.impls.items():
             for qualifier in qualifiers:
-                self.factories[impl, qualifier] = self._compile_and_create_function(
+                obj_id = FactoryCompiler.get_object_id(impl, qualifier)
+
+                self.factories[obj_id] = self._compile_and_create_function(
                     self.registry.factories[impl, qualifier],
                     impl,
                     qualifier,
                 )
-                setattr(self, self.get_fn_name(impl, qualifier), self.factories[impl, qualifier])
+                setattr(self, self.get_fn_name(impl, qualifier), self.factories[obj_id])
 
         for interface, impls in self.registry.interfaces.items():
             for qualifier, impl in impls.items():
-                self.factories[interface, qualifier] = self._compile_and_create_function(
+                obj_id = FactoryCompiler.get_object_id(interface, qualifier)
+
+                self.factories[obj_id] = self._compile_and_create_function(
                     self.registry.factories[impl, qualifier],
                     interface,
                     qualifier,
                 )
-                setattr(self, self.get_fn_name(interface, qualifier), self.factories[interface, qualifier])
+                setattr(self, self.get_fn_name(interface, qualifier), self.factories[obj_id])
 
     def get_fn_name(self, impl: type, qualifier: Hashable) -> str:
         sanitized_impl = impl.__module__.replace(".", "_") + "_" + impl.__name__.replace(".", "_")
