@@ -93,7 +93,8 @@ class FactoryCompiler:
             code += "    obj_id = CURRENT_OBJ_ID\n"
 
         if lifetime == "singleton":
-            code += "    if res := container._global_scope.objects.get(obj_id):\n"
+            code += "    global_object_storage = container._global_scope.objects\n"
+            code += "    if res := global_object_storage.get(obj_id):\n"
             code += "        return res\n"
         else:
             code += "    scope_objects = container._current_scope_objects\n"
@@ -135,15 +136,17 @@ class FactoryCompiler:
                 code += "    instance = await instance.__anext__()\n"
 
         if lifetime == "singleton":
-            code += "    container._global_scope.objects[CURRENT_OBJ_ID] = instance\n"
+            code += "    global_object_storage[CURRENT_OBJ_ID] = instance\n"
             if is_interface:
-                code += "    container._global_scope.objects[obj_id] = instance\n"
+                code += "    global_object_storage[obj_id] = instance\n"
         elif lifetime == "scoped":
             code += "    scope_objects[CURRENT_OBJ_ID] = instance\n"
             if is_interface:
                 code += "    scope_objects[obj_id] = instance\n"
 
         code += "    return instance\n"
+
+        print(code)
 
         return code, factory.is_async
 
