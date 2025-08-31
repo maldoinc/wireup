@@ -47,7 +47,7 @@ class FactoryCompiler:
                     impl,
                     qualifier,
                 )
-                setattr(self, self._get_fn_name(impl, qualifier), self.factories[impl, qualifier])
+                setattr(self, self.get_fn_name(impl, qualifier), self.factories[impl, qualifier])
 
         for interface, impls in self.registry.interfaces.items():
             for qualifier, impl in impls.items():
@@ -56,9 +56,9 @@ class FactoryCompiler:
                     interface,
                     qualifier,
                 )
-                setattr(self, self._get_fn_name(interface, qualifier), self.factories[interface, qualifier])
+                setattr(self, self.get_fn_name(interface, qualifier), self.factories[interface, qualifier])
 
-    def _get_fn_name(self, impl: type, qualifier: Hashable) -> str:
+    def get_fn_name(self, impl: type, qualifier: Hashable) -> str:
         sanitized_impl = impl.__module__.replace(".", "_") + "_" + impl.__name__.replace(".", "_")
         return f"get_{sanitized_impl}_{qualifier}"
 
@@ -69,7 +69,7 @@ class FactoryCompiler:
         else:
             lifetime = self.registry.lifetime[impl]
 
-        generated_function_name = self._get_fn_name(impl, qualifier)
+        generated_function_name = self.get_fn_name(impl, qualifier)
 
         if lifetime != "singleton" and not self.is_scoped_container:
             code = f"def {generated_function_name}(container):\n"
@@ -79,9 +79,6 @@ class FactoryCompiler:
 
         maybe_async = "async " if factory.is_async else ""
         code = f"{maybe_async}def {generated_function_name}(container):\n"
-
-        code += "    if res := container._overrides.get(CURRENT_OBJ_ID):\n"
-        code += "        return res\n"
 
         if is_interface:
             code += "    obj_id = RESOLVED_OBJ_ID\n"
@@ -112,7 +109,7 @@ class FactoryCompiler:
                     dep_class = dep.klass
 
                 maybe_await = "await " if self.registry.factories[dep_class, dep.qualifier_value].is_async else ""
-                code += f"    _obj_dep_{name} = {maybe_await}self.{self._get_fn_name(dep_class, dep.qualifier_value)}.factory(container)\n"  # noqa: E501
+                code += f"    _obj_dep_{name} = {maybe_await}self.{self.get_fn_name(dep_class, dep.qualifier_value)}.factory(container)\n"  # noqa: E501
             kwargs += f"{name} = _obj_dep_{name}, "
 
         maybe_await = "await " if factory.factory_type == FactoryType.COROUTINE_FN else ""
@@ -168,7 +165,7 @@ class FactoryCompiler:
             compiled_code = compile(source, f"<generated_{obj_id}>", "exec")
             exec(compiled_code, namespace)  # noqa: S102
 
-            return CompiledFactory(factory=namespace[self._get_fn_name(impl, qualifier)], is_async=is_async)
+            return CompiledFactory(factory=namespace[self.get_fn_name(impl, qualifier)], is_async=is_async)
 
         except Exception as e:
             msg = f"Failed to compile generated factory {obj_id}: {e}"

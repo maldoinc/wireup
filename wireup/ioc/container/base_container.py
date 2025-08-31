@@ -35,7 +35,6 @@ class BaseContainer:
         "_current_scope_objects",
         "_global_scope",
         "_override_mgr",
-        "_overrides",
         "_params",
         "_registry",
         "_scoped_compiler",
@@ -54,7 +53,6 @@ class BaseContainer:
     ) -> None:
         self._registry = registry
         self._params = parameters
-        self._overrides = override_manager.active_overrides
         self._override_mgr = override_manager
         self._global_scope = global_scope
         self._current_scope_objects = current_scope_objects
