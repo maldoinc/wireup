@@ -50,15 +50,23 @@ class FactoryCompiler:
 
         for interface, impls in self.registry.interfaces.items():
             for qualifier, impl in impls.items():
-                self.factories[interface, qualifier] = self.factories[impl, qualifier]
+                self.factories[interface, qualifier] = self._compile_and_create_function(
+                    self.registry.factories[impl, qualifier],
+                    interface,
+                    qualifier,
+                )
                 setattr(self, self._get_fn_name(interface, qualifier), self.factories[interface, qualifier])
 
     def _get_fn_name(self, impl: type, qualifier: Hashable) -> str:
         sanitized_impl = impl.__module__.replace(".", "_") + "_" + impl.__name__.replace(".", "_")
         return f"get_{sanitized_impl}_{qualifier}"
 
-    def _get_factory_code(self, factory: ServiceFactory, impl: type, qualifier: Hashable) -> str:  # noqa: PLR0912
-        lifetime = self.registry.lifetime[impl]
+    def _get_factory_code(self, factory: ServiceFactory, impl: type, qualifier: Hashable) -> str:  # noqa: C901, PLR0912, PLR0915
+        is_interface = self.registry.is_interface_known(impl)
+        if is_interface:
+            lifetime = self.registry.lifetime[self.registry.interface_resolve_impl(impl, qualifier)]
+        else:
+            lifetime = self.registry.lifetime[impl]
 
         maybe_async = "async " if factory.is_async else ""
         code = f"{maybe_async}def {self._get_fn_name(impl, qualifier)}(container):\n"
@@ -67,8 +75,23 @@ class FactoryCompiler:
             code += "    if container._current_scope_objects is None:\n"
             code += "        raise WireupError(_CONTAINER_SCOPE_ERROR_MSG)\n"
 
-        code += "    if res := container._try_get_existing_instance(CURRENT_OBJ_ID):\n"
+        code += "    if res := container._overrides.get(CURRENT_OBJ_ID):\n"
         code += "        return res\n"
+
+        if self.registry.is_interface_known(impl):
+            code += "    # Interface resolution inlined\n"
+            code += "    resolved_obj_id = container._registry.interface_resolve_impl(\n"
+            code += "        CURRENT_OBJ_ID[0], CURRENT_OBJ_ID[1]), CURRENT_OBJ_ID[1]\n"
+        else:
+            code += "    resolved_obj_id = CURRENT_OBJ_ID\n"
+
+        if lifetime == "singleton":
+            code += "    if res := container._global_scope.objects.get(resolved_obj_id):\n"
+            code += "        return res\n"
+        else:
+            code += "    if container._current_scope_objects is not None:\n"
+            code += "        if res := container._current_scope_objects.get(resolved_obj_id):\n"
+            code += "            return res\n"
 
         kwargs = ""
         for name, dep in self.registry.dependencies[factory.factory].items():
@@ -106,10 +129,16 @@ class FactoryCompiler:
 
         if lifetime == "singleton":
             code += "    container._global_scope.objects[CURRENT_OBJ_ID] = instance\n"
+            if is_interface:
+                code += "    container._global_scope.objects[resolved_obj_id] = instance\n"
         elif lifetime == "scoped":
             code += "    container._current_scope_objects[CURRENT_OBJ_ID] = instance\n"
+            if is_interface:
+                code += "    container._current_scope_objects[resolved_obj_id] = instance\n"
 
         code += "    return instance\n"
+
+        print(code)
 
         return code
 

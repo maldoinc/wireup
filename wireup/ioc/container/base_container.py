@@ -69,21 +69,6 @@ class BaseContainer:
         """Override registered container services with new values."""
         return self._override_mgr
 
-    def _try_get_existing_instance(self, obj_id: ContainerObjectIdentifier) -> Any:
-        if res := self._overrides.get(obj_id):
-            return res
-
-        if obj_id[0] in self._registry.interfaces:
-            obj_id = self._registry.interface_resolve_impl(obj_id[0], obj_id[1]), obj_id[1]
-
-        if res := self._global_scope.objects.get(obj_id):
-            return res
-
-        if self._current_scope_objects is not None and (res := self._current_scope_objects.get(obj_id)):
-            return res
-
-        return None
-
     async def _async_get(self, klass: Type[T], qualifier: Optional[Qualifier] = None) -> T:
         """Get an instance of the requested type.
 
@@ -92,9 +77,6 @@ class BaseContainer:
         :return: An instance of the requested object. Always returns an existing instance when one is available.
         """
         obj_id = klass, qualifier
-
-        if res := self._try_get_existing_instance(obj_id):
-            return res  # type:ignore[no-any-return]
 
         if compiled_factory := self._compiler.factories.get(obj_id):
             res = compiled_factory.factory(self)
@@ -111,9 +93,6 @@ class BaseContainer:
         :return: An instance of the requested object. Always returns an existing instance when one is available.
         """
         obj_id = klass, qualifier
-
-        if res := self._try_get_existing_instance(obj_id):
-            return res  # type:ignore[no-any-return]
 
         if compiled_factory := self._compiler.factories.get(obj_id):
             if compiled_factory.is_async:
