@@ -7,6 +7,7 @@ from wireup._discovery import discover_wireup_registrations
 from wireup.errors import WireupError
 from wireup.ioc.container.async_container import AsyncContainer
 from wireup.ioc.container.base_container import BaseContainer
+from wireup.ioc.container.compiler import FactoryCompiler
 from wireup.ioc.container.sync_container import SyncContainer
 from wireup.ioc.override_manager import OverrideManager
 from wireup.ioc.parameter import ParameterBag
@@ -57,15 +58,19 @@ def _create_container(
         abstracts.extend(discovered_abstracts)
         impls.extend(discovered_services)
 
+    bag = ParameterBag(parameters)
     registry = ServiceRegistry(abstracts=abstracts, impls=impls)
+    compiler = FactoryCompiler(registry, bag)
     container = klass(
         registry=registry,
-        parameters=ParameterBag(parameters),
+        parameters=bag,
+        factory_compiler=compiler,
         global_scope=ContainerScope(objects={}, exit_stack=[]),
         override_manager=OverrideManager({}, registry.is_type_with_qualifier_known),
     )
 
     assert_dependencies_valid(container)
+    compiler.compile()
 
     return container
 

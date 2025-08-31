@@ -92,7 +92,7 @@ def ensure_is_type(value: type[T] | str, globalns: dict[str, Any] | None = None)
     """
     if isinstance(value, str):
         try:
-            import eval_type_backport
+            import eval_type_backport  # noqa: PLC0415
 
             return eval_type_backport.eval_type_backport(  # type:ignore[no-any-return]
                 eval_type_backport.ForwardRef(value), globalns=globalns, try_default=False

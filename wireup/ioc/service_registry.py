@@ -45,12 +45,14 @@ class FactoryType(Enum):
 
 
 GENERATOR_FACTORY_TYPES = {FactoryType.GENERATOR, FactoryType.ASYNC_GENERATOR}
+ASYNC_FACTORY_TYPES = {FactoryType.ASYNC_GENERATOR, FactoryType.COROUTINE_FN}
 
 
 @dataclass
 class ServiceFactory:
     factory: Callable[..., Any]
     factory_type: FactoryType
+    is_async: bool
 
 
 ServiceCreationDetails = Tuple[Callable[..., Any], ContainerObjectIdentifier, FactoryType, ServiceLifetime]
@@ -115,6 +117,37 @@ class ServiceRegistry:
 
         self._precompute_ctors()
 
+    def update_factories_async_flag(self) -> None:
+        """Update the is_async flag for factories. This must be called once all dependencies are registered
+        and asserted to be valid.
+
+        TODO(@maldoinc): Remove this restriction and have relevant checks happen in the registry.
+        """
+
+        def _is_dependency_async(impl: type, qualifier: Qualifier) -> bool:
+            if self.is_interface_known(impl):
+                impl = self.interface_resolve_impl(impl, qualifier)
+
+            factory = self.factories[impl, qualifier]
+
+            if factory.is_async:
+                return True
+
+            for dep in self.dependencies[factory.factory].values():
+                if dep.is_parameter:
+                    continue
+
+                if _is_dependency_async(dep.klass, dep.qualifier_value):
+                    return True
+
+            return False
+
+        for impl, qualifiers in self.impls.items():
+            for qualifier in qualifiers:
+                factory = self.factories[impl, qualifier]
+
+                factory.is_async = _is_dependency_async(impl, qualifier)
+
     def _precompute_ctors(self) -> None:
         for interface, impls in self.interfaces.items():
             for qualifier, impl in impls.items():
@@ -167,9 +200,9 @@ class ServiceRegistry:
 
         self._target_init_context(obj)
         self.lifetime[klass] = lifetime
+        factory_type = _get_factory_type(obj)
         self.factories[klass, qualifier] = ServiceFactory(
-            factory=obj,
-            factory_type=_get_factory_type(obj),
+            factory=obj, factory_type=factory_type, is_async=factory_type in ASYNC_FACTORY_TYPES
         )
         self.impls[klass].add(qualifier)
 
