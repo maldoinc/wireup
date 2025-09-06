@@ -68,7 +68,9 @@ wireup.integration.fastapi.setup(
 \*  Injecting parameters and singletons here has no benefit and is not zero-cost. Inject those in `__init__` instead.
 
 !!! note "Testing"
-    FastAPI lifespan events are used for initialization. When testing, create clients as context managers:
+    This feature uses FastAPI lifespan events. When testing, create the test client using a context manager for the
+    lifespan events to correctly trigger. Note that this is a limitation of Fastapi/Testclient rather than Wireup.
+
     ```python
     @pytest.fixture()
     def client(app: FastAPI) -> Iterator[TestClient]:
