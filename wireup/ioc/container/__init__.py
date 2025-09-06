@@ -12,7 +12,6 @@ from wireup.ioc.override_manager import OverrideManager
 from wireup.ioc.parameter import ParameterBag
 from wireup.ioc.service_registry import ServiceRegistry
 from wireup.ioc.types import ContainerScope
-from wireup.ioc.validation import assert_dependencies_valid
 
 if TYPE_CHECKING:
     from types import ModuleType
@@ -57,17 +56,13 @@ def _create_container(
         abstracts.extend(discovered_abstracts)
         impls.extend(discovered_services)
 
-    registry = ServiceRegistry(abstracts=abstracts, impls=impls)
-    container = klass(
+    registry = ServiceRegistry(parameters=ParameterBag(parameters), abstracts=abstracts, impls=impls)
+
+    return klass(
         registry=registry,
-        parameters=ParameterBag(parameters),
         global_scope=ContainerScope(objects={}, exit_stack=[]),
         override_manager=OverrideManager({}, registry.is_type_with_qualifier_known),
     )
-
-    assert_dependencies_valid(container)
-
-    return container
 
 
 def create_sync_container(

@@ -1,7 +1,7 @@
 import asyncio
 import contextlib
 import uuid
-from typing import Any, AsyncIterator, Dict, Iterator, NewType
+from typing import Any, AsyncIterator, Dict, Iterator
 
 import anyio.to_thread
 import pytest

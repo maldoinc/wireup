@@ -33,8 +33,7 @@ from wireup.integration.starlette import (
 from wireup.ioc.container.async_container import AsyncContainer, ScopedAsyncContainer
 from wireup.ioc.container.sync_container import ScopedSyncContainer
 from wireup.ioc.types import AnyCallable
-from wireup.ioc.validation import (
-    assert_dependencies_valid,
+from wireup.ioc.util import (
     get_inject_annotated_parameters,
     hide_annotated_names,
 )
@@ -166,8 +165,7 @@ def _update_lifespan(
     async def lifespan(app: FastAPI) -> AsyncIterator[Any]:
         if class_based_routes:
             for cbr in class_based_routes:
-                container._registry._extend_with_services(abstracts=[], impls=[ServiceDeclaration(cbr)])
-            assert_dependencies_valid(container)
+                container._registry.extend_with_services(abstracts=[], impls=[ServiceDeclaration(cbr)])
 
             for cbr in class_based_routes:
                 await _instantiate_class_based_route(app, container, cbr)

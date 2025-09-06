@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import importlib
+import inspect
 import types
 import typing
 from inspect import Parameter
@@ -13,6 +14,8 @@ _OPTIONAL_UNION_ARG_COUNT = 2
 
 if typing.TYPE_CHECKING:
     from collections.abc import Callable
+
+    from wireup.ioc.container.base_container import BaseContainer
 
 
 def _get_injectable_type(metadata: Any) -> InjectableType | None:
@@ -128,3 +131,63 @@ def unwrap_optional_type(type_: Any) -> Any:
 
 def stringify_type(target: type | AnyCallable) -> str:
     return f"{type(target).__name__.capitalize()} {target.__module__}.{target.__name__}"
+
+
+def hide_annotated_names(func: AnyCallable) -> None:
+    if hasattr(func, "__wireup_names__"):
+        return
+
+    names_to_hide = get_inject_annotated_parameters(func)
+
+    if not names_to_hide:
+        return
+
+    orig_sig = inspect.signature(func)
+    filtered_params = {name: param for name, param in orig_sig.parameters.items() if param.name not in names_to_hide}
+    new_sig = inspect.Signature(parameters=list(filtered_params.values()), return_annotation=orig_sig.return_annotation)
+    new_annotations = {
+        name: annotation for name, annotation in func.__annotations__.items() if name not in names_to_hide
+    }
+
+    func.__wireup_names__ = get_inject_annotated_parameters(func)  # type: ignore[attr-defined]
+    func.__signature__ = new_sig  # type: ignore[attr-defined]
+    func.__annotations__ = new_annotations
+
+    return
+
+
+def get_inject_annotated_parameters(target: AnyCallable) -> dict[str, AnnotatedParameter]:
+    """Retrieve annotated parameters from a given callable target.
+
+    This function inspects the signature of the provided callable and returns a dictionary
+    of parameter names and their corresponding annotated parameters, filtered by those
+    that are instances of `InjectableType`.
+
+    Args:
+        target (AnyCallable): The callable whose parameters are to be inspected.
+
+    Returns:
+        dict[str, AnnotatedParameter]: A dictionary where the keys are parameter names
+        and the values are the annotated parameters that are instances of `InjectableType`.
+
+    """
+    if hasattr(target, "__wireup_names__"):
+        return target.__wireup_names__  # type:ignore[no-any-return]
+
+    return {
+        name: param
+        for name, parameter in inspect.signature(target).parameters.items()
+        if (param := param_get_annotation(parameter, globalns=get_globals(target)))
+        and isinstance(param.annotation, InjectableType)
+    }
+
+
+def get_valid_injection_annotated_parameters(
+    container: BaseContainer, target: AnyCallable
+) -> dict[str, AnnotatedParameter]:
+    names_to_inject = get_inject_annotated_parameters(target)
+
+    for name, parameter in names_to_inject.items():
+        container._registry.assert_dependency_exists(parameter=parameter, target=target, name=name)
+
+    return names_to_inject

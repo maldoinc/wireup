@@ -40,21 +40,18 @@ class BaseContainer:
         "_global_scope",
         "_override_mgr",
         "_overrides",
-        "_params",
         "_registry",
     )
 
-    def __init__(  # noqa: PLR0913
+    def __init__(
         self,
         registry: ServiceRegistry,
-        parameters: ParameterBag,
         override_manager: OverrideManager,
         global_scope: ContainerScope,
         current_scope_objects: Optional[Dict[ContainerObjectIdentifier, Any]] = None,
         current_scope_exit_stack: Optional[List[Union[Generator[Any, Any, Any], AsyncGenerator[Any, Any]]]] = None,
     ) -> None:
         self._registry = registry
-        self._params = parameters
         self._overrides = override_manager.active_overrides
         self._override_mgr = override_manager
         self._global_scope = global_scope
@@ -64,7 +61,7 @@ class BaseContainer:
     @property
     def params(self) -> ParameterBag:
         """Parameter bag associated with this container."""
-        return self._params
+        return self._registry.parameters
 
     @property
     def override(self) -> OverrideManager:
@@ -97,7 +94,7 @@ class BaseContainer:
             elif not param.is_parameter:
                 result[name] = await self._async_create_instance(self._registry.ctors[obj_id])
             elif param.annotation and isinstance(param.annotation, ParameterWrapper):
-                result[name] = self._params.get(param.annotation.param)
+                result[name] = self._registry.parameters.get(param.annotation.param)
 
         return result
 
