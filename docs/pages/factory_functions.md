@@ -16,13 +16,11 @@ inheriting from the same base (See: [Strategy Pattern](https://en.wikipedia.org/
 In order for the container to inject these dependencies, you must decorate the factory with `@service` and register
 it with the container.
 
-When the container needs to inject a dependency, it checks known factories to see if any of them can create it.
+Return type annotation of the factory is required as it denotes what will be built.
 
+---
 
-!!! info "Good to know"
-    Return type annotation of the factory is required as it denotes what will be built.
-
-## Examples
+## Resource Management with Factories
 
 ### Generator Functions for Resource Management
 
@@ -125,6 +123,10 @@ def create_user(
     When using this feature, database transactions and other resources are automatically managed per request,
     with automatic rollback on any unhandled exception.
 
+---
+
+## Common Factory Patterns
+
 ### Inject Models
 
 Assume in the context of an application a class User exists and represents a user of the system.
@@ -152,10 +154,8 @@ def get_user_logs(user: Injected[AuthenticatedUser]):
 Assume a base class `Notifier` with implementations that define how the notification is sent (IMAP, POP, WebHooks, etc.)
 Given a user it is possible to instantiate the correct type of notifier based on user preferences.
 
-
 ```python
 from wireup import service
-
 
 @service(lifetime="transient")
 def get_user_notifier(
@@ -178,20 +178,16 @@ Let's take redis client as an example.
 ```python
 from wireup import service
 
-
 @service
 def redis_factory(redis_url: Annotated[str, Inject(param="redis_url")]) -> Redis:
     return redis.from_url(redis_url)
 ```
 
-
 ### Inject built-in types
 
 If you want to inject resources which are just strings, ints, or other built-in types then you can use a factory in combination with `NewType`.
 
-
 ```python title="factories.py"
-
 AuthenticatedUsername = NewType("AuthenticatedUsername", str)
 
 @service
@@ -201,28 +197,52 @@ def authenticated_username_factory(auth: SomeAuthService) -> AuthenticatedUserna
 
 This can now be injected as usual by annotating the dependency with the new type.
 
-### Optional Dependencies and Factories
+---
+
+## Optional Dependencies and Factories
 
 You can both request Optional dependencies and create factories that return Optional values. This is useful when a service might not be available or when you want to make a dependency optional.
 
+!!! important "Service Registration Required"
+    When using optional dependencies, the service providing the optional dependency **must still be registered** in the container. The service cannot be absent - it can only return `None`. This means you must register a factory or service that can potentially return `None`, rather than simply not registering the service at all.
+
 #### Requesting Optional Dependencies
 
-When a service has an optional dependency, simply annotate it with `Optional[T]`:
+When a service has an optional dependency, simply use `T | None` or `Optional[T]`.
 
-```python
-@service
-class UserService:
-    def __init__(self, cache: Optional[Cache]) -> None:
-        self.cache = cache
+=== "Python 3.10+"
 
-    def get_user(self, id: str) -> User:
-        if self.cache:
-            cached = self.cache.get(id)
-            if cached:
-                return cached
-        # Fallback to database
-        ...
-```
+    ```python hl_lines="1 3"
+    @service
+    class UserService:
+        def __init__(self, cache: Cache | None) -> None:
+            self.cache = cache
+
+        def get_user(self, id: str) -> User:
+            if self.cache:
+                cached = self.cache.get(id)
+                if cached:
+                    return cached
+            # Fallback to database
+            ...
+    ```
+
+=== "Python <3.10"
+
+    ```python hl_lines="1 3"
+    @service
+    class UserService:
+        def __init__(self, cache: Optional[Cache]) -> None:
+            self.cache = cache
+
+        def get_user(self, id: str) -> User:
+            if self.cache:
+                cached = self.cache.get(id)
+                if cached:
+                    return cached
+            # Fallback to database
+            ...
+    ```
 
 #### Factories Returning Optional Values
 
@@ -231,12 +251,38 @@ Sometimes you want a factory to return `None` when certain conditions aren't met
 ```python
 @service
 def make_cache(
-    dsn: Annotated[str, Inject(param="REDIS_DSN")],
+    dsn: Annotated[str | None, Inject(param="REDIS_DSN")],
 ) -> Optional[RedisCache]:
-    """Create a Redis cache connection if DSN is configured, otherwise return None."""
     return RedisCache(dsn) if dsn else None
 ```
 
-!!! warning
-    Optional types can be injected into services or targets, but you cannot do `container.get(Optional[T])`; 
-    use `container.get(T)` instead.
+Note that the `make_cache` factory is registered and will be called when `Cache` is requested. 
+It can return `None` based on configuration, but the factory itself must be present in the container.
+
+**Injection vs. Direct Access**: Optional dependencies can be injected into services and decorated functions, but there's an important distinction when accessing them directly:
+
+```python
+# ✅ This works - injecting optional dependencies
+@service
+class UserService:
+    def __init__(self, cache: Optional[Cache]) -> None: ...
+
+# ✅ This works - getting the service directly
+cache = container.get(Cache)  # Returns None if factory returns None
+
+# ❌ This doesn't work - cannot get Optional types directly
+cache = container.get(Optional[Cache]) 
+```
+
+**Type Annotation Compatibility**: Optional dependencies work with various annotation patterns:
+
+```python
+Optional[Cache]
+Cache | None
+
+Annotated[Cache | None, Inject(qualifier="redis")]
+Annotated[Cache, Inject(qualifier="redis")] | None
+
+Annotated[Optional[Cache], Inject(qualifier="redis")]
+Optional[Annotated[Cache, Inject(qualifier="redis")]]
+```
