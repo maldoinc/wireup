@@ -34,7 +34,7 @@ nav:
       - Flask: 
         - Flask Integration: integrations/flask/index.md
       - AIOHTTP: 
-        - Flask Integration: integrations/aiohttp/index.md
+        - AIOHTTP Integration: integrations/aiohttp/index.md
         - Class-Based Handlers: integrations/aiohttp/class_based_handlers.md
       - Starlette: 
         - Starlette Integration: integrations/starlette/index.md
