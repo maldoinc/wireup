@@ -7,7 +7,9 @@ from typing_extensions import Annotated
 from wireup._annotations import Inject, abstract, service
 from wireup.errors import WireupError
 
+from test.unit import services
 from test.unit.services.no_annotations.random.random_service import RandomService
+from test.unit.services.with_annotations.env import EnvService
 
 
 def test_dependencies_parameters_exist() -> None:
@@ -209,3 +211,12 @@ def test_registers_abstract() -> None:
 
     container = wireup.create_sync_container(services=[Foo, FooImpl])
     assert isinstance(container.get(Foo), FooImpl)
+
+
+def test_container_deduplicates_services_from_modules_and_services() -> None:
+    container = wireup.create_sync_container(
+        services=[EnvService],
+        service_modules=[services],
+        parameters={"env_name": "test"},
+    )
+    assert container.get(EnvService) is not None

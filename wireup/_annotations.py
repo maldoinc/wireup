@@ -72,7 +72,7 @@ Alias of `Annotated[T, Inject()]`.
 """
 
 
-@dataclass
+@dataclass(frozen=True)
 class ServiceDeclaration:
     """Object containing service declaration metadata."""
 
@@ -81,7 +81,7 @@ class ServiceDeclaration:
     lifetime: ServiceLifetime = "singleton"
 
 
-@dataclass
+@dataclass(frozen=True)
 class AbstractDeclaration:
     """Used to denote a registration for a service that is abstract."""
 
