@@ -14,12 +14,12 @@ The `wireup.integration.starlette` module provides dependency injection for Star
 
     ---
 
-    Wireup is framework-agnostic, allowing you to share your service layer across web applications and other interfaces, such as CLIs.
+    Wireup is framework-agnostic, allowing the service layer to be shared across web applications and other interfaces, such as CLIs.
 </div>
 
 ### Setting Up the Integration
 
-To set up the integration, use the `wireup.integration.starlette.setup` function.
+First, [create an async container](../../container.md#async) with your service modules:
 
 ```python
 from starlette.applications import Starlette
@@ -29,12 +29,14 @@ import wireup
 app = Starlette()
 
 container = wireup.create_async_container(
-    # A list of top-level modules containing service registrations.
     service_modules=[services],
-    # Optionally, expose custom parameters to the container.
-    parameters={"DEBUG": True}
+    parameters={"DEBUG": True}  # Optionally expose custom parameters
 )
+```
 
+Then set up the integration using `wireup.integration.starlette.setup`:
+
+```python
 # Set up the integration.
 wireup.integration.starlette.setup(container, app)
 ```
@@ -71,8 +73,16 @@ class HelloEndpoint(HTTPEndpoint):
 
 ### Inject Starlette request or WebSocket
 
-To inject the current request/websocket in your services you must add `wireup.integration.starlette` module to your
-service modules when creating a container.
+To inject the current request/websocket in services, include the `wireup.integration.starlette` module
+in the service modules when [creating the container](../../container.md).
+
+```python
+container = wireup.create_async_container(
+    service_modules=[..., wireup.integration.starlette],
+)
+```
+
+### Using Starlette Request
 
 ```python title="Example Service using Starlette Request"
 @service(lifetime="scoped")

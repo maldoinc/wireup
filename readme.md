@@ -36,19 +36,32 @@ user_service = container.get(UserService) # ✅ Dependencies resolved.
 ```
 
 <details>
-<summary>Example With Configuration</summary>
+<summary>No annotations</summary>
+
+Keep domain objects clean of framework annotations by using factories.
 
 ```python
-@service
+# Clean domain objects: No annotations
 class Database:
-    def __init__(self, db_url: Annotated[str, Inject(param="db_url")]) -> None:
-        self.db_url = db_url
+    pass
+
+class UserService:
+    def __init__(self, db: Database) -> None:
+        self.db = db
+
+# Register services via factories
+@service
+def database_factory() -> Database:
+    return Database()
+
+@service
+def user_service_factory(db: Database) -> UserService:
+    return UserService(db)
 
 container = wireup.create_sync_container(
-    services=[Database], 
-    parameters={"db_url": os.environ["APP_DB_URL"]}
+    services=[database_factory, user_service_factory]
 )
-database = container.get(Database) # ✅ Dependencies resolved.
+user_service = container.get(UserService) # ✅ Dependencies resolved.
 ```
 
 </details>
@@ -205,6 +218,10 @@ def users_list(user_service: Injected[UserService]):
 
 wireup.integration.fastapi.setup(container, app)
 ```
+
+**Supported Frameworks:** FastAPI (with zero-overhead class-based handlers), Django, Flask, AIOHTTP, Starlette, and Click.
+
+[View all integrations →](https://maldoinc.github.io/wireup/latest/integrations/)
 
 ### 🧪 Simplified Testing
 
