@@ -65,7 +65,7 @@ def wireup_middleware(
     return sync_inner
 
 
-@service
+@service(lifetime="scoped")
 def _django_request_factory() -> HttpRequest:
     try:
         return current_request.get()
