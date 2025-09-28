@@ -6,8 +6,7 @@
 [![GitHub Workflow Status (with event)](https://img.shields.io/github/actions/workflow/status/maldoinc/wireup/run_all.yml)](https://github.com/maldoinc/wireup)
 [![PyPI - Python Version](https://img.shields.io/pypi/pyversions/wireup)](https://pypi.org/project/wireup/)
 [![PyPI - Version](https://img.shields.io/pypi/v/wireup)](https://pypi.org/project/wireup/)
-
-<p><a target="_blank" href="https://maldoinc.github.io/wireup">📚 Documentation</a> | <a target="_blank" href="https://github.com/maldoinc/wireup-demo">🎮 Demo Application</a></p>
+[![Documentation](https://img.shields.io/badge/%F0%9F%93%9A%20Documentation-3D9970)](https://maldoinc.github.io/wireup)
 </div>
 
 Dependency Injection (DI) is a design pattern where dependencies are provided externally rather than created within objects. Wireup automates dependency management using Python's type system, with support for async, generators, modern Python features and integrations for FastAPI, Django, Flask and AIOHTTP out of the box.
@@ -37,19 +36,32 @@ user_service = container.get(UserService) # ✅ Dependencies resolved.
 ```
 
 <details>
-<summary>Example With Configuration</summary>
+<summary>No annotations</summary>
+
+Keep domain objects clean of framework annotations by using factories.
 
 ```python
-@service
+# Clean domain objects: No annotations
 class Database:
-    def __init__(self, db_url: Annotated[str, Inject(param="db_url")]) -> None:
-        self.db_url = db_url
+    pass
+
+class UserService:
+    def __init__(self, db: Database) -> None:
+        self.db = db
+
+# Register services via factories
+@service
+def database_factory() -> Database:
+    return Database()
+
+@service
+def user_service_factory(db: Database) -> UserService:
+    return UserService(db)
 
 container = wireup.create_sync_container(
-    services=[Database], 
-    parameters={"db_url": os.environ["APP_DB_URL"]}
+    services=[database_factory, user_service_factory]
 )
-database = container.get(Database) # ✅ Dependencies resolved.
+user_service = container.get(UserService) # ✅ Dependencies resolved.
 ```
 
 </details>
@@ -191,7 +203,7 @@ Wireup provides its own Dependency Injection mechanism and is not tied to specif
 
 Share the service layer between your web application and its accompanying CLI using Wireup.
 
-### 🔌 Native Integration with AIOHTTP, Django, FastAPI, Flask, Litestar and Starlette
+### 🔌 Native Integration with Django, FastAPI, Flask, AIOHTTP, Click, Litestar and Starlette
 
 Integrate with popular frameworks for a smoother developer experience.
 Integrations manage request scopes, injection in endpoints, and lifecycle of services.
@@ -206,6 +218,10 @@ def users_list(user_service: Injected[UserService]):
 
 wireup.integration.fastapi.setup(container, app)
 ```
+
+**Supported Frameworks:** FastAPI (with zero-overhead class-based handlers), Django, Flask, AIOHTTP, Starlette, and Click.
+
+[View all integrations →](https://maldoinc.github.io/wireup/latest/integrations/)
 
 ### 🧪 Simplified Testing
 
@@ -225,7 +241,3 @@ with container.override.service(target=Database, new=in_memory_database):
 ## 📚 Documentation
 
 For more information [check out the documentation](https://maldoinc.github.io/wireup)
-
-## 🎮 Demo application
-
-A demo flask application is available at [maldoinc/wireup-demo](https://github.com/maldoinc/wireup-demo)

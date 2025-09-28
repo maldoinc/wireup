@@ -4,42 +4,46 @@ nav:
     - Wireup: index.md
     - Getting Started: getting_started.md
     - Basics:
+      - Container: container.md
       - Services: services.md
-      - Parameters: parameters.md
-    - Learn:
-      - Lifetimes: lifetimes.md
-      - Interfaces: interfaces.md
-      - Factory functions: factory_functions.md
+      - Configuration: parameters.md
+    - Core Concepts:
+      - Factories: factories.md
       - Annotations: annotations.md
-      - Apply as a decorator: apply_container_as_decorator.md
-      - Testing: testing.md
+      - Interfaces: interfaces.md
+      - Lifetimes & Scopes: lifetimes_and_scopes.md
+    - Guides:
+      - Function Injection: apply_container_as_decorator.md
+      - Clean Domain Code: annotation_free.md
       - Multiple registrations: multiple_registrations.md
-    - Advanced:
-      - Use without annotations: use_without_annotations.md
-      - Use with __future__ annotations: future_annotations.md
+      - Testing: testing.md
     - Misc:
+      - Use with __future__ annotations: future_annotations.md
       - Tips & Tricks: tips_tricks.md
-      - Demo application: demo_app.md
       - Versioning: versioning.md
       - Upgrading: upgrading.md
 
   - Integrations:
     - Integrations: integrations/index.md
-    - AIOHTTP:
-      - AIOHTTP Integration: integrations/aiohttp/index.md
-      - Class-Based Handlers: integrations/aiohttp/class_based_handlers.md
-    - Django:
-      - Django Integration: integrations/django/index.md
-    - FastAPI:
-      - FastAPI Integration: integrations/fastapi/index.md
-      - Class Based Handlers: integrations/fastapi/class_based_handlers.md
-      - Direct container access: integrations/fastapi/direct_container_access.md
-    - Flask:
-      - Flask Integration: integrations/flask/index.md
-    - Litestar:
-      - Litestar Integration: integrations/litestar/index.md
-    - Starlette:
-      - Starlette Integration: integrations/starlette/index.md
+    - Web Frameworks:
+      - Django: 
+        - Django Integration: integrations/django/index.md
+      - FastAPI: 
+        - FastAPI Integration: integrations/fastapi/index.md
+        - Class Based Handlers: integrations/fastapi/class_based_handlers.md
+        - Direct container access: integrations/fastapi/direct_container_access.md
+      - Flask: 
+        - Flask Integration: integrations/flask/index.md
+      - AIOHTTP: 
+        - AIOHTTP Integration: integrations/aiohttp/index.md
+        - Class-Based Handlers: integrations/aiohttp/class_based_handlers.md
+      - Starlette:
+        - Starlette Integration: integrations/starlette/index.md
+      - Litestar:
+        - Litestar Integration: integrations/litestar/index.md
+    - Command Line Interfaces:
+      - Click:
+        - Click Integration: integrations/click/index.md
   - API Reference:
       - wireup: class/wireup.md
       - OverrideManager: class/override_manager.md
@@ -51,6 +55,7 @@ nav:
         - Flask: class/flask_integration.md
         - Litestar: class/litestar_integration.md
         - Starlette: class/starlette_integration.md
+        - Click: class/click_integration.md
 repo_url: https://github.com/maldoinc/wireup
 repo_name: maldoinc/wireup
 theme:

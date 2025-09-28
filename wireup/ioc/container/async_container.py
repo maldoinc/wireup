@@ -1,8 +1,15 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 from typing_extensions import Self
 
 from wireup.ioc._exit_stack import async_clean_exit_stack
 from wireup.ioc.container.base_container import BaseContainer
 from wireup.ioc.container.sync_container import ScopedSyncContainer
+
+if TYPE_CHECKING:
+    from types import TracebackType
 
 
 class BareAsyncContainer(BaseContainer):
@@ -16,9 +23,14 @@ class ScopedAsyncContainer(BareAsyncContainer):
     async def __aenter__(self) -> Self:
         return self
 
-    async def __aexit__(self, *exc_info: object) -> None:
+    async def __aexit__(
+        self,
+        _exc_type: type[BaseException] | None = None,
+        exc_val: BaseException | None = None,
+        _exc_tb: TracebackType | None = None,
+    ) -> None:
         if self._current_scope_exit_stack:
-            await async_clean_exit_stack(self._current_scope_exit_stack)
+            await async_clean_exit_stack(self._current_scope_exit_stack, exc_val=exc_val, exc_tb=_exc_tb)
 
 
 class AsyncContainer(BareAsyncContainer):

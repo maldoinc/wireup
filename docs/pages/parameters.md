@@ -1,38 +1,63 @@
-The container can also hold configuration parameters to configure services.
-This feature allows self-contained service declarations by adding `@service` and annotations to indicate what to inject.
+# Configuration Parameters
 
-!!! warning
-    **Parameters are for application configuration only**. 
-    They should not be used to pass values around or as a global session object.
+Wireup containers can store configuration parameters that services can inject. This enables self-contained service
+definition without having to create factories for every service.
 
-    Use parameters for app configuration like environment name, database URL, mailer URL, etc.
+## Setting up parameters
 
-### Inject by name
+When creating a container, provide a dictionary of configuration parameters.
 
-To inject a parameter by name, annotate the type with `Inject(param="param_name")`.
+```python
+import wireup
+
+container = wireup.create_sync_container(
+    parameters={
+        "database_url": "postgresql://localhost:5432/app",
+        "env": "production",
+        "debug_mode": True,
+        "max_connections": 100,
+        "allowed_hosts": ["localhost", "example.com"]
+    }
+)
+```
+
+## Injecting parameters
+
+### By name
+
+Inject a specific parameter by name using `Inject(param="parameter_name")`:
+
+```python
+from typing import Annotated
+from wireup import service, Inject
+
+@service
+class DatabaseService:
+    def __init__(
+        self,
+        url: Annotated[str, Inject(param="database_url")],
+        max_connections: Annotated[int, Inject(param="max_connections")]
+    ) -> None:
+        self.url = url
+        self.max_connections = max_connections
+```
+
+### Using expressions
+
+Create dynamic configuration values by interpolating parameters using `${parameter_name}` syntax:
 
 ```python
 @service
-class GithubClient:
-    def __init__(self, api_key: Annotated[str, Inject(param="gh_api_key")]) -> None:
-        ...
+class FileStorageService:
+    def __init__(
+        self, 
+        upload_path: Annotated[str, Inject(expr="/tmp/uploads/${env}")]
+    ) -> None:
+        # upload_path = "/tmp/uploads/production"
+        self.upload_path = upload_path
 ```
 
-### Parameter expressions
+!!! note "Expression results are strings"
+    Parameter expressions always return strings. Non-string parameters are converted using `str()` before interpolation.
 
-You can interpolate parameters using a special syntax to retrieve and concatenate multiple parameter values.
-
-**Note:** The result is a string, so non-string parameters will be converted using `str()`.
-
-```python
-def target(logs_dir: Annotated[str, Inject(expr="${cache_dir}/${env}/logs")]) -> None:
-    ...
-```
-
-## 🏭 Class-based configuration
-
-Wireup's parameter configuration is optional. You can use typed classes for configuration, supported via factories.
-
-Register your settings as a service and inject them into factories like regular dependencies.
-
-See [Use Without Annotations](use_without_annotations.md) for more info.
+For more complex configuration scenarios or to keep domain objects free of annotations, see the [Annotation-Free Architecture](annotation_free.md#configuration-classes) guide.

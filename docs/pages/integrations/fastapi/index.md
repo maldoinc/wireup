@@ -25,37 +25,43 @@
 
     Retrieve dependencies in middleware and route handler decorators where they are normally unavailable in FastAPI.
 
-    [:octicons-arrow-right-24: Learn more](direct_container_access.md#middleware-mode-middleware_modetrue)
+    [:octicons-arrow-right-24: Learn more](direct_container_access.md)
 
 -   :material-share-circle:{ .lg .middle } __Shared business logic__
 
     ---
 
-    Wireup is framework-agnostic. Use it to share the service layer between your web application and other interfaces, such as a CLI.
+    Wireup is framework-agnostic. Use it to share the service layer between web applications and other interfaces, such as a CLI.
 </div>
 
 ### Getting started
 
-To initialize the integration, call `wireup.integration.fastapi.setup` after adding all routers.
+First, [create an async container](../../container.md)
 
 ```python
+import wireup
+from myapp import services
+
 container = wireup.create_async_container(
-    # Add service modules.
-    service_modules=[
-        # Top level module containing service registrations.
-        services,
-        # Include the integration if you need `fastapi.Request`
-        # or `fastapi.WebSocket` in Wireup services.
-        wireup.integration.fastapi
-    ],
-    # Expose parameters to Wireup as necessary. 
+    service_modules=[services],
     parameters={"debug": settings.DEBUG},
 )
+```
+
+Then initialize the integration by calling `wireup.integration.fastapi.setup` after adding all routers:
+
+```python
+from fastapi import FastAPI
+
+app = FastAPI()
+
+# Add routers here
+# app.include_router(...)
+
 wireup.integration.fastapi.setup(
     container, 
     app, 
-    # Include here any Wireup Class-Based Handlers.
-    class_based_handlers=[...]
+    class_based_handlers=[...]  # Include Wireup Class-Based Handlers
 )
 ```
 
@@ -67,6 +73,10 @@ See [Annotations](../../annotations.md) for more details.
 === "HTTP"
 
     ```python title="HTTP Route"
+    from typing import Annotated
+    from fastapi import Depends
+    from wireup import Injected, Inject
+
     @app.get("/random")
     async def target(
         random_service: Injected[RandomService],
@@ -79,6 +89,9 @@ See [Annotations](../../annotations.md) for more details.
 === "WebSocket"
 
     ```python title="WebSocket Route"
+    from fastapi import WebSocket
+    from wireup import Injected
+
     @app.websocket("/ws")
     async def ws(websocket: WebSocket, greeter: Injected[GreeterService]): ...
     ```
@@ -103,16 +116,33 @@ See [Annotations](../../annotations.md) for more details.
 
 ### Inject FastAPI request or websocket
 
-To inject the current request/websocket in your services you must add `wireup.integration.fastapi` 
-module to your service modules when creating a container.
+To inject the current request/websocket in services, include `wireup.integration.fastapi` 
+module in the service modules when creating the container.
 
 ```python
+import wireup
+
+container = wireup.create_async_container(
+    service_modules=[services, wireup.integration.fastapi],
+    parameters={"debug": settings.DEBUG},
+)
+```
+
+#### Use Request and WebSocket
+
+```python
+import fastapi
+from wireup import service
+
 @service(lifetime="scoped")
 class HttpAuthenticationService:
     def __init__(self, request: fastapi.Request) -> None: ...
 ```
 
 ```python
+import fastapi
+from wireup import service
+
 @service(lifetime="scoped")
 class ChatService:
     def __init__(self, websocket: fastapi.WebSocket) -> None:
@@ -145,8 +175,7 @@ for more examples.
 
 !!! warning
     FastAPI's lifespan events are required to close the Wireup container properly. 
-    Use a context manager when instantiating the test client if you're using class-based handlers or generator
-    factories in your application.
+    Use a context manager when instantiating the test client if using class-based handlers or generator factories in the application.
 
     ```python
     @pytest.fixture()

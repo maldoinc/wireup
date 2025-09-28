@@ -14,28 +14,32 @@ Dependency injection for Flask is available in the `wireup.integration.flask` mo
 
     ---
 
-    Wireup is framework-agnostic. Share the service layer between your web application and other interfaces, such as a CLI.
+    Wireup is framework-agnostic. Share the service layer between web applications and other interfaces, such as a CLI.
 </div>
 
 ### Initialize the integration
 
-To initialize the integration, call `wireup.integration.flask.setup` after adding all views and configuration.
+First, [create a sync container](../../container.md#synchronous) with your service modules:
 
 ```python
+from flask import Flask
 from wireup import Inject, Injected, service
 
 app = Flask(__name__)
 app.config["FOO"] = "bar"
 
 container = wireup.create_sync_container(
-    # service_modules is a list of top-level modules with service registrations.
     service_modules=[services],
     parameters={
-        **app.config, # Optionally expose flask configuration to the container.
-        "FOO": "bar"
+        **app.config,  # Optionally expose flask configuration to the container
+        "API_KEY": "secret"
     }
 )
+```
 
+Then initialize the integration by calling `wireup.integration.flask.setup` after adding all views and configuration:
+
+```python
 # Initialize the integration.
 # Must be called after views and configuration have been added.
 wireup.integration.flask.setup(container, app)

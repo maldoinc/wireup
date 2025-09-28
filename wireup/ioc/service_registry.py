@@ -105,7 +105,7 @@ class ServiceRegistry:
         self.impls: dict[type, set[Qualifier]] = defaultdict(set)
         self.factories: dict[ContainerObjectIdentifier, ServiceFactory] = {}
         self.dependencies: dict[InjectionTarget, dict[str, AnnotatedParameter]] = defaultdict(defaultdict)
-        self.lifetime: dict[InjectionTarget, ServiceLifetime] = {}
+        self.lifetime: dict[ContainerObjectIdentifier, ServiceLifetime] = {}
         self.ctors: dict[ContainerObjectIdentifier, ServiceCreationDetails] = {}
         self.type_normalizer = type_normalizer
         self._extend_with_services(abstracts or [], impls or [])
@@ -127,7 +127,7 @@ class ServiceRegistry:
                     factory.factory,
                     (impl, qualifier),
                     factory.factory_type,
-                    self.lifetime[impl],
+                    self.lifetime[impl, qualifier],
                 )
 
         for impl, qualifiers in self.impls.items():
@@ -137,7 +137,7 @@ class ServiceRegistry:
                     factory.factory,
                     (impl, qualifier),
                     factory.factory_type,
-                    self.lifetime[impl],
+                    self.lifetime[impl, qualifier],
                 )
 
     def _register(
@@ -170,7 +170,7 @@ class ServiceRegistry:
             discover_interfaces(klass.__bases__)
 
         self._target_init_context(obj)
-        self.lifetime[klass] = lifetime
+        self.lifetime[klass, qualifier] = lifetime
         self.factories[klass, qualifier] = ServiceFactory(
             factory=obj,
             factory_type=_get_factory_type(obj),
