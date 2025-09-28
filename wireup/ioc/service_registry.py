@@ -6,7 +6,7 @@ import warnings
 from collections import defaultdict
 from dataclasses import dataclass
 from enum import Enum, auto
-from typing import TYPE_CHECKING, Any, Callable, Iterable, Tuple, TypeVar, Union
+from typing import TYPE_CHECKING, Any, Callable, Tuple, TypeVar, Union
 
 from wireup.errors import (
     DuplicateQualifierForInterfaceError,
@@ -96,7 +96,7 @@ class ServiceRegistry:
     __slots__ = ("ctors", "dependencies", "factories", "impls", "interfaces", "lifetime")
 
     def __init__(
-        self, abstracts: Iterable[AbstractDeclaration] | None = None, impls: Iterable[ServiceDeclaration] | None = None
+        self, abstracts: list[AbstractDeclaration] | None = None, impls: list[ServiceDeclaration] | None = None
     ) -> None:
         self.interfaces: dict[type, dict[Qualifier, type]] = {}
         self.impls: dict[type, set[Qualifier]] = defaultdict(set)
@@ -106,11 +106,7 @@ class ServiceRegistry:
         self.ctors: dict[ContainerObjectIdentifier, ServiceCreationDetails] = {}
         self._extend_with_services(abstracts or [], impls or [])
 
-    def _extend_with_services(
-        self,
-        abstracts: Iterable[AbstractDeclaration],
-        impls: Iterable[ServiceDeclaration],
-    ) -> None:
+    def _extend_with_services(self, abstracts: list[AbstractDeclaration], impls: list[ServiceDeclaration]) -> None:
         for abstract in abstracts:
             self._register_abstract(abstract.obj)
 

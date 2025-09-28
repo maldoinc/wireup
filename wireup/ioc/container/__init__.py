@@ -36,8 +36,8 @@ def _create_container(
     :param parameters: Dict containing parameters you want to expose to the container. Services or factories can
     request parameters via the `Inject(param="name")` syntax.
     """
-    abstracts: set[AbstractDeclaration] = set()
-    impls: set[ServiceDeclaration] = set()
+    abstracts: list[AbstractDeclaration] = []
+    impls: list[ServiceDeclaration] = []
 
     if services:
         for service in services:
@@ -48,14 +48,14 @@ def _create_container(
             reg: AbstractDeclaration | ServiceDeclaration = service.__wireup_registration__
 
             if isinstance(reg, AbstractDeclaration):
-                abstracts.add(reg)
+                abstracts.append(reg)
             else:
-                impls.add(reg)
+                impls.append(reg)
 
     if service_modules:
         discovered_abstracts, discovered_services = discover_wireup_registrations(service_modules)
-        abstracts.update(discovered_abstracts)
-        impls.update(discovered_services)
+        abstracts.extend(discovered_abstracts)
+        impls.extend(discovered_services)
 
     registry = ServiceRegistry(abstracts=abstracts, impls=impls)
     container = klass(
