@@ -31,26 +31,24 @@ Dependency injection for AIOHTTP is available in the `wireup.integration.aiohttp
 
     ---
 
-    Wireup is framework-agnostic. Share the service layer between your web application and other interfaces, such as a CLI.
+    Wireup is framework-agnostic. Share the service layer between web applications and other interfaces, such as a CLI.
 </div>
 
 
 ### Initialize the integration
 
-To initialize the integration, call `wireup.integration.aiohttp.setup`.
+First, [create an async container](../../container.md#async).
 
 ```python
 container = wireup.create_async_container(
-    # Add service modules.
-    service_modules=[
-        # Top level module containing service registrations.
-        services,
-        # Add this module if you need `web.Request` in Wireup services.
-        wireup.integration.aiohttp
-    ],
-    # Expose parameters to Wireup as necessary. 
+    service_modules=[services],
     parameters={"db_dsn": os.environ.get("APP_DB_DSN")}
 )
+```
+
+Then initialize the integration:
+
+```python
 wireup.integration.aiohttp.setup(container, app)
 ```
 
@@ -61,7 +59,7 @@ See [Annotations](../../annotations.md) for more details.
 
 === "Function Handlers"
 
-    ```python title="Function Handler"
+    ```python title="Function Handler" hl_lines="3"
     async def get_users(
         request: web.Request,
         user_repository: Injected[UserRepository],
@@ -72,7 +70,7 @@ See [Annotations](../../annotations.md) for more details.
 === "Class-Based Views"
     In Class-based views dependencies must be declared in the init method. 
 
-    ```python title="Class Based View"
+    ```python title="Class Based View" hl_lines="5"
     class UsersView(web.View):
         def __init__(
             self, 
@@ -88,9 +86,18 @@ See [Annotations](../../annotations.md) for more details.
 
 ### Inject AIOHTTP request
 
-A key feature of the integration is to expose `web.Request` in Wireup.
-To inject it in your services you must add `wireup.integration.aiohttp` module to your service modules
-when creating a container.
+To inject `web.Request` in services, include `wireup.integration.aiohttp` module in the service modules
+when creating the container.
+
+```python hl_lines="4"
+container = wireup.create_async_container(
+    service_modules=[
+        services,
+        wireup.integration.aiohttp
+    ],
+    parameters={"db_dsn": os.environ.get("APP_DB_DSN")}
+)
+```
 
 ### Accessing the Container
 
@@ -112,7 +119,7 @@ request_container: ScopedAsyncContainer = get_request_container()
 For general testing tips with Wireup refer to the [test docs](../../testing.md). 
 With the AIOHTTP integration, you can override dependencies in the container as follows.
 
-```python title="test_thing.py"
+```python title="test_thing.py" hl_lines="8"
 from wireup.integration.aiohttp import get_app_container
 
 def test_override(aiohttp_client):
@@ -133,7 +140,7 @@ for more examples.
 If you're using a type checker, then you may notice it showing type errors when adding
 dependencies to aio handlers. This is because the signature as defined in aiohttp only allows for `web.Request` in the parameters. To make the type checker happy you can annotate them with `wireup.integration.aiohttp.route`.
 
-```python hl_lines="4"
+```python hl_lines="4 7"
 from wireup.integration.aiohttp import route
 
 @router.get("/users")

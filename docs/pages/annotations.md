@@ -1,52 +1,51 @@
 # Dependency Annotations
 
-Wireup uses type annotations to resolve dependencies. In most cases, the type alone is sufficient, but some cases require additional metadata through annotations.
+Wireup uses type annotations to figure out which dependencies to inject. Most of the time, just the type is enough, but sometimes you need to add extra information using injection annotations.
 
-## When Are Annotations Required?
+## When Do You Need Annotations?
 
-Wireup differentiates between injecting into its own services (those decorated with `@service`) and injecting into external targets.
+Whether you need annotations depends on where you're injecting into Wireup services or into external targets.
 
-### Annotation Requirements in Wireup Services
+### Injecting into Wireup Services
 
-| Type of Dependency                      | Annotations Required? | What is Required |
-| --------------------------------------- | --------------------- | ---------------- |
-| Services                                | No                    |                  |
-| Interface with only one implementation  | No                    |                  |
-| Default implementation of an interface  | No                    |                  |
-| Interface with multiple implementations | Yes                   | Qualifier        |
-| Parameters                              | Yes                   | Parameter name   |
-| Parameter expressions                   | Yes                   | Expression       |
- 
+For classes and functions marked with `@service`:
 
-### Annotation Requirements in External Targets
+| Dependency Type                         | Annotations Needed? | Required Information |
+| --------------------------------------- | ------------------- | -------------------- |
+| Services                                | No                  | -                    |
+| Interface with single implementation    | No                  | -                    |
+| Default implementation of interface     | No                  | -                    |
+| Interface with multiple implementations | Yes                 | Qualifier            |
+| Parameters                              | Yes                 | Parameter name       |
+| Parameter expressions                   | Yes                 | Expression template  |
 
-When injecting into an external target, annotations are always required, even if not typically needed in Wireup services. Annotate parameters with `Annotated[T, Inject()]` or its alias `Injected[T]`.
+### Injecting into External Code
 
-!!! abstract "Why is this required"
-    In its own services, Wireup assumes full ownership of dependencies, making empty annotations via `Inject()` redundant. For external targets, annotations inform the container to interact only with specific parameters, ensuring compatibility with other libraries or frameworks.
+When you're injecting into code that Wireup doesn't manage (like framework route handlers), you always need annotations. Use either `Annotated[T, Inject(...)]` or the shorthand `Injected[T]`.
 
-    Explicit annotations allow the container to fail fast on unrecognized injection requests, improving reliability by catching errors early. They also enhance maintainability and readability by clearly documenting expected dependencies.
+!!! info "Why external code needs annotations"
+    Inside Wireup services, Wireup assumes full ownership of all dependencies, so basic `Injected[T]` annotations are redundant. For external targets, annotations explicitly tell Wireup to handle those parameters.
 
-## Examples
+## Usage Examples
 
-For Python 3.9+ (or 3.8+ with `typing_extensions`):
+Here's how to use annotations in Python 3.9+ (or Python 3.8+ with `typing_extensions`):
 
 ```python
 @wireup.inject_from_container(container)
 def configure(
-    # Inject configuration parameter
+    # Inject a configuration parameter by name
     env: Annotated[str, Inject(param="app_env")],
     
-    # Inject dynamic expression
+    # Inject a computed value using parameter substitution
     log_path: Annotated[str, Inject(expr="${data_dir}/logs")],
     
-    # Inject service
+    # Inject a service (explicit annotation required for external targets)
     service: Annotated[MyService, Inject()],
 
-    # Injected is an alias of Annotated[T, Inject()]
+    # Alternative shorthand syntax for service injection
     service: Injected[MyService],
     
-    # Inject specific implementation
+    # Inject a specific implementation when multiple exist
     db: Annotated[Database, Inject(qualifier="readonly")]
 ):
     ...

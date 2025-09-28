@@ -309,6 +309,8 @@ class ServiceRegistry:
         if dependency.klass in self.interfaces or dependency.is_parameter:
             return
         dependency_service_factory = self.factories[dependency.klass, dependency.qualifier_value]
+        new_path: list[tuple[AnnotatedParameter, Any]] = [*path, (dependency, dependency_service_factory)]
+
         if any(p.klass == dependency.klass and p.qualifier_value == dependency.qualifier_value for p, _ in path):
 
             def stringify_dependency(p: AnnotatedParameter, factory: Any) -> str:
@@ -320,11 +322,9 @@ class ServiceRegistry:
                     f"{p.klass.__module__}.{p.klass.__name__} ({', '.join([d for d in descriptors if d is not None])})"
                 )
 
-            cycle_path = "\n -> ".join(
-                f"{stringify_dependency(p, factory)}"
-                for p, factory in [*path, (dependency, dependency_service_factory)]
-            )
+            cycle_path = "\n -> ".join(f"{stringify_dependency(p, factory)}" for p, factory in new_path)
             msg = f"Circular dependency detected for {cycle_path} ! Cycle here"
             raise WireupError(msg)
+
         for next_dependency in self.dependencies[dependency_service_factory.factory].values():
-            self._assert_valid_resolution_path(next_dependency, [*path, (dependency, dependency_service_factory)])
+            self._assert_valid_resolution_path(next_dependency, path=new_path)
