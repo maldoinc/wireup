@@ -93,7 +93,7 @@ class UnknownOverrideRequestedError(WireupError):
 
 if sys.version_info >= (3, 11):
 
-    class ContainerCloseError(ExceptionGroup, WireupError):  # type:ignore[misc]  # noqa: F821
+    class ContainerCloseError(ExceptionGroup, WireupError):  # noqa: F821
         """Contains a list of exceptions raised while closing the container."""
 
         def __init__(self, message: str, errors: list[Exception]) -> None:
