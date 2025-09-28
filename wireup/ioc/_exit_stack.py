@@ -9,6 +9,9 @@ if TYPE_CHECKING:
     from types import TracebackType
 
 
+_CONTAINER_CLOSE_ERR = "The following exceptions were raised while closing the container"
+
+
 def clean_exit_stack(
     exit_stack: list[Generator[Any, Any, Any] | AsyncGenerator[Any, Any]],
     exc_val: BaseException | None = None,
@@ -78,13 +81,11 @@ def maybe_raise_exc(
 ) -> None:
     if not exc_val:
         if container_close_errors:
-            raise ContainerCloseError(container_close_errors)
+            raise ContainerCloseError(_CONTAINER_CLOSE_ERR, container_close_errors)
         return
 
     if exc_tb is not None:
         exc_val.__traceback__ = exc_tb
 
     if container_close_errors:
-        raise exc_val from ContainerCloseError(container_close_errors)
-
-    raise exc_val
+        raise ContainerCloseError(_CONTAINER_CLOSE_ERR, container_close_errors)

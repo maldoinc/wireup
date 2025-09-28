@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import sys
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
@@ -90,9 +91,20 @@ class UnknownOverrideRequestedError(WireupError):
         super().__init__(f"Cannot override unknown {klass} with qualifier '{qualifier}'.")
 
 
-class ContainerCloseError(WireupError):
-    """Contains a list of exceptions raised while closing the container."""
+if sys.version_info >= (3, 11):
 
-    def __init__(self, errors: list[Exception]) -> None:
-        self.errors = errors
-        super().__init__(f"The following exceptions were raised while closing the container: {errors}")
+    class ContainerCloseError(ExceptionGroup, WireupError):  # type:ignore[misc]  # noqa: F821
+        """Contains a list of exceptions raised while closing the container."""
+
+        def __init__(self, message: str, errors: list[Exception]) -> None:
+            self.errors = errors
+            super().__init__(message, errors)
+
+else:
+
+    class ContainerCloseError(WireupError):
+        """Contains a list of exceptions raised while closing the container."""
+
+        def __init__(self, message: str, errors: list[Exception]) -> None:
+            self.errors = errors
+            super().__init__(f"{message}: {errors}")
