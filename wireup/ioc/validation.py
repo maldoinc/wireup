@@ -5,7 +5,7 @@ import typing
 from typing import Any
 
 from wireup.errors import WireupError
-from wireup.ioc.types import AnnotatedParameter, AnyCallable, InjectableType
+from wireup.ioc.types import AnnotatedParameter, AnyCallable, InjectableType, Qualifier
 from wireup.ioc.util import get_globals, param_get_annotation, stringify_type
 
 if typing.TYPE_CHECKING:
@@ -40,15 +40,28 @@ def hide_annotated_names(func: AnyCallable) -> None:
 
 def assert_dependencies_valid(container: BaseContainer) -> None:
     """Assert that all required dependencies exist for this container instance."""
-    for (impl, _), service_factory in container._registry.factories.items():
+    for (impl, impl_qualifier), service_factory in container._registry.factories.items():
         for name, dependency in container._registry.dependencies[service_factory.factory].items():
             assert_dependency_exists(container=container, parameter=dependency, target=impl, name=name)
-            assert_lifetime_valid(container, impl, name, dependency, service_factory.factory)
+            assert_lifetime_valid(
+                container=container,
+                impl=impl,
+                impl_qualifier=impl_qualifier,
+                parameter_name=name,
+                dependency=dependency,
+                factory=service_factory.factory,
+            )
             assert_valid_resolution_path(container=container, dependency=dependency, path=[])
 
 
-def assert_lifetime_valid(
-    container: BaseContainer, impl: Any, parameter_name: str, dependency: AnnotatedParameter, factory: AnyCallable
+def assert_lifetime_valid(  # noqa: PLR0913
+    *,
+    container: BaseContainer,
+    impl: Any,
+    impl_qualifier: Qualifier | None,
+    parameter_name: str,
+    dependency: AnnotatedParameter,
+    factory: AnyCallable,
 ) -> None:
     if dependency.is_parameter:
         return
@@ -58,9 +71,9 @@ def assert_lifetime_valid(
         if dependency.klass in container._registry.interfaces
         else dependency.klass
     )
-    dependency_lifetime = container._registry.lifetime[dependency_class]
+    dependency_lifetime = container._registry.lifetime[dependency_class, dependency.qualifier_value]
 
-    if container._registry.lifetime[impl] == "singleton" and dependency_lifetime != "singleton":
+    if container._registry.lifetime[impl, impl_qualifier] == "singleton" and dependency_lifetime != "singleton":
         msg = (
             f"Parameter '{parameter_name}' of {stringify_type(factory)} "
             f"depends on a service with a '{dependency_lifetime}' lifetime which is not supported. "

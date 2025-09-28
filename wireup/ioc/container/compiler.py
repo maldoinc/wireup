@@ -72,9 +72,9 @@ class FactoryCompiler:
     def _get_factory_code(self, factory: ServiceFactory, impl: type, qualifier: Hashable) -> tuple[str, bool]:  # noqa: C901, PLR0912, PLR0915
         is_interface = self.registry.is_interface_known(impl)
         if is_interface:
-            lifetime = self.registry.lifetime[self.registry.interface_resolve_impl(impl, qualifier)]
+            lifetime = self.registry.lifetime[self.registry.interface_resolve_impl(impl, qualifier), qualifier]
         else:
-            lifetime = self.registry.lifetime[impl]
+            lifetime = self.registry.lifetime[impl, qualifier]
 
         generated_function_name = self.get_fn_name(impl, qualifier)
 

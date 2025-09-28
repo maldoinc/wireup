@@ -36,18 +36,18 @@ async def get_users(user_service: Injected[UserService]):  # And here
 
 #### In Route Decorators
 
-    ```python hl_lines="4"
-    def require_not_bob(fn):
-        @functools.wraps(fn)
-        async def wrapper(*args: Any, **kwargs: Any) -> Any:
-            request = await get_request_container().get(fastapi.Request)
+```python hl_lines="4"
+def require_not_bob(fn):
+    @functools.wraps(fn)
+    async def wrapper(*args: Any, **kwargs: Any) -> Any:
+        request = await get_request_container().get(fastapi.Request)
 
-        if request.query_params.get("name") == "Bob":
-            raise HTTPException(status_code=401, detail="Bob is not allowed")
+    if request.query_params.get("name") == "Bob":
+        raise HTTPException(status_code=401, detail="Bob is not allowed")
 
-        return await fn(*args, **kwargs)
+    return await fn(*args, **kwargs)
 
-    return wrapper
+return wrapper
 
 @router.get("/users")
 @require_not_bob
@@ -57,8 +57,8 @@ async def get_users(user_service: Injected[UserService]):
 
 #### In Middleware (Requires Middleware Mode)
 
-    ```python hl_lines="4"
-    from wireup.integration.fastapi import get_request_container
+```python hl_lines="4"
+from wireup.integration.fastapi import get_request_container
 
 async def example_middleware(request: Request, call_next) -> Response:
     container = get_request_container()
@@ -68,8 +68,8 @@ async def example_middleware(request: Request, call_next) -> Response:
 
 #### In FastAPI Dependencies (Requires Middleware Mode)
 
-    ```python hl_lines="6"
-    from wireup.integration.fastapi import get_request_container
+```python hl_lines="6"
+from wireup.integration.fastapi import get_request_container
 
 async def get_example_dependency(
     request: Request, 

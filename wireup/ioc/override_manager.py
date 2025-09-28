@@ -68,10 +68,16 @@ class OverrideManager:
             return new
 
         self._compiler_override_obj_id(
-            target=target, qualifier=qualifier, compiler=self._factory_compiler, new=override_factory
+            target=target,
+            qualifier=qualifier,
+            compiler=self._factory_compiler,
+            new=override_factory,
         )
         self._compiler_override_obj_id(
-            target=target, qualifier=qualifier, compiler=self._scoped_factory_compiler, new=override_factory
+            target=target,
+            qualifier=qualifier,
+            compiler=self._scoped_factory_compiler,
+            new=override_factory,
         )
 
     def _restore_factory_methods(self, target: type, qualifier: Qualifier | None) -> None:

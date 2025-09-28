@@ -14,13 +14,13 @@ Dependency injection for Click is available in the `wireup.integration.click` mo
 
     ---
 
-    Wireup is framework-agnostic. Share the service layer between your CLI and other interfaces, such as a web application.
+    Wireup is framework-agnostic. Share the service layer between CLIs and other interfaces, such as a web application.
 
 </div>
 
 ### Initialize the integration
 
-To initialize the integration, call `wireup.integration.click.setup` after adding all commands and configuration.
+First, [create a sync container](../../container.md#synchronous)
 
 ```python
 import click
@@ -31,14 +31,17 @@ def cli():
     pass
 
 container = wireup.create_sync_container(
-    # service_modules is a list of top-level modules with service registrations
     service_modules=[services],
     parameters={
         "env": "development",
         "debug": True
     }
 )
+```
 
+Then initialize the integration by calling `wireup.integration.click.setup` after adding all commands:
+
+```python
 # Initialize the integration.
 # Must be called after all commands have been added.
 wireup.integration.click.setup(container, cli)
@@ -76,21 +79,22 @@ container = get_app_container(cli)
 
 ### Testing
 
-When testing Click commands with dependency injection, you can swap out services in your tests by overriding
+When testing Click commands with dependency injection, services can be swapped out in tests by overriding
 services before executing the Click runner.
 
 ```python
-def test_random_number_command(runner):
-    test_container = wireup.create_sync_container(...)
-    
-    cli = click.Group()
-    wireup.integration.click.setup(test_container, cli)
-    
-    with container.override.service(RandomService, new=mocked_random_service):
-        result = runner.invoke(cli, ["random-number"])
+from click.testing import CliRunner
 
-    assert result.exit_code == 0
-    assert "Your lucky number is:" in result.output
+
+def test_random_number_command():
+    
+    # Create test container with mocked service
+    with container.override.service(RandomService, new=MockRandomService()):
+        runner = CliRunner()
+        result = runner.invoke(cli, ["random-number"])
+        
+        assert result.exit_code == 0
+        assert "Your lucky number is:" in result.output
 ```
 
 ### API Reference

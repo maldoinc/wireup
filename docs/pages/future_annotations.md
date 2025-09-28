@@ -17,7 +17,7 @@ if TYPE_CHECKING:
 
 
 @service
-def create_thing() -> Iterator[Thing]:  # This needs the import at runtime
+def thing_factory() -> Iterator[Thing]:  # This needs the import at runtime
     yield Thing()
 
 @service

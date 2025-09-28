@@ -8,6 +8,9 @@ Performant, concise and type-safe Dependency Injection for Python 3.8+
     Dependency Injection (DI) is a design pattern where dependencies are provided externally rather than created within objects.
     Wireup automates DI using Python's type system, with support for async, generators and other modern Python features.
 
+!!! tip "Zero Runtime Overhead"
+    **New**: Inject Dependencies in FastAPI with zero runtime overhead using [Class-Based Handlers](integrations/fastapi/class_based_handlers.md).
+
 ## Features
 
 ### ✨ Simple & Type-Safe DI
@@ -30,19 +33,30 @@ Inject services and configuration using a clean and intuitive syntax without boi
     user_service = container.get(UserService) # ✅ Dependencies resolved.
     ```
 
-=== "With Configuration"
+=== "No Annotations"
 
     ```python
-    @service
+    # Clean domain objects: No annotations
     class Database:
-        def __init__(self, db_url: Annotated[str, Inject(param="db_url")]) -> None:
-            self.db_url = db_url
+        pass
+
+    class UserService:
+        def __init__(self, db: Database) -> None:
+            self.db = db
+
+    # Register services via factories
+    @service
+    def database_factory() -> Database:
+        return Database()
+
+    @service
+    def user_service_factory(db: Database) -> UserService:
+        return UserService(db)
 
     container = wireup.create_sync_container(
-        services=[Database], 
-        parameters={"db_url": os.environ["APP_DB_URL"]}
+        services=[database_factory, user_service_factory]
     )
-    database = container.get(Database) # ✅ Dependencies resolved.
+    user_service = container.get(UserService) # ✅ Dependencies resolved.
     ```
 
 ### 🎯 Function Injection
@@ -140,7 +154,7 @@ Full support for async and generators. Wireup handles cleanup at the correct tim
 
 ### 🛡️ Improved Safety
 
-Wireup is mypy strict compliant and will not introduce type errors in your code. It will also warn you at the earliest possible stage about configuration errors to avoid surprises.
+Wireup is mypy strict compliant and will not introduce type errors. It will also warn at the earliest possible stage about configuration errors to avoid surprises at runtime.
 
 === "Container Creation"
 
@@ -197,7 +211,7 @@ Wireup provides its own Dependency Injection mechanism and is not tied to specif
 
 ### 🔗 Share Services Between Application and CLI
 
-Share the service layer between your web application and its accompanying CLI using Wireup.
+Share the service layer between web applications and their accompanying CLIs using Wireup.
 
 ### 🔌 Native Integration with popular frameworks
 
@@ -215,19 +229,14 @@ def users_list(user_service: Injected[UserService]):
 wireup.integration.fastapi.setup(container, app)
 ```
 
-- [x] [AIOHTTP](integrations/aiohttp/index.md)
-- [x] [Click](integrations/click/index.md)
-- [x] [Django](integrations/django/index.md)
-- [x] [FastAPI](integrations/fastapi/index.md)
-- [x] [Flask](integrations/flask/index.md)
-- [x] [Starlette](integrations/starlette/index.md)
+[View all integrations →](integrations/index.md)
 
 
 ### 🧪 Simplified Testing
 
-Wireup does not patch your services and lets you test them in isolation.
+Wireup does not patch services and lets them be tested in isolation.
 
-If you need to use the container in your tests, you can have it create parts of your services
+If the container is needed in tests, it can create parts of services
 or perform dependency substitution.
 
 ```python

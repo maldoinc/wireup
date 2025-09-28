@@ -31,12 +31,12 @@ dependency injection in Django applications.
 
     ---
 
-    Wireup is framework-agnostic. Share the service layer between your web application and other interfaces, such as a CLI.
+    Wireup is framework-agnostic. Share the service layer between web applications and other interfaces, such as a CLI.
 </div>
 
 ### Initialize the integration
 
-Add the following to your Django settings:
+Add the following to Django settings:
 
 ```python title="settings.py"
 import os
@@ -53,7 +53,7 @@ MIDDLEWARE = [
 ]
 
 WIREUP = WireupSettings(
-    service_modules=["mysite.polls.services"]  # Your service modules here
+    service_modules=["mysite.polls.services"]  # Service modules here
 )
 
 # Additional application settings
@@ -62,7 +62,7 @@ S3_BUCKET_TOKEN = os.environ["S3_BUCKET_ACCESS_TOKEN"]
 
 ### Inject Django settings
 
-You can inject Django settings into your services:
+Django settings can be injected into services:
 
 ```python title="mysite/polls/services/s3_manager.py"
 from wireup import service, Inject
@@ -79,7 +79,7 @@ class S3Manager:
     def upload(self, file: File) -> None: ...
 ```
 
-You can also use Django settings in factory functions:
+You can also use Django settings in factories:
 
 ```python title="mysite/polls/services/github_client.py"
 from wireup import service

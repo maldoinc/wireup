@@ -122,7 +122,7 @@ Factories can define their dependencies in the function's signature.
 
 ```python title="services/factories.py" hl_lines="1 2"
 @service
-async def make_http_client() -> AsyncIterator[aiohttp.ClientSession]:
+async def http_client_factory() -> AsyncIterator[aiohttp.ClientSession]:
     async with aiohttp.ClientSession() as client:
         yield client
 ```
@@ -271,4 +271,4 @@ This concludes the "Getting Started" walkthrough, covering the most common depen
 
 * [Services](services.md)
 * [Parameters](parameters.md)
-* [Factory functions](factory_functions.md)
+* [Factories](factories.md)
