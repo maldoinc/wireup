@@ -14,10 +14,17 @@ from test.integration.django import view
 from test.shared.shared_services.greeter import GreeterService
 
 INSTALLED_APPS = [
+    "django.contrib.contenttypes",
+    "django.contrib.auth",
+    "rest_framework",
     "wireup.integration.django",
     "test.integration.django.apps.app_1",
     "test.integration.django.apps.app_2",
 ]
+REST_FRAMEWORK = {
+    "DEFAULT_AUTHENTICATION_CLASSES": [],
+    "DEFAULT_PERMISSION_CLASSES": [],
+}
 DEBUG = True
 ROOT_URLCONF = sys.modules[__name__]
 WIREUP = WireupSettings(
@@ -51,8 +58,16 @@ urlpatterns = [
 
 @pytest.fixture(autouse=True, scope="module")
 def django_setup() -> None:
-    os.environ["DJANGO_SETTINGS_MODULE"] = "test.integration.django.test_django_integration"
+    os.environ["DJANGO_SETTINGS_MODULE"] = (
+        "test.integration.django.test_django_integration"
+    )
     django.setup()
+
+    # DRF URLs must be added after django.setup() because DRF modules require
+    # Django to be configured before they can be imported
+    urlpatterns.append(
+        path("drf/", include("test.integration.django.apps.drf_app.urls"))
+    )
 
 
 @pytest.fixture
@@ -64,14 +79,19 @@ def test_django_thing(client: Client):
     res = client.get("/?name=World")
 
     assert res.status_code == 200
-    assert res.content.decode("utf8") == "Hello World! Debug = True. Your lucky number is 4"
+    assert (
+        res.content.decode("utf8")
+        == "Hello World! Debug = True. Your lucky number is 4"
+    )
 
 
 def test_get_random(client: Client):
     res = client.get("/classbased?name=Test")
 
     assert res.status_code == 200
-    assert res.content.decode("utf8") == "Hello Test! Debug = True. Your lucky number is 4"
+    assert (
+        res.content.decode("utf8") == "Hello Test! Debug = True. Your lucky number is 4"
+    )
 
 
 @pytest.mark.parametrize("path", ("foo", "bar"))
@@ -91,7 +111,10 @@ def test_override(client: Client):
         res = client.get("/classbased?name=Test")
 
     assert res.status_code == 200
-    assert res.content.decode("utf8") == "Bad day to you, Test! Debug = True. Your lucky number is 4"
+    assert (
+        res.content.decode("utf8")
+        == "Bad day to you, Test! Debug = True. Your lucky number is 4"
+    )
 
 
 def test_multiple_apps(client: Client):
@@ -104,3 +127,24 @@ def test_multiple_apps(client: Client):
 
     assert app_2_response.status_code == 200
     assert app_2_response.content.decode("utf8") == "App 2: Hello World"
+
+
+def test_drf_function_based_view(client: Client):
+    res = client.get("/drf/fbv/?name=World")
+
+    assert res.status_code == 200
+    assert res.json() == {"message": "FBV: Hello World"}
+
+
+def test_drf_class_based_view(client: Client):
+    res = client.get("/drf/cbv/?name=World")
+
+    assert res.status_code == 200
+    assert res.json() == {"message": "CBV: Hello World"}
+
+
+def test_drf_viewset(client: Client):
+    res = client.get("/drf/viewset/?name=World")
+
+    assert res.status_code == 200
+    assert res.json() == {"message": "ViewSet: Hello World"}
