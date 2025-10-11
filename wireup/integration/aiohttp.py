@@ -77,7 +77,7 @@ def _get_startup_event(
     handlers: Optional[Iterable[Type[_WireupHandler]]],
 ) -> Callable[[web.Application], Awaitable[None]]:
     for handler_type in handlers or []:
-        container._registry.extend_with_services(abstracts=[], impls=[ServiceDeclaration(handler_type)])
+        container._registry.extend(impls=[ServiceDeclaration(handler_type)])
 
     async def _inner(app: web.Application) -> None:
         if handlers:

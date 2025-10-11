@@ -111,13 +111,18 @@ class ServiceRegistry:
         self.dependencies: dict[InjectionTarget, dict[str, AnnotatedParameter]] = defaultdict(defaultdict)
         self.lifetime: dict[ContainerObjectIdentifier, ServiceLifetime] = {}
         self.ctors: dict[ContainerObjectIdentifier, ServiceCreationDetails] = {}
-        self.extend_with_services(abstracts or [], impls or [])
+        self.extend(abstracts=abstracts or [], impls=impls or [])
 
-    def extend_with_services(self, abstracts: list[AbstractDeclaration], impls: list[ServiceDeclaration]) -> None:
-        for abstract in abstracts:
+    def extend(
+        self,
+        *,
+        abstracts: list[AbstractDeclaration] | None = None,
+        impls: list[ServiceDeclaration] | None = None,
+    ) -> None:
+        for abstract in abstracts or []:
             self._register_abstract(abstract.obj)
 
-        for impl in impls:
+        for impl in impls or []:
             self._register(obj=impl.obj, lifetime=impl.lifetime, qualifier=impl.qualifier)
 
         self.assert_dependencies_valid()

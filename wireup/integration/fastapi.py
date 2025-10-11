@@ -165,7 +165,7 @@ def _update_lifespan(
     async def lifespan(app: FastAPI) -> AsyncIterator[Any]:
         if class_based_routes:
             for cbr in class_based_routes:
-                container._registry.extend_with_services(abstracts=[], impls=[ServiceDeclaration(cbr)])
+                container._registry.extend(impls=[ServiceDeclaration(cbr)])
 
             for cbr in class_based_routes:
                 await _instantiate_class_based_route(app, container, cbr)
