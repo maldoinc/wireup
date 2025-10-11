@@ -82,18 +82,13 @@ class FactoryCompiler:
         maybe_async = "async " if factory.is_async else ""
         code = f"{maybe_async}def {generated_function_name}(container):\n"
 
-        if is_interface:
-            code += "    obj_id = RESOLVED_OBJ_ID\n"
-        else:
-            code += "    obj_id = CURRENT_OBJ_ID\n"
-
         if lifetime == "singleton":
             code += "    global_object_storage = container._global_scope.objects\n"
-            code += "    if res := global_object_storage.get(obj_id):\n"
+            code += "    if res := global_object_storage.get(OBJ_ID):\n"
             code += "        return res\n"
         else:
             code += "    scope_objects = container._current_scope_objects\n"
-            code += "    if res := scope_objects.get(obj_id):\n"
+            code += "    if res := scope_objects.get(ORIGINAL_OBJ_ID):\n"
             code += "        return res\n"
 
         kwargs = ""
@@ -131,13 +126,13 @@ class FactoryCompiler:
                 code += "    instance = await instance.__anext__()\n"
 
         if lifetime == "singleton":
-            code += "    global_object_storage[CURRENT_OBJ_ID] = instance\n"
+            code += "    global_object_storage[OBJ_ID] = instance\n"
             if is_interface:
-                code += "    global_object_storage[obj_id] = instance\n"
+                code += "    global_object_storage[ORIGINAL_OBJ_ID] = instance\n"
         elif lifetime == "scoped":
-            code += "    scope_objects[CURRENT_OBJ_ID] = instance\n"
+            code += "    scope_objects[OBJ_ID] = instance\n"
             if is_interface:
-                code += "    scope_objects[obj_id] = instance\n"
+                code += "    scope_objects[ORIGINAL_OBJ_ID] = instance\n"
 
         code += "    return instance\n"
 
@@ -148,7 +143,7 @@ class FactoryCompiler:
         resolved_obj_id = (
             (self.registry.interface_resolve_impl(impl, qualifier), qualifier)
             if self.registry.is_interface_known(impl)
-            else None
+            else obj_id
         )
 
         source, is_async = self._get_factory_code(factory, impl, qualifier)
@@ -157,8 +152,8 @@ class FactoryCompiler:
             # Create a namespace with necessary references
             namespace: dict[str, Any] = {
                 "self": self,
-                "CURRENT_OBJ_ID": obj_id,
-                "RESOLVED_OBJ_ID": resolved_obj_id,
+                "ORIGINAL_OBJ_ID": obj_id,
+                "OBJ_ID": resolved_obj_id,
                 "ORIGINAL_FACTORY": self.registry.ctors[obj_id][0],
                 "TemplatedString": TemplatedString,
                 "WireupError": WireupError,
