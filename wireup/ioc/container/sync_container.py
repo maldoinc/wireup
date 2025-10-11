@@ -36,7 +36,6 @@ class SyncContainer(BareSyncContainer):
     def enter_scope(self) -> ScopedSyncContainer:
         return ScopedSyncContainer(
             registry=self._registry,
-            parameters=self._params,
             override_manager=self._override_mgr,
             global_scope=self._global_scope,
             current_scope_objects={},

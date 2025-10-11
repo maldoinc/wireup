@@ -56,7 +56,6 @@ class AsyncContainer(BareAsyncContainer):
     def enter_scope(self) -> ScopedAsyncContainer:
         return ScopedAsyncContainer(
             registry=self._registry,
-            parameters=self._params,
             override_manager=self._override_mgr,
             global_scope=self._global_scope,
             current_scope_objects={},
@@ -74,7 +73,6 @@ def async_container_force_sync_scope(container: AsyncContainer) -> ScopedSyncCon
     """
     return ScopedSyncContainer(
         registry=container._registry,
-        parameters=container._params,
         override_manager=container._override_mgr,
         global_scope=container._global_scope,
         current_scope_objects={},

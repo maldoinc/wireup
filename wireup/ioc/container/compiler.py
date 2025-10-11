@@ -41,8 +41,6 @@ class FactoryCompiler:
         return impl if qualifier is None else (impl, qualifier)
 
     def compile(self) -> None:
-        self.registry.update_factories_async_flag()
-
         for impl, qualifiers in self.registry.impls.items():
             for qualifier in qualifiers:
                 obj_id = FactoryCompiler.get_object_id(impl, qualifier)
@@ -145,8 +143,6 @@ class FactoryCompiler:
                 code += "    scope_objects[obj_id] = instance\n"
 
         code += "    return instance\n"
-
-        print(code)
 
         return code, factory.is_async
 

@@ -10,7 +10,7 @@ from wireup.errors import (
 from wireup.ioc.service_registry import ServiceRegistry
 
 from test.unit.services.no_annotations.random.random_service import RandomService
-from test.unit.services.with_annotations.services import Foo, FooImplWithInjected
+from test.unit.services.with_annotations.services import Foo, FooImpl, FooImplWithInjected
 
 
 def test_register_service() -> None:
@@ -83,7 +83,8 @@ def test_is_type_with_qualifier_known() -> None:
 def test_register_with_redundant_annotation() -> None:
     with pytest.warns(UserWarning, match=r"Redundant Injected\[T\] or Annotated\[T, Inject\(\)\] in parameter"):
         ServiceRegistry(
-            impls=[ServiceDeclaration(obj=Foo), ServiceDeclaration(obj=FooImplWithInjected, lifetime="singleton")],
+            abstracts=[AbstractDeclaration(obj=Foo)],
+            impls=[ServiceDeclaration(obj=FooImpl), ServiceDeclaration(obj=FooImplWithInjected, lifetime="singleton")],
         )
 
 

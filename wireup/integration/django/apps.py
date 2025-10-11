@@ -21,7 +21,7 @@ from wireup.errors import WireupError
 from wireup.ioc.container.async_container import AsyncContainer, ScopedAsyncContainer, async_container_force_sync_scope
 from wireup.ioc.container.sync_container import ScopedSyncContainer
 from wireup.ioc.types import ParameterWrapper
-from wireup.ioc.validation import get_valid_injection_annotated_parameters
+from wireup.ioc.util import get_valid_injection_annotated_parameters
 
 if TYPE_CHECKING:
     from wireup.integration.django import WireupSettings

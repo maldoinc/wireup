@@ -35,7 +35,6 @@ class BaseContainer:
         "_current_scope_objects",
         "_global_scope",
         "_override_mgr",
-        "_params",
         "_registry",
         "_scoped_compiler",
     )
@@ -43,7 +42,6 @@ class BaseContainer:
     def __init__(  # noqa: PLR0913
         self,
         registry: ServiceRegistry,
-        parameters: ParameterBag,
         override_manager: OverrideManager,
         global_scope: ContainerScope,
         factory_compiler: FactoryCompiler,
@@ -52,7 +50,6 @@ class BaseContainer:
         current_scope_exit_stack: Optional[List[Union[Generator[Any, Any, Any], AsyncGenerator[Any, Any]]]] = None,
     ) -> None:
         self._registry = registry
-        self._params = parameters
         self._override_mgr = override_manager
         self._global_scope = global_scope
         self._current_scope_objects = current_scope_objects
@@ -63,7 +60,7 @@ class BaseContainer:
     @property
     def params(self) -> ParameterBag:
         """Parameter bag associated with this container."""
-        return self._params
+        return self._registry.parameters
 
     @property
     def override(self) -> OverrideManager:
