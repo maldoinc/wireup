@@ -57,10 +57,9 @@ def _create_container(
         abstracts.extend(discovered_abstracts)
         impls.extend(discovered_services)
 
-    bag = ParameterBag(parameters)
     registry = ServiceRegistry(parameters=ParameterBag(parameters), abstracts=abstracts, impls=impls)
-    compiler = FactoryCompiler(registry, bag, is_scoped_container=False)
-    scoped_compiler = FactoryCompiler(registry, bag, is_scoped_container=True)
+    compiler = FactoryCompiler(registry, is_scoped_container=False)
+    scoped_compiler = FactoryCompiler(registry, is_scoped_container=True)
     override_manager = OverrideManager(registry.is_type_with_qualifier_known, compiler, scoped_compiler)
     container = klass(
         registry=registry,

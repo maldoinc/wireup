@@ -9,7 +9,6 @@ from wireup.ioc.types import ParameterWrapper, TemplatedString
 
 if TYPE_CHECKING:
     from wireup.ioc.container.base_container import BaseContainer
-    from wireup.ioc.parameter import ParameterBag
     from wireup.ioc.service_registry import ServiceFactory
 
 
@@ -29,11 +28,9 @@ _CONTAINER_SCOPE_ERROR_MSG = (
 class FactoryCompiler:
     """Compiles factory functions for dependency injection."""
 
-    def __init__(self, registry: ServiceRegistry, params: ParameterBag, *, is_scoped_container: bool) -> None:
+    def __init__(self, registry: ServiceRegistry, *, is_scoped_container: bool) -> None:
         self.registry = registry
-        self.params = params
         self.factories: dict[Hashable, CompiledFactory] = {}
-        self.named_factories: dict[str, CompiledFactory] = {}
         self.is_scoped_container = is_scoped_container
 
     @classmethod
@@ -107,7 +104,7 @@ class FactoryCompiler:
                     if isinstance(dep.annotation.param, TemplatedString)
                     else f'"{dep.annotation.param}"'
                 )
-                code += f"    _obj_dep_{name} = container.params.get({param_value})\n"
+                code += f"    _obj_dep_{name} = parameters.get({param_value})\n"
             else:
                 if self.registry.is_interface_known(dep.klass):
                     dep_class = self.registry.interface_resolve_impl(dep.klass, dep.qualifier_value)
@@ -166,6 +163,7 @@ class FactoryCompiler:
                 "TemplatedString": TemplatedString,
                 "WireupError": WireupError,
                 "_CONTAINER_SCOPE_ERROR_MSG": _CONTAINER_SCOPE_ERROR_MSG,
+                "parameters": self.registry.parameters,
             }
 
             compiled_code = compile(source, f"<generated_{obj_id}>", "exec")
