@@ -23,6 +23,7 @@ _CONTAINER_SCOPE_ERROR_MSG = (
     "Please enter a scope using container.enter_scope. "
     "If you are within a scope, use the scoped container instance to create dependencies."
 )
+_WIREUP_GENERATED_FACTORY_NAME = "_wireup_factory"
 
 
 class FactoryCompiler:
@@ -30,12 +31,12 @@ class FactoryCompiler:
 
     def __init__(self, registry: ServiceRegistry, *, is_scoped_container: bool) -> None:
         self.registry = registry
-        self.factories: dict[Hashable, CompiledFactory] = {}
+        self.factories: dict[int, CompiledFactory] = {}
         self.is_scoped_container = is_scoped_container
 
     @classmethod
-    def get_object_id(cls, impl: type, qualifier: Hashable) -> Hashable:
-        return impl if qualifier is None else (impl, qualifier)
+    def get_object_id(cls, impl: type, qualifier: Hashable) -> int:
+        return hash(impl if qualifier is None else (impl, qualifier))
 
     def compile(self) -> None:
         for impl, qualifiers in self.registry.impls.items():
@@ -47,7 +48,6 @@ class FactoryCompiler:
                     impl,
                     qualifier,
                 )
-                setattr(self, self.get_fn_name(impl, qualifier), self.factories[obj_id])
 
         for interface, impls in self.registry.interfaces.items():
             for qualifier, impl in impls.items():
@@ -58,13 +58,6 @@ class FactoryCompiler:
                     interface,
                     qualifier,
                 )
-                setattr(self, self.get_fn_name(interface, qualifier), self.factories[obj_id])
-
-    def get_fn_name(self, impl: type, qualifier: Hashable) -> str:
-        sanitized_impl = impl.__module__.replace(".", "_") + "_" + impl.__name__.replace(".", "_")
-        sanitized_qualifier = str(qualifier).replace(".", "_").replace("-", "_").replace(" ", "_")
-
-        return f"_wireup_get_{sanitized_impl}_qualifier_{sanitized_qualifier}"
 
     def _get_factory_code(self, factory: ServiceFactory, impl: type, qualifier: Hashable) -> tuple[str, bool]:  # noqa: C901, PLR0912, PLR0915
         is_interface = self.registry.is_interface_known(impl)
@@ -73,16 +66,14 @@ class FactoryCompiler:
         else:
             lifetime = self.registry.lifetime[impl, qualifier]
 
-        generated_function_name = self.get_fn_name(impl, qualifier)
-
         if lifetime != "singleton" and not self.is_scoped_container:
-            code = f"def {generated_function_name}(container):\n"
+            code = f"def {_WIREUP_GENERATED_FACTORY_NAME}(container):\n"
             code += "    raise WireupError(_CONTAINER_SCOPE_ERROR_MSG)\n"
 
             return code, False
 
         maybe_async = "async " if factory.is_async else ""
-        code = f"{maybe_async}def {generated_function_name}(container):\n"
+        code = f"{maybe_async}def {_WIREUP_GENERATED_FACTORY_NAME}(container):\n"
 
         if lifetime == "singleton":
             code += "    global_object_storage = container._global_scope.objects\n"
@@ -109,7 +100,8 @@ class FactoryCompiler:
                     dep_class = dep.klass
 
                 maybe_await = "await " if self.registry.factories[dep_class, dep.qualifier_value].is_async else ""
-                code += f"    _obj_dep_{name} = {maybe_await}self.{self.get_fn_name(dep_class, dep.qualifier_value)}.factory(container)\n"  # noqa: E501
+                dep_hash = FactoryCompiler.get_object_id(dep_class, dep.qualifier_value)
+                code += f"    _obj_dep_{name} = {maybe_await}self.factories[{dep_hash}].factory(container)\n"
             kwargs += f"{name} = _obj_dep_{name}, "
 
         maybe_await = "await " if factory.factory_type == FactoryType.COROUTINE_FN else ""
@@ -150,8 +142,6 @@ class FactoryCompiler:
 
         source, is_async = self._get_factory_code(factory, impl, qualifier)
 
-        print(source)
-
         try:
             # Create a namespace with necessary references
             namespace: dict[str, Any] = {
@@ -165,10 +155,10 @@ class FactoryCompiler:
                 "parameters": self.registry.parameters,
             }
 
-            compiled_code = compile(source, f"<generated_{obj_id}>", "exec")
+            compiled_code = compile(source, f"<{_WIREUP_GENERATED_FACTORY_NAME}_{obj_id}>", "exec")
             exec(compiled_code, namespace)  # noqa: S102
 
-            return CompiledFactory(factory=namespace[self.get_fn_name(impl, qualifier)], is_async=is_async)
+            return CompiledFactory(factory=namespace[_WIREUP_GENERATED_FACTORY_NAME], is_async=is_async)
 
         except Exception as e:
             msg = f"Failed to compile generated factory {obj_id}: {e}"

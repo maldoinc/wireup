@@ -74,7 +74,7 @@ class BaseContainer:
         :param klass: Class of the dependency already registered in the container.
         :return: An instance of the requested object. Always returns an existing instance when one is available.
         """
-        obj_id = klass if qualifier is None else (klass, qualifier)
+        obj_id = hash(klass if qualifier is None else (klass, qualifier))
 
         if compiled_factory := self._compiler.factories.get(obj_id):
             if compiled_factory.is_async:

@@ -27,22 +27,22 @@ class OverrideManager:
         self._original_factory_functions: dict[tuple[type, Qualifier], tuple[Any, Any]] = {}
 
     def _compiler_override_obj_id(
-        self, compiler: FactoryCompiler, target: type, qualifier: Qualifier, new: AnyCallable
+        self,
+        compiler: FactoryCompiler,
+        target: type,
+        qualifier: Qualifier,
+        new: Callable[[Any], Any],
     ) -> None:
-        compiler_obj_id = compiler.get_object_id(target, qualifier)
-
-        compiler.factories[compiler_obj_id].factory = new
-        method_name = compiler.get_fn_name(target, qualifier)
-        setattr(compiler, method_name, compiler.factories[compiler_obj_id])
+        compiler.factories[compiler.get_object_id(target, qualifier)].factory = new
 
     def _compiler_restore_obj_id(
-        self, compiler: FactoryCompiler, target: type, qualifier: Qualifier, original: AnyCallable
+        self,
+        compiler: FactoryCompiler,
+        target: type,
+        qualifier: Qualifier,
+        original: AnyCallable,
     ) -> None:
-        compiler_obj_id = compiler.get_object_id(target, qualifier)
-
-        compiler.factories[compiler_obj_id].factory = original
-        method_name = compiler.get_fn_name(target, qualifier)
-        setattr(compiler, method_name, compiler.factories[compiler_obj_id])
+        compiler.factories[compiler.get_object_id(target, qualifier)].factory = original
 
     def set(self, target: type, new: Any, qualifier: Qualifier | None = None) -> None:
         """Override the `target` service with `new`.
