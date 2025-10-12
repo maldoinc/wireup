@@ -62,7 +62,9 @@ class FactoryCompiler:
 
     def get_fn_name(self, impl: type, qualifier: Hashable) -> str:
         sanitized_impl = impl.__module__.replace(".", "_") + "_" + impl.__name__.replace(".", "_")
-        return f"get_{sanitized_impl}_{qualifier}"
+        sanitized_qualifier = str(qualifier).replace(".", "_").replace("-", "_").replace(" ", "_")
+
+        return f"_wireup_get_{sanitized_impl}_qualifier_{sanitized_qualifier}"
 
     def _get_factory_code(self, factory: ServiceFactory, impl: type, qualifier: Hashable) -> tuple[str, bool]:  # noqa: C901, PLR0912, PLR0915
         is_interface = self.registry.is_interface_known(impl)
@@ -147,6 +149,8 @@ class FactoryCompiler:
         )
 
         source, is_async = self._get_factory_code(factory, impl, qualifier)
+
+        print(source)
 
         try:
             # Create a namespace with necessary references
