@@ -35,7 +35,7 @@ class BareAsyncContainer(BaseContainer):
         raise UnknownServiceRequestedError(klass, qualifier)
 
     async def close(self) -> None:
-        await async_clean_exit_stack(self._global_scope.exit_stack)
+        await async_clean_exit_stack(self._global_scope_exit_stack)
 
 
 class ScopedAsyncContainer(BareAsyncContainer):
@@ -57,7 +57,8 @@ class AsyncContainer(BareAsyncContainer):
         return ScopedAsyncContainer(
             registry=self._registry,
             override_manager=self._override_mgr,
-            global_scope=self._global_scope,
+            global_scope_objects=self._global_scope_objects,
+            global_scope_exit_stack=self._global_scope_exit_stack,
             current_scope_objects={},
             current_scope_exit_stack=[],
             factory_compiler=self._scoped_compiler,
@@ -74,7 +75,8 @@ def async_container_force_sync_scope(container: AsyncContainer) -> ScopedSyncCon
     return ScopedSyncContainer(
         registry=container._registry,
         override_manager=container._override_mgr,
-        global_scope=container._global_scope,
+        global_scope_objects=container._global_scope_objects,
+        global_scope_exit_stack=container._global_scope_exit_stack,
         current_scope_objects={},
         current_scope_exit_stack=[],
         factory_compiler=container._scoped_compiler,

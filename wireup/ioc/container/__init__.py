@@ -12,7 +12,6 @@ from wireup.ioc.container.sync_container import SyncContainer
 from wireup.ioc.override_manager import OverrideManager
 from wireup.ioc.parameter import ParameterBag
 from wireup.ioc.service_registry import ServiceRegistry
-from wireup.ioc.types import ContainerScope
 
 if TYPE_CHECKING:
     from types import ModuleType
@@ -65,7 +64,8 @@ def _create_container(
         registry=registry,
         factory_compiler=compiler,
         scoped_compiler=scoped_compiler,
-        global_scope=ContainerScope(objects={}, exit_stack=[]),
+        global_scope_objects={},
+        global_scope_exit_stack=[],
         override_manager=override_manager,
     )
 

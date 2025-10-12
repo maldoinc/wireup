@@ -15,7 +15,7 @@ class BareSyncContainer(BaseContainer):
     get = BaseContainer._synchronous_get
 
     def close(self) -> None:
-        clean_exit_stack(self._global_scope.exit_stack)
+        clean_exit_stack(self._global_scope_exit_stack)
 
 
 class ScopedSyncContainer(BareSyncContainer):
@@ -37,7 +37,8 @@ class SyncContainer(BareSyncContainer):
         return ScopedSyncContainer(
             registry=self._registry,
             override_manager=self._override_mgr,
-            global_scope=self._global_scope,
+            global_scope_objects=self._global_scope_objects,
+            global_scope_exit_stack=self._global_scope_exit_stack,
             current_scope_objects={},
             current_scope_exit_stack=[],
             factory_compiler=self._scoped_compiler,

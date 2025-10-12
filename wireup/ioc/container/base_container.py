@@ -20,7 +20,6 @@ from wireup.ioc.parameter import ParameterBag
 from wireup.ioc.service_registry import ServiceRegistry
 from wireup.ioc.types import (
     ContainerObjectIdentifier,
-    ContainerScope,
     Qualifier,
 )
 
@@ -33,7 +32,8 @@ class BaseContainer:
         "_compiler",
         "_current_scope_exit_stack",
         "_current_scope_objects",
-        "_global_scope",
+        "_global_scope_exit_stack",
+        "_global_scope_objects",
         "_override_mgr",
         "_registry",
         "_scoped_compiler",
@@ -43,15 +43,17 @@ class BaseContainer:
         self,
         registry: ServiceRegistry,
         override_manager: OverrideManager,
-        global_scope: ContainerScope,
         factory_compiler: FactoryCompiler,
         scoped_compiler: FactoryCompiler,
+        global_scope_objects: Dict[ContainerObjectIdentifier, Any],
+        global_scope_exit_stack: List[Union[Generator[Any, Any, Any], AsyncGenerator[Any, Any]]],
         current_scope_objects: Optional[Dict[ContainerObjectIdentifier, Any]] = None,
         current_scope_exit_stack: Optional[List[Union[Generator[Any, Any, Any], AsyncGenerator[Any, Any]]]] = None,
     ) -> None:
         self._registry = registry
         self._override_mgr = override_manager
-        self._global_scope = global_scope
+        self._global_scope_objects = global_scope_objects
+        self._global_scope_exit_stack = global_scope_exit_stack
         self._current_scope_objects = current_scope_objects
         self._current_scope_exit_stack = current_scope_exit_stack
         self._compiler = factory_compiler

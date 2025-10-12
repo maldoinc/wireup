@@ -76,7 +76,7 @@ class FactoryCompiler:
         code = f"{maybe_async}def {_WIREUP_GENERATED_FACTORY_NAME}(container):\n"
 
         if lifetime == "singleton":
-            code += "    global_object_storage = container._global_scope.objects\n"
+            code += "    global_object_storage = container._global_scope_objects\n"
             code += "    if res := global_object_storage.get(OBJ_ID):\n"
             code += "        return res\n"
         else:
@@ -110,7 +110,7 @@ class FactoryCompiler:
 
         if factory.factory_type in GENERATOR_FACTORY_TYPES:
             if lifetime == "singleton":
-                code += "    container._global_scope.exit_stack.append(instance)\n"
+                code += "    container._global_scope_exit_stack.append(instance)\n"
             else:
                 code += "    container._current_scope_exit_stack.append(instance)\n"
 
