@@ -101,7 +101,7 @@ class FactoryCompiler:
 
                 maybe_await = "await " if self.registry.factories[dep_class, dep.qualifier_value].is_async else ""
                 dep_hash = FactoryCompiler.get_object_id(dep_class, dep.qualifier_value)
-                code += f"    _obj_dep_{name} = {maybe_await}self.factories[{dep_hash}].factory(container)\n"
+                code += f"    _obj_dep_{name} = {maybe_await}factories[{dep_hash}].factory(container)\n"
             kwargs += f"{name} = _obj_dep_{name}, "
 
         maybe_await = "await " if factory.factory_type == FactoryType.COROUTINE_FN else ""
@@ -145,7 +145,7 @@ class FactoryCompiler:
         try:
             # Create a namespace with necessary references
             namespace: dict[str, Any] = {
-                "self": self,
+                "factories": self.factories,
                 "ORIGINAL_OBJ_ID": obj_id,
                 "OBJ_ID": resolved_obj_id,
                 "ORIGINAL_FACTORY": self.registry.ctors[obj_id][0],
