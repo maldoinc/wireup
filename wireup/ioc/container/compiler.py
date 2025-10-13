@@ -59,7 +59,7 @@ class FactoryCompiler:
                     qualifier,
                 )
 
-    def _get_factory_code(self, factory: ServiceFactory, impl: type, qualifier: Hashable) -> tuple[str, bool]:  # noqa: C901, PLR0912, PLR0915
+    def _get_factory_code(self, factory: ServiceFactory, impl: type, qualifier: Hashable) -> tuple[str, bool]:  # noqa: C901, PLR0912
         is_interface = self.registry.is_interface_known(impl)
         if is_interface:
             lifetime = self.registry.lifetime[self.registry.interface_resolve_impl(impl, qualifier), qualifier]
@@ -74,14 +74,15 @@ class FactoryCompiler:
 
         maybe_async = "async " if factory.is_async else ""
         code = f"{maybe_async}def {_WIREUP_GENERATED_FACTORY_NAME}(container):\n"
+        cache_created_instance = lifetime != "transient"
 
-        if lifetime == "singleton":
-            code += "    global_object_storage = container._global_scope_objects\n"
-            code += "    if res := global_object_storage.get(OBJ_ID):\n"
-            code += "        return res\n"
-        else:
-            code += "    scope_objects = container._current_scope_objects\n"
-            code += "    if res := scope_objects.get(ORIGINAL_OBJ_ID):\n"
+        if cache_created_instance:
+            if lifetime == "singleton":
+                code += "    storage = container._global_scope_objects\n"
+            else:
+                code += "    storage = container._current_scope_objects\n"
+
+            code += "    if res := storage.get(OBJ_ID):\n"
             code += "        return res\n"
 
         kwargs = ""
@@ -102,7 +103,7 @@ class FactoryCompiler:
                 maybe_await = "await " if self.registry.factories[dep_class, dep.qualifier_value].is_async else ""
                 dep_hash = FactoryCompiler.get_object_id(dep_class, dep.qualifier_value)
                 code += f"    _obj_dep_{name} = {maybe_await}factories[{dep_hash}].factory(container)\n"
-            kwargs += f"{name} = _obj_dep_{name}, "
+            kwargs += f"{name}=_obj_dep_{name}, "
 
         maybe_await = "await " if factory.factory_type == FactoryType.COROUTINE_FN else ""
 
@@ -119,14 +120,10 @@ class FactoryCompiler:
             else:
                 code += "    instance = await instance.__anext__()\n"
 
-        if lifetime == "singleton":
-            code += "    global_object_storage[OBJ_ID] = instance\n"
+        if cache_created_instance:
+            code += "    storage[OBJ_ID] = instance\n"
             if is_interface:
-                code += "    global_object_storage[ORIGINAL_OBJ_ID] = instance\n"
-        elif lifetime == "scoped":
-            code += "    scope_objects[OBJ_ID] = instance\n"
-            if is_interface:
-                code += "    scope_objects[ORIGINAL_OBJ_ID] = instance\n"
+                code += "    storage[ORIGINAL_OBJ_ID] = instance\n"
 
         code += "    return instance\n"
 
