@@ -35,6 +35,31 @@ def _create_container(
     :param parameters: Dict containing parameters you want to expose to the container. Services or factories can
     request parameters via the `Inject(param="name")` syntax.
     """
+    abstracts, impls = _merge_definitions(service_modules, services)
+
+    registry = ServiceRegistry(parameters=ParameterBag(parameters), abstracts=abstracts, impls=impls)
+    compiler = FactoryCompiler(registry, is_scoped_container=False)
+    scoped_compiler = FactoryCompiler(registry, is_scoped_container=True)
+    override_manager = OverrideManager(registry.is_type_with_qualifier_known, compiler, scoped_compiler)
+    container = klass(
+        registry=registry,
+        factory_compiler=compiler,
+        scoped_compiler=scoped_compiler,
+        global_scope_objects={},
+        global_scope_exit_stack=[],
+        override_manager=override_manager,
+    )
+
+    compiler.compile()
+    scoped_compiler.compile()
+
+    return container
+
+
+def _merge_definitions(
+    service_modules: Iterable[ModuleType] | None = None,
+    services: Iterable[Any] | None = None,
+) -> tuple[list[AbstractDeclaration], list[ServiceDeclaration]]:
     abstracts: list[AbstractDeclaration] = []
     impls: list[ServiceDeclaration] = []
 
@@ -56,23 +81,7 @@ def _create_container(
         abstracts.extend(discovered_abstracts)
         impls.extend(discovered_services)
 
-    registry = ServiceRegistry(parameters=ParameterBag(parameters), abstracts=abstracts, impls=impls)
-    compiler = FactoryCompiler(registry, is_scoped_container=False)
-    scoped_compiler = FactoryCompiler(registry, is_scoped_container=True)
-    override_manager = OverrideManager(registry.is_type_with_qualifier_known, compiler, scoped_compiler)
-    container = klass(
-        registry=registry,
-        factory_compiler=compiler,
-        scoped_compiler=scoped_compiler,
-        global_scope_objects={},
-        global_scope_exit_stack=[],
-        override_manager=override_manager,
-    )
-
-    compiler.compile()
-    scoped_compiler.compile()
-
-    return container
+    return abstracts, impls
 
 
 def create_sync_container(
