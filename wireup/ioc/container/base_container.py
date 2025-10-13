@@ -32,6 +32,7 @@ class BaseContainer:
         "_compiler",
         "_current_scope_exit_stack",
         "_current_scope_objects",
+        "_factories",
         "_global_scope_exit_stack",
         "_global_scope_objects",
         "_override_mgr",
@@ -58,6 +59,7 @@ class BaseContainer:
         self._current_scope_exit_stack = current_scope_exit_stack
         self._compiler = factory_compiler
         self._scoped_compiler = scoped_compiler
+        self._factories = self._compiler.factories
 
     @property
     def params(self) -> ParameterBag:
@@ -78,7 +80,7 @@ class BaseContainer:
         """
         obj_id = hash(klass if qualifier is None else (klass, qualifier))
 
-        if compiled_factory := self._compiler.factories.get(obj_id):
+        if compiled_factory := self._factories.get(obj_id):
             if compiled_factory.is_async:
                 msg = (
                     f"{klass} is an async dependency and it cannot be created in a synchronous context. "

@@ -27,7 +27,7 @@ class BareAsyncContainer(BaseContainer):
         """
         obj_id = hash(klass if qualifier is None else (klass, qualifier))
 
-        if compiled_factory := self._compiler.factories.get(obj_id):
+        if compiled_factory := self._factories.get(obj_id):
             res = compiled_factory.factory(self)
 
             return await res if compiled_factory.is_async else res  # type:ignore[no-any-return]
