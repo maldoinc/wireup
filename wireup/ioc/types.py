@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from collections.abc import Hashable
 from dataclasses import dataclass
-from typing import Any, AsyncGenerator, Callable, Generator, NamedTuple, Optional, Tuple, Union
+from typing import Any, Callable, Optional, Tuple, Union
 
 from typing_extensions import Literal
 
@@ -109,8 +109,3 @@ class ServiceOverride:
     target: type[Any]
     new: Any
     qualifier: Qualifier | None = None
-
-
-class ContainerScope(NamedTuple):
-    objects: dict[ContainerObjectIdentifier, Any]
-    exit_stack: list[Generator[Any, Any, Any] | AsyncGenerator[Any, Any]]

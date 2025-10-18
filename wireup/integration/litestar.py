@@ -1,6 +1,3 @@
-import typing
-from typing import Any, Type
-
 from litestar import Litestar, Request, WebSocket
 
 from wireup.integration._asgi_common import (
@@ -21,22 +18,6 @@ __all__ = [
     "request_factory",
     "websocket_factory",
 ]
-
-
-def litestar_type_normalizer(type_: Type[Any]) -> Type[Any]:
-    """Normalize litestar's generic Request and WebSocket types to their origin types.
-
-    This allows injecting Request with generic types and have it resolve to the same instance as the raw type.
-    """
-    origin_type = typing.get_origin(type_) or type_
-    if (
-        hasattr(origin_type, "__module__")
-        and hasattr(origin_type, "__name__")
-        and origin_type.__module__ in ("litestar.connection.request", "litestar.connection.websocket")
-        and origin_type.__name__ in ("Request", "WebSocket")
-    ):
-        return origin_type
-    return type_
 
 
 request_factory = make_request_factory(Request)

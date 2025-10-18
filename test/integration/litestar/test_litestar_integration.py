@@ -1,10 +1,11 @@
-from typing import Any, Iterator
+# type: ignore[reportMissingTypeArgument]
+
+from typing import Iterator
 
 import pytest
 import wireup
 import wireup.integration.litestar
 from litestar import Controller, Litestar, Request, WebSocket, get, websocket
-from litestar.datastructures import State
 from litestar.testing import TestClient
 from wireup._annotations import Injected, service
 from wireup.integration.litestar import get_app_container, get_request_container, inject
@@ -15,7 +16,7 @@ from test.shared.shared_services.greeter import GreeterService
 
 @service(lifetime="scoped")
 class RequestContext:
-    def __init__(self, request: Request[Any, Any, Any]) -> None:
+    def __init__(self, request: Request) -> None:
         self.request = request
 
     @property
@@ -25,7 +26,7 @@ class RequestContext:
 
 @service(lifetime="scoped")
 class WebSocketContext:
-    def __init__(self, socket: WebSocket[Any, Any, Any]) -> None:
+    def __init__(self, socket: WebSocket) -> None:
         self.socket = socket
 
 
@@ -38,7 +39,7 @@ async def index(greeter: Injected[GreeterService], ctx: Injected[RequestContext]
 
 @websocket(path="/ws")
 @inject
-async def websocket_handler(greeter: Injected[GreeterService], socket: WebSocket[Any, Any, State]) -> None:
+async def websocket_handler(greeter: Injected[GreeterService], socket: WebSocket) -> None:
     await socket.accept()
     recv = await socket.receive_json()
     await socket.send_json({"message": greeter.greet(recv["name"])})
@@ -48,7 +49,7 @@ async def websocket_handler(greeter: Injected[GreeterService], socket: WebSocket
 @websocket(path="/ws/wireup-websocket")
 @inject
 async def websocket_handler_wireup(
-    socket: WebSocket[Any, Any, State],  # noqa: ARG001
+    socket: WebSocket,  # noqa: ARG001
     greeter: Injected[GreeterService],
     ctx: Injected[WebSocketContext],
 ) -> None:
@@ -73,7 +74,6 @@ def app() -> Litestar:
     container = wireup.create_async_container(
         services=[RequestContext, WebSocketContext],
         service_modules=[shared_services, wireup.integration.litestar],
-        type_normalizer=wireup.integration.litestar.litestar_type_normalizer,
     )
     wireup.integration.litestar.setup(container, app)
     return app

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Callable, Iterable, TypeVar
+from typing import TYPE_CHECKING, Any, Iterable, TypeVar
 
 from wireup._annotations import AbstractDeclaration, ServiceDeclaration
 from wireup._discovery import discover_wireup_registrations
@@ -8,11 +8,10 @@ from wireup.errors import WireupError
 from wireup.ioc.container.async_container import AsyncContainer
 from wireup.ioc.container.base_container import BaseContainer
 from wireup.ioc.container.sync_container import SyncContainer
+from wireup.ioc.factory_compiler import FactoryCompiler
 from wireup.ioc.override_manager import OverrideManager
 from wireup.ioc.parameter import ParameterBag
 from wireup.ioc.service_registry import ServiceRegistry
-from wireup.ioc.types import ContainerScope
-from wireup.ioc.validation import assert_dependencies_valid
 
 if TYPE_CHECKING:
     from types import ModuleType
@@ -26,7 +25,6 @@ def _create_container(
     service_modules: Iterable[ModuleType] | None = None,
     services: Iterable[Any] | None = None,
     parameters: dict[str, Any] | None = None,
-    type_normalizer: Callable[[type[Any]], type[Any]] | None = None,
 ) -> _ContainerT:
     """Create a Wireup container.
 
@@ -37,6 +35,31 @@ def _create_container(
     :param parameters: Dict containing parameters you want to expose to the container. Services or factories can
     request parameters via the `Inject(param="name")` syntax.
     """
+    abstracts, impls = _merge_definitions(service_modules, services)
+
+    registry = ServiceRegistry(parameters=ParameterBag(parameters), abstracts=abstracts, impls=impls)
+    compiler = FactoryCompiler(registry, is_scoped_container=False)
+    scoped_compiler = FactoryCompiler(registry, is_scoped_container=True)
+    override_manager = OverrideManager(registry.is_type_with_qualifier_known, compiler, scoped_compiler)
+    container = klass(
+        registry=registry,
+        factory_compiler=compiler,
+        scoped_compiler=scoped_compiler,
+        global_scope_objects={},
+        global_scope_exit_stack=[],
+        override_manager=override_manager,
+    )
+
+    compiler.compile()
+    scoped_compiler.compile()
+
+    return container
+
+
+def _merge_definitions(
+    service_modules: Iterable[ModuleType] | None = None,
+    services: Iterable[Any] | None = None,
+) -> tuple[list[AbstractDeclaration], list[ServiceDeclaration]]:
     abstracts: list[AbstractDeclaration] = []
     impls: list[ServiceDeclaration] = []
 
@@ -58,24 +81,13 @@ def _create_container(
         abstracts.extend(discovered_abstracts)
         impls.extend(discovered_services)
 
-    registry = ServiceRegistry(abstracts=abstracts, impls=impls, type_normalizer=type_normalizer)
-    container = klass(
-        registry=registry,
-        parameters=ParameterBag(parameters),
-        global_scope=ContainerScope(objects={}, exit_stack=[]),
-        override_manager=OverrideManager({}, registry.is_type_with_qualifier_known),
-    )
-
-    assert_dependencies_valid(container)
-
-    return container
+    return abstracts, impls
 
 
 def create_sync_container(
     service_modules: list[ModuleType] | None = None,
     services: list[Any] | None = None,
     parameters: dict[str, Any] | None = None,
-    type_normalizer: Callable[[type[Any]], type[Any]] | None = None,
 ) -> SyncContainer:
     """Create a Wireup container.
 
@@ -93,7 +105,6 @@ def create_sync_container(
         service_modules=service_modules,
         services=services,
         parameters=parameters,
-        type_normalizer=type_normalizer,
     )
 
 
@@ -101,7 +112,6 @@ def create_async_container(
     service_modules: list[ModuleType] | None = None,
     services: list[Any] | None = None,
     parameters: dict[str, Any] | None = None,
-    type_normalizer: Callable[[type[Any]], type[Any]] | None = None,
 ) -> AsyncContainer:
     """Create a Wireup container.
 
@@ -119,5 +129,4 @@ def create_async_container(
         service_modules=service_modules,
         services=services,
         parameters=parameters,
-        type_normalizer=type_normalizer,
     )

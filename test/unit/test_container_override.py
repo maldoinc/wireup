@@ -1,13 +1,11 @@
 import unittest
-from typing import Any
 from unittest.mock import MagicMock
 
 import pytest
 import wireup
 from wireup._annotations import Injected
 from wireup.errors import UnknownOverrideRequestedError
-from wireup.ioc.override_manager import OverrideManager
-from wireup.ioc.types import Qualifier, ServiceOverride
+from wireup.ioc.types import ServiceOverride
 
 from test.conftest import Container
 from test.unit.services.no_annotations.random.random_service import RandomService
@@ -45,6 +43,9 @@ async def test_container_overrides_deps_service_locator_interface():
         svc = await run(container.get(Foo))
         assert svc.get_foo() == "mock"
 
+    res = await run(container.get(Foo))
+    assert res.get_foo() == "foo"
+
 
 async def test_container_override_many_with_qualifier(container: Container):
     rand1_mock = MagicMock()
@@ -62,17 +63,6 @@ async def test_container_override_many_with_qualifier(container: Container):
 
     with container.override.services(overrides=overrides):
         target()
-
-
-async def test_clear_services_removes_all():
-    overrides: dict[tuple[type, Qualifier], Any] = {}
-    mock1 = MagicMock()
-    override_mgr = OverrideManager(overrides, lambda _klass, _qualifier: True)
-    override_mgr.set(RandomService, new=mock1)
-    assert overrides == {(RandomService, None): mock1}
-
-    override_mgr.clear()
-    assert overrides == {}
 
 
 async def test_raises_on_unknown_override(container: Container):

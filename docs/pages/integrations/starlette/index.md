@@ -46,11 +46,13 @@ wireup.integration.starlette.setup(container, app)
 To inject dependencies, apply the `@inject` decorator from the `wireup.integration.starlette` module to endpoints
 and annotate parameters accordingly. Refer to [Annotations](../../annotations.md) for more details.
 
-```python title="Starlette Endpoint" hl_lines="4 6 9 15 18"
+```python title="Starlette Endpoint" hl_lines="5 6 8 11 17 20"
 from starlette.endpoints import HTTPEndpoint
 from starlette.requests import Request
 from starlette.responses import JSONResponse
-from wireup.integration.starlette import Injected, inject
+
+from wireup import Injected
+from wireup.integration.starlette import inject
 
 @inject
 async def get_random(
