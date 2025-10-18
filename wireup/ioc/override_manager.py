@@ -4,7 +4,7 @@ from contextlib import contextmanager
 from typing import TYPE_CHECKING, Any, Iterator
 
 from wireup.errors import UnknownOverrideRequestedError
-from wireup.ioc.container.compiler import FactoryCompiler
+from wireup.ioc.factory_compiler import FactoryCompiler
 
 if TYPE_CHECKING:
     from collections.abc import Callable

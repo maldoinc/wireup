@@ -14,7 +14,7 @@ from wireup.errors import (
     UnknownServiceRequestedError,
     WireupError,
 )
-from wireup.ioc.container.compiler import FactoryCompiler
+from wireup.ioc.factory_compiler import FactoryCompiler
 from wireup.ioc.override_manager import OverrideManager
 from wireup.ioc.parameter import ParameterBag
 from wireup.ioc.service_registry import ServiceRegistry

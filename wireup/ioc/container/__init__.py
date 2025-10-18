@@ -7,8 +7,8 @@ from wireup._discovery import discover_wireup_registrations
 from wireup.errors import WireupError
 from wireup.ioc.container.async_container import AsyncContainer
 from wireup.ioc.container.base_container import BaseContainer
-from wireup.ioc.container.compiler import FactoryCompiler
 from wireup.ioc.container.sync_container import SyncContainer
+from wireup.ioc.factory_compiler import FactoryCompiler
 from wireup.ioc.override_manager import OverrideManager
 from wireup.ioc.parameter import ParameterBag
 from wireup.ioc.service_registry import ServiceRegistry

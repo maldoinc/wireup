@@ -27,8 +27,6 @@ _WIREUP_GENERATED_FACTORY_NAME = "_wireup_factory"
 
 
 class FactoryCompiler:
-    """Compiles factory functions for dependency injection."""
-
     def __init__(self, registry: ServiceRegistry, *, is_scoped_container: bool) -> None:
         self._registry = registry
         self._is_scoped_container = is_scoped_container
