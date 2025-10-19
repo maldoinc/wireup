@@ -36,24 +36,29 @@ def _create_container(
     request parameters via the `Inject(param="name")` syntax.
     """
     abstracts, impls = _merge_definitions(service_modules, services)
-
     registry = ServiceRegistry(parameters=ParameterBag(parameters), abstracts=abstracts, impls=impls)
-    compiler = FactoryCompiler(registry, is_scoped_container=False)
+
+    # The container uses a dual-compiler optimization strategy:
+    # 1. The singleton compiler generates optimized factories for singleton dependencies
+    #    and throws errors if scoped dependencies are accessed outside a scope.
+    # 2. The scoped compiler handles dependencies that require request/scope isolation.
+    #
+    # When entering/exiting scopes, the container switches between these compilers.
+    # This eliminates the need to check lifetime rules at runtime.
+    singleton_compiler = FactoryCompiler(registry, is_scoped_container=False)
     scoped_compiler = FactoryCompiler(registry, is_scoped_container=True)
-    override_manager = OverrideManager(registry.is_type_with_qualifier_known, compiler, scoped_compiler)
-    container = klass(
+    singleton_compiler.compile()
+    scoped_compiler.compile()
+
+    override_manager = OverrideManager(registry.is_type_with_qualifier_known, singleton_compiler, scoped_compiler)
+    return klass(
         registry=registry,
-        factory_compiler=compiler,
+        factory_compiler=singleton_compiler,
         scoped_compiler=scoped_compiler,
         global_scope_objects={},
         global_scope_exit_stack=[],
         override_manager=override_manager,
     )
-
-    compiler.compile()
-    scoped_compiler.compile()
-
-    return container
 
 
 def _merge_definitions(
