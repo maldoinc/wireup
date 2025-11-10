@@ -88,23 +88,41 @@ T = TypeVar("T")
 def ensure_is_type(value: type[T] | str, globalns: dict[str, Any] | None = None) -> type[T] | None:
     """Ensure the given value represents a type.
 
-    If it is a string it will be evaluated using eval_type_backport.
+    If it is a string it will be evaluated using eval_type_backport on Python < 3.14,
+    or using typing.get_type_hints for Python 3.14+.
     """
     if isinstance(value, str):
-        try:
-            import eval_type_backport
+        import sys
 
-            return eval_type_backport.eval_type_backport(  # type:ignore[no-any-return]
-                eval_type_backport.ForwardRef(value), globalns=globalns, try_default=False
-            )
-        except NameError:
-            return None
-        except ImportError as e:
-            msg = (
-                "Using __future__ annotations in Wireup requires the eval_type_backport package to be installed. "
-                "See: https://maldoinc.github.io/wireup/latest/future_annotations/"
-            )
-            raise WireupError(msg) from e
+        if sys.version_info >= (3, 14):
+            try:
+                # Use typing.get_type_hints as a fallback for Python 3.14+
+                from typing import ForwardRef, get_type_hints
+
+                fr = ForwardRef(value)
+                # Create a dummy class to host our forward reference
+                namespace = {}
+                class_def = f"class _Temp:\n    x: {value}"
+                exec(class_def, globalns or {}, namespace)
+                # Extract the resolved type from get_type_hints
+                return get_type_hints(namespace["_Temp"], globalns=globalns)["x"]
+            except (NameError, SyntaxError):
+                return None
+        else:
+            try:
+                import eval_type_backport
+
+                return eval_type_backport.eval_type_backport(  # type:ignore[no-any-return]
+                    eval_type_backport.ForwardRef(value), globalns=globalns, try_default=False
+                )
+            except NameError:
+                return None
+            except ImportError as e:
+                msg = (
+                    "Using __future__ annotations in Wireup requires the eval_type_backport package to be installed. "
+                    "See: https://maldoinc.github.io/wireup/latest/future_annotations/"
+                )
+                raise WireupError(msg) from e
 
     return value
 
