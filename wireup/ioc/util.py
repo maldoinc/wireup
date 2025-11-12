@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import importlib
+import sys
 import types
 import typing
 from inspect import Parameter
@@ -85,44 +86,68 @@ def get_globals(obj: type[Any] | Callable[..., Any]) -> dict[str, Any]:
 T = TypeVar("T")
 
 
+def _eval_type_native(
+    value: typing.ForwardRef,
+    globalns: dict[str, Any] | None = None,
+    localns: dict[str, Any] | None = None,
+) -> Any:
+    """Evaluate a ForwardRef using the native typing._eval_type function.
+
+    This function handles version-specific differences in the _eval_type signature.
+    """
+    if sys.version_info >= (3, 12):
+        # Python 3.14 signature: _eval_type(t, globalns, localns, type_params, *, recursive_guard=frozenset(), ...)
+        # Python 3.12-3.13 signature: _eval_type(t, globalns, localns, type_params, *, recursive_guard=frozenset())
+        return typing._eval_type(value, globalns, localns, None)  # type: ignore[attr-defined]
+
+    # Python 3.9-3.11 signature: _eval_type(t, globalns, localns, recursive_guard=frozenset())
+    # Python 3.8 signature: _eval_type(t, globalns, localns)
+    return typing._eval_type(value, globalns, localns)
+
+
+def _is_backport_fixable_error(e: TypeError) -> bool:
+    """Check if the TypeError can be fixed by eval_type_backport."""
+    msg = str(e)
+    # This error occurs in Python < 3.10 when using the new union syntax (X | Y)
+    return sys.version_info < (3, 10) and msg.startswith("unsupported operand type(s) for |: ")
+
+
 def ensure_is_type(value: type[T] | str, globalns: dict[str, Any] | None = None) -> type[T] | None:
     """Ensure the given value represents a type.
 
-    If it is a string it will be evaluated using eval_type_backport on Python < 3.14,
-    or using typing.get_type_hints for Python 3.14+.
+    If it is a string it will be evaluated, first trying the native typing._eval_type,
+    and falling back to eval_type_backport if needed.
+
+    This approach ensures compatibility with Python 3.14+ where eval_type_backport
+    cannot be imported due to ForwardRef subclassing restrictions.
     """
     if isinstance(value, str):
-        import sys
+        # Convert string to ForwardRef
+        forward_ref = typing.ForwardRef(value)
 
-        if sys.version_info >= (3, 14):
-            try:
-                # Use typing.get_type_hints as a fallback for Python 3.14+
-                from typing import ForwardRef, get_type_hints
+        try:
+            # First, try using the native typing._eval_type
+            return _eval_type_native(forward_ref, globalns=globalns)  # type:ignore[no-any-return]
+        except TypeError as e:
+            # Check if this is an error that eval_type_backport can fix
+            if not (isinstance(forward_ref, typing.ForwardRef) and _is_backport_fixable_error(e)):
+                # If it's not fixable by the backport, re-raise
+                raise
 
-                fr = ForwardRef(value)
-                # Create a dummy class to host our forward reference
-                namespace = {}
-                class_def = f"class _Temp:\n    x: {value}"
-                exec(class_def, globalns or {}, namespace)
-                # Extract the resolved type from get_type_hints
-                return get_type_hints(namespace["_Temp"], globalns=globalns)["x"]
-            except (NameError, SyntaxError):
-                return None
-        else:
+            # Try to import and use eval_type_backport as a fallback
             try:
                 import eval_type_backport
 
-                return eval_type_backport.eval_type_backport(  # type:ignore[no-any-return]
-                    eval_type_backport.ForwardRef(value), globalns=globalns, try_default=False
-                )
-            except NameError:
-                return None
-            except ImportError as e:
+                return eval_type_backport.eval_type_backport(forward_ref, globalns=globalns, try_default=False)  # type:ignore[no-any-return]
+            except ImportError as import_error:
                 msg = (
                     "Using __future__ annotations in Wireup requires the eval_type_backport package to be installed. "
                     "See: https://maldoinc.github.io/wireup/latest/future_annotations/"
                 )
-                raise WireupError(msg) from e
+                raise WireupError(msg) from import_error
+        except NameError:
+            # The name in the forward reference doesn't exist
+            return None
 
     return value
 
