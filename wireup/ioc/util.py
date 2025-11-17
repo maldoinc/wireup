@@ -15,6 +15,14 @@ _OPTIONAL_UNION_ARG_COUNT = 2
 if typing.TYPE_CHECKING:
     from collections.abc import Callable
 
+    _EvalTypeFn = Callable[..., Any]
+else:
+    _EvalTypeFn = Any
+
+
+# Runtime: fetch typing._eval_type safely
+_eval_type: _EvalTypeFn | None = getattr(typing, "_eval_type", None)
+
 
 def _get_injectable_type(metadata: Any) -> InjectableType | None:
     # When using fastapi, the injectable type will be wrapped with Depends.
@@ -95,14 +103,14 @@ def _eval_type_native(
 
     This function handles version-specific differences in the _eval_type signature.
     """
-    if sys.version_info >= (3, 12):
-        # Python 3.14 signature: _eval_type(t, globalns, localns, type_params, *, recursive_guard=frozenset(), ...)
-        # Python 3.12-3.13 signature: _eval_type(t, globalns, localns, type_params, *, recursive_guard=frozenset())
-        return typing._eval_type(value, globalns, localns, None)  # type: ignore[attr-defined]
 
-    # Python 3.9-3.11 signature: _eval_type(t, globalns, localns, recursive_guard=frozenset())
-    # Python 3.8 signature: _eval_type(t, globalns, localns)
-    return typing._eval_type(value, globalns, localns)  # type: ignore[attr-defined]
+    if _eval_type is None:
+        msg = "typing._eval_type is not available in this Python version."
+        raise RuntimeError(msg)
+
+    if sys.version_info >= (3, 12):
+        return _eval_type(value, globalns, localns, None)
+    return _eval_type(value, globalns, localns)
 
 
 def _is_backport_fixable_error(e: TypeError) -> bool:
