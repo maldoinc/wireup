@@ -102,7 +102,7 @@ def _eval_type_native(
 
     # Python 3.9-3.11 signature: _eval_type(t, globalns, localns, recursive_guard=frozenset())
     # Python 3.8 signature: _eval_type(t, globalns, localns)
-    return typing._eval_type(value, globalns, localns)
+    return typing._eval_type(value, globalns, localns)  # type: ignore[attr-defined]
 
 
 def _is_backport_fixable_error(e: TypeError) -> bool:
