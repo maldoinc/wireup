@@ -133,6 +133,12 @@ def ensure_is_type(value: type[T] | str, globalns: dict[str, Any] | None = None)
         # Convert string to ForwardRef
         forward_ref = typing.ForwardRef(value)
 
+        if globalns is None:
+            globalns = {}
+
+        if "typing" not in globalns:
+            globalns = {**globalns, **typing.__dict__}
+
         try:
             # First, try using the native typing._eval_type
             return _eval_type_native(forward_ref, globalns=globalns)  # type:ignore[no-any-return]
