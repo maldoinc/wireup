@@ -8,7 +8,7 @@ from django.test import Client
 from django.urls import include, path
 from django.views.generic import TemplateView
 from wireup.errors import WireupError
-from wireup.integration.django import inject, WireupSettings
+from wireup.integration.django import WireupSettings, inject
 from wireup.integration.django.apps import get_app_container
 
 from test.integration.django import view

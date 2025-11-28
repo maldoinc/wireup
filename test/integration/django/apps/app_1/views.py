@@ -1,8 +1,9 @@
 from django.http import HttpRequest, HttpResponse
+from django.views import View
 from wireup import Injected
 from wireup.integration.django import inject
+
 from test.shared.shared_services.greeter import GreeterService
-from django.views import View
 
 
 def test(request: HttpRequest, greeter: Injected[GreeterService]) -> HttpResponse:
