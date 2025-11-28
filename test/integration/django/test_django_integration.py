@@ -183,7 +183,7 @@ def test_django_cbv_with_inject_decorator(client: Client):
     )
 
 
-def test_django_fbv_with_inject_decorator():
+def test_inject_decorator_applied_multiple_times():
     with pytest.raises(
         WireupError, match="@inject decorator applied multiple times to"
     ):
