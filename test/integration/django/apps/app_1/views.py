@@ -14,9 +14,7 @@ def test(request: HttpRequest, greeter: Injected[GreeterService]) -> HttpRespons
 
 
 @inject
-def test_inject(
-    request: HttpRequest, greeter: Injected[GreeterService]
-) -> HttpResponse:
+def test_inject(request: HttpRequest, greeter: Injected[GreeterService]) -> HttpResponse:
     name = request.GET["name"]
     greeting = greeter.greet(name)
 
@@ -25,9 +23,7 @@ def test_inject(
 
 class TestInjectView(View):
     @inject
-    def get(
-        self, request: HttpRequest, greeter: Injected[GreeterService]
-    ) -> HttpResponse:
+    def get(self, request: HttpRequest, greeter: Injected[GreeterService]) -> HttpResponse:
         name = request.GET["name"]
         greeting = greeter.greet(name)
 

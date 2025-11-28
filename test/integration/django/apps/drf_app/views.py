@@ -11,9 +11,7 @@ from test.shared.shared_services.greeter import GreeterService
 
 @api_view(["GET"])
 @inject
-def drf_function_based_view(
-    request: Request, greeter: Injected[GreeterService]
-) -> Response:
+def drf_function_based_view(request: Request, greeter: Injected[GreeterService]) -> Response:
     name = request.query_params.get("name", "Guest")
     greeting = greeter.greet(name)
     return Response({"message": f"FBV: {greeting}"})

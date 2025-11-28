@@ -59,16 +59,12 @@ urlpatterns = [
 
 @pytest.fixture(autouse=True, scope="module")
 def django_setup() -> None:
-    os.environ["DJANGO_SETTINGS_MODULE"] = (
-        "test.integration.django.test_django_integration"
-    )
+    os.environ["DJANGO_SETTINGS_MODULE"] = "test.integration.django.test_django_integration"
     django.setup()
 
     # DRF URLs must be added after django.setup() because DRF modules require
     # Django to be configured before they can be imported
-    urlpatterns.append(
-        path("drf/", include("test.integration.django.apps.drf_app.urls"))
-    )
+    urlpatterns.append(path("drf/", include("test.integration.django.apps.drf_app.urls")))
 
 
 @pytest.fixture
@@ -80,19 +76,14 @@ def test_django_thing(client: Client):
     res = client.get("/?name=World")
 
     assert res.status_code == 200
-    assert (
-        res.content.decode("utf8")
-        == "Hello World! Debug = True. Your lucky number is 4"
-    )
+    assert res.content.decode("utf8") == "Hello World! Debug = True. Your lucky number is 4"
 
 
 def test_get_random(client: Client):
     res = client.get("/classbased?name=Test")
 
     assert res.status_code == 200
-    assert (
-        res.content.decode("utf8") == "Hello Test! Debug = True. Your lucky number is 4"
-    )
+    assert res.content.decode("utf8") == "Hello Test! Debug = True. Your lucky number is 4"
 
 
 @pytest.mark.parametrize("path", ("foo", "bar"))
@@ -112,10 +103,7 @@ def test_override(client: Client):
         res = client.get("/classbased?name=Test")
 
     assert res.status_code == 200
-    assert (
-        res.content.decode("utf8")
-        == "Bad day to you, Test! Debug = True. Your lucky number is 4"
-    )
+    assert res.content.decode("utf8") == "Bad day to you, Test! Debug = True. Your lucky number is 4"
 
 
 def test_multiple_apps(client: Client):
@@ -156,15 +144,9 @@ def test_django_fbv_with_inject_decorator(client: Client):
     app_2_response = client.get("/app_2/inject/?name=World")
 
     assert app_1_response.status_code == 200
-    assert (
-        app_1_response.content.decode("utf8")
-        == "App 1: Hello World (with inject decorator)"
-    )
+    assert app_1_response.content.decode("utf8") == "App 1: Hello World (with inject decorator)"
     assert app_2_response.status_code == 200
-    assert (
-        app_2_response.content.decode("utf8")
-        == "App 2: Hello World (with inject decorator)"
-    )
+    assert app_2_response.content.decode("utf8") == "App 2: Hello World (with inject decorator)"
 
 
 def test_django_cbv_with_inject_decorator(client: Client):
@@ -172,21 +154,13 @@ def test_django_cbv_with_inject_decorator(client: Client):
     app_2_response = client.get("/app_2/cbv/inject/?name=World")
 
     assert app_1_response.status_code == 200
-    assert (
-        app_1_response.content.decode("utf8")
-        == "App 1: Hello World (with inject decorator)"
-    )
+    assert app_1_response.content.decode("utf8") == "App 1: Hello World (with inject decorator)"
     assert app_2_response.status_code == 200
-    assert (
-        app_2_response.content.decode("utf8")
-        == "App 2: Hello World (with inject decorator)"
-    )
+    assert app_2_response.content.decode("utf8") == "App 2: Hello World (with inject decorator)"
 
 
 def test_inject_decorator_applied_multiple_times():
-    with pytest.raises(
-        WireupError, match="@inject decorator applied multiple times to"
-    ):
+    with pytest.raises(WireupError, match="@inject decorator applied multiple times to"):
 
         @inject
         @inject
