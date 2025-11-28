@@ -7,7 +7,8 @@ import pytest
 from django.test import Client
 from django.urls import include, path
 from django.views.generic import TemplateView
-from wireup.integration.django import WireupSettings
+from wireup.errors import WireupError
+from wireup.integration.django import inject, WireupSettings
 from wireup.integration.django.apps import get_app_container
 
 from test.integration.django import view
@@ -148,3 +149,45 @@ def test_drf_viewset(client: Client):
 
     assert res.status_code == 200
     assert res.json() == {"message": "ViewSet: Hello World"}
+
+
+def test_django_fbv_with_inject_decorator(client: Client):
+    app_1_response = client.get("/app_1/inject/?name=World")
+    app_2_response = client.get("/app_2/inject/?name=World")
+
+    assert app_1_response.status_code == 200
+    assert (
+        app_1_response.content.decode("utf8")
+        == "App 1: Hello World (with inject decorator)"
+    )
+    assert app_2_response.status_code == 200
+    assert (
+        app_2_response.content.decode("utf8")
+        == "App 2: Hello World (with inject decorator)"
+    )
+
+
+def test_django_cbv_with_inject_decorator(client: Client):
+    app_1_response = client.get("/app_1/cbv/inject/?name=World")
+    app_2_response = client.get("/app_2/cbv/inject/?name=World")
+
+    assert app_1_response.status_code == 200
+    assert (
+        app_1_response.content.decode("utf8")
+        == "App 1: Hello World (with inject decorator)"
+    )
+    assert app_2_response.status_code == 200
+    assert (
+        app_2_response.content.decode("utf8")
+        == "App 2: Hello World (with inject decorator)"
+    )
+
+
+def test_django_fbv_with_inject_decorator():
+    with pytest.raises(
+        WireupError, match="@inject decorator applied multiple times to"
+    ):
+
+        @inject
+        @inject
+        def _(*__, **___): ...
