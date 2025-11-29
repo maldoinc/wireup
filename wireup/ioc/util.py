@@ -129,41 +129,41 @@ def ensure_is_type(value: type[T] | str, globalns: dict[str, Any] | None = None)
     This approach ensures compatibility with Python 3.14+ where eval_type_backport
     cannot be imported due to ForwardRef subclassing restrictions.
     """
-    if isinstance(value, str):
-        # Convert string to ForwardRef
-        forward_ref = typing.ForwardRef(value)
+    if not isinstance(value, str):
+        return value
 
-        if globalns is None:
-            globalns = {}
+    # Convert string to ForwardRef
+    forward_ref = typing.ForwardRef(value)
 
-        if "typing" not in globalns:
-            globalns = {**globalns, **typing.__dict__}
+    if globalns is None:
+        globalns = {}
 
+    if "typing" not in globalns:
+        globalns = {**globalns, **typing.__dict__}
+
+    try:
+        # First, try using the native typing._eval_type
+        return _eval_type_native(forward_ref, globalns=globalns)  # type:ignore[no-any-return]
+    except TypeError as e:
+        # Check if this is an error that eval_type_backport can fix
+        if not (isinstance(forward_ref, typing.ForwardRef) and _is_backport_fixable_error(e)):
+            # If it's not fixable by the backport, re-raise
+            raise
+
+        # Try to import and use eval_type_backport as a fallback
         try:
-            # First, try using the native typing._eval_type
-            return _eval_type_native(forward_ref, globalns=globalns)  # type:ignore[no-any-return]
-        except TypeError as e:
-            # Check if this is an error that eval_type_backport can fix
-            if not (isinstance(forward_ref, typing.ForwardRef) and _is_backport_fixable_error(e)):
-                # If it's not fixable by the backport, re-raise
-                raise
+            import eval_type_backport
 
-            # Try to import and use eval_type_backport as a fallback
-            try:
-                import eval_type_backport
-
-                return eval_type_backport.eval_type_backport(forward_ref, globalns=globalns, try_default=False)  # type:ignore[no-any-return]
-            except ImportError as import_error:
-                msg = (
-                    "Using __future__ annotations in Wireup requires the eval_type_backport package to be installed. "
-                    "See: https://maldoinc.github.io/wireup/latest/future_annotations/"
-                )
-                raise WireupError(msg) from import_error
-        except NameError:
-            # The name in the forward reference doesn't exist
-            return None
-
-    return value
+            return eval_type_backport.eval_type_backport(forward_ref, globalns=globalns, try_default=False)  # type:ignore[no-any-return]
+        except ImportError as import_error:
+            msg = (
+                "Using __future__ annotations in Wireup requires the eval_type_backport package to be installed. "
+                "See: https://maldoinc.github.io/wireup/latest/future_annotations/"
+            )
+            raise WireupError(msg) from import_error
+    except NameError:
+        # The name in the forward reference doesn't exist
+        return None
 
 
 def unwrap_optional_type(type_: Any) -> Any:
