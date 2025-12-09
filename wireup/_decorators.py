@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-import asyncio
 import contextlib
 import functools
+import inspect
 from contextlib import AsyncExitStack, ExitStack
 from typing import TYPE_CHECKING, Any, Callable
 
@@ -60,7 +60,7 @@ def inject_from_container(
     """
 
     def _decorator(target: Callable[..., Any]) -> Callable[..., Any]:
-        if asyncio.iscoroutinefunction(target) and isinstance(container, SyncContainer):
+        if inspect.iscoroutinefunction(target) and isinstance(container, SyncContainer):
             msg = (
                 "Sync container cannot perform injection on async targets. "
                 "Create an async container via wireup.create_async_container."
@@ -96,7 +96,7 @@ def inject_from_container_util(  # noqa: C901
     if not names_to_inject:
         return target
 
-    if asyncio.iscoroutinefunction(target):
+    if inspect.iscoroutinefunction(target):
 
         @functools.wraps(target)
         async def _inject_async_target(*args: Any, **kwargs: Any) -> Any:
