@@ -27,6 +27,15 @@ dependency injection in Django applications.
     The integration exposes Django settings to Wireup as parameters.
 
 
+-   :material-ninja:{ .lg .middle } __Django Ninja Support__
+
+    ---
+
+    Use `@inject` from `wireup.integration.django.ninja` for seamless injection in Django Ninja routes.
+
+    [:octicons-arrow-right-24: Learn more](#django-ninja)
+
+
 -   :material-share-circle:{ .lg .middle } __Shared business logic__
 
     ---
@@ -128,6 +137,76 @@ def upload_file_view(
 Class-based views are also supported. Specify dependencies in the class `__init__` function.
 
 For more examples, see the [Wireup Django integration tests](https://github.com/maldoinc/wireup/tree/master/test/integration/django/view.py).
+
+### Django Ninja
+
+[Django Ninja](https://django-ninja.dev/) is a FastAPI-inspired web framework for Django. 
+Wireup provides a dedicated `@inject` decorator for Django Ninja routes because Ninja inspects 
+function signatures to determine request parameters (Body, Query, Path, etc.).
+
+Without the decorator, Wireup-annotated parameters would be incorrectly interpreted as request 
+parameters, causing Pydantic schema generation errors.
+
+#### Usage
+
+```python title="mysite/api/views.py"
+from ninja import Router, Schema
+from wireup import Injected
+from wireup.integration.django.ninja import inject
+
+from mysite.services import ItemService
+
+class ItemSchema(Schema):
+    name: str
+    price: float
+
+router = Router()
+
+@router.post("/items/")
+@inject  # Place below @router.* decorators
+def create_item(
+    request,
+    data: ItemSchema,  # Ninja parses this as Body
+    service: Injected[ItemService],  # Wireup injects this
+):
+    return service.create(data)
+```
+
+The `@inject` decorator:
+
+1. Hides Wireup-injectable parameters from Django Ninja's signature inspection
+2. Resolves dependencies from the Wireup container at request time
+
+!!! warning "Decorator order"
+    Place `@inject` **below** `@router.*` decorators:
+    
+    ```python
+    @router.get("/items/")  # Router decorator first
+    @inject                  # Inject decorator second
+    def list_items(request, service: Injected[ItemService]):
+        ...
+    ```
+
+#### Injecting parameters
+
+You can also inject configuration parameters:
+
+```python
+from typing import Annotated
+from wireup import Inject, Injected
+from wireup.integration.django.ninja import inject
+
+@router.get("/config/")
+@inject
+def get_config(
+    request,
+    debug: Annotated[bool, Inject(param="DEBUG")],
+    service: Injected[ConfigService],
+):
+    return {"debug": debug, "config": service.get_all()}
+```
+
+For more examples, see the [Django Ninja integration tests](https://github.com/maldoinc/wireup/tree/master/test/integration/django_ninja/).
 
 ### Accessing the container
 
