@@ -4,9 +4,13 @@ from pathlib import Path
 
 import django
 import pytest
+from django.apps import apps
+from django.http import HttpRequest, HttpResponse
 from django.test import Client
 from django.urls import include, path
+from django.views import View
 from django.views.generic import TemplateView
+from wireup import Injected
 from wireup.errors import WireupError
 from wireup.integration.django import WireupSettings, inject
 from wireup.integration.django.apps import get_app_container
@@ -140,6 +144,8 @@ def test_drf_viewset(client: Client):
 
 
 def test_django_fbv_with_inject_decorator(client: Client):
+    # This test verifies that function-based views with @inject decorator
+    # skip auto-injection (avoiding double injection)
     app_1_response = client.get("/app_1/inject/?name=World")
     app_2_response = client.get("/app_2/inject/?name=World")
 
@@ -150,6 +156,8 @@ def test_django_fbv_with_inject_decorator(client: Client):
 
 
 def test_django_cbv_with_inject_decorator(client: Client):
+    # This test verifies that class-based views with @inject decorator on methods
+    # skip auto-injection for those methods (avoiding double injection)
     app_1_response = client.get("/app_1/cbv/inject/?name=World")
     app_2_response = client.get("/app_2/cbv/inject/?name=World")
 
@@ -157,6 +165,32 @@ def test_django_cbv_with_inject_decorator(client: Client):
     assert app_1_response.content.decode("utf8") == "App 1: Hello World (with inject decorator)"
     assert app_2_response.status_code == 200
     assert app_2_response.content.decode("utf8") == "App 2: Hello World (with inject decorator)"
+
+
+def test_django_cbv_with_inject_decorator_and_injected_init():
+    # GIVEN a class-based view with both __init__ Injected[] params and @inject on methods
+    class TestInjectViewWithInjectedInit(View):
+        def __init__(self, greeter: Injected[GreeterService]) -> None:
+            self.greeter = greeter
+
+        @inject
+        def get(self, request: HttpRequest, greeter: Injected[GreeterService]) -> HttpResponse:
+            name = request.GET["name"]
+            greeting = greeter.greet(name)
+
+            return HttpResponse(f"App 1: {greeting} (with inject decorator and injected init)")
+
+    # WHEN we trigger URL injection for a pattern containing this view
+    urlpatterns.append(path("test-mixed-injection/", TestInjectViewWithInjectedInit.as_view()))
+    django.urls.clear_url_caches()
+    wireup_config = apps.get_app_config("wireup")
+
+    # THEN it should raise WireupError
+    with pytest.raises(
+        WireupError,
+        match="has both __init__ parameters with Injected\\[\\] annotations and methods decorated with @inject",
+    ):
+        wireup_config._inject(django.urls.get_resolver())
 
 
 def test_inject_decorator_applied_multiple_times():

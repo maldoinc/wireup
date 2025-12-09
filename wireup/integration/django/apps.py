@@ -13,6 +13,7 @@ from django.conf import settings
 from django.http import HttpRequest, HttpResponse
 from django.urls import URLPattern, URLResolver
 from django.utils.decorators import sync_and_async_middleware
+from django.views import View
 
 import wireup
 from wireup import service
@@ -123,13 +124,35 @@ class WireupConfig(AppConfig):
                 continue
 
             if isinstance(p, URLPattern) and p.callback:  # type: ignore[reportUnnecessaryComparison]
+                # Skip auto-injection if the view is already marked by @inject decorator
+                if getattr(p.callback, "__wireup_marked__", False):
+                    continue
+
                 if hasattr(p.callback, "view_class") and hasattr(p.callback, "view_initkwargs"):
                     p.callback = self._inject_class_based_view(p.callback)
                 else:
                     p.callback = self.inject_scoped(p.callback)
 
     def _inject_class_based_view(self, callback: Any) -> Any:
+        # Check if any of the handler methods are already marked with @inject
+        has_marked_methods = any(
+            getattr(callback.view_class, method_name, None)
+            and getattr(getattr(callback.view_class, method_name), "__wireup_marked__", False)
+            for method_name in View.http_method_names
+        )
+
         names_to_inject = get_valid_injection_annotated_parameters(self.container, callback.view_class)
+
+        if has_marked_methods and names_to_inject:
+            # User is mixing auto-injection (__init__ params) with @inject decorator on methods
+            # This is not supported - they should pick one approach
+            msg = (
+                f"Class-based view {callback.view_class.__name__} has both __init__ parameters with "
+                f"Injected[] annotations and methods decorated with @inject. This is not supported. "
+                f"Either remove Injected[] annotations from __init__ and use @inject on methods only, "
+                f"or remove @inject decorators and rely on auto-injection for both __init__ and methods."
+            )
+            raise WireupError(msg)
 
         # This is taken from the django .as_view() method.
         @functools.wraps(callback)

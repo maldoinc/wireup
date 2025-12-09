@@ -130,7 +130,7 @@ Class-based views are also supported. Specify dependencies in the class `__init_
 For more examples, see the [Wireup Django integration tests](https://github.com/maldoinc/wireup/tree/master/test/integration/django/view.py).
 
 #### Non core-django views (eg, Django REST framework)
-If your project use a third-party packages to create views, such as [Django REST framework](https://www.django-rest-framework.org/), you must use the `@inject` decorator explicitly.
+If your project uses third-party packages to create views, such as [Django REST framework](https://www.django-rest-framework.org/), you must use the `@inject` decorator explicitly.
 
 ```python title="app/views.py"
 from rest_framework.decorators import api_view
@@ -155,18 +155,22 @@ def drf_function_based_view(request: Request, s3_manager: Injected[S3Manager]) -
 class DRFClassBasedView(APIView):
     @inject
     def get(self, request: Request, s3_manager: Injected[S3Manager]) -> Response:
-    # Use the injected S3Manager instance
-    return Response(...)
+        # Use the injected S3Manager instance
+        return Response(...)
 
 
 class DRFViewSet(ViewSet):
     @inject
     def list(self, request: Request, greeter: Injected[GreeterService]) -> Response:
-    # Use the injected S3Manager instance
-    return Response(...)
+        # Use the injected S3Manager instance
+        return Response(...)
 ```
 
-If your project share core and non core-django views it's strongly recommended to use `@inject` across all your views for consistency.
+If your project shares core and non core-django views it's strongly recommended to use `@inject` across all your views for consistency.
+
+!!! warning "Don't mix injection approaches in Django class-based views"
+    When using `@inject` on methods, do not also use `Injected[]` annotations in `__init__`. 
+    Pick one approach: either use `@inject` on methods, or rely on auto-injection for `__init__` parameters.
 
 ### Accessing the container
 
