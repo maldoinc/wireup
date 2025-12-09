@@ -76,4 +76,3 @@ def multi_inject_endpoint(
 def no_inject_endpoint(request, name: str):  # noqa: ARG001
     # A route without any injection - should work normally
     return {"name": name}
-

@@ -104,4 +104,3 @@ def inject(func: F) -> F:
     # Wrap the function with Wireup injection logic.
     # inject_from_container_unchecked will use __wireup_names__ to determine what to inject.
     return inject_from_container_unchecked(get_request_container)(func)  # type: ignore[return-value]
-

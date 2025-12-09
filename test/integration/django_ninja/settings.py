@@ -10,4 +10,3 @@ MIDDLEWARE = ["wireup.integration.django.wireup_middleware"]
 WIREUP = WireupSettings(
     service_modules=["test.shared.shared_services"],
 )
-
