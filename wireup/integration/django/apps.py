@@ -1,6 +1,7 @@
 import asyncio
 import functools
 import importlib
+import inspect
 from contextvars import ContextVar
 from dataclasses import dataclass
 from types import ModuleType
@@ -38,7 +39,7 @@ def wireup_middleware(
 ) -> Callable[[HttpRequest], Union[HttpResponse, Awaitable[HttpResponse]]]:
     container = get_app_container()
 
-    if asyncio.iscoroutinefunction(get_response):
+    if inspect.iscoroutinefunction(get_response):
 
         async def async_inner(request: HttpRequest) -> HttpResponse:
             async with container.enter_scope() as scoped:
