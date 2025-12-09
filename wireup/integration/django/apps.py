@@ -1,4 +1,3 @@
-import asyncio
 import functools
 import importlib
 import inspect
