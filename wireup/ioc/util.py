@@ -79,6 +79,10 @@ def get_globals(obj: type[Any] | Callable[..., Any]) -> dict[str, Any]:
     if isinstance(obj, type):
         return importlib.import_module(obj.__module__).__dict__
 
+    # Handle functools.partial by getting globals from the wrapped function
+    if hasattr(obj, "func"):
+        return get_globals(obj.func)
+
     return obj.__globals__
 
 
