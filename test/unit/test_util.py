@@ -1,3 +1,4 @@
+import functools
 import inspect
 import unittest
 
@@ -7,6 +8,7 @@ from wireup import Inject
 from wireup.errors import WireupError
 from wireup.ioc.types import AnnotatedParameter, InjectableType, ParameterWrapper, ServiceQualifier
 from wireup.ioc.util import (
+    get_globals,
     param_get_annotation,
 )
 
@@ -65,3 +67,50 @@ def test_raises_multiple_annotations() -> None:
 
 class MyCustomClass:
     pass
+
+
+def _sample_function():
+    pass
+
+
+class TestGetGlobals:
+    def test_returns_globals_for_regular_function(self):
+        # GIVEN
+        func = _sample_function
+
+        # WHEN
+        result = get_globals(func)
+
+        # THEN
+        assert result is _sample_function.__globals__
+
+    def test_returns_globals_for_class(self):
+        # GIVEN
+        cls = MyCustomClass
+
+        # WHEN
+        result = get_globals(cls)
+
+        # THEN
+        assert "_sample_function" in result
+        assert "MyCustomClass" in result
+
+    def test_unwraps_functools_partial(self):
+        # GIVEN
+        partial_func = functools.partial(_sample_function)
+
+        # WHEN
+        result = get_globals(partial_func)
+
+        # THEN
+        assert result is _sample_function.__globals__
+
+    def test_unwraps_nested_functools_partial(self):
+        # GIVEN
+        partial_func = functools.partial(functools.partial(functools.partial(_sample_function)))
+
+        # WHEN
+        result = get_globals(partial_func)
+
+        # THEN
+        assert result is _sample_function.__globals__
