@@ -27,7 +27,7 @@ from typing import Any, Callable, TypeVar
 
 from wireup._decorators import inject_from_container_unchecked
 from wireup.integration.django import get_request_container
-from wireup.ioc.validation import hide_annotated_names
+from wireup.ioc.util import hide_annotated_names
 
 __all__ = ["inject"]
 
