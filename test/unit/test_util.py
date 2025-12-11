@@ -41,9 +41,7 @@ class TestUtilityFunctions(unittest.TestCase):
             param_get_annotation(params.parameters["_a"], globalns=globals()),
             AnnotatedParameter(str, d1),
         )
-        self.assertEqual(
-            param_get_annotation(params.parameters["_b"], globalns=globals()), None
-        )
+        self.assertEqual(param_get_annotation(params.parameters["_b"], globalns=globals()), None)
         self.assertEqual(
             param_get_annotation(params.parameters["_c"], globalns=globals()),
             AnnotatedParameter(str, None),
@@ -59,9 +57,7 @@ class TestUtilityFunctions(unittest.TestCase):
         self.assertIsNone(
             param_get_annotation(params.parameters["_f"], globalns=globals()),
         )
-        self.assertEqual(
-            param_get_annotation(params.parameters["_g"], globalns=globals()), None
-        )
+        self.assertEqual(param_get_annotation(params.parameters["_g"], globalns=globals()), None)
 
     def test_annotated_parameter_hash_equality(self):
         self.assertEqual(
