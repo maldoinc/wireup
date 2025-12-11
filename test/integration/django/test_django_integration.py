@@ -1,6 +1,7 @@
 import os
 import sys
 from pathlib import Path
+from unittest.mock import patch
 
 import django
 import pytest
@@ -8,12 +9,11 @@ from django.apps import apps
 from django.http import HttpRequest, HttpResponse
 from django.test import Client
 from django.urls import include, path
-from django.views import View
 from django.views.generic import TemplateView
 from wireup import Injected
 from wireup.errors import WireupError
 from wireup.integration.django import WireupSettings, inject
-from wireup.integration.django.apps import get_app_container
+from wireup.integration.django.apps import WireupConfig, get_app_container
 
 from test.integration.django import view
 from test.shared.shared_services.greeter import GreeterService
@@ -167,30 +167,56 @@ def test_django_cbv_with_inject_decorator(client: Client):
     assert app_2_response.content.decode("utf8") == "App 2: Hello World (with inject decorator)"
 
 
-def test_django_cbv_with_inject_decorator_and_injected_init():
-    # GIVEN a class-based view with both __init__ Injected[] params and @inject on methods
-    class TestInjectViewWithInjectedInit(View):
-        def __init__(self, greeter: Injected[GreeterService]) -> None:
-            self.greeter = greeter
+def test_auto_inject_views_setting_default():
+    # GIVEN WireupSettings with default values
+    settings_default = WireupSettings(service_modules=["test.shared.shared_services"])
 
-        @inject
-        def get(self, request: HttpRequest, greeter: Injected[GreeterService]) -> HttpResponse:
-            name = request.GET["name"]
-            greeting = greeter.greet(name)
+    # THEN auto_inject_views should default to True
+    assert settings_default.auto_inject_views is True
 
-            return HttpResponse(f"App 1: {greeting} (with inject decorator and injected init)")
 
-    # WHEN we trigger URL injection for a pattern containing this view
-    urlpatterns.append(path("test-mixed-injection/", TestInjectViewWithInjectedInit.as_view()))
-    django.urls.clear_url_caches()
+def test_auto_inject_views_disabled_skips_injection():
+    # GIVEN WireupSettings with auto_inject_views=False
+    settings_disabled = WireupSettings(
+        service_modules=["test.shared.shared_services"],
+        auto_inject_views=False,
+    )
+
+    # WHEN we call ready() with auto_inject_views=False
     wireup_config = apps.get_app_config("wireup")
 
-    # THEN it should raise WireupError
-    with pytest.raises(
-        WireupError,
-        match="has both __init__ parameters with Injected\\[\\] annotations and methods decorated with @inject",
+    with (
+        patch("wireup.integration.django.apps.settings") as mock_settings,
+        patch.object(wireup_config, "_inject") as mock_inject,
     ):
-        wireup_config._inject(django.urls.get_resolver())
+        mock_settings.WIREUP = settings_disabled
+
+        wireup_config.ready()
+
+        # THEN _inject should NOT be called
+        mock_inject.assert_not_called()
+
+
+def test_auto_inject_views_enabled_calls_injection():
+    # GIVEN WireupSettings with auto_inject_views=True (default)
+    settings_enabled = WireupSettings(
+        service_modules=["test.shared.shared_services"],
+        auto_inject_views=True,
+    )
+
+    # WHEN we call ready() with auto_inject_views=True
+    wireup_config = apps.get_app_config("wireup")
+
+    with (
+        patch("wireup.integration.django.apps.settings") as mock_settings,
+        patch.object(wireup_config, "_inject") as mock_inject,
+    ):
+        mock_settings.WIREUP = settings_enabled
+
+        wireup_config.ready()
+
+        # THEN _inject should be called
+        mock_inject.assert_called_once()
 
 
 def test_inject_decorator_applied_multiple_times():

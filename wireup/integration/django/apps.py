@@ -13,7 +13,6 @@ from django.conf import settings
 from django.http import HttpRequest, HttpResponse
 from django.urls import URLPattern, URLResolver
 from django.utils.decorators import sync_and_async_middleware
-from django.views import View
 
 import wireup
 from wireup import service
@@ -115,7 +114,8 @@ class WireupConfig(AppConfig):
         )
         self.inject_scoped = inject_from_container(self.container, get_request_container)
 
-        self._inject(django.urls.get_resolver())
+        if integration_settings.auto_inject_views:
+            self._inject(django.urls.get_resolver())
 
     def _inject(self, resolver: URLResolver) -> None:
         for p in resolver.url_patterns:
@@ -134,25 +134,7 @@ class WireupConfig(AppConfig):
                     p.callback = self.inject_scoped(p.callback)
 
     def _inject_class_based_view(self, callback: Any) -> Any:
-        # Check if any of the handler methods are already marked with @inject
-        has_marked_methods = any(
-            getattr(callback.view_class, method_name, None)
-            and getattr(getattr(callback.view_class, method_name), "__wireup_marked__", False)
-            for method_name in View.http_method_names
-        )
-
         names_to_inject = get_valid_injection_annotated_parameters(self.container, callback.view_class)
-
-        if has_marked_methods and names_to_inject:
-            # User is mixing auto-injection (__init__ params) with @inject decorator on methods
-            # This is not supported - they should pick one approach
-            msg = (
-                f"Class-based view {callback.view_class.__name__} has both __init__ parameters with "
-                f"Injected[] annotations and methods decorated with @inject. This is not supported. "
-                f"Either remove Injected[] annotations from __init__ and use @inject on methods only, "
-                f"or remove @inject decorators and rely on auto-injection for both __init__ and methods."
-            )
-            raise WireupError(msg)
 
         # This is taken from the django .as_view() method.
         @functools.wraps(callback)
@@ -183,3 +165,13 @@ class WireupSettings:
 
     service_modules: List[Union[str, ModuleType]]
     """List of modules containing wireup service registrations."""
+
+    auto_inject_views: bool = True
+    """Whether to automatically inject dependencies into Django views.
+
+    When True (default), Wireup will automatically inject dependencies into all Django views.
+    When False, you must use the @inject decorator explicitly on views that need injection.
+
+    Set this to False if you want to use @inject explicitly across all views (useful when mixing
+    core Django views with third-party views like Django REST framework).
+    """
