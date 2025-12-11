@@ -1,6 +1,7 @@
 import functools
 import inspect
 import unittest
+from typing import Callable
 
 import pytest
 from typing_extensions import Annotated
@@ -86,17 +87,6 @@ def _sample_function():
     pass
 
 
-def test_returns_globals_for_regular_function():
-    # GIVEN
-    func = _sample_function
-
-    # WHEN
-    result = get_globals(func)
-
-    # THEN
-    assert result is _sample_function.__globals__
-
-
 def test_returns_globals_for_class():
     # GIVEN
     cls = MyCustomClass
@@ -112,11 +102,12 @@ def test_returns_globals_for_class():
 @pytest.mark.parametrize(
     "partial_func",
     (
+        _sample_function,
         functools.partial(_sample_function),
         functools.partial(functools.partial(functools.partial(_sample_function))),
     ),
 )
-def test_unwraps_functools_partial(partial_func: functools.partial):
+def test_unwraps_functools_partial(partial_func: Callable):
     # GIVEN
     # WHEN
     result = get_globals(partial_func)
