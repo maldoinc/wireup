@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import functools
 import importlib
 import inspect
 import types
@@ -81,6 +82,10 @@ def get_globals(obj: type[Any] | Callable[..., Any]) -> dict[str, Any]:
     """Return the globals for the given object."""
     if isinstance(obj, type):
         return importlib.import_module(obj.__module__).__dict__
+
+    # Unwrap nested functools.partial to get the underlying function
+    while isinstance(obj, functools.partial):
+        obj = obj.func
 
     return obj.__globals__
 
