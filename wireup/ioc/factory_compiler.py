@@ -41,21 +41,23 @@ class FactoryCompiler:
             for qualifier in qualifiers:
                 obj_id = FactoryCompiler.get_object_id(impl, qualifier)
 
-                self.factories[obj_id] = self._compile_and_create_function(
-                    self._registry.factories[impl, qualifier],
-                    impl,
-                    qualifier,
-                )
+                if obj_id not in self.factories:
+                    self.factories[obj_id] = self._compile_and_create_function(
+                        self._registry.factories[impl, qualifier],
+                        impl,
+                        qualifier,
+                    )
 
         for interface, impls in self._registry.interfaces.items():
             for qualifier, impl in impls.items():
                 obj_id = FactoryCompiler.get_object_id(interface, qualifier)
 
-                self.factories[obj_id] = self._compile_and_create_function(
-                    self._registry.factories[impl, qualifier],
-                    interface,
-                    qualifier,
-                )
+                if obj_id not in self.factories:
+                    self.factories[obj_id] = self._compile_and_create_function(
+                        self._registry.factories[impl, qualifier],
+                        interface,
+                        qualifier,
+                    )
 
     def _get_factory_code(self, factory: ServiceFactory, impl: type, qualifier: Hashable) -> tuple[str, bool]:  # noqa: C901, PLR0912
         is_interface = self._registry.is_interface_known(impl)
