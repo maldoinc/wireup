@@ -114,7 +114,8 @@ class WireupConfig(AppConfig):
         )
         self.inject_scoped = inject_from_container(self.container, get_request_container)
 
-        self._inject(django.urls.get_resolver())
+        if integration_settings.auto_inject_views:
+            self._inject(django.urls.get_resolver())
 
     def _inject(self, resolver: URLResolver) -> None:
         for p in resolver.url_patterns:
@@ -123,6 +124,10 @@ class WireupConfig(AppConfig):
                 continue
 
             if isinstance(p, URLPattern) and p.callback:  # type: ignore[reportUnnecessaryComparison]
+                # Skip auto-injection if the view is already marked by @inject decorator
+                if getattr(p.callback, "__wireup_marked__", False):
+                    continue
+
                 if hasattr(p.callback, "view_class") and hasattr(p.callback, "view_initkwargs"):
                     p.callback = self._inject_class_based_view(p.callback)
                 else:
@@ -160,3 +165,13 @@ class WireupSettings:
 
     service_modules: List[Union[str, ModuleType]]
     """List of modules containing wireup service registrations."""
+
+    auto_inject_views: bool = True
+    """Whether to automatically inject dependencies into Django views.
+
+    When True (default), Wireup will automatically inject dependencies into all Django views.
+    When False, you must use the @inject decorator explicitly on views that need injection.
+
+    Set this to False if you want to use @inject explicitly across all views (useful when mixing
+    core Django views with third-party views like Django REST framework).
+    """
