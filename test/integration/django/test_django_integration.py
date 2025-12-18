@@ -42,6 +42,8 @@ TEMPLATES = [
 urlpatterns = [
     path("", view.index),
     path("classbased", view.RandomNumberView.as_view()),
+    path("async_classbased", view.AsyncRandomNumberView.as_view()),
+    path("async_greet", view.async_greet),
     path("template_view/foo", TemplateView.as_view(template_name="foo.html")),
     path("template_view/bar", TemplateView.as_view(template_name="bar.html")),
     path("app_1", include("test.integration.django.apps.app_1.urls")),
@@ -104,3 +106,23 @@ def test_multiple_apps(client: Client):
 
     assert app_2_response.status_code == 200
     assert app_2_response.content.decode("utf8") == "App 2: Hello World"
+
+
+def test_async_view_with_async_service(client: Client):
+    # GIVEN an async Django view with an injected async service
+    # WHEN making a request
+    res = client.get("/async_greet?name=World")
+
+    # THEN the async service is properly injected and works
+    assert res.status_code == 200
+    assert res.content.decode("utf8") == "Hello World! Debug = True"
+
+
+def test_async_cbv_with_async_service(client: Client):
+    # GIVEN an async Django CBV with an injected async service
+    # WHEN making a request
+    res = client.get("/async_classbased?name=World")
+
+    # THEN the async service is properly injected and works
+    assert res.status_code == 200
+    assert res.content.decode("utf8") == "Hello World! Debug = True. Your lucky number is 4"
