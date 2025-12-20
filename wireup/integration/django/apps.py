@@ -1,6 +1,6 @@
-import asyncio
 import functools
 import importlib
+import inspect
 from contextvars import ContextVar
 from dataclasses import dataclass
 from types import ModuleType
@@ -21,7 +21,7 @@ from wireup.errors import WireupError
 from wireup.ioc.container.async_container import AsyncContainer, ScopedAsyncContainer, async_container_force_sync_scope
 from wireup.ioc.container.sync_container import ScopedSyncContainer
 from wireup.ioc.types import ParameterWrapper
-from wireup.ioc.validation import get_valid_injection_annotated_parameters
+from wireup.ioc.util import get_valid_injection_annotated_parameters
 
 if TYPE_CHECKING:
     from wireup.integration.django import WireupSettings
@@ -38,7 +38,7 @@ def wireup_middleware(
 ) -> Callable[[HttpRequest], Union[HttpResponse, Awaitable[HttpResponse]]]:
     container = get_app_container()
 
-    if asyncio.iscoroutinefunction(get_response):
+    if inspect.iscoroutinefunction(get_response):
 
         async def async_inner(request: HttpRequest) -> HttpResponse:
             async with container.enter_scope() as scoped:

@@ -165,7 +165,7 @@ from wireup import service, Injected
 @service(lifetime="scoped")
 class UserService:
     # Uses Session as defined above.
-    def __init__(self, db: Injected[Session]) -> None:
+    def __init__(self, db: Session) -> None:
         self.db = db
     
     def create_user(self, user_data: UserCreate) -> User:

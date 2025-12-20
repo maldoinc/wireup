@@ -1,7 +1,7 @@
 import asyncio
 import contextlib
 import uuid
-from typing import Any, AsyncIterator, Dict, Iterator, NewType
+from typing import Any, AsyncIterator, Dict, Iterator
 
 import anyio.to_thread
 import pytest
@@ -203,3 +203,19 @@ async def test_middleware_disabled_does_not_add_middleware() -> None:
     with TestClient(app) as client:
         res = client.get("/")
         assert res.json() == {"random": 4}
+
+
+async def test_overrides_in_class_based_handlers() -> None:
+    app = create_app(expose_container_in_middleware=True)
+
+    class FakeRandomService(RandomService):
+        def get_random(self) -> int:
+            return 100
+
+    new_instance = FakeRandomService()
+
+    with get_app_container(app).override.service(RandomService, new=new_instance), TestClient(app) as client:
+        res = client.get("/cbr")
+        assert res.json() == {"counter": 1, "random": 100}
+
+        assert await get_app_container(app).get(RandomService) is new_instance
