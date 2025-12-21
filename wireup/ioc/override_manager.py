@@ -4,11 +4,12 @@ from contextlib import contextmanager
 from typing import TYPE_CHECKING, Any, Iterator
 
 from wireup.errors import UnknownOverrideRequestedError
+from wireup.ioc.factory_compiler import FactoryCompiler
 
 if TYPE_CHECKING:
     from collections.abc import Callable
 
-    from wireup.ioc.types import Qualifier, ServiceOverride
+    from wireup.ioc.types import AnyCallable, Qualifier, ServiceOverride
 
 
 class OverrideManager:
@@ -16,11 +17,32 @@ class OverrideManager:
 
     def __init__(
         self,
-        active_overrides: dict[tuple[type, Qualifier], Any],
         is_valid_override: Callable[[type, Qualifier], bool],
+        factory_compiler: FactoryCompiler,
+        scoped_factory_compiler: FactoryCompiler,
     ) -> None:
         self.__is_valid_override = is_valid_override
-        self.active_overrides = active_overrides
+        self._factory_compiler = factory_compiler
+        self._scoped_factory_compiler = scoped_factory_compiler
+        self._original_factory_functions: dict[tuple[type, Qualifier], tuple[Any, Any]] = {}
+
+    def _compiler_override_obj_id(
+        self,
+        compiler: FactoryCompiler,
+        target: type,
+        qualifier: Qualifier,
+        new: Callable[[Any], Any],
+    ) -> None:
+        compiler.factories[compiler.get_object_id(target, qualifier)].factory = new
+
+    def _compiler_restore_obj_id(
+        self,
+        compiler: FactoryCompiler,
+        target: type,
+        qualifier: Qualifier,
+        original: AnyCallable,
+    ) -> None:
+        compiler.factories[compiler.get_object_id(target, qualifier)].factory = original
 
     def set(self, target: type, new: Any, qualifier: Qualifier | None = None) -> None:
         """Override the `target` service with `new`.
@@ -35,16 +57,58 @@ class OverrideManager:
         if not self.__is_valid_override(target, qualifier):
             raise UnknownOverrideRequestedError(klass=target, qualifier=qualifier)
 
-        self.active_overrides[target, qualifier] = new
+        obj_id = FactoryCompiler.get_object_id(target, qualifier)
+
+        self._original_factory_functions[target, qualifier] = (
+            self._factory_compiler.factories[obj_id].factory,
+            self._scoped_factory_compiler.factories[obj_id].factory,
+        )
+
+        def override_factory(_container: Any) -> Any:
+            return new
+
+        self._compiler_override_obj_id(
+            target=target,
+            qualifier=qualifier,
+            compiler=self._factory_compiler,
+            new=override_factory,
+        )
+        self._compiler_override_obj_id(
+            target=target,
+            qualifier=qualifier,
+            compiler=self._scoped_factory_compiler,
+            new=override_factory,
+        )
+
+    def _restore_factory_methods(self, target: type, qualifier: Qualifier | None) -> None:
+        """Restore original factory methods after override is removed."""
+        if (target, qualifier) not in self._original_factory_functions:
+            return
+
+        factory_func, scoped_factory_func = self._original_factory_functions[target, qualifier]
+        self._compiler_restore_obj_id(
+            compiler=self._factory_compiler,
+            target=target,
+            qualifier=qualifier,
+            original=factory_func,
+        )
+        self._compiler_restore_obj_id(
+            compiler=self._scoped_factory_compiler,
+            target=target,
+            qualifier=qualifier,
+            original=scoped_factory_func,
+        )
+
+        del self._original_factory_functions[target, qualifier]
 
     def delete(self, target: type, qualifier: Qualifier | None = None) -> None:
         """Clear active override for the `target` service."""
-        if (target, qualifier) in self.active_overrides:
-            del self.active_overrides[target, qualifier]
+        self._restore_factory_methods(target, qualifier)
 
     def clear(self) -> None:
         """Clear active service overrides."""
-        self.active_overrides.clear()
+        for key in self._original_factory_functions:
+            self._restore_factory_methods(key[0], key[1])
 
     @contextmanager
     def service(self, target: type, new: Any, qualifier: Qualifier | None = None) -> Iterator[None]:

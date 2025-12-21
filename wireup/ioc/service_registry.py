@@ -13,14 +13,17 @@ from wireup.errors import (
     DuplicateServiceRegistrationError,
     FactoryReturnTypeIsEmptyError,
     InvalidRegistrationTypeError,
+    UnknownParameterError,
     UnknownQualifiedServiceRequestedError,
     WireupError,
 )
+from wireup.ioc.parameter import ParameterBag
 from wireup.ioc.types import (
     AnnotatedParameter,
     AnyCallable,
     ContainerObjectIdentifier,
     EmptyContainerInjectionRequest,
+    ParameterWrapper,
     ServiceLifetime,
 )
 from wireup.ioc.util import ensure_is_type, get_globals, param_get_annotation, stringify_type, unwrap_optional_type
@@ -45,12 +48,14 @@ class FactoryType(Enum):
 
 
 GENERATOR_FACTORY_TYPES = {FactoryType.GENERATOR, FactoryType.ASYNC_GENERATOR}
+ASYNC_FACTORY_TYPES = {FactoryType.ASYNC_GENERATOR, FactoryType.COROUTINE_FN}
 
 
 @dataclass
 class ServiceFactory:
     factory: Callable[..., Any]
     factory_type: FactoryType
+    is_async: bool
 
 
 ServiceCreationDetails = Tuple[Callable[..., Any], ContainerObjectIdentifier, FactoryType, ServiceLifetime]
@@ -93,27 +98,65 @@ def _function_get_unwrapped_return_type(fn: Callable[..., T]) -> type[T] | None:
 class ServiceRegistry:
     """Container class holding service registration info and dependencies among them."""
 
-    __slots__ = ("ctors", "dependencies", "factories", "impls", "interfaces", "lifetime")
+    __slots__ = ("ctors", "dependencies", "factories", "impls", "interfaces", "lifetime", "parameters")
 
     def __init__(
-        self, abstracts: list[AbstractDeclaration] | None = None, impls: list[ServiceDeclaration] | None = None
+        self,
+        parameters: ParameterBag | None = None,
+        abstracts: list[AbstractDeclaration] | None = None,
+        impls: list[ServiceDeclaration] | None = None,
     ) -> None:
+        self.parameters = parameters or ParameterBag()
         self.interfaces: dict[type, dict[Qualifier, type]] = {}
         self.impls: dict[type, set[Qualifier]] = defaultdict(set)
         self.factories: dict[ContainerObjectIdentifier, ServiceFactory] = {}
         self.dependencies: dict[InjectionTarget, dict[str, AnnotatedParameter]] = defaultdict(defaultdict)
         self.lifetime: dict[ContainerObjectIdentifier, ServiceLifetime] = {}
         self.ctors: dict[ContainerObjectIdentifier, ServiceCreationDetails] = {}
-        self._extend_with_services(abstracts or [], impls or [])
+        self.extend(abstracts=abstracts or [], impls=impls or [])
 
-    def _extend_with_services(self, abstracts: list[AbstractDeclaration], impls: list[ServiceDeclaration]) -> None:
-        for abstract in abstracts:
+    def extend(
+        self,
+        *,
+        abstracts: list[AbstractDeclaration] | None = None,
+        impls: list[ServiceDeclaration] | None = None,
+    ) -> None:
+        for abstract in abstracts or []:
             self._register_abstract(abstract.obj)
 
-        for impl in impls:
+        for impl in impls or []:
             self._register(obj=impl.obj, lifetime=impl.lifetime, qualifier=impl.qualifier)
 
+        self.assert_dependencies_valid()
         self._precompute_ctors()
+        self._update_factories_async_flag()
+
+    def _update_factories_async_flag(self) -> None:
+        """Update the is_async flag for factories"""
+
+        def _is_dependency_async(impl: type, qualifier: Qualifier) -> bool:
+            if self.is_interface_known(impl):
+                impl = self.interface_resolve_impl(impl, qualifier)
+
+            factory = self.factories[impl, qualifier]
+
+            if factory.is_async:
+                return True
+
+            for dep in self.dependencies[factory.factory].values():
+                if dep.is_parameter:
+                    continue
+
+                if _is_dependency_async(dep.klass, dep.qualifier_value):
+                    return True
+
+            return False
+
+        for impl, qualifiers in self.impls.items():
+            for qualifier in qualifiers:
+                factory = self.factories[impl, qualifier]
+
+                factory.is_async = _is_dependency_async(impl, qualifier)
 
     def _precompute_ctors(self) -> None:
         for interface, impls in self.interfaces.items():
@@ -167,9 +210,9 @@ class ServiceRegistry:
 
         self._target_init_context(obj)
         self.lifetime[klass, qualifier] = lifetime
+        factory_type = _get_factory_type(obj)
         self.factories[klass, qualifier] = ServiceFactory(
-            factory=obj,
-            factory_type=_get_factory_type(obj),
+            factory=obj, factory_type=factory_type, is_async=factory_type in ASYNC_FACTORY_TYPES
         )
         self.impls[klass].add(qualifier)
 
@@ -227,3 +270,96 @@ class ServiceRegistry:
             return impls[qualifier]
 
         raise UnknownQualifiedServiceRequestedError(klass, qualifier, set(impls.keys()))
+
+    def assert_dependencies_valid(self) -> None:
+        """Assert that all required dependencies exist for this registry instance."""
+        for (impl, impl_qualifier), service_factory in self.factories.items():
+            for name, dependency in self.dependencies[service_factory.factory].items():
+                self.assert_dependency_exists(parameter=dependency, target=impl, name=name)
+                self._assert_lifetime_valid(
+                    impl=impl,
+                    impl_qualifier=impl_qualifier,
+                    parameter_name=name,
+                    dependency=dependency,
+                    factory=service_factory.factory,
+                )
+                self._assert_valid_resolution_path(dependency=dependency, path=[])
+
+    def _assert_lifetime_valid(
+        self,
+        *,
+        impl: Any,
+        impl_qualifier: Qualifier | None,
+        parameter_name: str,
+        dependency: AnnotatedParameter,
+        factory: AnyCallable,
+    ) -> None:
+        if dependency.is_parameter:
+            return
+
+        dependency_class = (
+            self.interface_resolve_impl(dependency.klass, dependency.qualifier_value)
+            if dependency.klass in self.interfaces
+            else dependency.klass
+        )
+        dependency_lifetime = self.lifetime[dependency_class, dependency.qualifier_value]
+
+        if self.lifetime[impl, impl_qualifier] == "singleton" and dependency_lifetime != "singleton":
+            msg = (
+                f"Parameter '{parameter_name}' of {stringify_type(factory)} "
+                f"depends on a service with a '{dependency_lifetime}' lifetime which is not supported. "
+                "Singletons can only depend on other singletons."
+            )
+            raise WireupError(msg)
+
+    def assert_dependency_exists(self, parameter: AnnotatedParameter, target: Any, name: str) -> None:
+        """Assert that a dependency exists in the container for the given annotated parameter."""
+        if isinstance(parameter.annotation, ParameterWrapper):
+            try:
+                self.parameters.get(parameter.annotation.param)
+            except UnknownParameterError as e:
+                msg = (
+                    f"Parameter '{name}' of {stringify_type(target)} "
+                    f"depends on an unknown Wireup parameter '{e.parameter_name}'"
+                    + (
+                        ""
+                        if isinstance(parameter.annotation.param, str)
+                        else f" requested in expression '{parameter.annotation.param.value}'"
+                    )
+                    + "."
+                )
+                raise WireupError(msg) from e
+        elif not self.is_type_with_qualifier_known(parameter.klass, qualifier=parameter.qualifier_value):
+            msg = (
+                f"Parameter '{name}' of {stringify_type(target)} "
+                f"depends on an unknown service {stringify_type(parameter.klass)} "
+                f"with qualifier {parameter.qualifier_value}."
+            )
+            raise WireupError(msg)
+
+    def _assert_valid_resolution_path(
+        self, dependency: AnnotatedParameter, path: list[tuple[AnnotatedParameter, Any]]
+    ) -> None:
+        """Assert that the resolution path for a dependency does not create a cycle."""
+        if dependency.klass in self.interfaces or dependency.is_parameter:
+            return
+        dependency_service_factory = self.factories[dependency.klass, dependency.qualifier_value]
+        new_path: list[tuple[AnnotatedParameter, Any]] = [*path, (dependency, dependency_service_factory)]
+
+        if any(p.klass == dependency.klass and p.qualifier_value == dependency.qualifier_value for p, _ in path):
+
+            def stringify_dependency(p: AnnotatedParameter, factory: Any) -> str:
+                descriptors = [
+                    f'with qualifier "{p.qualifier_value}"' if p.qualifier_value else None,
+                    f"created via {factory.factory.__module__}.{factory.factory.__name__}" if factory else None,
+                ]
+                return (
+                    f"{p.klass.__module__}.{p.klass.__name__} ({', '.join([d for d in descriptors if d is not None])})"
+                )
+
+            cycle_path = "\n -> ".join(f"{stringify_dependency(p, factory)}" for p, factory in new_path)
+            msg = f"Circular dependency detected for {cycle_path} ! Cycle here"
+            raise WireupError(msg)
+
+        for next_dependency in self.dependencies[dependency_service_factory.factory].values():
+            self._assert_valid_resolution_path(next_dependency, path=new_path)
