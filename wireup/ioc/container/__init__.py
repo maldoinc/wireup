@@ -8,11 +8,10 @@ from wireup.errors import WireupError
 from wireup.ioc.container.async_container import AsyncContainer
 from wireup.ioc.container.base_container import BaseContainer
 from wireup.ioc.container.sync_container import SyncContainer
+from wireup.ioc.factory_compiler import FactoryCompiler
 from wireup.ioc.override_manager import OverrideManager
 from wireup.ioc.parameter import ParameterBag
 from wireup.ioc.service_registry import ServiceRegistry
-from wireup.ioc.types import ContainerScope
-from wireup.ioc.validation import assert_dependencies_valid
 
 if TYPE_CHECKING:
     from types import ModuleType
@@ -36,6 +35,36 @@ def _create_container(
     :param parameters: Dict containing parameters you want to expose to the container. Services or factories can
     request parameters via the `Inject(param="name")` syntax.
     """
+    abstracts, impls = _merge_definitions(service_modules, services)
+    registry = ServiceRegistry(parameters=ParameterBag(parameters), abstracts=abstracts, impls=impls)
+
+    # The container uses a dual-compiler optimization strategy:
+    # 1. The singleton compiler generates optimized factories for singleton dependencies
+    #    and throws errors if scoped dependencies are accessed outside a scope.
+    # 2. The scoped compiler handles dependencies that require request/scope isolation.
+    #
+    # When entering/exiting scopes, the container switches between these compilers.
+    # This eliminates the need to check lifetime rules at runtime.
+    singleton_compiler = FactoryCompiler(registry, is_scoped_container=False)
+    scoped_compiler = FactoryCompiler(registry, is_scoped_container=True)
+    singleton_compiler.compile()
+    scoped_compiler.compile()
+
+    override_manager = OverrideManager(registry.is_type_with_qualifier_known, singleton_compiler, scoped_compiler)
+    return klass(
+        registry=registry,
+        factory_compiler=singleton_compiler,
+        scoped_compiler=scoped_compiler,
+        global_scope_objects={},
+        global_scope_exit_stack=[],
+        override_manager=override_manager,
+    )
+
+
+def _merge_definitions(
+    service_modules: Iterable[ModuleType] | None = None,
+    services: Iterable[Any] | None = None,
+) -> tuple[list[AbstractDeclaration], list[ServiceDeclaration]]:
     abstracts: list[AbstractDeclaration] = []
     impls: list[ServiceDeclaration] = []
 
@@ -57,17 +86,7 @@ def _create_container(
         abstracts.extend(discovered_abstracts)
         impls.extend(discovered_services)
 
-    registry = ServiceRegistry(abstracts=abstracts, impls=impls)
-    container = klass(
-        registry=registry,
-        parameters=ParameterBag(parameters),
-        global_scope=ContainerScope(objects={}, exit_stack=[]),
-        override_manager=OverrideManager({}, registry.is_type_with_qualifier_known),
-    )
-
-    assert_dependencies_valid(container)
-
-    return container
+    return abstracts, impls
 
 
 def create_sync_container(
