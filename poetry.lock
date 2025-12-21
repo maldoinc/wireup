@@ -1393,4 +1393,4 @@ eval-type = ["eval-type-backport"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.8"
-content-hash = "1662af406cb87db26a500b053aaf01b4d893910740c39527a8b9e9118387d7be"
+content-hash = "67953cdb114022aee11282094ec67b0982e0661347c663741fc8f1de87f98c23"
