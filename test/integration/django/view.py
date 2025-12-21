@@ -5,7 +5,7 @@ from wireup import Inject, Injected
 
 from test.integration.django.service.current_request_service import CurrentDjangoRequest
 from test.integration.django.service.random_service import RandomService
-from test.shared.shared_services.greeter import GreeterService
+from test.shared.shared_services.greeter import AsyncGreeterService, GreeterService
 
 
 def index(
@@ -42,3 +42,37 @@ class RandomNumberView(View):
         return HttpResponse(
             f"{greeting}! Debug = {self.is_debug}. Your lucky number is {self.random_service.get_random()}"
         )
+
+
+class AsyncRandomNumberView(View):
+    def __init__(
+        self,
+        greeter: Injected[AsyncGreeterService],
+        is_debug: Annotated[bool, Inject(param="DEBUG")],
+        random_service: Injected[RandomService],
+    ) -> None:
+        self.random_service = random_service
+        self.is_debug = is_debug
+        self.greeter = greeter
+
+    async def get(
+        self,
+        request: HttpRequest,
+    ) -> HttpResponse:
+        name = request.GET["name"]
+        greeting = await self.greeter.agreet(name)
+
+        return HttpResponse(
+            f"{greeting}! Debug = {self.is_debug}. Your lucky number is {self.random_service.get_random()}"
+        )
+
+
+async def async_greet(
+    request: HttpRequest,
+    greeter: Injected[AsyncGreeterService],
+    is_debug: Annotated[bool, Inject(param="DEBUG")],
+) -> HttpResponse:
+    """Async view that uses an async service."""
+    name = request.GET["name"]
+    greeting = await greeter.agreet(name)
+    return HttpResponse(f"{greeting}! Debug = {is_debug}")

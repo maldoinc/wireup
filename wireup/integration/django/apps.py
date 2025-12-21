@@ -137,7 +137,7 @@ class WireupConfig(AppConfig):
             injected_names = {
                 name: self.container.params.get(param.annotation.param)
                 if isinstance(param.annotation, ParameterWrapper)
-                else get_request_container().get(param.klass, qualifier=param.qualifier_value)
+                else get_request_container()._synchronous_get(param.klass, qualifier=param.qualifier_value)
                 for name, param in names_to_inject.items()
                 if param.annotation
             }
