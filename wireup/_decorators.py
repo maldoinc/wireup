@@ -112,20 +112,13 @@ def inject_from_container_util(  # noqa: C901
                 if middleware:
                     cm.enter_context(middleware(scoped_container, args, kwargs))
 
-                is_async_container = isinstance(scoped_container, ScopedAsyncContainer)
-                injected_names: dict[str, Any] = {}
-                for name, param in names_to_inject.items():
-                    if param.annotation:
-                        if isinstance(param.annotation, ParameterWrapper):
-                            injected_names[name] = scoped_container.params.get(param.annotation.param)
-                        elif is_async_container:
-                            injected_names[name] = await scoped_container.get(
-                                param.klass, qualifier=param.qualifier_value
-                            )
-                        else:
-                            injected_names[name] = scoped_container._synchronous_get(
-                                param.klass, qualifier=param.qualifier_value
-                            )
+                injected_names = {
+                    name: scoped_container.params.get(param.annotation.param)
+                    if isinstance(param.annotation, ParameterWrapper)
+                    else await scoped_container.get(param.klass, qualifier=param.qualifier_value)
+                    for name, param in names_to_inject.items()
+                    if param.annotation
+                }
 
                 return await target(*args, **{**kwargs, **injected_names})
 

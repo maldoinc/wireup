@@ -4,7 +4,7 @@ from pathlib import Path
 
 import django
 import pytest
-from django.test import Client
+from django.test import AsyncClient, Client
 from django.urls import include, path
 from django.views.generic import TemplateView
 from wireup.integration.django import WireupSettings
@@ -53,7 +53,9 @@ urlpatterns = [
 
 @pytest.fixture(autouse=True, scope="module")
 def django_setup() -> None:
-    os.environ["DJANGO_SETTINGS_MODULE"] = "test.integration.django.test_django_integration"
+    os.environ["DJANGO_SETTINGS_MODULE"] = (
+        "test.integration.django.test_django_integration"
+    )
     django.setup()
 
 
@@ -62,18 +64,28 @@ def client() -> Client:
     return Client()
 
 
+@pytest.fixture
+def async_client() -> AsyncClient:
+    return AsyncClient()
+
+
 def test_django_thing(client: Client):
     res = client.get("/?name=World")
 
     assert res.status_code == 200
-    assert res.content.decode("utf8") == "Hello World! Debug = True. Your lucky number is 4"
+    assert (
+        res.content.decode("utf8")
+        == "Hello World! Debug = True. Your lucky number is 4"
+    )
 
 
 def test_get_random(client: Client):
     res = client.get("/classbased?name=Test")
 
     assert res.status_code == 200
-    assert res.content.decode("utf8") == "Hello Test! Debug = True. Your lucky number is 4"
+    assert (
+        res.content.decode("utf8") == "Hello Test! Debug = True. Your lucky number is 4"
+    )
 
 
 @pytest.mark.parametrize("path", ("foo", "bar"))
@@ -108,21 +120,24 @@ def test_multiple_apps(client: Client):
     assert app_2_response.content.decode("utf8") == "App 2: Hello World"
 
 
-def test_async_view_with_async_service(client: Client):
+async def test_async_view_with_async_service(async_client: AsyncClient):
     # GIVEN an async Django view with an injected async service
     # WHEN making a request
-    res = client.get("/async_greet?name=World")
+    res = await async_client.get("/async_greet?name=World")
 
     # THEN the async service is properly injected and works
     assert res.status_code == 200
     assert res.content.decode("utf8") == "Hello World! Debug = True"
 
 
-def test_async_cbv_with_async_service(client: Client):
+async def test_async_cbv_with_async_service(async_client: AsyncClient):
     # GIVEN an async Django CBV with an injected async service
     # WHEN making a request
-    res = client.get("/async_classbased?name=World")
+    res = await async_client.get("/async_classbased?name=World")
 
     # THEN the async service is properly injected and works
     assert res.status_code == 200
-    assert res.content.decode("utf8") == "Hello World! Debug = True. Your lucky number is 4"
+    assert (
+        res.content.decode("utf8")
+        == "Hello World! Debug = True. Your lucky number is 4"
+    )
