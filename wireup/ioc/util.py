@@ -3,15 +3,18 @@ from __future__ import annotations
 import functools
 import importlib
 import inspect
+import sys
 import types
 import typing
 from inspect import Parameter
-from typing import Any, Sequence, TypeVar
+from typing import Any, Sequence, TypeVar, cast
 
 from wireup.errors import WireupError
 from wireup.ioc.types import AnnotatedParameter, AnyCallable, InjectableType
 
+T = TypeVar("T")
 _OPTIONAL_UNION_ARG_COUNT = 2
+_eval_type = cast("Callable[..., Any]", typing._eval_type)  # type: ignore[attr-defined]
 
 if typing.TYPE_CHECKING:
     from collections.abc import Callable
@@ -90,31 +93,59 @@ def get_globals(obj: type[Any] | Callable[..., Any]) -> dict[str, Any]:
     return obj.__globals__
 
 
-T = TypeVar("T")
+def _eval_type_native(
+    value: typing.ForwardRef,
+    globalns: dict[str, Any] | None = None,
+) -> Any:
+    """Evaluate a ForwardRef using the native typing._eval_type function.
+
+    This function handles version-specific differences in typing._eval_type.
+    """
+    res = _eval_type(value, globalns, None)
+
+    return type(None) if sys.version_info >= (3, 14) and res is None else res
 
 
 def ensure_is_type(value: type[T] | str, globalns: dict[str, Any] | None = None) -> type[T] | None:
     """Ensure the given value represents a type.
 
-    If it is a string it will be evaluated using eval_type_backport.
+    If it is a string it will be evaluated, first trying the native typing._eval_type,
+    and falling back to eval_type_backport if needed.
+
+    This approach ensures compatibility with Python 3.14+ where eval_type_backport
+    cannot be imported due to ForwardRef subclassing restrictions.
     """
-    if isinstance(value, str):
+    if not isinstance(value, str):
+        return value
+
+    forward_ref = typing.ForwardRef(value)
+
+    try:
+        # First, try using the native typing._eval_type then fall back to eval_type_backport.
+        # For a more complete solution see the pydantic implementation below.
+        # See: https://github.com/pydantic/pydantic/blob/f42171c760d43b9522fde513ae6e209790f7fefb/pydantic/_internal/_typing_extra.py#L485-L512
+        return _eval_type_native(forward_ref, globalns=globalns)  # type:ignore[no-any-return]
+    except TypeError as eval_type_error:
         try:
             import eval_type_backport
-
-            return eval_type_backport.eval_type_backport(  # type:ignore[no-any-return]
-                eval_type_backport.ForwardRef(value), globalns=globalns, try_default=False
-            )
-        except NameError:
-            return None
-        except ImportError as e:
+        except ImportError as import_error:
             msg = (
-                "Using __future__ annotations in Wireup requires the eval_type_backport package to be installed. "
+                f"Error evaluating type annotation '{value}'. "
+                f"Got: TypeError: {eval_type_error}.\n"
+                "Tip: Try using the eval_type_backport package to resolve stringified types.\n"
                 "See: https://maldoinc.github.io/wireup/latest/future_annotations/"
             )
-            raise WireupError(msg) from e
+            raise WireupError(msg) from import_error
 
-    return value
+        return eval_type_backport.eval_type_backport(forward_ref, globalns=globalns, try_default=False)  # type:ignore[no-any-return]
+
+    except NameError as e:
+        msg = (
+            f"Error evaluating type annotation '{value}'. Got NameError: {e!s}. "
+            "Make sure the type is correctly imported and not inside a TYPE_CHECKING block.\n"
+            "See: https://maldoinc.github.io/wireup/latest/future_annotations/"
+        )
+        raise WireupError(msg) from e
 
 
 def unwrap_optional_type(type_: Any) -> Any:
