@@ -53,9 +53,7 @@ urlpatterns = [
 
 @pytest.fixture(autouse=True, scope="module")
 def django_setup() -> None:
-    os.environ["DJANGO_SETTINGS_MODULE"] = (
-        "test.integration.django.test_django_integration"
-    )
+    os.environ["DJANGO_SETTINGS_MODULE"] = "test.integration.django.test_django_integration"
     django.setup()
 
 
@@ -73,19 +71,14 @@ def test_django_thing(client: Client):
     res = client.get("/?name=World")
 
     assert res.status_code == 200
-    assert (
-        res.content.decode("utf8")
-        == "Hello World! Debug = True. Your lucky number is 4"
-    )
+    assert res.content.decode("utf8") == "Hello World! Debug = True. Your lucky number is 4"
 
 
 def test_get_random(client: Client):
     res = client.get("/classbased?name=Test")
 
     assert res.status_code == 200
-    assert (
-        res.content.decode("utf8") == "Hello Test! Debug = True. Your lucky number is 4"
-    )
+    assert res.content.decode("utf8") == "Hello Test! Debug = True. Your lucky number is 4"
 
 
 @pytest.mark.parametrize("path", ("foo", "bar"))
@@ -137,7 +130,4 @@ async def test_async_cbv_with_async_service(async_client: AsyncClient):
 
     # THEN the async service is properly injected and works
     assert res.status_code == 200
-    assert (
-        res.content.decode("utf8")
-        == "Hello World! Debug = True. Your lucky number is 4"
-    )
+    assert res.content.decode("utf8") == "Hello World! Debug = True. Your lucky number is 4"
