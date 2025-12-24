@@ -101,9 +101,12 @@ def _eval_type_native(
 
     This function handles version-specific differences in typing._eval_type.
     """
-    res = _eval_type(value, globalns, None)
+    if sys.version_info >= (3, 14):
+        res = _eval_type(value, globalns, None, type_params=())
 
-    return type(None) if sys.version_info >= (3, 14) and res is None else res
+        return type(None) if res is None else res
+
+    return _eval_type(value, globalns, None)
 
 
 def ensure_is_type(value: type[T] | str, globalns: dict[str, Any] | None = None) -> type[T] | None:
