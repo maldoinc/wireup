@@ -81,10 +81,24 @@ def param_get_annotation(parameter: Parameter, *, globalns: dict[str, Any]) -> A
     return AnnotatedParameter(klass=inner_type, annotation=annotation)
 
 
+def _type_get_globals(typ: type) -> dict[str, Any]:
+    """
+    Merge globals from parent classes with the child class's module globals,
+    with child class globals taking precedence.
+    """
+    merged_globals: dict[str, Any] = {}
+
+    for base_class in reversed(typ.__mro__[:-1]):
+        base_globals = importlib.import_module(base_class.__module__).__dict__
+        merged_globals.update(base_globals)
+
+    return merged_globals
+
+
 def get_globals(obj: type[Any] | Callable[..., Any]) -> dict[str, Any]:
     """Return the globals for the given object."""
     if isinstance(obj, type):
-        return importlib.import_module(obj.__module__).__dict__
+        return _type_get_globals(obj)
 
     # Unwrap nested functools.partial to get the underlying function
     while isinstance(obj, functools.partial):

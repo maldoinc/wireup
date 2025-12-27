@@ -18,6 +18,7 @@ from wireup.errors import (
 
 from test.unit import service_refs, services
 from test.unit.services.abstract_multiple_bases import FooBase, FooBaseAnother
+from test.unit.services.inheritance_test import ObjWithInheritance
 from test.unit.services.no_annotations.random.random_service import RandomService
 from test.unit.services.no_annotations.random.truly_random_service import TrulyRandomService
 from test.unit.services.with_annotations.env import EnvService
@@ -61,6 +62,9 @@ class ContainerGetParams(NamedTuple):
         ContainerGetParams(service_type=Foo, qualifier=None, expected_type=FooImpl).to_pytest("With qualifier"),
         ContainerGetParams(service_type=Foo, qualifier="other", expected_type=OtherFooImpl).to_pytest(
             "Resolves interface"
+        ),
+        ContainerGetParams(service_type=ObjWithInheritance, qualifier=None, expected_type=ObjWithInheritance).to_pytest(
+            "Resolves dependencies from base classes with stringified types"
         ),
     ],
 )
