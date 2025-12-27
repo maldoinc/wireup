@@ -80,7 +80,7 @@ def _function_get_unwrapped_return_type(fn: Callable[..., T]) -> type[T] | None:
         return fn
 
     if ret := fn.__annotations__.get("return"):
-        ret = ensure_is_type(ret, globalns=get_globals(fn))
+        ret = ensure_is_type(ret, globalns_supplier=lambda: get_globals(fn))
         if not ret:
             return None
 
@@ -225,7 +225,7 @@ class ServiceRegistry:
     ) -> None:
         """Init and collect all the necessary dependencies to initialize the specified target."""
         for name, parameter in inspect.signature(target).parameters.items():
-            annotated_param = param_get_annotation(parameter, globalns=get_globals(target))
+            annotated_param = param_get_annotation(parameter, globalns_supplier=lambda: get_globals(target))
 
             if not annotated_param:
                 msg = f"Wireup dependencies must have types. Please add a type to the '{name}' parameter in {target}."

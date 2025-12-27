@@ -46,14 +46,18 @@ def _get_wireup_annotation(metadata: Sequence[Any]) -> InjectableType | None:
     return annotations[0]
 
 
-def param_get_annotation(parameter: Parameter, *, globalns: dict[str, Any]) -> AnnotatedParameter | None:
+def param_get_annotation(
+    parameter: Parameter,
+    *,
+    globalns_supplier: Callable[[], dict[str, Any]],
+) -> AnnotatedParameter | None:
     """Get the annotation injection type from a signature's Parameter.
 
     Returns the first injectable annotation for an Annotated type or the default value.
     Also handles Optional types by marking them as optional in the AnnotatedParameter.
     Supports both Annotated[Optional[T], ...] and Optional[Annotated[T, ...]] patterns.
     """
-    resolved_type: type[Any] | None = ensure_is_type(parameter.annotation, globalns=globalns)
+    resolved_type: type[Any] | None = ensure_is_type(parameter.annotation, globalns_supplier=globalns_supplier)
 
     if resolved_type is Parameter.empty:
         resolved_type = None
@@ -123,7 +127,7 @@ def _eval_type_native(
     return _eval_type(value, globalns, None)
 
 
-def ensure_is_type(value: type[T] | str, globalns: dict[str, Any] | None = None) -> type[T] | None:
+def ensure_is_type(value: type[T] | str, globalns_supplier: Callable[[], dict[str, Any]]) -> type[T] | None:
     """Ensure the given value represents a type.
 
     If it is a string it will be evaluated, first trying the native typing._eval_type,
@@ -141,7 +145,7 @@ def ensure_is_type(value: type[T] | str, globalns: dict[str, Any] | None = None)
         # First, try using the native typing._eval_type then fall back to eval_type_backport.
         # For a more complete solution see the pydantic implementation below.
         # See: https://github.com/pydantic/pydantic/blob/f42171c760d43b9522fde513ae6e209790f7fefb/pydantic/_internal/_typing_extra.py#L485-L512
-        return _eval_type_native(forward_ref, globalns=globalns)  # type:ignore[no-any-return]
+        return _eval_type_native(forward_ref, globalns=globalns_supplier())  # type:ignore[no-any-return]
     except TypeError as eval_type_error:
         try:
             import eval_type_backport
@@ -154,7 +158,7 @@ def ensure_is_type(value: type[T] | str, globalns: dict[str, Any] | None = None)
             )
             raise WireupError(msg) from import_error
 
-        return eval_type_backport.eval_type_backport(forward_ref, globalns=globalns, try_default=False)  # type:ignore[no-any-return]
+        return eval_type_backport.eval_type_backport(forward_ref, globalns=globalns_supplier(), try_default=False)  # type:ignore[no-any-return]
 
     except NameError as e:
         msg = (
@@ -230,7 +234,7 @@ def get_inject_annotated_parameters(target: AnyCallable) -> dict[str, AnnotatedP
     return {
         name: param
         for name, parameter in inspect.signature(target).parameters.items()
-        if (param := param_get_annotation(parameter, globalns=get_globals(target)))
+        if (param := param_get_annotation(parameter, globalns_supplier=lambda: get_globals(target)))
         and isinstance(param.annotation, InjectableType)
     }
 
