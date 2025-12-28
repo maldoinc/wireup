@@ -3,7 +3,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 import wireup
-from wireup._annotations import Injected  # noqa: TC002
+from typing_extensions import Annotated
+from wireup import Inject, Injected
 
 
 class MaybeThing: ...
@@ -24,8 +25,15 @@ def test_inject_from_container_handles_optionals() -> None:
     container = wireup.create_sync_container(services=[wireup.service(make_maybe_thing), wireup.service(make_thing)])
 
     @wireup.inject_from_container(container)
-    def main(maybe_thing: Injected[MaybeThing | None], thing: Injected[Thing]):
+    def main(
+        maybe_thing: Injected[MaybeThing | None],
+        maybe_thing_annotated: Annotated[MaybeThing | None, Inject(qualifier=None)],
+        maybe_thing_annotated2: Annotated[MaybeThing, Inject(qualifier=None)] | None,
+        thing: Injected[Thing],
+    ):
         assert maybe_thing is None
+        assert maybe_thing_annotated is None
+        assert maybe_thing_annotated2 is None
         assert isinstance(thing, Thing)
         assert thing.maybe_thing is None
 

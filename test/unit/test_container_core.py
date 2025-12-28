@@ -1,8 +1,9 @@
 from __future__ import annotations
 
 import re
+import sys
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, NamedTuple
+from typing import TYPE_CHECKING, Any, NamedTuple, Optional
 
 import pytest
 import wireup
@@ -302,4 +303,22 @@ def test_container_properly_caches_none_result() -> None:
 
     container = wireup.create_sync_container(services=[make_none])
     assert container.get(RandomService) is container.get(RandomService)
+    assert counter == 1
+
+
+@pytest.mark.skipif(sys.version_info < (3, 10), reason="Union types not available in python versions")
+def test_container_handles_optional_types_as_aliased() -> None:
+    counter = 0
+
+    @wireup.service
+    def make_none() -> RandomService | None:
+        nonlocal counter
+        counter += 1
+
+        return None
+
+    container = wireup.create_sync_container(services=[make_none])
+    assert container.get(RandomService | None) is container.get(Optional[RandomService])
+    assert container.get(RandomService | None) is container.get(None | RandomService)
+    assert container.get(RandomService) is container.get(Optional[RandomService])
     assert counter == 1

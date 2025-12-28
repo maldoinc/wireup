@@ -254,17 +254,12 @@ When a service has an optional dependency, simply use `T | None` or `Optional[T]
     instead of conditional checks throughout your code.
 
 
-**Injection vs. Direct Access**: Optional dependencies can be injected into services and decorated functions, but there's an important distinction when accessing them directly:
+**Direct Access**
+
+When accessing optional dependencies directly from the container, you can retrieve them using `container.get()` just like any other service. If the factory was registered with an optional return type you'll need to provide the union type when retrieving it.
 
 ```python
-# ✅ This works - injecting optional dependencies
-@service
-class UserService:
-    def __init__(self, cache: Optional[Cache]) -> None: ...
-
 # ✅ This works - getting the service directly
-cache = container.get(Cache)  # Returns None if factory returns None
-
-# ❌ This doesn't work - cannot get Optional types directly
 cache = container.get(Optional[Cache]) 
+cache = container.get(Cache | None) 
 ```
