@@ -24,6 +24,7 @@ _CONTAINER_SCOPE_ERROR_MSG = (
     "If you are within a scope, use the scoped container instance to create dependencies."
 )
 _WIREUP_GENERATED_FACTORY_NAME = "_wireup_factory"
+_SENTINEL = object()
 
 
 class FactoryCompiler:
@@ -82,7 +83,7 @@ class FactoryCompiler:
             else:
                 code += "    storage = container._current_scope_objects\n"
 
-            code += "    if res := storage.get(OBJ_ID):\n"
+            code += "    if (res := storage.get(OBJ_ID, _SENTINEL)) is not _SENTINEL:\n"
             code += "        return res\n"
 
         kwargs = ""
@@ -148,6 +149,7 @@ class FactoryCompiler:
                 "TemplatedString": TemplatedString,
                 "WireupError": WireupError,
                 "_CONTAINER_SCOPE_ERROR_MSG": _CONTAINER_SCOPE_ERROR_MSG,
+                "_SENTINEL": _SENTINEL,
                 "parameters": self._registry.parameters,
             }
 

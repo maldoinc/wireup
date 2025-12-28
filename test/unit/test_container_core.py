@@ -288,3 +288,18 @@ def test_container_deduplicates_services_from_multiple_modules() -> None:
     # This should not result in a duplicate error since the container should deduplicate classes
     # when imported from multiple modules.
     wireup.create_async_container(service_modules=[services, service_refs], parameters={"env_name": "test"})
+
+
+def test_container_properly_caches_none_result() -> None:
+    counter = 0
+
+    @wireup.service
+    def make_none() -> RandomService | None:
+        nonlocal counter
+        counter += 1
+
+        return None
+
+    container = wireup.create_sync_container(services=[make_none])
+    assert container.get(RandomService) is container.get(RandomService)
+    assert counter == 1
