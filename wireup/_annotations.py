@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import contextlib
 import importlib
+import warnings
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, TypeVar, overload
 
@@ -16,6 +17,7 @@ from wireup.ioc.types import (
     ServiceQualifier,
     TemplatedString,
 )
+from wireup.ioc.util import stringify_type
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -79,6 +81,7 @@ class ServiceDeclaration:
     obj: Any
     qualifier: Qualifier | None = None
     lifetime: ServiceLifetime = "singleton"
+    binds: Any | None = None
 
 
 @dataclass
@@ -94,6 +97,7 @@ def service(
     *,
     qualifier: Qualifier | None = None,
     lifetime: ServiceLifetime = "singleton",
+    binds: type[Any] | None = None,
 ) -> Callable[[T], T]:
     pass
 
@@ -104,6 +108,7 @@ def service(
     *,
     qualifier: Qualifier | None = None,
     lifetime: ServiceLifetime = "singleton",
+    binds: type[Any] | None = None,
 ) -> T:
     pass
 
@@ -113,13 +118,17 @@ def service(
     *,
     qualifier: Qualifier | None = None,
     lifetime: ServiceLifetime = "singleton",
+    binds: type[Any] | None = None,
 ) -> T | Callable[[T], T]:
     """Mark the decorated class or function as a Wireup service."""
 
     # Allow this to be used as a decorator factory or as a decorator directly.
     def _service_decorator(decorated_obj: T) -> T:
         decorated_obj.__wireup_registration__ = ServiceDeclaration(  # type: ignore[attr-defined]
-            obj=decorated_obj, qualifier=qualifier, lifetime=lifetime
+            obj=decorated_obj,
+            qualifier=qualifier,
+            lifetime=lifetime,
+            binds=binds,
         )
         return decorated_obj
 
@@ -129,5 +138,15 @@ def service(
 def abstract(cls: type[T]) -> type[T]:
     """Mark the decorated class as an abstract service."""
     cls.__wireup_registration__ = AbstractDeclaration(cls)  # type: ignore[attr-defined]
+
+    warnings.warn(
+        (
+            f"Deprecated: Using @abstract on {stringify_type(cls)}. "
+            f"Remove the @abstract decorator and"
+            f"annotate concrete implementations with `@service(binds={cls.__name__})` instead. "
+            "See https://maldoinc.github.io/wireup/latest/interfaces/."
+        ),
+        stacklevel=2,
+    )
 
     return cls

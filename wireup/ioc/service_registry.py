@@ -125,7 +125,15 @@ class ServiceRegistry:
             self._register_abstract(abstract.obj)
 
         for impl in impls or []:
-            self._register(obj=impl.obj, lifetime=impl.lifetime, qualifier=impl.qualifier)
+            if impl.binds:
+                self._register_abstract(impl.binds)
+                self.interfaces[impl.binds][impl.qualifier] = impl.obj
+            self._register(
+                obj=impl.obj,
+                lifetime=impl.lifetime,
+                qualifier=impl.qualifier,
+                auto_discover_interfaces=impl.binds is None,
+            )
 
         self.assert_dependencies_valid()
         self._precompute_ctors()
@@ -184,6 +192,8 @@ class ServiceRegistry:
         obj: Callable[..., Any],
         lifetime: ServiceLifetime = "singleton",
         qualifier: Qualifier | None = None,
+        *,
+        auto_discover_interfaces: bool,
     ) -> None:
         if not callable(obj):
             raise InvalidRegistrationTypeError(obj)
@@ -205,7 +215,7 @@ class ServiceRegistry:
                     self.interfaces[base][qualifier] = klass
                 discover_interfaces(base.__bases__)
 
-        if hasattr(klass, "__bases__"):
+        if auto_discover_interfaces and hasattr(klass, "__bases__"):
             discover_interfaces(klass.__bases__)
 
         self._target_init_context(obj)
