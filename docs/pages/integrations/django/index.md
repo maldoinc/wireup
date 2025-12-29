@@ -129,6 +129,150 @@ Class-based views are also supported. Specify dependencies in the class `__init_
 
 For more examples, see the [Wireup Django integration tests](https://github.com/maldoinc/wireup/tree/master/test/integration/django/view.py).
 
+### Third-party Django frameworks
+
+If your project uses third-party packages to create views, such as [Django REST framework](https://www.django-rest-framework.org/) or [Django Ninja](https://django-ninja.dev/), you must use the `@inject` decorator explicitly.
+
+This approach should work for any Django-based framework as long as it relies on Django's `AppConfig` and middleware mechanisms.
+
+=== "Django REST Framework"
+
+    ```python title="app/views.py"
+    from rest_framework.decorators import api_view
+    from rest_framework.request import Request
+    from rest_framework.response import Response
+    from rest_framework.views import APIView
+    from rest_framework.viewsets import ViewSet
+
+    from wireup import Injected
+    from wireup.integration.django import inject
+
+    from mysite.polls.services import S3Manager
+
+
+    @api_view(("GET",))
+    @inject
+    def drf_function_based_view(
+        request: Request,
+        s3_manager: Injected[S3Manager]
+    ) -> Response:
+        # Use the injected S3Manager instance
+        return Response(...)
+
+
+    class DRFClassBasedView(APIView):
+        @inject
+        def get(
+            self,
+            request: Request,
+            s3_manager: Injected[S3Manager]
+        ) -> Response:
+            # Use the injected S3Manager instance
+            return Response(...)
+
+
+    class DRFViewSet(ViewSet):
+        @inject
+        def list(
+            self,
+            request: Request,
+            s3_manager: Injected[S3Manager]
+        ) -> Response:
+            # Use the injected S3Manager instance
+            return Response(...)
+    ```
+
+=== "Django Ninja"
+
+    ```python title="app/views.py"
+    from ninja import Router, Schema
+
+    from wireup import Injected
+    from wireup.integration.django import inject
+
+    from mysite.polls.services import S3Manager
+
+
+    router = Router()
+
+
+    class ItemSchema(Schema):
+        name: str
+        price: float
+
+
+    @router.get("/items")
+    @inject
+    def list_items(
+        request,
+        s3_manager: Injected[S3Manager]
+    ):
+        # Use the injected S3Manager instance
+        return {"items": [...]}
+
+
+    @router.post("/items")
+    @inject
+    def create_item(
+        request,
+        data: ItemSchema,
+        s3_manager: Injected[S3Manager]
+    ):
+        # Both request body and injected service work together
+        return {"name": data.name, "price": data.price}
+    ```
+
+!!! tip "Best practice for mixing core and non-core Django views"
+
+    If your project shares core and non core-django views, consider disabling auto-injection and using `@inject`
+    explicitly across all your views for consistency:
+
+    ```python title="settings.py"
+    WIREUP = WireupSettings(
+        service_modules=["mysite.polls.services"],
+        auto_inject_views=False,  # Disable auto-injection
+    )
+    ```
+
+    === "Do"
+
+        ```python
+        # Consistent approach: use @inject everywhere
+        @inject
+        def core_django_view(
+            request: HttpRequest,
+            service: Injected[MyService]
+        ) -> HttpResponse:
+            return HttpResponse(...)
+
+        @api_view(("GET",))
+        @inject
+        def drf_view(
+            request: Request,
+            service: Injected[MyService]
+        ) -> Response:
+            return Response(...)
+        ```
+
+    === "Don't"
+
+        ```python
+        # Inconsistent: mixing auto-injection and @inject
+        def core_django_view(
+            request: HttpRequest,
+            service: Injected[MyService]  # Auto-injected
+        ) -> HttpResponse:
+            return HttpResponse(...)
+
+        @api_view(("GET",))
+        @inject  # Explicit injection
+        def drf_view(
+            request: Request,
+            service: Injected[MyService]
+        ) -> Response:
+            return Response(...)
+        ```
+
 ### Accessing the container
 
 To access the Wireup container directly, use the following functions:

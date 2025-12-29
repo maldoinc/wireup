@@ -38,16 +38,17 @@ def _create_container(
     :param config: Configuration to expose to the container. Services or factories can
     request config via the `Inject(config="name")` annotation.
     """
-    if parameters is not None and config is not None:
-        msg = (
-            "Passing both 'parameters' and 'config' is not supported. "
-            "Please use only 'config' as 'parameters' is deprecated."
-        )
-        raise WireupError(msg)
 
     if parameters is not None:
         msg = "Parameters have been renamed to Config. Pass your configuration to the config parameter."
         warnings.warn(msg, FutureWarning, stacklevel=2)
+
+        if config is not None:
+            msg = (
+                "Passing both 'parameters' and 'config' is not supported. "
+                "Please use only 'config' as 'parameters' is deprecated."
+            )
+            raise WireupError(msg)
 
     abstracts, impls = _merge_definitions(service_modules, services)
     registry = ServiceRegistry(config=ConfigStore(parameters or config), abstracts=abstracts, impls=impls)
