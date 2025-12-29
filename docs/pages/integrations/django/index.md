@@ -129,36 +129,30 @@ Class-based views are also supported. Specify dependencies in the class `__init_
 
 For more examples, see the [Wireup Django integration tests](https://github.com/maldoinc/wireup/tree/master/test/integration/django/view.py).
 
-### Non core-django views (eg, Django REST framework)
-If your project uses third-party packages to create views, such as [Django REST framework](https://www.django-rest-framework.org/), you must use the `@inject` decorator explicitly.
+### Third-party Django frameworks
 
-```python title="app/views.py"
-from rest_framework.decorators import api_view
-from rest_framework.request import Request
-from rest_framework.response import Response
-from rest_framework.views import APIView
-from rest_framework.viewsets import ViewSet
+If your project uses third-party packages to create views, such as [Django REST framework](https://www.django-rest-framework.org/) or [Django Ninja](https://django-ninja.dev/), you must use the `@inject` decorator explicitly.
 
-from wireup import Injected
-from wireup.integration.django import inject
+This approach should work for any Django-based framework as long as it relies on Django's `AppConfig` and middleware mechanisms.
 
-from mysite.polls.services import S3Manager
+=== "Django REST Framework"
 
+    ```python title="app/views.py"
+    from rest_framework.decorators import api_view
+    from rest_framework.request import Request
+    from rest_framework.response import Response
+    from rest_framework.views import APIView
+    from rest_framework.viewsets import ViewSet
 
-@api_view(("GET",))
-@inject
-def drf_function_based_view(
-    request: Request,
-    s3_manager: Injected[S3Manager]
-) -> Response:
-    # Use the injected S3Manager instance
-    return Response(...)
+    from wireup import Injected
+    from wireup.integration.django import inject
+
+    from mysite.polls.services import S3Manager
 
 
-class DRFClassBasedView(APIView):
+    @api_view(("GET",))
     @inject
-    def get(
-        self,
+    def drf_function_based_view(
         request: Request,
         s3_manager: Injected[S3Manager]
     ) -> Response:
@@ -166,16 +160,67 @@ class DRFClassBasedView(APIView):
         return Response(...)
 
 
-class DRFViewSet(ViewSet):
+    class DRFClassBasedView(APIView):
+        @inject
+        def get(
+            self,
+            request: Request,
+            s3_manager: Injected[S3Manager]
+        ) -> Response:
+            # Use the injected S3Manager instance
+            return Response(...)
+
+
+    class DRFViewSet(ViewSet):
+        @inject
+        def list(
+            self,
+            request: Request,
+            s3_manager: Injected[S3Manager]
+        ) -> Response:
+            # Use the injected S3Manager instance
+            return Response(...)
+    ```
+
+=== "Django Ninja"
+
+    ```python title="app/views.py"
+    from ninja import Router, Schema
+
+    from wireup import Injected
+    from wireup.integration.django import inject
+
+    from mysite.polls.services import S3Manager
+
+
+    router = Router()
+
+
+    class ItemSchema(Schema):
+        name: str
+        price: float
+
+
+    @router.get("/items")
     @inject
-    def list(
-        self,
-        request: Request,
-        greeter: Injected[GreeterService]
-    ) -> Response:
+    def list_items(
+        request,
+        s3_manager: Injected[S3Manager]
+    ):
         # Use the injected S3Manager instance
-        return Response(...)
-```
+        return {"items": [...]}
+
+
+    @router.post("/items")
+    @inject
+    def create_item(
+        request,
+        data: ItemSchema,
+        s3_manager: Injected[S3Manager]
+    ):
+        # Both request body and injected service work together
+        return {"name": data.name, "price": data.price}
+    ```
 
 !!! tip "Best practice for mixing core and non-core Django views"
 
