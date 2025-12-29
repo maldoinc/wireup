@@ -1,16 +1,17 @@
 from __future__ import annotations
 
+import warnings
 from typing import TYPE_CHECKING, Any, Iterable, TypeVar
 
 from wireup._annotations import AbstractDeclaration, ServiceDeclaration
 from wireup._discovery import discover_wireup_registrations
 from wireup.errors import WireupError
+from wireup.ioc.configuration import ConfigStore
 from wireup.ioc.container.async_container import AsyncContainer
 from wireup.ioc.container.base_container import BaseContainer
 from wireup.ioc.container.sync_container import SyncContainer
 from wireup.ioc.factory_compiler import FactoryCompiler
 from wireup.ioc.override_manager import OverrideManager
-from wireup.ioc.parameter import ParameterBag
 from wireup.ioc.service_registry import ServiceRegistry
 
 if TYPE_CHECKING:
@@ -25,6 +26,7 @@ def _create_container(
     service_modules: Iterable[ModuleType] | None = None,
     services: Iterable[Any] | None = None,
     parameters: dict[str, Any] | None = None,
+    config: dict[str, Any] | None = None,
 ) -> _ContainerT:
     """Create a Wireup container.
 
@@ -32,11 +34,23 @@ def _create_container(
     with `@service` or `@abstract`. Wireup will recursively scan the modules and register services found in them.
     :param services: A list of classes or functions decorated with `@service` or `@abstract` to register with the
     container instance. Use this when you want to explicitly list services.
-    :param parameters: Dict containing parameters you want to expose to the container. Services or factories can
-    request parameters via the `Inject(param="name")` syntax.
+    :param parameters: Deprecated. Parameters was renamed to config, use that instead.
+    :param config: Configuration to expose to the container. Services or factories can
+    request config via the `Inject(config="name")` annotation.
     """
+    if parameters is not None and config is not None:
+        msg = (
+            "Passing both 'parameters' and 'config' is not supported. "
+            "Please use only 'config' as 'parameters' is deprecated."
+        )
+        raise WireupError(msg)
+
+    if parameters is not None:
+        msg = "Parameters have been renamed to Config. Pass your configuration to the config parameter."
+        warnings.warn(msg, FutureWarning, stacklevel=2)
+
     abstracts, impls = _merge_definitions(service_modules, services)
-    registry = ServiceRegistry(parameters=ParameterBag(parameters), abstracts=abstracts, impls=impls)
+    registry = ServiceRegistry(config=ConfigStore(parameters or config), abstracts=abstracts, impls=impls)
 
     # The container uses a dual-compiler optimization strategy:
     # 1. The singleton compiler generates optimized factories for singleton dependencies
@@ -93,6 +107,8 @@ def create_sync_container(
     service_modules: list[ModuleType] | None = None,
     services: list[Any] | None = None,
     parameters: dict[str, Any] | None = None,
+    *,
+    config: dict[str, Any] | None = None,
 ) -> SyncContainer:
     """Create a Wireup container.
 
@@ -100,17 +116,26 @@ def create_sync_container(
     with `@service` or `@abstract`. Wireup will recursively scan the modules and register services found in them.
     :param services: A list of classes or functions decorated with `@service` or `@abstract` to register with the
     container instance. Use this when you want to explicitly list services.
-    :param parameters: Dict containing parameters you want to expose to the container. Services or factories can
-    request parameters via the `Inject(param="name")` syntax.
+    :param parameters: Deprecated. Parameters was renamed to config, use that instead.
+    :param config: Configuration to expose to the container. Services or factories can
+    request config via the `Inject(config="name")` annotation.
     :raises WireupError: Raised if the dependencies cannot be fully resolved.
     """
-    return _create_container(SyncContainer, service_modules=service_modules, services=services, parameters=parameters)
+    return _create_container(
+        SyncContainer,
+        service_modules=service_modules,
+        services=services,
+        parameters=parameters,
+        config=config,
+    )
 
 
 def create_async_container(
     service_modules: list[ModuleType] | None = None,
     services: list[Any] | None = None,
     parameters: dict[str, Any] | None = None,
+    *,
+    config: dict[str, Any] | None = None,
 ) -> AsyncContainer:
     """Create a Wireup container.
 
@@ -118,8 +143,15 @@ def create_async_container(
     with `@service` or `@abstract`. Wireup will recursively scan the modules and register services found in them.
     :param services: A list of classes or functions decorated with `@service` or `@abstract` to register with the
     container instance. Use this when you want to explicitly list services.
-    :param parameters: Dict containing parameters you want to expose to the container. Services or factories can
-    request parameters via the `Inject(param="name")` syntax.
+    :param parameters: Deprecated. Parameters was renamed to config, use that instead.
+    :param config: Configuration to expose to the container. Services or factories can
+    request config via the `Inject(config="name")` annotation.
     :raises WireupError: Raised if the dependencies cannot be fully resolved.
     """
-    return _create_container(AsyncContainer, service_modules=service_modules, services=services, parameters=parameters)
+    return _create_container(
+        AsyncContainer,
+        service_modules=service_modules,
+        services=services,
+        parameters=parameters,
+        config=config,
+    )

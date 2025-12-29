@@ -9,8 +9,8 @@ from wireup import Inject
 from wireup.errors import WireupError
 from wireup.ioc.types import (
     AnnotatedParameter,
+    ConfigInjectionRequest,
     InjectableType,
-    ParameterWrapper,
     ServiceQualifier,
 )
 from wireup.ioc.util import (
@@ -30,9 +30,9 @@ class TestUtilityFunctions(unittest.TestCase):
             _a: Annotated[str, "ignored", unittest.TestCase, d1],
             _b,
             _c: str,
-            _d: Annotated[str, Inject(param="d")],
-            _e: str = Inject(param="e"),
-            _f=Inject(param="f"),
+            _d: Annotated[str, Inject(config="d")],
+            _e: str = Inject(config="e"),
+            _f=Inject(config="f"),
             _g=d2,
         ): ...
 
@@ -50,7 +50,7 @@ class TestUtilityFunctions(unittest.TestCase):
         )
         self.assertEqual(
             _param_get_annotation(params.parameters["_d"]),
-            AnnotatedParameter(str, ParameterWrapper("d")),
+            AnnotatedParameter(str, ConfigInjectionRequest("d")),
         )
         self.assertEqual(
             _param_get_annotation(params.parameters["_e"]),
@@ -69,7 +69,7 @@ class TestUtilityFunctions(unittest.TestCase):
 
 
 def test_raises_multiple_annotations() -> None:
-    def inner(_a: Annotated[str, Inject(), Inject(param="foo")]): ...
+    def inner(_a: Annotated[str, Inject(), Inject(config="foo")]): ...
 
     params = inspect.signature(inner)
 

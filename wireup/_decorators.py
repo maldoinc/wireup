@@ -9,7 +9,7 @@ from typing import TYPE_CHECKING, Any, Callable
 from wireup.errors import WireupError
 from wireup.ioc.container.async_container import AsyncContainer, ScopedAsyncContainer, async_container_force_sync_scope
 from wireup.ioc.container.sync_container import SyncContainer
-from wireup.ioc.types import AnnotatedParameter, ParameterWrapper
+from wireup.ioc.types import AnnotatedParameter, ConfigInjectionRequest
 from wireup.ioc.util import (
     get_inject_annotated_parameters,
     get_valid_injection_annotated_parameters,
@@ -113,8 +113,8 @@ def inject_from_container_util(  # noqa: C901
                     cm.enter_context(middleware(scoped_container, args, kwargs))
 
                 injected_names = {
-                    name: scoped_container.params.get(param.annotation.param)
-                    if isinstance(param.annotation, ParameterWrapper)
+                    name: scoped_container.config.get(param.annotation.config_key)
+                    if isinstance(param.annotation, ConfigInjectionRequest)
                     else await scoped_container.get(param.klass, qualifier=param.qualifier_value)
                     for name, param in names_to_inject.items()
                     if param.annotation
@@ -145,8 +145,8 @@ def inject_from_container_util(  # noqa: C901
             get = scoped_container._synchronous_get
 
             injected_names = {
-                name: scoped_container.params.get(param.annotation.param)
-                if isinstance(param.annotation, ParameterWrapper)
+                name: scoped_container.config.get(param.annotation.config_key)
+                if isinstance(param.annotation, ConfigInjectionRequest)
                 else get(param.klass, qualifier=param.qualifier_value)
                 for name, param in names_to_inject.items()
                 if param.annotation

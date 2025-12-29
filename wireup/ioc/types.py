@@ -15,9 +15,9 @@ class InjectableType:
 
 @dataclass(frozen=True)
 class TemplatedString:
-    """Wrapper for strings which contain values that must be interpolated by the parameter bag.
+    """Wrapper for strings which contain values that must be interpolated by the configuration store.
 
-    Use this with the special ${param_name} syntax to reference a parameter in a string similar to python f-string.
+    Use this with the special ${config_value} syntax to reference a configuration in a formatted string.
     Strings in Inject(expr="") calls are automatically wrapped.
     """
 
@@ -26,15 +26,15 @@ class TemplatedString:
     value: str
 
 
-ParameterReference = Union[str, TemplatedString]
+ConfigurationReference = Union[str, TemplatedString]
 
 
 @dataclass(frozen=True)
-class ParameterWrapper(InjectableType):
-    """Wrapper for parameter values. This indicates to the container registry that this argument is a parameter."""
+class ConfigInjectionRequest(InjectableType):
+    """Flag to indicates to the registry that this argument is a configuration value."""
 
-    __slots__ = ("param",)
-    param: ParameterReference
+    __slots__ = ("config_key",)
+    config_key: ConfigurationReference
 
 
 Qualifier = Hashable
@@ -79,12 +79,12 @@ class AnnotatedParameter:
         If the annotation is a ContainerProxyQualifier, `qualifier_value` will be set to its value.
 
         :param klass: The type of the dependency
-        :param annotation: Any annotation passed along. Such as Inject(param=...) calls
+        :param annotation: Any annotation passed along. Such as Inject(config=...) calls
         """
         self.klass = klass
         self.annotation = annotation
         self.qualifier_value = self.annotation.qualifier if isinstance(self.annotation, ServiceQualifier) else None
-        self.is_parameter = isinstance(self.annotation, ParameterWrapper)
+        self.is_parameter = isinstance(self.annotation, ConfigInjectionRequest)
         self.obj_id = self.klass, self.qualifier_value
 
     def __eq__(self, other: object) -> bool:

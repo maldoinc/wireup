@@ -33,13 +33,11 @@ def c_factory(b: B) -> Iterator[C]:
 
 
 def test_eval_type_evaluates_strings() -> None:
-    container = wireup.create_sync_container(
-        parameters={"foo": "bar"}, service_modules=[importlib.import_module(__name__)]
-    )
+    container = wireup.create_sync_container(config={"foo": "bar"}, service_modules=[importlib.import_module(__name__)])
 
     @inject_from_container(container)
     def test(
-        a: Injected[A], b: Injected[B], c: Injected[C], foo: Annotated[str, wireup.Inject(param="foo")], _: int = 1
+        a: Injected[A], b: Injected[B], c: Injected[C], foo: Annotated[str, wireup.Inject(config="foo")], _: int = 1
     ):
         assert isinstance(a, A)
         assert isinstance(b, B)

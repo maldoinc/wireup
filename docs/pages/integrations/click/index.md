@@ -32,7 +32,7 @@ def cli():
 
 container = wireup.create_sync_container(
     service_modules=[services],
-    parameters={
+    config={
         "env": "development",
         "debug": True
     }
@@ -59,8 +59,8 @@ def random_number(random: Injected[RandomService]):
 
 @cli.command()
 def env_info(
-    env: Annotated[str, Inject(param="env")],
-    debug: Annotated[bool, Inject(param="debug")]
+    env: Annotated[str, Inject(config="env")],
+    debug: Annotated[bool, Inject(config="debug")]
 ):
     click.echo(f"Environment: {env}")
     click.echo(f"Debug mode: {debug}")

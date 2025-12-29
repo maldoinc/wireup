@@ -30,7 +30,7 @@ def user_service_factory(repository: UserRepository) -> UserService:
 
 ## Configuration Classes
 
-For deeply nested configuration, use typed classes instead of parameter injection:
+For deeply nested configuration, consider using typed classes instead of configuration injection:
 
 ```python title="factories.py"
 from wireup import service

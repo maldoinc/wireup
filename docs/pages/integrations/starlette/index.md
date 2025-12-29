@@ -30,7 +30,7 @@ app = Starlette()
 
 container = wireup.create_async_container(
     service_modules=[services],
-    parameters={"DEBUG": True}  # Optionally expose custom parameters
+    config={"DEBUG": True}  # Optionally expose configuration to services
 )
 ```
 

@@ -194,15 +194,15 @@ Wireup is mypy strict compliant and will not introduce type errors. It will also
     # ❌ Parameter 'foo' of 'home' depends on an unknown service 'NotManagedByWireup'.
     ```
 
-=== "Parameter Checks"
+=== "Configuration Checks"
 
-    Configuration parameters are also checked for validity.
+    Configuration injection is also checked for validity.
     ```python
     class Database:
-        def __init__(self, url: Annotated[str, Inject(param="db_url")]) -> None:
+        def __init__(self, url: Annotated[str, Inject(config="db_url")]) -> None:
             self.db = db
 
-    # ❌ Parameter 'url' of Type 'Database' depends on an unknown Wireup parameter 'db_url'.
+    # ❌ Parameter 'url' of Type 'Database' depends on an unknown Wireup config key 'db_url'.
     ```
 
 ### 📍 Framework-Agnostic
@@ -251,4 +251,4 @@ with container.override.service(target=Database, new=in_memory_database):
 
 * [Getting Started](getting_started.md) - Follow the Getting Started guide for a more in-depth tutorial.
 * [Services](services.md)
-* [Parameters](parameters.md)
+* [Configuration](configuration.md)

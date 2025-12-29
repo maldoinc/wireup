@@ -2,15 +2,16 @@ from __future__ import annotations
 
 import contextlib
 import importlib
+import warnings
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, TypeVar, overload
 
 from typing_extensions import Annotated
 
 from wireup.ioc.types import (
+    ConfigInjectionRequest,
     EmptyContainerInjectionRequest,
     InjectableType,
-    ParameterWrapper,
     Qualifier,
     ServiceLifetime,
     ServiceQualifier,
@@ -23,6 +24,7 @@ if TYPE_CHECKING:
 
 def Inject(  # noqa: N802
     *,
+    config: str | None = None,
     param: str | None = None,
     expr: str | None = None,
     qualifier: Qualifier | None = None,
@@ -32,7 +34,8 @@ def Inject(  # noqa: N802
     When used without parameters as `Annotated[T, Inject()]`,
     you can also use the alias `Injected[T]`.
 
-    :param param: Inject a specific parameter by name.
+    :param config: Inject a specific config by name.
+    :param param: Deprecated. Use `Inject(config="")` instead.
     :param expr: Inject a string value using a templated string.
     Parameters within `${}` will be replaced with their corresponding values.
 
@@ -40,11 +43,14 @@ def Inject(  # noqa: N802
     implement an interface registered in the container via `@abstract`.
     """
     res: InjectableType
-
-    if param:
-        res = ParameterWrapper(param)
+    if config:
+        res = ConfigInjectionRequest(config)
+    elif param:
+        msg = f'Parameters have been renamed to Config. Use `Inject(config="{param}")` instead.'
+        warnings.warn(msg, FutureWarning, stacklevel=2)
+        res = ConfigInjectionRequest(param)
     elif expr:
-        res = ParameterWrapper(TemplatedString(expr))
+        res = ConfigInjectionRequest(TemplatedString(expr))
     elif qualifier:
         res = ServiceQualifier(qualifier)
     else:

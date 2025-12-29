@@ -84,7 +84,7 @@ Let's take redis client as an example.
 from wireup import service
 
 @service
-def redis_factory(redis_url: Annotated[str, Inject(param="redis_url")]) -> Redis:
+def redis_factory(redis_url: Annotated[str, Inject(config="redis_url")]) -> Redis:
     return redis.from_url(redis_url)
 ```
 
@@ -206,7 +206,7 @@ Sometimes you want a factory to return `None` when certain conditions aren't met
 ```python
 @service
 def cache_factory(
-    redis_url: Annotated[str | None, Inject(param="redis_url")],
+    redis_url: Annotated[str | None, Inject(config="redis_url")],
 ) -> Redis | None:
     return Redis.from_url(redis_url) if redis_url else None
 ```

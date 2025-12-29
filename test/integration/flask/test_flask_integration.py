@@ -19,7 +19,7 @@ def create_app() -> Flask:
 
     container = wireup.create_sync_container(
         service_modules=[shared_services, flask_integration_services],
-        parameters={**app.config, "custom_params": True},
+        config={**app.config, "custom_params": True},
     )
     wireup.integration.flask.setup(container, app)
 

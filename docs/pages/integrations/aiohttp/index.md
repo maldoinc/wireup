@@ -42,7 +42,7 @@ First, [create an async container](../../container.md#async).
 ```python
 container = wireup.create_async_container(
     service_modules=[services],
-    parameters={"db_dsn": os.environ.get("APP_DB_DSN")}
+    config={"db_dsn": os.environ.get("APP_DB_DSN")}
 )
 ```
 
@@ -95,7 +95,7 @@ container = wireup.create_async_container(
         services,
         wireup.integration.aiohttp
     ],
-    parameters={"db_dsn": os.environ.get("APP_DB_DSN")}
+    config={"db_dsn": os.environ.get("APP_DB_DSN")}
 )
 ```
 
@@ -138,7 +138,8 @@ for more examples.
 ### Routes and type checker
 
 If you're using a type checker, then you may notice it showing type errors when adding
-dependencies to aio handlers. This is because the signature as defined in aiohttp only allows for `web.Request` in the parameters. To make the type checker happy you can annotate them with `wireup.integration.aiohttp.route`.
+dependencies to aio handlers. This is because the signature as defined in aiohttp only allows for `web.Request` in the signature. 
+To make the type checker happy you can annotate them with `wireup.integration.aiohttp.route`.
 
 ```python hl_lines="4 7"
 from wireup.integration.aiohttp import route

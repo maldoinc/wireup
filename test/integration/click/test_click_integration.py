@@ -21,7 +21,7 @@ def runner() -> CliRunner:
 @pytest.fixture
 def container() -> wireup.SyncContainer:
     return wireup.create_sync_container(
-        services=[NumberGenerator], parameters={"env": "test", "debug": True, "name": "test-app"}
+        services=[NumberGenerator], config={"env": "test", "debug": True, "name": "test-app"}
     )
 
 
@@ -47,9 +47,9 @@ def test_injects_parameters(runner: CliRunner, container: wireup.SyncContainer) 
 
     @cli.command()
     def show_env(  # type: ignore[reportUnusedFunction]
-        env: Annotated[str, Inject(param="env")],
-        debug: Annotated[bool, Inject(param="debug")],
-        name: Annotated[str, Inject(param="name")],
+        env: Annotated[str, Inject(config="env")],
+        debug: Annotated[bool, Inject(config="debug")],
+        name: Annotated[str, Inject(config="name")],
     ) -> None:
         click.echo(f"{name} running in {env} with debug={debug}")
 

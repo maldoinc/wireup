@@ -33,9 +33,11 @@ The first step is to create a container.
 import wireup
 
 container = wireup.create_async_container(
-    # Parameters are an optional key-value configuration store.
-    # You can inject parameters as necessary by their name where required.
-    parameters={ # (1)!
+    # `config` is an optional key-value configuration store.
+    # You can inject configuration as necessary by referencing config keys.
+    # This allows you to create self-contained service definitions 
+    # without additional setup code.
+    config={ # (1)!
         "redis_url": os.environ["APP_REDIS_URL"],
         "weather_api_key": os.environ["APP_WEATHER_API_KEY"],
     },
@@ -45,7 +47,7 @@ container = wireup.create_async_container(
 )
 ```
 
-1. Parameters are configuration your application needs.
+1. `config` is configuration your application needs.
     Such as an api key, database url, or other settings.
 
     You can inject them as necessary by their name (dict key) where required.
@@ -57,7 +59,7 @@ container = wireup.create_async_container(
     to create these objects.
 
     Note that the values can be literally anything you need to inject and not just int/strings or other scalars.
-    You can put dataclasses for example in the parameters to inject structured configuration.
+    You can put dataclasses for example in the config to inject structured configuration.
 
 2.  Service modules is a list of top-level python modules containing service definitions this container
     needs to know about (Classes or functions decorated with `@service` or `@abstract`.).
@@ -88,9 +90,7 @@ results in self-contained service declarations without having to create factorie
 
 
 #### 🐍 `KeyValueStore`
-To create `KeyValueStore`, all we need is the `redis_url` parameter.
-The `@service` decorator tells Wireup this is a service, and we need to tell the container via annotated types
-to fetch the value of the `redis_url` parameter for `dsn`. 
+To create the `KeyValueStore`, we need a value for `redis_url`. The `@service` decorator registers the class, and the type hint tells the container to inject the value of the `redis_url` key into the `dsn` parameter.
 
 
 ```python title="services/key_value_store.py" hl_lines="4 6"
@@ -99,14 +99,14 @@ from typing_extensions import Annotated
 
 @service  #(1)!
 class KeyValueStore:
-    def __init__(self, dsn: Annotated[str, Inject(param="redis_url")]) -> None:  #(2)!
+    def __init__(self, dsn: Annotated[str, Inject(config="redis_url")]) -> None:  #(2)!
         self.client = redis.from_url(dsn)
 ```
 
 1. Decorators are only used to collect metadata. 
     This makes testing simpler, as you can still instantiate this like a regular class in your tests.
-2. Since type-based injection is not possible here (there can be many string/int parameters after all), 
-    parameters must be annotated with the `Inject(param=name)` syntax. This tells the container which parameter to inject.
+2. Since type-based injection is not possible here (there can be many string/int configs after all), 
+    config injection must be annotated with the `Inject(config=key)` syntax. This tells the container which config key to inject.
 
 
 #### 🏭 `aiohttp.ClientSession`
@@ -137,13 +137,13 @@ Class dependencies do not need additional annotations, even though the http clie
 class WeatherService:
     def __init__(
         self,
-        api_key: Annotated[str, Inject(param="weather_api_key")], #(1)!
+        api_key: Annotated[str, Inject(config="weather_api_key")], #(1)!
         kv_store: KeyValueStore, #(2)!
         client: aiohttp.ClientSession, #(3)!
     ) -> None: ...
 ```
 
-1. Same as above, weather api key needs the parameter name for the container to inject it.
+1. Same as above, weather api key needs the config key for the container to inject it.
 2. `KeyValueStore` can be injected only by type and does not require annotations.
 3. `aiohttp.ClientSession` can be injected only by type and requires no additional configuration.
 
@@ -270,5 +270,5 @@ This concludes the "Getting Started" walkthrough, covering the most common depen
 ## Next Steps
 
 * [Services](services.md)
-* [Parameters](parameters.md)
+* [Configuration](configuration.md)
 * [Factories](factories.md)

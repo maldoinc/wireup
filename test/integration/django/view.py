@@ -12,7 +12,7 @@ def index(
     _request: HttpRequest,
     example_request_service: Injected[CurrentDjangoRequest],
     greeter: Injected[GreeterService],
-    is_debug: Annotated[bool, Inject(param="DEBUG")],
+    is_debug: Annotated[bool, Inject(config="DEBUG")],
     random_service: Injected[RandomService],
 ) -> HttpResponse:
     name = example_request_service.request.GET["name"]
@@ -25,7 +25,7 @@ class RandomNumberView(View):
     def __init__(
         self,
         greeter: Injected[GreeterService],
-        is_debug: Annotated[bool, Inject(param="DEBUG")],
+        is_debug: Annotated[bool, Inject(config="DEBUG")],
         random_service: Injected[RandomService],
     ) -> None:
         self.random_service = random_service
@@ -48,7 +48,7 @@ class AsyncRandomNumberView(View):
     def __init__(
         self,
         greeter: Injected[AsyncGreeterService],
-        is_debug: Annotated[bool, Inject(param="DEBUG")],
+        is_debug: Annotated[bool, Inject(config="DEBUG")],
         random_service: Injected[RandomService],
     ) -> None:
         self.random_service = random_service
@@ -70,7 +70,7 @@ class AsyncRandomNumberView(View):
 async def async_greet(
     request: HttpRequest,
     greeter: Injected[AsyncGreeterService],
-    is_debug: Annotated[bool, Inject(param="DEBUG")],
+    is_debug: Annotated[bool, Inject(config="DEBUG")],
 ) -> HttpResponse:
     """Async view that uses an async service."""
     name = request.GET["name"]

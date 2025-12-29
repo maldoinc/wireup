@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING, Any, Callable, Hashable
 
 from wireup.errors import WireupError
 from wireup.ioc.service_registry import GENERATOR_FACTORY_TYPES, FactoryType, ServiceRegistry
-from wireup.ioc.types import ParameterWrapper, TemplatedString
+from wireup.ioc.types import ConfigInjectionRequest, TemplatedString
 
 if TYPE_CHECKING:
     from wireup.ioc.container.base_container import BaseContainer
@@ -88,11 +88,11 @@ class FactoryCompiler:
 
         kwargs = ""
         for name, dep in self._registry.dependencies[factory.factory].items():
-            if isinstance(dep.annotation, ParameterWrapper):
+            if isinstance(dep.annotation, ConfigInjectionRequest):
                 param_value = (
-                    str(dep.annotation.param)
-                    if isinstance(dep.annotation.param, TemplatedString)
-                    else f'"{dep.annotation.param}"'
+                    str(dep.annotation.config_key)
+                    if isinstance(dep.annotation.config_key, TemplatedString)
+                    else f'"{dep.annotation.config_key}"'
                 )
                 code += f"    _obj_dep_{name} = parameters.get({param_value})\n"
             else:

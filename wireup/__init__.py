@@ -6,15 +6,13 @@ from wireup.ioc.container import (
 )
 from wireup.ioc.container.async_container import AsyncContainer
 from wireup.ioc.container.sync_container import SyncContainer
-from wireup.ioc.parameter import ParameterBag
-from wireup.ioc.types import ParameterReference, ServiceOverride
+from wireup.ioc.types import ConfigurationReference, ServiceOverride
 
 __all__ = [
     "AsyncContainer",
+    "ConfigurationReference",
     "Inject",
     "Injected",
-    "ParameterBag",
-    "ParameterReference",
     "ServiceOverride",
     "SyncContainer",
     "abstract",

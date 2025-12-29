@@ -151,6 +151,6 @@ When using [generator factories](factories.md#error-handling) with scoped lifeti
 
 Services have restrictions on what they can depend on based on their lifetime:
 
-- **Singletons** can only depend on other singletons and parameters
-- **Scoped** services can depend on singletons, other scoped services, and parameters  
-- **Transient** services can depend on any lifetime and parameters
+- **Singletons** can only depend on other singletons and config
+- **Scoped** services can depend on singletons, other scoped services, and config  
+- **Transient** services can depend on any lifetime and config

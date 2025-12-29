@@ -12,7 +12,5 @@ Container = Union[wireup.SyncContainer, wireup.AsyncContainer]
 def container(request: pytest.FixtureRequest) -> Container:
     return request.param(
         service_modules=[services],
-        parameters={
-            "env_name": "test",
-        },
+        config={"env_name": "test"},
     )

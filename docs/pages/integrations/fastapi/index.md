@@ -44,7 +44,7 @@ from myapp import services
 
 container = wireup.create_async_container(
     service_modules=[services],
-    parameters={"debug": settings.DEBUG},
+    config={"debug": settings.DEBUG},
 )
 ```
 
@@ -80,7 +80,7 @@ See [Annotations](../../annotations.md) for more details.
     @app.get("/random")
     async def target(
         random_service: Injected[RandomService],
-        is_debug: Annotated[bool, Inject(param="debug")],
+        is_debug: Annotated[bool, Inject(config="debug")],
 
         # This is a regular FastAPI dependency.
         lucky_number: Annotated[int, Depends(get_lucky_number)]
@@ -124,7 +124,7 @@ import wireup
 
 container = wireup.create_async_container(
     service_modules=[services, wireup.integration.fastapi],
-    parameters={"debug": settings.DEBUG},
+    config={"debug": settings.DEBUG},
 )
 ```
 

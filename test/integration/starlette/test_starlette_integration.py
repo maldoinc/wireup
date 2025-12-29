@@ -72,7 +72,7 @@ def create_app():
     container = wireup.create_async_container(
         services=[RequestContext, WebSocketContext],
         service_modules=[shared_services, wireup.integration.starlette],
-        parameters={"foo": "bar"},
+        config={"foo": "bar"},
     )
 
     app = Starlette(

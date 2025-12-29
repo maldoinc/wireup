@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import warnings
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -17,9 +18,9 @@ from wireup.errors import (
 )
 
 if TYPE_CHECKING:
+    from wireup.ioc.configuration import ConfigStore
     from wireup.ioc.factory_compiler import FactoryCompiler
     from wireup.ioc.override_manager import OverrideManager
-    from wireup.ioc.parameter import ParameterBag
     from wireup.ioc.service_registry import ServiceRegistry
     from wireup.ioc.types import (
         ContainerObjectIdentifier,
@@ -65,8 +66,15 @@ class BaseContainer:
         self._factories = self._compiler.factories
 
     @property
-    def params(self) -> ParameterBag:
-        """Parameter bag associated with this container."""
+    def params(self) -> ConfigStore:
+        """Configuration associated with this container."""
+        msg = "Parameters have been renamed to Config. Use `container.config` instead of `container.params`."
+        warnings.warn(msg, FutureWarning, stacklevel=2)
+        return self._registry.parameters
+
+    @property
+    def config(self) -> ConfigStore:
+        """Configuration associated with this container."""
         return self._registry.parameters
 
     @property

@@ -21,13 +21,13 @@ class DatabaseService:
 
 @service  # Default connection for writes
 def primary_db(
-    dsn: Annotated[str, Inject(param="PRIMARY_DB_DSN")]
+    dsn: Annotated[str, Inject(config="PRIMARY_DB_DSN")]
 ) -> DatabaseService:
     return DatabaseService(dsn)
 
 @service(qualifier="replica")  # Read-only connection
 def replica_db(
-    dsn: Annotated[str, Inject(param="REPLICA_DB_DSN")]
+    dsn: Annotated[str, Inject(config="REPLICA_DB_DSN")]
 ) -> DatabaseService:
     return DatabaseService(dsn)
 ```

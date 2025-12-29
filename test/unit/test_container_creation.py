@@ -12,14 +12,14 @@ from test.unit.services.no_annotations.random.random_service import RandomServic
 
 def test_dependencies_parameters_exist() -> None:
     @wireup.service
-    def foo_service(_param: Annotated[str, wireup.Inject(param="foo")]) -> RandomService:
+    def foo_service(_param: Annotated[str, wireup.Inject(config="foo")]) -> RandomService:
         return RandomService()
 
     with pytest.raises(
         WireupError,
         match=(
             "Parameter '_param' of Type test.unit.services.no_annotations.random.random_service.RandomService "
-            "depends on an unknown Wireup parameter 'foo'."
+            "depends on an unknown Wireup config key 'foo'."
         ),
     ):
         wireup.create_sync_container(services=[foo_service])
@@ -34,7 +34,7 @@ def test_parameters_exist_checks_expression() -> None:
         WireupError,
         match=re.escape(
             "Parameter '_param' of Type test.unit.services.no_annotations.random.random_service.RandomService "
-            "depends on an unknown Wireup parameter 'foo' requested in expression '${foo}-${foo}'."
+            "depends on an unknown Wireup config key 'foo' requested in expression '${foo}-${foo}'."
         ),
     ):
         wireup.create_sync_container(services=[foo_service])

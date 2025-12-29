@@ -33,11 +33,11 @@ class DuplicateQualifierForInterfaceError(WireupError):
 
 
 class UnknownParameterError(WireupError):
-    """Raised when requesting a parameter by name which does not exist."""
+    """Raised when requesting a config by name which does not exist."""
 
     def __init__(self, parameter_name: str) -> None:
         self.parameter_name = parameter_name
-        super().__init__(f"Unknown parameter requested: {parameter_name}")
+        super().__init__(f"Unknown config key requested: {parameter_name}")
 
 
 class FactoryReturnTypeIsEmptyError(WireupError):

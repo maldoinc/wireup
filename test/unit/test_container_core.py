@@ -8,7 +8,6 @@ from typing import TYPE_CHECKING, Any, NamedTuple, Optional
 import pytest
 import wireup
 from typing_extensions import Annotated
-from wireup import ParameterBag
 from wireup._annotations import Inject, abstract, service
 from wireup.errors import (
     DuplicateQualifierForInterfaceError,
@@ -16,6 +15,7 @@ from wireup.errors import (
     UnknownServiceRequestedError,
     WireupError,
 )
+from wireup.ioc.configuration import ConfigStore
 
 from test.unit import service_refs, services
 from test.unit.services.abstract_multiple_bases import FooBase, FooBaseAnother
@@ -82,12 +82,13 @@ async def test_injects_parameters_dataclass():
     @service
     @dataclass
     class MyDbService:
-        connection_str: Annotated[str, Inject(param="connection_str")]
+        connection_str: Annotated[str, Inject(config="connection_str")]
+        connection_str_param: Annotated[str, Inject(param="connection_str")]
         cache_dir: Annotated[str, Inject(expr="${cache_dir}/${auth.user}/db")]
 
     container = wireup.create_async_container(
         services=[MyDbService],
-        parameters={
+        config={
             "env_name": "test",
             "cache_dir": "/var/cache",
             "connection_str": "sqlite://memory",
@@ -99,6 +100,7 @@ async def test_injects_parameters_dataclass():
     assert isinstance(db, MyDbService)
     assert db.cache_dir == "/var/cache/anon/db"
     assert db.connection_str == "sqlite://memory"
+    assert db.connection_str_param == "sqlite://memory"
 
 
 async def test_get_unknown_class(container: Container):
@@ -155,8 +157,13 @@ async def test_container_get_returns_service(container: Container) -> None:
 
 
 async def test_container_params_returns_bag(container: Container) -> None:
-    assert isinstance(container.params, ParameterBag)
+    assert isinstance(container.params, ConfigStore)
     assert container.params.get("env_name") == "test"
+
+
+async def test_container_config_returns_store(container: Container) -> None:
+    assert isinstance(container.config, ConfigStore)
+    assert container.config.get("env_name") == "test"
 
 
 async def test_container_raises_get_transient_scoped(container: Container) -> None:
@@ -197,14 +204,14 @@ def test_get_class_with_param_bindings() -> None:
     class ServiceWithParams:
         def __init__(
             self,
-            connection_str: Annotated[str, Inject(param="connection_str")],
+            connection_str: Annotated[str, Inject(config="connection_str")],
             cache_dir: Annotated[str, Inject(expr="${cache_dir}/etc")],
         ) -> None:
             self.connection_str = connection_str
             self.cache_dir = cache_dir
 
     container = wireup.create_sync_container(
-        services=[ServiceWithParams], parameters={"connection_str": "sqlite://memory", "cache_dir": "/var/cache"}
+        services=[ServiceWithParams], config={"connection_str": "sqlite://memory", "cache_dir": "/var/cache"}
     )
     svc = container.get(ServiceWithParams)
 
@@ -263,7 +270,7 @@ async def test_injects_qualifiers():
 
 def test_services_from_multiple_bases_are_injected():
     container = wireup.create_sync_container(
-        service_modules=[services], parameters={"env_name": "test", "env": "test", "name": "foo"}
+        service_modules=[services], config={"env_name": "test", "env": "test", "name": "foo"}
     )
 
     foo = container.get(FooBase)
@@ -288,7 +295,7 @@ def test_container_deduplicates_services_from_multiple_modules() -> None:
     # service_refs imports classes with @service from services.
     # This should not result in a duplicate error since the container should deduplicate classes
     # when imported from multiple modules.
-    wireup.create_async_container(service_modules=[services, service_refs], parameters={"env_name": "test"})
+    wireup.create_async_container(service_modules=[services, service_refs], config={"env_name": "test"})
 
 
 def test_container_properly_caches_none_result() -> None:
@@ -322,3 +329,27 @@ def test_container_handles_optional_types_as_aliased() -> None:
     assert container.get(RandomService | None) is container.get(None | RandomService)
     assert container.get(RandomService) is container.get(Optional[RandomService])
     assert counter == 1
+
+
+def test_container_config_compat() -> None:
+    container = wireup.create_sync_container(services=[], parameters={"foo": "bar"})
+
+    assert container.params.get("foo") == "bar"
+
+    @wireup.inject_from_container(container)
+    def main(foo: Annotated[str, Inject(param="foo")]) -> None:
+        assert foo == "bar"
+
+    main()
+
+
+async def test_async_container_config_compat() -> None:
+    container = wireup.create_async_container(services=[], parameters={"foo": "bar"})
+
+    assert container.params.get("foo") == "bar"
+
+    @wireup.inject_from_container(container)
+    async def main(foo: Annotated[str, Inject(param="foo")]) -> None:
+        assert foo == "bar"
+
+    await main()

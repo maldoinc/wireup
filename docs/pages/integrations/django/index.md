@@ -24,7 +24,7 @@ dependency injection in Django applications.
 
     ---
 
-    The integration exposes Django settings to Wireup as parameters.
+    The integration exposes Django settings to Wireup as config.
 
 
 -   :material-share-circle:{ .lg .middle } __Shared business logic__
@@ -73,7 +73,7 @@ class S3Manager:
     def __init__(
         self,
         # Reference configuration by name
-        token: Annotated[str, Inject(param="S3_BUCKET_TOKEN")],
+        token: Annotated[str, Inject(config="S3_BUCKET_TOKEN")],
     ) -> None: ...
 
     def upload(self, file: File) -> None: ...

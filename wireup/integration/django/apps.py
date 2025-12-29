@@ -20,7 +20,7 @@ from wireup._decorators import inject_from_container
 from wireup.errors import WireupError
 from wireup.ioc.container.async_container import AsyncContainer, ScopedAsyncContainer, async_container_force_sync_scope
 from wireup.ioc.container.sync_container import ScopedSyncContainer
-from wireup.ioc.types import ParameterWrapper
+from wireup.ioc.types import ConfigInjectionRequest
 from wireup.ioc.util import get_valid_injection_annotated_parameters
 
 if TYPE_CHECKING:
@@ -135,8 +135,8 @@ class WireupConfig(AppConfig):
         @functools.wraps(callback)
         def view(request: HttpRequest, *args: Any, **kwargs: Any) -> Any:
             injected_names = {
-                name: self.container.params.get(param.annotation.param)
-                if isinstance(param.annotation, ParameterWrapper)
+                name: self.container.config.get(param.annotation.config_key)
+                if isinstance(param.annotation, ConfigInjectionRequest)
                 else get_request_container()._synchronous_get(param.klass, qualifier=param.qualifier_value)
                 for name, param in names_to_inject.items()
                 if param.annotation

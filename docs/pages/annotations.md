@@ -16,8 +16,8 @@ For classes and functions marked with `@service`:
 | Interface with single implementation    | No                  | -                    |
 | Default implementation of interface     | No                  | -                    |
 | Interface with multiple implementations | Yes                 | Qualifier            |
-| Parameters                              | Yes                 | Parameter name       |
-| Parameter expressions                   | Yes                 | Expression template  |
+| Configuration                           | Yes                 | Config key           |
+| Configuration expression                | Yes                 | Expression template  |
 
 ### Injecting into External Code
 
@@ -33,10 +33,10 @@ Here's how to use annotations in Python 3.9+ (or Python 3.8+ with `typing_extens
 ```python
 @wireup.inject_from_container(container)
 def configure(
-    # Inject a configuration parameter by name
-    env: Annotated[str, Inject(param="app_env")],
+    # Inject configuration by referencing its key
+    env: Annotated[str, Inject(config="app_env")],
     
-    # Inject a computed value using parameter substitution
+    # Inject a computed value using expressions
     log_path: Annotated[str, Inject(expr="${data_dir}/logs")],
     
     # Inject a service (explicit annotation required for external targets)

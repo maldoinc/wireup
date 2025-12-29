@@ -42,7 +42,7 @@ from myapp import services, repositories
 
 container = wireup.create_sync_container(
     service_modules=[services, repositories],
-    parameters={"api_key": "secret"}
+    config={"api_key": "secret"}
 )
 ```
 
@@ -75,7 +75,7 @@ from myapp.services import UserService, EmailService
 
 container = wireup.create_sync_container(
     services=[UserService, EmailService],
-    parameters={"db_url": "postgresql://localhost/myapp"}
+    config={"db_url": "postgresql://localhost/myapp"}
 )
 ```
 
@@ -85,7 +85,7 @@ You can also mix both approaches as needed:
 container = wireup.create_sync_container(
     service_modules=[services],      # Auto-discover
     services=[SpecialService],       # Manual addition
-    parameters={"api_key": "secret"}
+    config={"api_key": "secret"}
 )
 ```
 

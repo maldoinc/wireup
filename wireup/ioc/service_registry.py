@@ -17,14 +17,14 @@ from wireup.errors import (
     UnknownQualifiedServiceRequestedError,
     WireupError,
 )
-from wireup.ioc.parameter import ParameterBag
+from wireup.ioc.configuration import ConfigStore
 from wireup.ioc.type_analysis import analyze_type
 from wireup.ioc.types import (
     AnnotatedParameter,
     AnyCallable,
+    ConfigInjectionRequest,
     ContainerObjectIdentifier,
     EmptyContainerInjectionRequest,
-    ParameterWrapper,
     ServiceLifetime,
 )
 from wireup.ioc.util import ensure_is_type, get_globals, param_get_annotation, stringify_type
@@ -105,11 +105,11 @@ class ServiceRegistry:
 
     def __init__(
         self,
-        parameters: ParameterBag | None = None,
+        config: ConfigStore | None = None,
         abstracts: list[AbstractDeclaration] | None = None,
         impls: list[ServiceDeclaration] | None = None,
     ) -> None:
-        self.parameters = parameters or ParameterBag()
+        self.parameters = config or ConfigStore()
         self.interfaces: dict[type, dict[Qualifier, type]] = {}
         self.impls: dict[type, set[Qualifier]] = defaultdict(set)
         self.factories: dict[ContainerObjectIdentifier, ServiceFactory] = {}
@@ -355,17 +355,17 @@ class ServiceRegistry:
 
     def assert_dependency_exists(self, parameter: AnnotatedParameter, target: Any, name: str) -> None:
         """Assert that a dependency exists in the container for the given annotated parameter."""
-        if isinstance(parameter.annotation, ParameterWrapper):
+        if isinstance(parameter.annotation, ConfigInjectionRequest):
             try:
-                self.parameters.get(parameter.annotation.param)
+                self.parameters.get(parameter.annotation.config_key)
             except UnknownParameterError as e:
                 msg = (
                     f"Parameter '{name}' of {stringify_type(target)} "
-                    f"depends on an unknown Wireup parameter '{e.parameter_name}'"
+                    f"depends on an unknown Wireup config key '{e.parameter_name}'"
                     + (
                         ""
-                        if isinstance(parameter.annotation.param, str)
-                        else f" requested in expression '{parameter.annotation.param.value}'"
+                        if isinstance(parameter.annotation.config_key, str)
+                        else f" requested in expression '{parameter.annotation.config_key.value}'"
                     )
                     + "."
                 )

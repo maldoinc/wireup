@@ -55,24 +55,24 @@
 
 ---
 
-!!! tip "Aliased parameters"
+!!! tip "Aliased config"
 
-    If you don't like having string parameters in your service objects you can alias them instead.
+    If you don't like having string configuration keys in your service objects you can alias them instead.
 
     === "Before"
 
         ```python
-        def list_users(env: Annotated[str, Inject(param="env")]) -> None: ...
-        def get_users(env: Annotated[str, Inject(param="env")]) -> None: ...
+        def list_users(env: Annotated[str, Inject(config="env")]) -> None: ...
+        def get_users(env: Annotated[str, Inject(config="env")]) -> None: ...
         ```
 
     === "After"
 
         ```python
-        EnvParameter = Annotated[str, Inject(param="env")]
+        EnvConfig = Annotated[str, Inject(config="env")]
 
-        def list_users(env: EnvParameter) -> None: ...
-        def get_users(env: EnvParameter) -> None: ...
+        def list_users(env: EnvConfig) -> None: ...
+        def get_users(env: EnvConfig) -> None: ...
         ```
 
 ---
@@ -160,7 +160,7 @@
 
     @service
     def cache_factory(
-        redis_url: Annotated[str | None, Inject(param="redis_url")],
+        redis_url: Annotated[str | None, Inject(config="redis_url")],
     ) -> Cache:
         return RedisCache(redis_url) if redis_url else NullCache()
     ```

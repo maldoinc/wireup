@@ -4,5 +4,5 @@ from wireup import Inject, service
 
 @service
 class EnvService:
-    def __init__(self, env_name: Annotated[str, Inject(param="env_name")]):
+    def __init__(self, env_name: Annotated[str, Inject(config="env_name")]):
         self.env_name = env_name

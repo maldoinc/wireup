@@ -7,4 +7,4 @@ from wireup import Inject, service
 @service
 @dataclass
 class IsTestService:
-    is_test: Annotated[bool, Inject(param="TESTING")]
+    is_test: Annotated[bool, Inject(config="TESTING")]

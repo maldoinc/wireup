@@ -28,7 +28,7 @@ def create_app(*, expose_container_in_middleware: bool) -> FastAPI:
 
     container = wireup.create_async_container(
         service_modules=[fastapi_test_services, shared_services, wireup.integration.fastapi],
-        parameters={"foo": "bar"},
+        config={"foo": "bar"},
     )
     wireup.integration.fastapi.setup(
         container,
