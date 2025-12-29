@@ -189,9 +189,6 @@ class DRFViewSet(ViewSet):
     )
     ```
 
-    Note that core Django views with auto-injection (the default) benefit from Wireup's validation of all
-    injections at startup, which is not possible when using the `@inject` decorator.
-
     === "Do"
 
         ```python

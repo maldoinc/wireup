@@ -66,9 +66,10 @@ def django_setup() -> None:
     os.environ["DJANGO_SETTINGS_MODULE"] = "test.integration.django.test_django_integration"
     django.setup()
 
-    # DRF URLs must be added after django.setup() because DRF modules require
-    # Django to be configured before they can be imported
+    # DRF and Django Ninja URLs must be added after django.setup() because these modules
+    # require Django to be configured before they can be imported
     urlpatterns.append(path("drf/", include("test.integration.django.apps.drf_app.urls")))
+    urlpatterns.append(path("ninja/", include("test.integration.django.apps.ninja_app.urls")))
 
 
 @pytest.fixture
@@ -250,3 +251,92 @@ def test_inject_decorator_applied_multiple_times():
         @inject
         @inject
         def _(*__, **___): ...
+
+
+# Django Ninja tests
+
+
+def test_ninja_greet_with_injection(client: Client):
+    # GIVEN a Django Ninja endpoint with Injected services
+    # WHEN making a request with query parameter
+    res = client.get("/ninja/greet?name=World")
+
+    # THEN the injected service is used and response is correct
+    assert res.status_code == 200
+    assert res.json() == {"greeting": "Hello World"}
+
+
+def test_ninja_post_with_body_and_injection(client: Client):
+    # GIVEN a Django Ninja endpoint with both Body schema and Injected service
+    # WHEN making a POST request with JSON body
+    res = client.post(
+        "/ninja/items",
+        data={"name": "Widget", "price": 9.99},
+        content_type="application/json",
+    )
+
+    # THEN both the body is parsed and the injected service works
+    assert res.status_code == 200
+    assert res.json() == {
+        "id": 1,
+        "name": "Widget",
+        "price": 9.99,
+        "message": "Hello Widget",
+    }
+
+
+def test_ninja_endpoint_without_injection(client: Client):
+    # GIVEN a Django Ninja endpoint without any Wireup injection
+    # WHEN making a request
+    res = client.get("/ninja/no-inject?name=Test")
+
+    # THEN it works normally
+    assert res.status_code == 200
+    assert res.json() == {"name": "Test"}
+
+
+def test_ninja_override_injected_service(client: Client):
+    # GIVEN a custom implementation of GreeterService
+    class RudeGreeter(GreeterService):
+        def greet(self, name: str) -> str:
+            return f"Go away, {name}"
+
+    # WHEN using override context manager
+    with get_app_container().override.service(GreeterService, new=RudeGreeter()):
+        res = client.get("/ninja/greet?name=Bob")
+
+    # THEN the overridden service is used
+    assert res.status_code == 200
+    assert res.json() == {"greeting": "Go away, Bob"}
+
+
+# Django Ninja async tests
+
+
+async def test_ninja_async_greet_with_injection(async_client: AsyncClient):
+    # GIVEN an async Django Ninja endpoint with Injected async service
+    # WHEN making a request with query parameter
+    res = await async_client.get("/ninja/async-greet?name=World")
+
+    # THEN the async injected service is used and response is correct
+    assert res.status_code == 200
+    assert res.json() == {"greeting": "Hello World"}
+
+
+async def test_ninja_async_post_with_body_and_injection(async_client: AsyncClient):
+    # GIVEN an async Django Ninja endpoint with both Body schema and Injected async service
+    # WHEN making a POST request with JSON body
+    res = await async_client.post(
+        "/ninja/async-items",
+        data={"name": "Widget", "price": 9.99},
+        content_type="application/json",
+    )
+
+    # THEN both the body is parsed and the async injected service works
+    assert res.status_code == 200
+    assert res.json() == {
+        "id": 1,
+        "name": "Widget",
+        "price": 9.99,
+        "message": "Hello Widget",
+    }
