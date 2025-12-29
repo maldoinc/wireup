@@ -1,8 +1,9 @@
 from __future__ import annotations
 
 import re
+import sys
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, NamedTuple
+from typing import TYPE_CHECKING, Any, NamedTuple, Optional
 
 import pytest
 import wireup
@@ -18,6 +19,7 @@ from wireup.errors import (
 
 from test.unit import service_refs, services
 from test.unit.services.abstract_multiple_bases import FooBase, FooBaseAnother
+from test.unit.services.inheritance_test import ObjWithInheritance
 from test.unit.services.no_annotations.random.random_service import RandomService
 from test.unit.services.no_annotations.random.truly_random_service import TrulyRandomService
 from test.unit.services.with_annotations.env import EnvService
@@ -61,6 +63,9 @@ class ContainerGetParams(NamedTuple):
         ContainerGetParams(service_type=Foo, qualifier=None, expected_type=FooImpl).to_pytest("With qualifier"),
         ContainerGetParams(service_type=Foo, qualifier="other", expected_type=OtherFooImpl).to_pytest(
             "Resolves interface"
+        ),
+        ContainerGetParams(service_type=ObjWithInheritance, qualifier=None, expected_type=ObjWithInheritance).to_pytest(
+            "Resolves dependencies from base classes with stringified types"
         ),
     ],
 )
@@ -284,3 +289,36 @@ def test_container_deduplicates_services_from_multiple_modules() -> None:
     # This should not result in a duplicate error since the container should deduplicate classes
     # when imported from multiple modules.
     wireup.create_async_container(service_modules=[services, service_refs], parameters={"env_name": "test"})
+
+
+def test_container_properly_caches_none_result() -> None:
+    counter = 0
+
+    @wireup.service
+    def make_none() -> RandomService | None:
+        nonlocal counter
+        counter += 1
+
+        return None
+
+    container = wireup.create_sync_container(services=[make_none])
+    assert container.get(RandomService) is container.get(RandomService)
+    assert counter == 1
+
+
+@pytest.mark.skipif(sys.version_info < (3, 10), reason="Union types not available in python versions")
+def test_container_handles_optional_types_as_aliased() -> None:
+    counter = 0
+
+    @wireup.service
+    def make_none() -> RandomService | None:
+        nonlocal counter
+        counter += 1
+
+        return None
+
+    container = wireup.create_sync_container(services=[make_none])
+    assert container.get(RandomService | None) is container.get(Optional[RandomService])
+    assert container.get(RandomService | None) is container.get(None | RandomService)
+    assert container.get(RandomService) is container.get(Optional[RandomService])
+    assert counter == 1

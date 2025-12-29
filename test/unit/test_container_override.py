@@ -8,6 +8,7 @@ from wireup.errors import UnknownOverrideRequestedError
 from wireup.ioc.types import ServiceOverride
 
 from test.conftest import Container
+from test.unit.services.abstract_multiple_bases import FooBar
 from test.unit.services.no_annotations.random.random_service import RandomService
 from test.unit.services.with_annotations.services import (
     Foo,
@@ -72,3 +73,21 @@ async def test_raises_on_unknown_override(container: Container):
     ):
         with container.override.service(target=unittest.TestCase, qualifier="foo", new=MagicMock()):
             pass
+
+
+async def test_overrides_async_dependency() -> None:
+    @wireup.service
+    async def async_foo_factory() -> FooBar:
+        return FooBar()
+
+    container = wireup.create_async_container(services=[async_foo_factory])
+
+    foo_mock = MagicMock()
+    foo_mock.foo = "mock"
+
+    with container.override.service(target=FooBar, new=foo_mock):
+        svc = await container.get(FooBar)
+        assert svc.foo == "mock"
+
+    res = await container.get(FooBar)
+    assert res.foo == "bar"

@@ -3,15 +3,17 @@ from __future__ import annotations
 import functools
 import importlib
 import inspect
-import types
+import sys
 import typing
 from inspect import Parameter
-from typing import Any, Sequence, TypeVar
+from typing import Any, Sequence, TypeVar, cast
 
 from wireup.errors import WireupError
+from wireup.ioc.type_analysis import analyze_type
 from wireup.ioc.types import AnnotatedParameter, AnyCallable, InjectableType
 
-_OPTIONAL_UNION_ARG_COUNT = 2
+T = TypeVar("T")
+_eval_type = cast("Callable[..., Any]", typing._eval_type)  # type: ignore[attr-defined]
 
 if typing.TYPE_CHECKING:
     from collections.abc import Callable
@@ -43,14 +45,18 @@ def _get_wireup_annotation(metadata: Sequence[Any]) -> InjectableType | None:
     return annotations[0]
 
 
-def param_get_annotation(parameter: Parameter, *, globalns: dict[str, Any]) -> AnnotatedParameter | None:
+def param_get_annotation(
+    parameter: Parameter,
+    *,
+    globalns_supplier: Callable[[], dict[str, Any]],
+) -> AnnotatedParameter | None:
     """Get the annotation injection type from a signature's Parameter.
 
     Returns the first injectable annotation for an Annotated type or the default value.
     Also handles Optional types by marking them as optional in the AnnotatedParameter.
     Supports both Annotated[Optional[T], ...] and Optional[Annotated[T, ...]] patterns.
     """
-    resolved_type: type[Any] | None = ensure_is_type(parameter.annotation, globalns=globalns)
+    resolved_type: type[Any] | None = ensure_is_type(parameter.annotation, globalns_supplier=globalns_supplier)
 
     if resolved_type is Parameter.empty:
         resolved_type = None
@@ -58,30 +64,32 @@ def param_get_annotation(parameter: Parameter, *, globalns: dict[str, Any]) -> A
     if not resolved_type:
         return None
 
-    annotation = None
-    inner_type = resolved_type
+    type_analysis = analyze_type(resolved_type)
 
-    # Handle Annotated[Optional[T], ...] pattern
-    if hasattr(resolved_type, "__metadata__") and hasattr(resolved_type, "__args__"):
-        annotation = _get_wireup_annotation(resolved_type.__metadata__)
-        inner_type = resolved_type.__args__[0]
-        unwrapped_type = unwrap_optional_type(inner_type)
-        inner_type = unwrapped_type
-    else:
-        # Handle Optional[T] or Optional[Annotated[T, ...]] pattern
-        unwrapped_type = unwrap_optional_type(resolved_type)
-        inner_type = unwrapped_type
-        if hasattr(inner_type, "__metadata__") and hasattr(inner_type, "__args__"):
-            annotation = _get_wireup_annotation(inner_type.__metadata__)
-            inner_type = inner_type.__args__[0]
+    return AnnotatedParameter(
+        klass=type_analysis.normalized_type,
+        annotation=_get_wireup_annotation(type_analysis.annotations),
+    )
 
-    return AnnotatedParameter(klass=inner_type, annotation=annotation)
+
+def _type_get_globals(typ: type) -> dict[str, Any]:
+    """
+    Merge globals from parent classes with the child class's module globals,
+    with child class globals taking precedence.
+    """
+    merged_globals: dict[str, Any] = {}
+
+    for base_class in reversed(typ.__mro__[:-1]):
+        base_globals = importlib.import_module(base_class.__module__).__dict__
+        merged_globals.update(base_globals)
+
+    return merged_globals
 
 
 def get_globals(obj: type[Any] | Callable[..., Any]) -> dict[str, Any]:
     """Return the globals for the given object."""
     if isinstance(obj, type):
-        return importlib.import_module(obj.__module__).__dict__
+        return _type_get_globals(obj)
 
     # Unwrap nested functools.partial to get the underlying function
     while isinstance(obj, functools.partial):
@@ -90,48 +98,62 @@ def get_globals(obj: type[Any] | Callable[..., Any]) -> dict[str, Any]:
     return obj.__globals__
 
 
-T = TypeVar("T")
+def _eval_type_native(
+    value: typing.ForwardRef,
+    globalns: dict[str, Any] | None = None,
+) -> Any:
+    """Evaluate a ForwardRef using the native typing._eval_type function.
+
+    This function handles version-specific differences in typing._eval_type.
+    """
+    if sys.version_info >= (3, 14):
+        res = _eval_type(value, globalns, None, type_params=())
+
+        return type(None) if res is None else res
+
+    return _eval_type(value, globalns, None)
 
 
-def ensure_is_type(value: type[T] | str, globalns: dict[str, Any] | None = None) -> type[T] | None:
+def ensure_is_type(value: type[T] | str, globalns_supplier: Callable[[], dict[str, Any]]) -> type[T] | None:
     """Ensure the given value represents a type.
 
-    If it is a string it will be evaluated using eval_type_backport.
+    If it is a string it will be evaluated, first trying the native typing._eval_type,
+    and falling back to eval_type_backport if needed.
+
+    This approach ensures compatibility with Python 3.14+ where eval_type_backport
+    cannot be imported due to ForwardRef subclassing restrictions.
     """
-    if isinstance(value, str):
+    if not isinstance(value, str):
+        return value
+
+    forward_ref = typing.ForwardRef(value)
+
+    try:
+        # First, try using the native typing._eval_type then fall back to eval_type_backport.
+        # For a more complete solution see the pydantic implementation below.
+        # See: https://github.com/pydantic/pydantic/blob/f42171c760d43b9522fde513ae6e209790f7fefb/pydantic/_internal/_typing_extra.py#L485-L512
+        return _eval_type_native(forward_ref, globalns=globalns_supplier())  # type:ignore[no-any-return]
+    except TypeError as eval_type_error:
         try:
             import eval_type_backport
-
-            return eval_type_backport.eval_type_backport(  # type:ignore[no-any-return]
-                eval_type_backport.ForwardRef(value), globalns=globalns, try_default=False
-            )
-        except NameError:
-            return None
-        except ImportError as e:
+        except ImportError as import_error:
             msg = (
-                "Using __future__ annotations in Wireup requires the eval_type_backport package to be installed. "
+                f"Error evaluating type annotation '{value}'. "
+                f"Got: TypeError: {eval_type_error}.\n"
+                "Tip: Try using the eval_type_backport package to resolve stringified types.\n"
                 "See: https://maldoinc.github.io/wireup/latest/future_annotations/"
             )
-            raise WireupError(msg) from e
+            raise WireupError(msg) from import_error
 
-    return value
+        return eval_type_backport.eval_type_backport(forward_ref, globalns=globalns_supplier(), try_default=False)  # type:ignore[no-any-return]
 
-
-def unwrap_optional_type(type_: Any) -> Any:
-    """If the given type is Optional[T], returns T. Otherwise returns type_."""
-    valid_origins = [typing.Union]
-
-    # types.UnionType requires py310+
-    if union_type := getattr(types, "UnionType", None):
-        valid_origins.append(union_type)
-
-    origin = typing.get_origin(type_) or type_
-    if origin in valid_origins:
-        args = typing.get_args(type_)
-        if len(args) == _OPTIONAL_UNION_ARG_COUNT and type(None) in args:
-            return next(arg for arg in args if arg is not type(None))
-
-    return type_
+    except NameError as e:
+        msg = (
+            f"Error evaluating type annotation '{value}'. Got NameError: {e!s}. "
+            "Make sure the type is correctly imported and not inside a TYPE_CHECKING block.\n"
+            "See: https://maldoinc.github.io/wireup/latest/future_annotations/"
+        )
+        raise WireupError(msg) from e
 
 
 def stringify_type(target: type | AnyCallable) -> str:
@@ -182,7 +204,7 @@ def get_inject_annotated_parameters(target: AnyCallable) -> dict[str, AnnotatedP
     return {
         name: param
         for name, parameter in inspect.signature(target).parameters.items()
-        if (param := param_get_annotation(parameter, globalns=get_globals(target)))
+        if (param := param_get_annotation(parameter, globalns_supplier=lambda: get_globals(target)))
         and isinstance(param.annotation, InjectableType)
     }
 

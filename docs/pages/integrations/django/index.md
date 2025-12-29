@@ -263,6 +263,23 @@ def test_override():
         assert res.status_code == 200
 ```
 
+!!! info "Testing async views"
+
+    When testing async views, use Django's `AsyncClient` instead of the regular `Client`:
+
+    ```python
+    from django.test import AsyncClient
+    import pytest
+
+    @pytest.fixture
+    def async_client():
+        return AsyncClient()
+
+    async def test_async_view(async_client):
+        response = await async_client.get("/async-endpoint/")
+        assert response.status_code == 200
+    ```
+
 ### API Reference
 
 * [django_integration](../../class/django_integration.md)

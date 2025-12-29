@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "wireup"
-version = "2.1.0"
+version = "2.2.2"
 description = "Python Dependency Injection Library"
 authors = ["Aldo Mateli <aldo.mateli@gmail.com>"]
 license = "MIT"
@@ -33,6 +33,7 @@ classifiers = [
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
     "Programming Language :: Python :: 3 :: Only",
     "Typing :: Typed",
     "Topic :: Software Development :: Libraries :: Python Modules",
@@ -46,7 +47,7 @@ Changelog = "https://github.com/maldoinc/wireup/releases"
 [tool.poetry.dependencies]
 python = "^3.8"
 typing_extensions = "^4.7"
-eval-type-backport = { version = "^0.2.0", optional = true }
+eval-type-backport = { version = "^0.2.0", optional = true, python = "<3.11" }
 
 [tool.poetry.extras]
 eval-type = ["eval-type-backport"]

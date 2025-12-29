@@ -18,6 +18,7 @@ from wireup.errors import (
     WireupError,
 )
 from wireup.ioc.parameter import ParameterBag
+from wireup.ioc.type_analysis import analyze_type
 from wireup.ioc.types import (
     AnnotatedParameter,
     AnyCallable,
@@ -26,7 +27,7 @@ from wireup.ioc.types import (
     ParameterWrapper,
     ServiceLifetime,
 )
-from wireup.ioc.util import ensure_is_type, get_globals, param_get_annotation, stringify_type, unwrap_optional_type
+from wireup.ioc.util import ensure_is_type, get_globals, param_get_annotation, stringify_type
 
 if TYPE_CHECKING:
     from wireup._annotations import AbstractDeclaration, ServiceDeclaration
@@ -56,6 +57,8 @@ class ServiceFactory:
     factory: Callable[..., Any]
     factory_type: FactoryType
     is_async: bool
+    is_optional_type: bool
+    raw_type: type
 
 
 ServiceCreationDetails = Tuple[Callable[..., Any], ContainerObjectIdentifier, FactoryType, ServiceLifetime]
@@ -80,7 +83,7 @@ def _function_get_unwrapped_return_type(fn: Callable[..., T]) -> type[T] | None:
         return fn
 
     if ret := fn.__annotations__.get("return"):
-        ret = ensure_is_type(ret, globalns=get_globals(fn))
+        ret = ensure_is_type(ret, globalns_supplier=lambda: get_globals(fn))
         if not ret:
             return None
 
@@ -90,7 +93,7 @@ def _function_get_unwrapped_return_type(fn: Callable[..., T]) -> type[T] | None:
                 return None
             ret = args[0]  # Extract the yield type from the generator
 
-        return unwrap_optional_type(ret)  # type: ignore[no-any-return]
+        return ret  # type: ignore[no-any-return]
 
     return None
 
@@ -125,7 +128,16 @@ class ServiceRegistry:
             self._register_abstract(abstract.obj)
 
         for impl in impls or []:
-            self._register(obj=impl.obj, lifetime=impl.lifetime, qualifier=impl.qualifier)
+            obj = impl.obj
+            if not callable(obj):
+                raise InvalidRegistrationTypeError(obj)
+
+            klass = _function_get_unwrapped_return_type(obj)
+
+            if klass is None:
+                raise FactoryReturnTypeIsEmptyError(obj)
+
+            self._register(klass=klass, factory_fn=obj, lifetime=impl.lifetime, qualifier=impl.qualifier)
 
         self.assert_dependencies_valid()
         self._precompute_ctors()
@@ -181,17 +193,13 @@ class ServiceRegistry:
 
     def _register(
         self,
-        obj: Callable[..., Any],
+        klass: type[Any],
+        factory_fn: Callable[..., Any],
         lifetime: ServiceLifetime = "singleton",
         qualifier: Qualifier | None = None,
     ) -> None:
-        if not callable(obj):
-            raise InvalidRegistrationTypeError(obj)
-
-        klass = _function_get_unwrapped_return_type(obj)
-
-        if klass is None:
-            raise FactoryReturnTypeIsEmptyError(obj)
+        type_analysis = analyze_type(klass)
+        klass = type_analysis.normalized_type
 
         if self.is_type_with_qualifier_known(klass, qualifier):
             raise DuplicateServiceRegistrationError(klass, qualifier=qualifier)
@@ -208,13 +216,46 @@ class ServiceRegistry:
         if hasattr(klass, "__bases__"):
             discover_interfaces(klass.__bases__)
 
-        self._target_init_context(obj)
+        self._target_init_context(factory_fn)
         self.lifetime[klass, qualifier] = lifetime
-        factory_type = _get_factory_type(obj)
+        factory_type = _get_factory_type(factory_fn)
         self.factories[klass, qualifier] = ServiceFactory(
-            factory=obj, factory_type=factory_type, is_async=factory_type in ASYNC_FACTORY_TYPES
+            factory=factory_fn,
+            factory_type=factory_type,
+            is_async=factory_type in ASYNC_FACTORY_TYPES,
+            is_optional_type=type_analysis.is_optional,
+            raw_type=type_analysis.raw_type,
         )
         self.impls[klass].add(qualifier)
+
+        if type_analysis.is_optional:
+            # Backwards compatibility: In earlier versions when a factory returned T | None
+            # you could do container.get(T). Alias that type to the normalized T | None factory.
+            # Create a fake factory that warns and returns the original instance.
+            # https://github.com/maldoinc/wireup/commit/00590dc741035a4c7042c5b6fc434ed08e27f5c0
+            def compat_fn(raw_type_instance: Any) -> Any:
+                type_name = type_analysis.raw_type.__name__
+                deprecated_msg = (
+                    f"Deprecated: {stringify_type(type_analysis.raw_type)} was registered as optional "
+                    f"and retrieving it via container.get({type_name}) is deprecated. "
+                    f"Please use container.get({type_name} | None) or container.get(Optional[{type_name}]) instead."
+                )
+
+                warnings.warn(deprecated_msg, DeprecationWarning, stacklevel=4)
+
+                return raw_type_instance
+
+            compat_fn.__signature__ = inspect.Signature(  # type: ignore[attr-defined]
+                parameters=[
+                    inspect.Parameter(
+                        "raw_type_instance",
+                        kind=inspect.Parameter.POSITIONAL_OR_KEYWORD,
+                        annotation=klass,
+                    )
+                ],
+            )
+
+            self._register(type_analysis.raw_type, factory_fn=compat_fn, lifetime=lifetime, qualifier=qualifier)
 
     def _register_abstract(self, klass: type) -> None:
         self.interfaces[klass] = {}
@@ -225,7 +266,7 @@ class ServiceRegistry:
     ) -> None:
         """Init and collect all the necessary dependencies to initialize the specified target."""
         for name, parameter in inspect.signature(target).parameters.items():
-            annotated_param = param_get_annotation(parameter, globalns=get_globals(target))
+            annotated_param = param_get_annotation(parameter, globalns_supplier=lambda: get_globals(target))
 
             if not annotated_param:
                 msg = f"Wireup dependencies must have types. Please add a type to the '{name}' parameter in {target}."

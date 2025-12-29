@@ -36,28 +36,30 @@ class TestUtilityFunctions(unittest.TestCase):
             _g=d2,
         ): ...
 
+        _param_get_annotation = functools.partial(param_get_annotation, globalns_supplier=lambda: globals())
+
         params = inspect.signature(inner)
         self.assertEqual(
-            param_get_annotation(params.parameters["_a"], globalns=globals()),
+            _param_get_annotation(params.parameters["_a"]),
             AnnotatedParameter(str, d1),
         )
-        self.assertEqual(param_get_annotation(params.parameters["_b"], globalns=globals()), None)
+        self.assertEqual(_param_get_annotation(params.parameters["_b"]), None)
         self.assertEqual(
-            param_get_annotation(params.parameters["_c"], globalns=globals()),
+            _param_get_annotation(params.parameters["_c"]),
             AnnotatedParameter(str, None),
         )
         self.assertEqual(
-            param_get_annotation(params.parameters["_d"], globalns=globals()),
+            _param_get_annotation(params.parameters["_d"]),
             AnnotatedParameter(str, ParameterWrapper("d")),
         )
         self.assertEqual(
-            param_get_annotation(params.parameters["_e"], globalns=globals()),
+            _param_get_annotation(params.parameters["_e"]),
             AnnotatedParameter(str),
         )
         self.assertIsNone(
-            param_get_annotation(params.parameters["_f"], globalns=globals()),
+            _param_get_annotation(params.parameters["_f"]),
         )
-        self.assertEqual(param_get_annotation(params.parameters["_g"], globalns=globals()), None)
+        self.assertEqual(_param_get_annotation(params.parameters["_g"]), None)
 
     def test_annotated_parameter_hash_equality(self):
         self.assertEqual(
@@ -72,7 +74,7 @@ def test_raises_multiple_annotations() -> None:
     params = inspect.signature(inner)
 
     with pytest.raises(WireupError, match="Multiple Wireup annotations used"):
-        param_get_annotation(params.parameters["_a"], globalns=globals())
+        param_get_annotation(params.parameters["_a"], globalns_supplier=globals())
 
 
 class MyCustomClass:
