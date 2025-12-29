@@ -94,6 +94,45 @@ class AbstractDeclaration:
     obj: Any
 
 
+
+@overload
+def injectable(
+    obj: None = None,
+    *,
+    qualifier: Qualifier | None = None,
+    lifetime: ServiceLifetime = "singleton",
+) -> Callable[[T], T]:
+    pass
+
+
+@overload
+def injectable(
+    obj: T,
+    *,
+    qualifier: Qualifier | None = None,
+    lifetime: ServiceLifetime = "singleton",
+) -> T:
+    pass
+
+
+def injectable(
+    obj: T | None = None,
+    *,
+    qualifier: Qualifier | None = None,
+    lifetime: ServiceLifetime = "singleton",
+) -> T | Callable[[T], T]:
+    """Mark the decorated class or function as a Wireup service."""
+
+    # Allow this to be used as a decorator factory or as a decorator directly.
+    def _service_decorator(decorated_obj: T) -> T:
+        decorated_obj.__wireup_registration__ = ServiceDeclaration(  # type: ignore[attr-defined]
+            obj=decorated_obj, qualifier=qualifier, lifetime=lifetime
+        )
+        return decorated_obj
+
+    return _service_decorator if obj is None else _service_decorator(obj)
+
+
 @overload
 def service(
     obj: None = None,
@@ -120,16 +159,16 @@ def service(
     qualifier: Qualifier | None = None,
     lifetime: ServiceLifetime = "singleton",
 ) -> T | Callable[[T], T]:
-    """Mark the decorated class or function as a Wireup service."""
+    """Mark the decorated class or function as a Wireup service.
 
-    # Allow this to be used as a decorator factory or as a decorator directly.
-    def _service_decorator(decorated_obj: T) -> T:
-        decorated_obj.__wireup_registration__ = ServiceDeclaration(  # type: ignore[attr-defined]
-            obj=decorated_obj, qualifier=qualifier, lifetime=lifetime
-        )
-        return decorated_obj
-
-    return _service_decorator if obj is None else _service_decorator(obj)
+    DEPRECATED: Use @injectable instead.
+    """
+    warnings.warn(
+        "The @service decorator is deprecated and will be removed in a future version. Use @injectable instead.",
+        FutureWarning,
+        stacklevel=2,
+    )
+    return injectable(obj, qualifier=qualifier, lifetime=lifetime)
 
 
 def abstract(cls: type[T]) -> type[T]:

@@ -5,7 +5,7 @@ from typing import Any, Awaitable, Callable, Dict, Iterable, Iterator, Optional,
 from aiohttp import web
 
 import wireup
-from wireup._annotations import ServiceDeclaration, service
+from wireup._annotations import ServiceDeclaration, injectable
 from wireup.errors import WireupError
 from wireup.ioc.container.async_container import ScopedAsyncContainer
 from wireup.ioc.container.sync_container import ScopedSyncContainer
@@ -38,7 +38,7 @@ def _route_middleware(
         current_request.reset(token)
 
 
-@service(lifetime="scoped")
+@injectable(lifetime="scoped")
 def aiohttp_request_factory() -> web.Request:
     """Provide the current aiohttp request as a dependency.
 

@@ -31,8 +31,8 @@ def _create_container(
     """Create a Wireup container.
 
     :param service_modules: This is a list of top-level modules containing services registered
-    with `@service` or `@abstract`. Wireup will recursively scan the modules and register services found in them.
-    :param services: A list of classes or functions decorated with `@service` or `@abstract` to register with the
+    with `@injectable` or `@abstract`. Wireup will recursively scan the modules and register services found in them.
+    :param services: A list of classes or functions decorated with `@injectable` or `@abstract` to register with the
     container instance. Use this when you want to explicitly list services.
     :param parameters: Deprecated. Parameters was renamed to config, use that instead.
     :param config: Configuration to expose to the container. Services or factories can
@@ -85,7 +85,7 @@ def _merge_definitions(
     if services:
         for service in services:
             if not hasattr(service, "__wireup_registration__"):
-                msg = f"Service {service} is not decorated with @abstract or @service."
+                msg = f"Service {service} is not decorated with @abstract or @injectable."
                 raise WireupError(msg)
 
             reg: AbstractDeclaration | ServiceDeclaration = service.__wireup_registration__
@@ -113,8 +113,8 @@ def create_sync_container(
     """Create a Wireup container.
 
     :param service_modules: This is a list of top-level modules containing services registered
-    with `@service` or `@abstract`. Wireup will recursively scan the modules and register services found in them.
-    :param services: A list of classes or functions decorated with `@service` or `@abstract` to register with the
+    with `@injectable` or `@abstract`. Wireup will recursively scan the modules and register services found in them.
+    :param services: A list of classes or functions decorated with `@injectable` or `@abstract` to register with the
     container instance. Use this when you want to explicitly list services.
     :param parameters: Deprecated. Parameters was renamed to config, use that instead.
     :param config: Configuration to expose to the container. Services or factories can
@@ -140,8 +140,8 @@ def create_async_container(
     """Create a Wireup container.
 
     :param service_modules: This is a list of top-level modules containing services registered
-    with `@service` or `@abstract`. Wireup will recursively scan the modules and register services found in them.
-    :param services: A list of classes or functions decorated with `@service` or `@abstract` to register with the
+    with `@injectable` or `@abstract`. Wireup will recursively scan the modules and register services found in them.
+    :param services: A list of classes or functions decorated with `@injectable` or `@abstract` to register with the
     container instance. Use this when you want to explicitly list services.
     :param parameters: Deprecated. Parameters was renamed to config, use that instead.
     :param config: Configuration to expose to the container. Services or factories can

@@ -15,7 +15,7 @@ from django.urls import URLPattern, URLResolver
 from django.utils.decorators import sync_and_async_middleware
 
 import wireup
-from wireup import service
+from wireup import injectable
 from wireup._decorators import inject_from_container
 from wireup.errors import WireupError
 from wireup.ioc.container.async_container import AsyncContainer, ScopedAsyncContainer, async_container_force_sync_scope
@@ -65,7 +65,7 @@ def wireup_middleware(
     return sync_inner
 
 
-@service(lifetime="scoped")
+@injectable(lifetime="scoped")
 def _django_request_factory() -> HttpRequest:
     try:
         return current_request.get()
