@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING, Any, NamedTuple, Optional
 import pytest
 import wireup
 from typing_extensions import Annotated
-from wireup._annotations import Inject, abstract, service
+from wireup._annotations import Inject, abstract, injectable
 from wireup.errors import (
     DuplicateQualifierForInterfaceError,
     DuplicateServiceRegistrationError,
@@ -79,7 +79,7 @@ async def test_container_get(
 
 
 async def test_injects_parameters_dataclass():
-    @service
+    @injectable
     @dataclass
     class MyDbService:
         connection_str: Annotated[str, Inject(config="connection_str")]
@@ -109,7 +109,7 @@ async def test_get_unknown_class(container: Container):
 
     with pytest.raises(
         UnknownServiceRequestedError,
-        match=f"Cannot create unknown service {TestGetUnknown}. Make sure it is registered with the container.",
+        match=f"Cannot create unknown injectable {TestGetUnknown}. Make sure it is registered with the container.",
     ):
         await run(container.get(TestGetUnknown))
 
@@ -118,7 +118,7 @@ async def test_container_get_interface_without_impls_raises(container: Container
     with pytest.raises(
         WireupError,
         match=re.escape(
-            f"Cannot create unknown service {InterfaceWithoutImpls}. Make sure it is registered with the container."
+            f"Cannot create unknown injectable {InterfaceWithoutImpls}. Make sure it is registered with the container."
         ),
     ):
         await run(container.get(InterfaceWithoutImpls))
@@ -128,7 +128,7 @@ async def test_container_get_interface_unknown_impl_errors_known_impls(container
     with pytest.raises(
         WireupError,
         match=re.escape(
-            f"Cannot create unknown service {Foo} with qualifier 'does-not-exist'. "
+            f"Cannot create unknown injectable {Foo} with qualifier 'does-not-exist'. "
             "Make sure it is registered with the container."
         ),
     ):
@@ -200,7 +200,7 @@ async def test_works_simple_get_instance_with_other_service_injected(container: 
 
 
 def test_get_class_with_param_bindings() -> None:
-    @service
+    @injectable
     class ServiceWithParams:
         def __init__(
             self,
@@ -220,7 +220,7 @@ def test_get_class_with_param_bindings() -> None:
 
 
 def test_raises_multiple_definitions():
-    @service
+    @injectable
     class Multiple: ...
 
     with pytest.raises(
@@ -234,10 +234,10 @@ def test_register_same_qualifier_should_raise():
     @abstract
     class F1Base: ...
 
-    @service(qualifier="f1")
+    @injectable(qualifier="f1")
     class F1(F1Base): ...
 
-    @service(qualifier="f1")
+    @injectable(qualifier="f1")
     class F11(F1Base): ...
 
     with pytest.raises(
@@ -253,13 +253,13 @@ async def test_injects_qualifiers():
     @abstract
     class FBase: ...
 
-    @service
+    @injectable
     class FDefault(FBase): ...
 
-    @service(qualifier="f1")
+    @injectable(qualifier="f1")
     class F1(FBase): ...
 
-    @service(qualifier="f2")
+    @injectable(qualifier="f2")
     class F2(FBase): ...
 
     container = wireup.create_async_container(services=[FBase, FDefault, F1, F2])
@@ -284,7 +284,7 @@ def test_inject_qualifier_on_unknown_type():
     with pytest.raises(
         UnknownServiceRequestedError,
         match=re.escape(
-            f"Cannot create unknown service {str} with qualifier '{__name__}'. "
+            f"Cannot create unknown injectable {str} with qualifier '{__name__}'. "
             "Make sure it is registered with the container."
         ),
     ):
@@ -292,7 +292,7 @@ def test_inject_qualifier_on_unknown_type():
 
 
 def test_container_deduplicates_services_from_multiple_modules() -> None:
-    # service_refs imports classes with @service from services.
+    # service_refs imports classes with @injectable from services.
     # This should not result in a duplicate error since the container should deduplicate classes
     # when imported from multiple modules.
     wireup.create_async_container(service_modules=[services, service_refs], config={"env_name": "test"})
@@ -301,7 +301,7 @@ def test_container_deduplicates_services_from_multiple_modules() -> None:
 def test_container_properly_caches_none_result() -> None:
     counter = 0
 
-    @wireup.service
+    @wireup.injectable
     def make_none() -> RandomService | None:
         nonlocal counter
         counter += 1
@@ -317,7 +317,7 @@ def test_container_properly_caches_none_result() -> None:
 def test_container_handles_optional_types_as_aliased() -> None:
     counter = 0
 
-    @wireup.service
+    @wireup.injectable
     def make_none() -> RandomService | None:
         nonlocal counter
         counter += 1

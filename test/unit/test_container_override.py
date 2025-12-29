@@ -5,7 +5,7 @@ import pytest
 import wireup
 from wireup._annotations import Injected
 from wireup.errors import UnknownOverrideRequestedError
-from wireup.ioc.types import ServiceOverride
+from wireup.ioc.types import InjectableOverride
 
 from test.conftest import Container
 from test.unit.services.abstract_multiple_bases import FooBar
@@ -26,7 +26,7 @@ def test_container_overrides_deps_service_locator(container: Container):
     random_mock = MagicMock()
     random_mock.get_random.return_value = 5
 
-    with container.override.service(target=RandomService, qualifier="foo", new=random_mock):
+    with container.override.injectable(target=RandomService, qualifier="foo", new=random_mock):
         svc = container.get(RandomService, qualifier="foo")
         assert svc.get_random() == 5
 
@@ -40,7 +40,7 @@ async def test_container_overrides_deps_service_locator_interface():
     foo_mock = MagicMock()
     foo_mock.get_foo.return_value = "mock"
 
-    with container.override.service(target=Foo, new=foo_mock):
+    with container.override.injectable(target=Foo, new=foo_mock):
         svc = await run(container.get(Foo))
         assert svc.get_foo() == "mock"
 
@@ -53,8 +53,8 @@ async def test_container_override_many_with_qualifier(container: Container):
     rand2_mock = MagicMock()
 
     overrides = [
-        ServiceOverride(target=ScopedService, new=rand1_mock),
-        ServiceOverride(target=TransientService, new=rand2_mock),
+        InjectableOverride(target=ScopedService, new=rand1_mock),
+        InjectableOverride(target=TransientService, new=rand2_mock),
     ]
 
     @wireup.inject_from_container(container)
@@ -71,12 +71,12 @@ async def test_raises_on_unknown_override(container: Container):
         UnknownOverrideRequestedError,
         match="Cannot override unknown <class 'unittest.case.TestCase'> with qualifier 'foo'.",
     ):
-        with container.override.service(target=unittest.TestCase, qualifier="foo", new=MagicMock()):
+        with container.override.injectable(target=unittest.TestCase, qualifier="foo", new=MagicMock()):
             pass
 
 
 async def test_overrides_async_dependency() -> None:
-    @wireup.service
+    @wireup.injectable
     async def async_foo_factory() -> FooBar:
         return FooBar()
 
@@ -85,7 +85,7 @@ async def test_overrides_async_dependency() -> None:
     foo_mock = MagicMock()
     foo_mock.foo = "mock"
 
-    with container.override.service(target=FooBar, new=foo_mock):
+    with container.override.injectable(target=FooBar, new=foo_mock):
         svc = await container.get(FooBar)
         assert svc.foo == "mock"
 

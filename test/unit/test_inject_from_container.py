@@ -97,7 +97,7 @@ async def test_raises_on_unknown_service(container: Container, qualifier: str) -
         WireupError,
         match=re.escape(
             "Parameter 'not_managed_by_wireup' of Function test.unit.test_inject_from_container._ "
-            "depends on an unknown service Type test.unit.test_inject_from_container.NotManagedByWireup "
+            "depends on an unknown injectable Type test.unit.test_inject_from_container.NotManagedByWireup "
             f"with qualifier {qualifier}."
         ),
     ):
@@ -215,7 +215,9 @@ def test_inject_from_container_handles_optionals() -> None:
     def make_thing(_thing2: Optional[MaybeThing]) -> Thing:
         return Thing()
 
-    container = wireup.create_sync_container(services=[wireup.service(make_maybe_thing), wireup.service(make_thing)])
+    container = wireup.create_sync_container(
+        services=[wireup.injectable(make_maybe_thing), wireup.injectable(make_thing)]
+    )
 
     @wireup.inject_from_container(container)
     def main(maybe_thing: Injected[Optional[MaybeThing]], thing: Injected[Thing]):

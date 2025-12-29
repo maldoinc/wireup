@@ -4,12 +4,12 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Callable, Hashable
 
 from wireup.errors import WireupError
-from wireup.ioc.service_registry import GENERATOR_FACTORY_TYPES, FactoryType, ServiceRegistry
+from wireup.ioc.registry import GENERATOR_FACTORY_TYPES, ContainerRegistry, FactoryType
 from wireup.ioc.types import ConfigInjectionRequest, TemplatedString
 
 if TYPE_CHECKING:
     from wireup.ioc.container.base_container import BaseContainer
-    from wireup.ioc.service_registry import ServiceFactory
+    from wireup.ioc.registry import InjectableFactory
 
 
 @dataclass
@@ -28,7 +28,7 @@ _SENTINEL = object()
 
 
 class FactoryCompiler:
-    def __init__(self, registry: ServiceRegistry, *, is_scoped_container: bool) -> None:
+    def __init__(self, registry: ContainerRegistry, *, is_scoped_container: bool) -> None:
         self._registry = registry
         self._is_scoped_container = is_scoped_container
         self.factories: dict[int, CompiledFactory] = {}
@@ -60,7 +60,7 @@ class FactoryCompiler:
                         qualifier,
                     )
 
-    def _get_factory_code(self, factory: ServiceFactory, impl: type, qualifier: Hashable) -> tuple[str, bool]:  # noqa: C901, PLR0912
+    def _get_factory_code(self, factory: InjectableFactory, impl: type, qualifier: Hashable) -> tuple[str, bool]:  # noqa: C901, PLR0912
         is_interface = self._registry.is_interface_known(impl)
         if is_interface:
             lifetime = self._registry.lifetime[self._registry.interface_resolve_impl(impl, qualifier), qualifier]
@@ -130,7 +130,9 @@ class FactoryCompiler:
 
         return code, factory.is_async
 
-    def _compile_and_create_function(self, factory: ServiceFactory, impl: type, qualifier: Hashable) -> CompiledFactory:
+    def _compile_and_create_function(
+        self, factory: InjectableFactory, impl: type, qualifier: Hashable
+    ) -> CompiledFactory:
         obj_id = impl, qualifier
         resolved_obj_id = (
             (self._registry.interface_resolve_impl(impl, qualifier), qualifier)

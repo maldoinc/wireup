@@ -11,11 +11,11 @@ from typing_extensions import Annotated
 from wireup import Injected, inject_from_container
 
 
-@wireup.service
+@wireup.injectable
 class A: ...
 
 
-@wireup.service
+@wireup.injectable
 @dataclass
 class B:
     a: A
@@ -27,7 +27,7 @@ class C:
     b: B
 
 
-@wireup.service
+@wireup.injectable
 def c_factory(b: B) -> Iterator[C]:
     yield C(b)
 

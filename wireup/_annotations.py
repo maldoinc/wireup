@@ -11,10 +11,10 @@ from typing_extensions import Annotated
 from wireup.ioc.types import (
     ConfigInjectionRequest,
     EmptyContainerInjectionRequest,
+    InjectableLifetime,
+    InjectableQualifier,
     InjectableType,
     Qualifier,
-    ServiceLifetime,
-    ServiceQualifier,
     TemplatedString,
 )
 
@@ -52,7 +52,7 @@ def Inject(  # noqa: N802
     elif expr:
         res = ConfigInjectionRequest(TemplatedString(expr))
     elif qualifier:
-        res = ServiceQualifier(qualifier)
+        res = InjectableQualifier(qualifier)
     else:
         res = EmptyContainerInjectionRequest()
 
@@ -79,17 +79,17 @@ Alias of `Annotated[T, Inject()]`.
 
 
 @dataclass
-class ServiceDeclaration:
-    """Object containing service declaration metadata."""
+class InjectableDeclaration:
+    """Object containing injectable declaration metadata."""
 
     obj: Any
     qualifier: Qualifier | None = None
-    lifetime: ServiceLifetime = "singleton"
+    lifetime: InjectableLifetime = "singleton"
 
 
 @dataclass
 class AbstractDeclaration:
-    """Used to denote a registration for a service that is abstract."""
+    """Used to denote a registration for a injectable that is abstract."""
 
     obj: Any
 
@@ -99,7 +99,7 @@ def injectable(
     obj: None = None,
     *,
     qualifier: Qualifier | None = None,
-    lifetime: ServiceLifetime = "singleton",
+    lifetime: InjectableLifetime = "singleton",
 ) -> Callable[[T], T]:
     pass
 
@@ -109,7 +109,7 @@ def injectable(
     obj: T,
     *,
     qualifier: Qualifier | None = None,
-    lifetime: ServiceLifetime = "singleton",
+    lifetime: InjectableLifetime = "singleton",
 ) -> T:
     pass
 
@@ -118,18 +118,18 @@ def injectable(
     obj: T | None = None,
     *,
     qualifier: Qualifier | None = None,
-    lifetime: ServiceLifetime = "singleton",
+    lifetime: InjectableLifetime = "singleton",
 ) -> T | Callable[[T], T]:
-    """Mark the decorated class or function as a Wireup service."""
+    """Mark the decorated class or function as a Wireup injectable."""
 
     # Allow this to be used as a decorator factory or as a decorator directly.
-    def _service_decorator(decorated_obj: T) -> T:
-        decorated_obj.__wireup_registration__ = ServiceDeclaration(  # type: ignore[attr-defined]
+    def _injectable_decorator(decorated_obj: T) -> T:
+        decorated_obj.__wireup_registration__ = InjectableDeclaration(  # type: ignore[attr-defined]
             obj=decorated_obj, qualifier=qualifier, lifetime=lifetime
         )
         return decorated_obj
 
-    return _service_decorator if obj is None else _service_decorator(obj)
+    return _injectable_decorator if obj is None else _injectable_decorator(obj)
 
 
 @overload
@@ -137,7 +137,7 @@ def service(
     obj: None = None,
     *,
     qualifier: Qualifier | None = None,
-    lifetime: ServiceLifetime = "singleton",
+    lifetime: InjectableLifetime = "singleton",
 ) -> Callable[[T], T]:
     pass
 
@@ -147,7 +147,7 @@ def service(
     obj: T,
     *,
     qualifier: Qualifier | None = None,
-    lifetime: ServiceLifetime = "singleton",
+    lifetime: InjectableLifetime = "singleton",
 ) -> T:
     pass
 
@@ -156,7 +156,7 @@ def service(
     obj: T | None = None,
     *,
     qualifier: Qualifier | None = None,
-    lifetime: ServiceLifetime = "singleton",
+    lifetime: InjectableLifetime = "singleton",
 ) -> T | Callable[[T], T]:
     """Mark the decorated class or function as a Wireup service.
 

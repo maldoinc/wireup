@@ -5,7 +5,7 @@ from typing import Any, Awaitable, Callable, Dict, Iterable, Iterator, Optional,
 from aiohttp import web
 
 import wireup
-from wireup._annotations import ServiceDeclaration, injectable
+from wireup._annotations import InjectableDeclaration, injectable
 from wireup.errors import WireupError
 from wireup.ioc.container.async_container import ScopedAsyncContainer
 from wireup.ioc.container.sync_container import ScopedSyncContainer
@@ -77,7 +77,7 @@ def _get_startup_event(
     handlers: Optional[Iterable[Type[_WireupHandler]]],
 ) -> Callable[[web.Application], Awaitable[None]]:
     for handler_type in handlers or []:
-        container._registry.extend(impls=[ServiceDeclaration(handler_type)])
+        container._registry.extend(impls=[InjectableDeclaration(handler_type)])
         container._compiler.compile()
         container._scoped_compiler.compile()
 
@@ -97,8 +97,7 @@ def setup(
 ) -> None:
     """Integrate Wireup with AIOHTTP.
 
-    If you need access to `aiohttp.web.Request` in your services, add this module to the `service_modules` in your
-    container's service modules.
+    If you need access to `aiohttp.web.Request` in your injectables, add this module to the container's injectables.
 
     :param container: A Wireup async container.
     :param app: An AIOHTTP server application.

@@ -23,7 +23,9 @@ def test_inject_from_container_handles_optionals() -> None:
     def make_thing(maybe_thing: Optional[MaybeThing]) -> Thing:
         return Thing(maybe_thing=maybe_thing)
 
-    container = wireup.create_sync_container(services=[wireup.service(make_maybe_thing), wireup.service(make_thing)])
+    container = wireup.create_sync_container(
+        services=[wireup.injectable(make_maybe_thing), wireup.injectable(make_thing)]
+    )
 
     @wireup.inject_from_container(container)
     def main(
@@ -46,11 +48,11 @@ def test_inject_from_container_handles_optionals() -> None:
 
 
 def test_getting_optional_service_via_plain_type_emits_deprecation_warning() -> None:
-    @wireup.service
+    @wireup.injectable
     class Foo:
         pass
 
-    @wireup.service
+    @wireup.injectable
     def make_foo() -> Optional[Foo]:
         return Foo()
 
@@ -66,11 +68,11 @@ def test_getting_optional_service_via_plain_type_emits_deprecation_warning() -> 
 
 
 def test_registering_optional_and_plain_type_raises_duplicate() -> None:
-    @wireup.service
+    @wireup.injectable
     class Foo:
         pass
 
-    @wireup.service
+    @wireup.injectable
     def make_optional() -> Optional[Foo]:
         return None
 

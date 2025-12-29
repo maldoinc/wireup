@@ -4,7 +4,7 @@ import warnings
 from types import ModuleType
 from typing import Any, Iterable, TypeVar
 
-from wireup._annotations import AbstractDeclaration, ServiceDeclaration
+from wireup._annotations import AbstractDeclaration, InjectableDeclaration
 from wireup._discovery import discover_wireup_registrations
 from wireup.errors import WireupError
 from wireup.ioc.configuration import ConfigStore
@@ -13,7 +13,7 @@ from wireup.ioc.container.base_container import BaseContainer
 from wireup.ioc.container.sync_container import SyncContainer
 from wireup.ioc.factory_compiler import FactoryCompiler
 from wireup.ioc.override_manager import OverrideManager
-from wireup.ioc.service_registry import ServiceRegistry
+from wireup.ioc.registry import ContainerRegistry
 
 _ContainerT = TypeVar("_ContainerT", bound=BaseContainer)
 
@@ -36,7 +36,7 @@ def _create_container(  # noqa: PLR0913
         A list of classes or functions decorated with `@injectable` or `@abstract` to register with the
         container instance. Use this when you want to explicitly list services.
     :param parameters: Deprecated. Parameters was renamed to config, use that instead.
-    :param config: Configuration to expose to the container. Services or factories can
+    :param config: Configuration to expose to the container. Injectables or factories can
         request config via the `Inject(config="name")` annotation.
     :param injectables: A list of classes or functions decorated with `@injectable` or `@abstract` or modules containing
         injectables to register with the container instance.
@@ -81,7 +81,7 @@ def _create_container(  # noqa: PLR0913
     else:
         abstracts, impls = _merge_definitions(service_modules, services)
 
-    registry = ServiceRegistry(config=ConfigStore(parameters or config), abstracts=abstracts, impls=impls)
+    registry = ContainerRegistry(config=ConfigStore(parameters or config), abstracts=abstracts, impls=impls)
 
     # The container uses a dual-compiler optimization strategy:
     # 1. The singleton compiler generates optimized factories for singleton dependencies
@@ -109,17 +109,17 @@ def _create_container(  # noqa: PLR0913
 def _merge_definitions(
     service_modules: Iterable[ModuleType] | None = None,
     services: Iterable[Any] | None = None,
-) -> tuple[list[AbstractDeclaration], list[ServiceDeclaration]]:
+) -> tuple[list[AbstractDeclaration], list[InjectableDeclaration]]:
     abstracts: list[AbstractDeclaration] = []
-    impls: list[ServiceDeclaration] = []
+    impls: list[InjectableDeclaration] = []
 
     if services:
         for service in services:
             if not hasattr(service, "__wireup_registration__"):
-                msg = f"Service {service} is not decorated with @abstract or @injectable."
+                msg = f"Injectable {service} is not decorated with @abstract or @injectable."
                 raise WireupError(msg)
 
-            reg: AbstractDeclaration | ServiceDeclaration = service.__wireup_registration__
+            reg: AbstractDeclaration | InjectableDeclaration = service.__wireup_registration__
 
             if isinstance(reg, AbstractDeclaration):
                 abstracts.append(reg)
@@ -151,7 +151,7 @@ def create_sync_container(
         A list of classes or functions decorated with `@injectable` or `@abstract` to register with the
         container instance. Use this when you want to explicitly list services.
     :param parameters: Deprecated. Parameters was renamed to config, use that instead.
-    :param config: Configuration to expose to the container. Services or factories can
+    :param config: Configuration to expose to the container. Injectables or factories can
         request config via the `Inject(config="name")` annotation.
     :param injectables: A list of classes or functions decorated with `@injectable` or `@abstract` or modules containing
         injectables to register with the container instance.
@@ -184,7 +184,7 @@ def create_async_container(
         A list of classes or functions decorated with `@injectable` or `@abstract` to register with the
         container instance. Use this when you want to explicitly list services.
     :param parameters: Deprecated. Parameters was renamed to config, use that instead.
-    :param config: Configuration to expose to the container. Services or factories can
+    :param config: Configuration to expose to the container. Injectables or factories can
         request config via the `Inject(config="name")` annotation.
     :param injectables: A list of classes or functions decorated with `@injectable` or `@abstract` or modules containing
         injectables to register with the container instance.

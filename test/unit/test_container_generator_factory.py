@@ -4,7 +4,7 @@ from typing import AsyncIterator, Iterator, NewType
 import pytest
 import wireup
 from wireup import Injected, inject_from_container
-from wireup._annotations import service
+from wireup._annotations import injectable
 from wireup.errors import ContainerCloseError, WireupError
 
 from test.conftest import Container
@@ -15,7 +15,7 @@ def test_cleans_up_on_exit(container: Container) -> None:
     _cleanup_performed = False
     Something = NewType("Something", str)
 
-    @service
+    @injectable
     def some_factory() -> Iterator[Something]:
         yield Something("foo")
         nonlocal _cleanup_performed
@@ -32,7 +32,7 @@ async def test_async_cleans_up_on_exit() -> None:
     _cleanup_performed = False
     Something = NewType("Something", str)
 
-    @service
+    @injectable
     async def some_factory() -> AsyncIterator[Something]:
         yield Something("foo")
         nonlocal _cleanup_performed
@@ -54,13 +54,13 @@ def test_injects_transient() -> None:
     Something = NewType("Something", str)
     SomethingElse = NewType("SomethingElse", str)
 
-    @service(lifetime="transient")
+    @injectable(lifetime="transient")
     def f1() -> Iterator[Something]:
         yield Something("Something")
         nonlocal _cleanups
         _cleanups.append("f1")
 
-    @service(lifetime="transient")
+    @injectable(lifetime="transient")
     def f2(something: Something) -> Iterator[SomethingElse]:
         yield SomethingElse(f"{something} else")
         nonlocal _cleanups
@@ -83,13 +83,13 @@ async def test_async_injects_transient_sync_depends_on_async_result() -> None:
     Something = NewType("Something", str)
     SomethingElse = NewType("SomethingElse", str)
 
-    @service(lifetime="transient")
+    @injectable(lifetime="transient")
     async def f1() -> AsyncIterator[Something]:
         yield Something("Something")
         nonlocal _cleanups
         _cleanups.append("f1")
 
-    @service(lifetime="transient")
+    @injectable(lifetime="transient")
     def f2(something: Something) -> Iterator[SomethingElse]:
         yield SomethingElse(f"{something} else")
         nonlocal _cleanups
@@ -107,13 +107,13 @@ def test_cleans_up_in_order() -> None:
     Something = NewType("Something", str)
     SomethingElse = NewType("SomethingElse", str)
 
-    @service
+    @injectable
     def f1() -> Iterator[Something]:
         yield Something("Something")
         nonlocal _cleanups
         _cleanups.append("f1")
 
-    @service
+    @injectable
     def f2(something: Something) -> Iterator[SomethingElse]:
         yield SomethingElse(f"{something} else")
         nonlocal _cleanups
@@ -130,7 +130,7 @@ def test_cleans_up_in_order() -> None:
 def test_sync_raises_when_generating_async() -> None:
     Something = NewType("Something", str)
 
-    @service
+    @injectable
     async def f1() -> AsyncIterator[Something]:
         yield Something("Something")
         raise ValueError("boom")
@@ -154,7 +154,7 @@ def test_sync_raises_when_generating_async() -> None:
 def test_raises_errors() -> None:
     Something = NewType("Something", str)
 
-    @service
+    @injectable
     def f1() -> Iterator[Something]:
         yield Something("Something")
         raise ValueError("boom")
@@ -173,7 +173,7 @@ def test_raises_errors() -> None:
 async def test_raises_errors_async() -> None:
     Something = NewType("Something", str)
 
-    @service
+    @injectable
     async def f1() -> AsyncIterator[Something]:
         yield Something("Something")
         raise ValueError("boom")

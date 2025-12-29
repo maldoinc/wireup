@@ -25,12 +25,12 @@ from wireup.ioc.types import (
     ConfigInjectionRequest,
     ContainerObjectIdentifier,
     EmptyContainerInjectionRequest,
-    ServiceLifetime,
+    InjectableLifetime,
 )
 from wireup.ioc.util import ensure_is_type, get_globals, param_get_annotation, stringify_type
 
 if TYPE_CHECKING:
-    from wireup._annotations import AbstractDeclaration, ServiceDeclaration
+    from wireup._annotations import AbstractDeclaration, InjectableDeclaration
     from wireup.ioc.types import (
         Qualifier,
     )
@@ -53,7 +53,7 @@ ASYNC_FACTORY_TYPES = {FactoryType.ASYNC_GENERATOR, FactoryType.COROUTINE_FN}
 
 
 @dataclass
-class ServiceFactory:
+class InjectableFactory:
     factory: Callable[..., Any]
     factory_type: FactoryType
     is_async: bool
@@ -61,7 +61,7 @@ class ServiceFactory:
     raw_type: type
 
 
-ServiceCreationDetails = Tuple[Callable[..., Any], ContainerObjectIdentifier, FactoryType, ServiceLifetime]
+InjectableCreationDetails = Tuple[Callable[..., Any], ContainerObjectIdentifier, FactoryType, InjectableLifetime]
 
 
 def _get_factory_type(fn: Callable[..., T]) -> FactoryType:
@@ -98,7 +98,7 @@ def _function_get_unwrapped_return_type(fn: Callable[..., T]) -> type[T] | None:
     return None
 
 
-class ServiceRegistry:
+class ContainerRegistry:
     """Container class holding service registration info and dependencies among them."""
 
     __slots__ = ("ctors", "dependencies", "factories", "impls", "interfaces", "lifetime", "parameters")
@@ -107,22 +107,22 @@ class ServiceRegistry:
         self,
         config: ConfigStore | None = None,
         abstracts: list[AbstractDeclaration] | None = None,
-        impls: list[ServiceDeclaration] | None = None,
+        impls: list[InjectableDeclaration] | None = None,
     ) -> None:
         self.parameters = config or ConfigStore()
         self.interfaces: dict[type, dict[Qualifier, type]] = {}
         self.impls: dict[type, set[Qualifier]] = defaultdict(set)
-        self.factories: dict[ContainerObjectIdentifier, ServiceFactory] = {}
+        self.factories: dict[ContainerObjectIdentifier, InjectableFactory] = {}
         self.dependencies: dict[InjectionTarget, dict[str, AnnotatedParameter]] = defaultdict(defaultdict)
-        self.lifetime: dict[ContainerObjectIdentifier, ServiceLifetime] = {}
-        self.ctors: dict[ContainerObjectIdentifier, ServiceCreationDetails] = {}
+        self.lifetime: dict[ContainerObjectIdentifier, InjectableLifetime] = {}
+        self.ctors: dict[ContainerObjectIdentifier, InjectableCreationDetails] = {}
         self.extend(abstracts=abstracts or [], impls=impls or [])
 
     def extend(
         self,
         *,
         abstracts: list[AbstractDeclaration] | None = None,
-        impls: list[ServiceDeclaration] | None = None,
+        impls: list[InjectableDeclaration] | None = None,
     ) -> None:
         for abstract in abstracts or []:
             self._register_abstract(abstract.obj)
@@ -195,7 +195,7 @@ class ServiceRegistry:
         self,
         klass: type[Any],
         factory_fn: Callable[..., Any],
-        lifetime: ServiceLifetime = "singleton",
+        lifetime: InjectableLifetime = "singleton",
         qualifier: Qualifier | None = None,
     ) -> None:
         type_analysis = analyze_type(klass)
@@ -219,7 +219,7 @@ class ServiceRegistry:
         self._target_init_context(factory_fn)
         self.lifetime[klass, qualifier] = lifetime
         factory_type = _get_factory_type(factory_fn)
-        self.factories[klass, qualifier] = ServiceFactory(
+        self.factories[klass, qualifier] = InjectableFactory(
             factory=factory_fn,
             factory_type=factory_type,
             is_async=factory_type in ASYNC_FACTORY_TYPES,
@@ -348,7 +348,7 @@ class ServiceRegistry:
         if self.lifetime[impl, impl_qualifier] == "singleton" and dependency_lifetime != "singleton":
             msg = (
                 f"Parameter '{parameter_name}' of {stringify_type(factory)} "
-                f"depends on a service with a '{dependency_lifetime}' lifetime which is not supported. "
+                f"depends on an injectable with a '{dependency_lifetime}' lifetime which is not supported. "
                 "Singletons can only depend on other singletons."
             )
             raise WireupError(msg)
@@ -373,7 +373,7 @@ class ServiceRegistry:
         elif not self.is_type_with_qualifier_known(parameter.klass, qualifier=parameter.qualifier_value):
             msg = (
                 f"Parameter '{name}' of {stringify_type(target)} "
-                f"depends on an unknown service {stringify_type(parameter.klass)} "
+                f"depends on an unknown injectable {stringify_type(parameter.klass)} "
                 f"with qualifier {parameter.qualifier_value}."
             )
             raise WireupError(msg)

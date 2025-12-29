@@ -10,7 +10,7 @@ import wireup.integration
 import wireup.integration.fastapi
 from fastapi import FastAPI, Request, WebSocket
 from fastapi.testclient import TestClient
-from wireup._annotations import Injected, service
+from wireup._annotations import Injected, injectable
 from wireup.errors import WireupError
 from wireup.integration.fastapi import get_app_container
 
@@ -78,7 +78,7 @@ def test_override(app: FastAPI, client: TestClient):
         def get_random(self) -> int:
             return super().get_random() ** 2
 
-    with get_app_container(app).override.service(RandomService, new=RealRandom()):
+    with get_app_container(app).override.injectable(RandomService, new=RealRandom()):
         response = client.get("/rng")
     assert response.status_code == 200
     assert response.json() == {"number": 16}
@@ -143,7 +143,7 @@ async def test_closes_container_on_lifespan_close() -> None:
 
     class Thing: ...
 
-    @service
+    @injectable
     def make_thing() -> Iterator[Thing]:
         yield Thing()
         nonlocal cleanup_done
@@ -214,7 +214,7 @@ async def test_overrides_in_class_based_handlers() -> None:
 
     new_instance = FakeRandomService()
 
-    with get_app_container(app).override.service(RandomService, new=new_instance), TestClient(app) as client:
+    with get_app_container(app).override.injectable(RandomService, new=new_instance), TestClient(app) as client:
         res = client.get("/cbr")
         assert res.json() == {"counter": 1, "random": 100}
 

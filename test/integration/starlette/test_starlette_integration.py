@@ -12,14 +12,14 @@ from starlette.routing import Route, WebSocketRoute
 from starlette.testclient import TestClient
 from starlette.types import ASGIApp, Receive, Scope, Send
 from starlette.websockets import WebSocket
-from wireup._annotations import Injected, service
+from wireup._annotations import Injected, injectable
 from wireup.integration.starlette import get_app_container, get_request_container, inject
 
 from test.shared import shared_services
 from test.shared.shared_services.greeter import GreeterService
 
 
-@service(lifetime="scoped")
+@injectable(lifetime="scoped")
 class RequestContext:
     def __init__(self, request: Request):
         self.request = request
@@ -29,7 +29,7 @@ class RequestContext:
         return self.request.query_params.get("name", "World")
 
 
-@service(lifetime="scoped")
+@injectable(lifetime="scoped")
 class WebSocketContext:
     def __init__(self, websocket: WebSocket, greeter: GreeterService):
         self.websocket = websocket
@@ -117,7 +117,7 @@ def test_override(app: Starlette, client: TestClient):
         def greet(self, name: str) -> str:
             return super().greet(name).upper()
 
-    with get_app_container(app).override.service(GreeterService, new=UppercaseGreeter()):
+    with get_app_container(app).override.injectable(GreeterService, new=UppercaseGreeter()):
         response = client.get("/hello", params={"name": "Test"})
 
     assert response.text == "HELLO TEST"
@@ -160,7 +160,7 @@ async def test_executes_closes_container_lifespan() -> None:
 
     class Thing: ...
 
-    @service
+    @injectable
     def make_thing() -> Iterator[Thing]:
         yield Thing()
         nonlocal cleanup_done

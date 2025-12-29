@@ -42,7 +42,7 @@ ContainerObjectIdentifier = Tuple[type, Optional[Qualifier]]
 
 
 @dataclass(frozen=True)
-class ServiceQualifier(InjectableType):
+class InjectableQualifier(InjectableType):
     """Hint the container registry which dependency to load when there are multiple ones registered with the same type.
 
     Use in case of interfaces where there are multiple dependencies that inherit it, but the type of the parameter
@@ -61,7 +61,7 @@ class EmptyContainerInjectionRequest(InjectableType):
     """
 
 
-ServiceLifetime = Literal["singleton", "scoped", "transient"]
+InjectableLifetime = Literal["singleton", "scoped", "transient"]
 
 
 class AnnotatedParameter:
@@ -83,7 +83,7 @@ class AnnotatedParameter:
         """
         self.klass = klass
         self.annotation = annotation
-        self.qualifier_value = self.annotation.qualifier if isinstance(self.annotation, ServiceQualifier) else None
+        self.qualifier_value = self.annotation.qualifier if isinstance(self.annotation, InjectableQualifier) else None
         self.is_parameter = isinstance(self.annotation, ConfigInjectionRequest)
         self.obj_id = self.klass, self.qualifier_value
 
@@ -103,7 +103,7 @@ class AnnotatedParameter:
 
 
 @dataclass(frozen=True, eq=True)
-class ServiceOverride:
+class InjectableOverride:
     """Data class to represent a service override. Target type will be replaced with the new type by the container."""
 
     target: type[Any]

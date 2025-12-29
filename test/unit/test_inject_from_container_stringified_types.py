@@ -22,7 +22,9 @@ def test_inject_from_container_handles_optionals() -> None:
     def make_thing(maybe_thing: MaybeThing | None) -> Thing:
         return Thing(maybe_thing=maybe_thing)
 
-    container = wireup.create_sync_container(services=[wireup.service(make_maybe_thing), wireup.service(make_thing)])
+    container = wireup.create_sync_container(
+        services=[wireup.injectable(make_maybe_thing), wireup.injectable(make_thing)]
+    )
 
     @wireup.inject_from_container(container)
     def main(

@@ -2,24 +2,24 @@ from typing import Iterator
 
 import pytest
 import wireup
-from wireup._annotations import service
+from wireup._annotations import injectable
 from wireup.errors import ContainerCloseError
 
 from test.unit.services.with_annotations.services import TransientService
 
 
-@service
+@injectable
 class SingletonService: ...
 
 
-@service(lifetime="scoped")
+@injectable(lifetime="scoped")
 class ScopedService: ...
 
 
 def test_scoped_exit_does_not_close_singleton_scopes() -> None:
     singleton_service_factory_exited = False
 
-    @service
+    @injectable
     def singleton_service_factory() -> Iterator[SingletonService]:
         yield SingletonService()
         nonlocal singleton_service_factory_exited
@@ -36,7 +36,7 @@ def test_scoped_exit_does_not_close_singleton_scopes() -> None:
 async def test_scoped_exit_does_not_close_singleton_scopes_async() -> None:
     singleton_service_factory_exited = False
 
-    @service
+    @injectable
     def singleton_service_factory() -> Iterator[SingletonService]:
         yield SingletonService()
         nonlocal singleton_service_factory_exited
@@ -88,7 +88,7 @@ def test_scoped_container_cleansup_container_get() -> None:
 
     done = False
 
-    @service(lifetime="transient")
+    @injectable(lifetime="transient")
     def factory() -> Iterator[SomeService]:
         yield SomeService()
         nonlocal done

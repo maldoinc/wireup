@@ -3,11 +3,11 @@ import pytest
 import wireup
 from click.testing import CliRunner
 from typing_extensions import Annotated
-from wireup import Inject, Injected, service
+from wireup import Inject, Injected, injectable
 from wireup.integration import click as wireup_click
 
 
-@service
+@injectable
 class NumberGenerator:
     def get_lucky_number(self) -> int:
         return 42

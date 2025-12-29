@@ -23,7 +23,7 @@ ROOT_URLCONF = sys.modules[__name__]
 WIREUP = WireupSettings(
     service_modules=[
         "test.shared.shared_services",
-        "test.integration.django.service",
+        "test.integration.django.injectable",
         "test.integration.django.factory",
     ]
 )
@@ -94,7 +94,7 @@ def test_override(client: Client):
         def greet(self, name: str) -> str:
             return f"Bad day to you, {name}"
 
-    with get_app_container().override.service(GreeterService, new=RudeGreeter()):
+    with get_app_container().override.injectable(GreeterService, new=RudeGreeter()):
         res = client.get("/classbased?name=Test")
 
     assert res.status_code == 200
@@ -114,20 +114,20 @@ def test_multiple_apps(client: Client):
 
 
 async def test_async_view_with_async_service(async_client: AsyncClient):
-    # GIVEN an async Django view with an injected async service
+    # GIVEN an async Django view with an injected async injectable
     # WHEN making a request
     res = await async_client.get("/async_greet?name=World")
 
-    # THEN the async service is properly injected and works
+    # THEN the async injectable is properly injected and works
     assert res.status_code == 200
     assert res.content.decode("utf8") == "Hello World! Debug = True"
 
 
 async def test_async_cbv_with_async_service(async_client: AsyncClient):
-    # GIVEN an async Django CBV with an injected async service
+    # GIVEN an async Django CBV with an injected async injectable
     # WHEN making a request
     res = await async_client.get("/async_classbased?name=World")
 
-    # THEN the async service is properly injected and works
+    # THEN the async injectable is properly injected and works
     assert res.status_code == 200
     assert res.content.decode("utf8") == "Hello World! Debug = True. Your lucky number is 4"

@@ -1,10 +1,10 @@
 from dataclasses import dataclass
 
 from django.http import HttpRequest
-from wireup import service
+from wireup import injectable
 
 
-@service(lifetime="scoped")
+@injectable(lifetime="scoped")
 @dataclass
 class CurrentDjangoRequest:
     request: HttpRequest

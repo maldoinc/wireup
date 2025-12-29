@@ -10,8 +10,8 @@ from wireup.errors import WireupError
 from wireup.ioc.types import (
     AnnotatedParameter,
     ConfigInjectionRequest,
+    InjectableQualifier,
     InjectableType,
-    ServiceQualifier,
 )
 from wireup.ioc.util import (
     get_globals,
@@ -63,8 +63,8 @@ class TestUtilityFunctions(unittest.TestCase):
 
     def test_annotated_parameter_hash_equality(self):
         self.assertEqual(
-            hash(AnnotatedParameter(AnnotatedParameter, ServiceQualifier("wow"))),
-            hash(AnnotatedParameter(AnnotatedParameter, ServiceQualifier("wow"))),
+            hash(AnnotatedParameter(AnnotatedParameter, InjectableQualifier("wow"))),
+            hash(AnnotatedParameter(AnnotatedParameter, InjectableQualifier("wow"))),
         )
 
 

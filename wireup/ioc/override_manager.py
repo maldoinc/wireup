@@ -9,7 +9,7 @@ from wireup.ioc.factory_compiler import CompiledFactory, FactoryCompiler
 if TYPE_CHECKING:
     from collections.abc import Callable
 
-    from wireup.ioc.types import Qualifier, ServiceOverride
+    from wireup.ioc.types import InjectableOverride, Qualifier
 
 
 class OverrideManager:
@@ -114,7 +114,7 @@ class OverrideManager:
             self._restore_factory_methods(key[0], key[1])
 
     @contextmanager
-    def service(self, target: type, new: Any, qualifier: Qualifier | None = None) -> Iterator[None]:
+    def injectable(self, target: type, new: Any, qualifier: Qualifier | None = None) -> Iterator[None]:
         """Override the `target` service with `new` for the duration of the context manager.
 
         Future requests to inject `target` will result in `new` being injected.
@@ -131,7 +131,7 @@ class OverrideManager:
             self.delete(target, qualifier)
 
     @contextmanager
-    def services(self, overrides: list[ServiceOverride]) -> Iterator[None]:
+    def injectables(self, overrides: list[InjectableOverride]) -> Iterator[None]:
         """Override a number of services with new for the duration of the context manager."""
         try:
             for override in overrides:
@@ -140,3 +140,23 @@ class OverrideManager:
         finally:
             for override in overrides:
                 self.delete(override.target, override.qualifier)
+
+    @contextmanager
+    def service(self, target: type, new: Any, qualifier: Qualifier | None = None) -> Iterator[None]:
+        """Override the `target` service with `new` for the duration of the context manager.
+
+        Future requests to inject `target` will result in `new` being injected.
+
+        :param target: The target service to override.
+        :param qualifier: The qualifier of the service to override. Set this if service is registered
+        with the qualifier parameter set to a value.
+        :param new: The new object to be injected instead of `target`.
+        """
+        with self.injectable(target, new, qualifier):
+            yield
+
+    @contextmanager
+    def services(self, overrides: list[InjectableOverride]) -> Iterator[None]:
+        """Override a number of services with new for the duration of the context manager."""
+        with self.injectables(overrides):
+            yield

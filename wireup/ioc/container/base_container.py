@@ -21,7 +21,7 @@ if TYPE_CHECKING:
     from wireup.ioc.configuration import ConfigStore
     from wireup.ioc.factory_compiler import FactoryCompiler
     from wireup.ioc.override_manager import OverrideManager
-    from wireup.ioc.service_registry import ServiceRegistry
+    from wireup.ioc.registry import ContainerRegistry
     from wireup.ioc.types import (
         ContainerObjectIdentifier,
         Qualifier,
@@ -46,7 +46,7 @@ class BaseContainer:
 
     def __init__(  # noqa: PLR0913
         self,
-        registry: ServiceRegistry,
+        registry: ContainerRegistry,
         override_manager: OverrideManager,
         factory_compiler: FactoryCompiler,
         scoped_compiler: FactoryCompiler,

@@ -13,7 +13,7 @@ def test_service_is_deprecated():
 
 
 def test_service_and_injectable_are_compatible():
-    @service
+    @injectable
     class Foo:
         pass
 
