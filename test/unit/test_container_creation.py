@@ -195,7 +195,7 @@ def test_errors_not_decorated_service() -> None:
 
     with pytest.raises(
         WireupError,
-        match=f"Service {NotDecorated} is not decorated with @abstract or @service",
+        match=f"Service {NotDecorated} is not decorated with @abstract or @injectable",
     ):
         wireup.create_sync_container(services=[NotDecorated])
 

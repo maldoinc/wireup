@@ -94,7 +94,6 @@ class AbstractDeclaration:
     obj: Any
 
 
-
 @overload
 def injectable(
     obj: None = None,
