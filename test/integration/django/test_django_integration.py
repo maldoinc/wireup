@@ -233,10 +233,9 @@ def test_auto_inject_views_enabled_calls_injection():
     # WHEN we call ready() with auto_inject_views=True
     wireup_config = apps.get_app_config("wireup")
 
-    with (
-        patch("wireup.integration.django.apps.settings") as mock_settings,
-        patch.object(wireup_config, "_inject") as mock_inject,
-    ):
+    with patch("wireup.integration.django.apps.settings") as mock_settings, patch.object(
+        wireup_config, "_inject"
+    ) as mock_inject:
         mock_settings.WIREUP = settings_enabled
 
         wireup_config.ready()
