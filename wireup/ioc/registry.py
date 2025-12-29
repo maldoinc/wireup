@@ -99,7 +99,7 @@ def _function_get_unwrapped_return_type(fn: Callable[..., T]) -> type[T] | None:
 
 
 class ContainerRegistry:
-    """Container class holding service registration info and dependencies among them."""
+    """Container class holding injectable registration info and dependencies among them."""
 
     __slots__ = ("ctors", "dependencies", "factories", "impls", "interfaces", "lifetime", "parameters")
 
@@ -314,15 +314,15 @@ class ContainerRegistry:
 
     def assert_dependencies_valid(self) -> None:
         """Assert that all required dependencies exist for this registry instance."""
-        for (impl, impl_qualifier), service_factory in self.factories.items():
-            for name, dependency in self.dependencies[service_factory.factory].items():
+        for (impl, impl_qualifier), injectable_factory in self.factories.items():
+            for name, dependency in self.dependencies[injectable_factory.factory].items():
                 self.assert_dependency_exists(parameter=dependency, target=impl, name=name)
                 self._assert_lifetime_valid(
                     impl=impl,
                     impl_qualifier=impl_qualifier,
                     parameter_name=name,
                     dependency=dependency,
-                    factory=service_factory.factory,
+                    factory=injectable_factory.factory,
                 )
                 self._assert_valid_resolution_path(dependency=dependency, path=[])
 
@@ -384,8 +384,8 @@ class ContainerRegistry:
         """Assert that the resolution path for a dependency does not create a cycle."""
         if dependency.klass in self.interfaces or dependency.is_parameter:
             return
-        dependency_service_factory = self.factories[dependency.klass, dependency.qualifier_value]
-        new_path: list[tuple[AnnotatedParameter, Any]] = [*path, (dependency, dependency_service_factory)]
+        dependency_injectable_factory = self.factories[dependency.klass, dependency.qualifier_value]
+        new_path: list[tuple[AnnotatedParameter, Any]] = [*path, (dependency, dependency_injectable_factory)]
 
         if any(p.klass == dependency.klass and p.qualifier_value == dependency.qualifier_value for p, _ in path):
 
@@ -402,5 +402,5 @@ class ContainerRegistry:
             msg = f"Circular dependency detected for {cycle_path} ! Cycle here"
             raise WireupError(msg)
 
-        for next_dependency in self.dependencies[dependency_service_factory.factory].values():
+        for next_dependency in self.dependencies[dependency_injectable_factory.factory].values():
             self._assert_valid_resolution_path(next_dependency, path=new_path)

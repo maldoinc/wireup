@@ -104,7 +104,7 @@ class AnnotatedParameter:
 
 @dataclass(frozen=True, eq=True)
 class InjectableOverride:
-    """Data class to represent a service override. Target type will be replaced with the new type by the container."""
+    """Data class to represent a injectable override. Target type will be replaced with the new type by the container."""
 
     target: type[Any]
     new: Any

@@ -79,7 +79,7 @@ class BaseContainer:
 
     @property
     def override(self) -> OverrideManager:
-        """Override registered container services with new values."""
+        """Override registered container injectables with new values."""
         return self._override_mgr
 
     @overload
