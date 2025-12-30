@@ -42,16 +42,17 @@ def _create_container(  # noqa: PLR0913
         injectables to register with the container instance.
     :raises WireupError: Raised if the dependencies cannot be fully resolved.
     """
-    if parameters is not None and config is not None:
-        msg = (
-            "Passing both 'parameters' and 'config' is not supported. "
-            "Please use only 'config' as 'parameters' is deprecated."
-        )
-        raise WireupError(msg)
 
     if parameters is not None:
         msg = "Parameters have been renamed to Config. Pass your configuration to the config parameter."
         warnings.warn(msg, FutureWarning, stacklevel=2)
+
+        if config is not None:
+            msg = (
+                "Passing both 'parameters' and 'config' is not supported. "
+                "Please use only 'config' as 'parameters' is deprecated."
+            )
+            raise WireupError(msg)
 
     if services or service_modules:
         msg = (
@@ -82,7 +83,6 @@ def _create_container(  # noqa: PLR0913
         abstracts, impls = _merge_definitions(service_modules, services)
 
     registry = ContainerRegistry(config=ConfigStore(parameters or config), abstracts=abstracts, impls=impls)
-
     # The container uses a dual-compiler optimization strategy:
     # 1. The singleton compiler generates optimized factories for singleton dependencies
     #    and throws errors if scoped dependencies are accessed outside a scope.

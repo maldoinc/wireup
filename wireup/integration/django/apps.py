@@ -102,11 +102,14 @@ class WireupConfig(AppConfig):
         integration_settings: WireupSettings = settings.WIREUP
 
         self.container = wireup.create_async_container(
-            service_modules=[
-                importlib.import_module(m) if isinstance(m, str) else m for m in integration_settings.service_modules
+            injectables=[
+                *[
+                    importlib.import_module(m) if isinstance(m, str) else m
+                    for m in integration_settings.injectables
+                ],
+                _django_request_factory,
             ],
-            services=[_django_request_factory],
-            parameters={
+            config={
                 entry: getattr(settings, entry)
                 for entry in dir(settings)
                 if not entry.startswith("__") and hasattr(settings, entry)
@@ -163,8 +166,8 @@ class WireupConfig(AppConfig):
 class WireupSettings:
     """Class containing Wireup settings specific to Django."""
 
-    service_modules: List[Union[str, ModuleType]]
-    """List of modules containing wireup service registrations."""
+    injectables: List[Union[str, ModuleType]]
+    """List of modules containing wireup injectable registrations."""
 
     auto_inject_views: bool = True
     """Whether to automatically inject dependencies into Django views.
