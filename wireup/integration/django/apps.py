@@ -1,10 +1,11 @@
 import functools
 import importlib
 import inspect
+import warnings
 from contextvars import ContextVar
 from dataclasses import dataclass
 from types import ModuleType
-from typing import TYPE_CHECKING, Any, Awaitable, Callable, List, Union
+from typing import TYPE_CHECKING, Any, Awaitable, Callable, List, Optional, Union
 
 import django
 import django.urls
@@ -101,9 +102,22 @@ class WireupConfig(AppConfig):
     def ready(self) -> None:
         integration_settings: WireupSettings = settings.WIREUP
 
+        injectables = integration_settings.injectables
+
+        if integration_settings.service_modules:
+            warnings.warn(
+                "WireupSettings.service_modules is deprecated. Use WireupSettings.injectables instead.",
+                FutureWarning,
+                stacklevel=2,
+            )
+            if integration_settings.injectables:
+                msg = "WireupSettings.service_modules and WireupSettings.injectables are mutually exclusive."
+                raise ValueError(msg)
+            injectables = integration_settings.service_modules
+
         self.container = wireup.create_async_container(
             injectables=[
-                *[importlib.import_module(m) if isinstance(m, str) else m for m in integration_settings.injectables],
+                *[importlib.import_module(m) if isinstance(m, str) else m for m in injectables],
                 _django_request_factory,
             ],
             config={
@@ -163,7 +177,10 @@ class WireupConfig(AppConfig):
 class WireupSettings:
     """Class containing Wireup settings specific to Django."""
 
-    injectables: List[Union[str, ModuleType]]
+    service_modules: List[Union[str, ModuleType]]
+    """List of modules containing wireup injectable registrations."""
+
+    injectables: Optional[List[Union[str, ModuleType]]] = None
     """List of modules containing wireup injectable registrations."""
 
     auto_inject_views: bool = True

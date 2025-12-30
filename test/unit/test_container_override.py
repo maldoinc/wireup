@@ -21,7 +21,7 @@ from test.unit.util import run
 
 
 def test_container_overrides_deps_service_locator(container: Container):
-    container = wireup.create_sync_container(services=[random_service_factory])
+    container = wireup.create_sync_container(injectables=[random_service_factory])
 
     random_mock = MagicMock()
     random_mock.get_random.return_value = 5
@@ -35,7 +35,7 @@ def test_container_overrides_deps_service_locator(container: Container):
 
 
 async def test_container_overrides_deps_service_locator_interface():
-    container = wireup.create_sync_container(services=[Foo, FooImpl])
+    container = wireup.create_sync_container(injectables=[Foo, FooImpl])
 
     foo_mock = MagicMock()
     foo_mock.get_foo.return_value = "mock"
@@ -80,7 +80,7 @@ async def test_overrides_async_dependency() -> None:
     async def async_foo_factory() -> FooBar:
         return FooBar()
 
-    container = wireup.create_async_container(services=[async_foo_factory])
+    container = wireup.create_async_container(injectables=[async_foo_factory])
 
     foo_mock = MagicMock()
     foo_mock.foo = "mock"

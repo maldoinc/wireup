@@ -70,8 +70,7 @@ async def hello_websocket(_websocket: WebSocket, websocket_context: Injected[Web
 
 def create_app():
     container = wireup.create_async_container(
-        services=[RequestContext, WebSocketContext],
-        service_modules=[shared_services, wireup.integration.starlette],
+        injectables=[RequestContext, WebSocketContext, shared_services, wireup.integration.starlette],
         config={"foo": "bar"},
     )
 
@@ -139,8 +138,7 @@ def test_get_request_container_in_middleware() -> None:
             raise ValueError(msg)
 
     container = wireup.create_async_container(
-        services=[RequestContext, WebSocketContext],
-        service_modules=[shared_services, wireup.integration.starlette],
+        injectables=[RequestContext, WebSocketContext, shared_services, wireup.integration.starlette],
     )
 
     app = Starlette(
@@ -172,7 +170,7 @@ async def test_executes_closes_container_lifespan() -> None:
         return PlainTextResponse("Hello World")
 
     app = Starlette(routes=[Route("/hello", hello, methods=["GET"])])
-    container = wireup.create_async_container(services=[make_thing])
+    container = wireup.create_async_container(injectables=[make_thing])
     wireup.integration.starlette.setup(container, app)
 
     with TestClient(app) as client:

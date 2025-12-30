@@ -87,7 +87,7 @@ async def test_injects_parameters_dataclass():
         cache_dir: Annotated[str, Inject(expr="${cache_dir}/${auth.user}/db")]
 
     container = wireup.create_async_container(
-        services=[MyDbService],
+        injectables=[MyDbService],
         config={
             "env_name": "test",
             "cache_dir": "/var/cache",
@@ -181,7 +181,7 @@ async def test_container_raises_get_transient_scoped(container: Container) -> No
 
 
 def test_container_reuses_singleton_instance() -> None:
-    container = wireup.create_sync_container(services=[Foo, FooImpl])
+    container = wireup.create_sync_container(injectables=[Foo, FooImpl])
 
     assert container.get(FooImpl) is container.get(FooImpl)
 
@@ -211,7 +211,7 @@ def test_get_class_with_param_bindings() -> None:
             self.cache_dir = cache_dir
 
     container = wireup.create_sync_container(
-        services=[ServiceWithParams], config={"connection_str": "sqlite://memory", "cache_dir": "/var/cache"}
+        injectables=[ServiceWithParams], config={"connection_str": "sqlite://memory", "cache_dir": "/var/cache"}
     )
     svc = container.get(ServiceWithParams)
 
@@ -227,7 +227,7 @@ def test_raises_multiple_definitions():
         DuplicateServiceRegistrationError,
         match=re.escape(f"Cannot register type {Multiple} with qualifier 'None' as it already exists."),
     ):
-        wireup.create_sync_container(services=[Multiple, Multiple])
+        wireup.create_sync_container(injectables=[Multiple, Multiple])
 
 
 def test_register_same_qualifier_should_raise():
@@ -246,7 +246,7 @@ def test_register_same_qualifier_should_raise():
             f"Cannot register implementation class {F11} for {F1Base} with qualifier 'f1' as it already exists",
         ),
     ):
-        wireup.create_async_container(services=[F1Base, F1, F11])
+        wireup.create_async_container(injectables=[F1Base, F1, F11])
 
 
 async def test_injects_qualifiers():
@@ -262,7 +262,7 @@ async def test_injects_qualifiers():
     @injectable(qualifier="f2")
     class F2(FBase): ...
 
-    container = wireup.create_async_container(services=[FBase, FDefault, F1, F2])
+    container = wireup.create_async_container(injectables=[FBase, FDefault, F1, F2])
     assert isinstance(await container.get(FBase), FDefault)
     assert isinstance(await container.get(FBase, "f1"), F1)
     assert isinstance(await container.get(FBase, "f2"), F2)
@@ -270,7 +270,7 @@ async def test_injects_qualifiers():
 
 def test_services_from_multiple_bases_are_injected():
     container = wireup.create_sync_container(
-        service_modules=[services], config={"env_name": "test", "env": "test", "name": "foo"}
+        injectables=[services], config={"env_name": "test", "env": "test", "name": "foo"}
     )
 
     foo = container.get(FooBase)
@@ -295,7 +295,7 @@ def test_container_deduplicates_services_from_multiple_modules() -> None:
     # service_refs imports classes with @injectable from services.
     # This should not result in a duplicate error since the container should deduplicate classes
     # when imported from multiple modules.
-    wireup.create_async_container(service_modules=[services, service_refs], config={"env_name": "test"})
+    wireup.create_async_container(injectables=[services, service_refs], config={"env_name": "test"})
 
 
 def test_container_properly_caches_none_result() -> None:
@@ -308,7 +308,7 @@ def test_container_properly_caches_none_result() -> None:
 
         return None
 
-    container = wireup.create_sync_container(services=[make_none])
+    container = wireup.create_sync_container(injectables=[make_none])
     assert container.get(RandomService) is container.get(RandomService)
     assert counter == 1
 
@@ -324,7 +324,7 @@ def test_container_handles_optional_types_as_aliased() -> None:
 
         return None
 
-    container = wireup.create_sync_container(services=[make_none])
+    container = wireup.create_sync_container(injectables=[make_none])
     assert container.get(RandomService | None) is container.get(Optional[RandomService])
     assert container.get(RandomService | None) is container.get(None | RandomService)
     assert container.get(RandomService) is container.get(Optional[RandomService])
@@ -332,7 +332,7 @@ def test_container_handles_optional_types_as_aliased() -> None:
 
 
 def test_container_config_compat() -> None:
-    container = wireup.create_sync_container(services=[], parameters={"foo": "bar"})
+    container = wireup.create_sync_container(injectables=[], parameters={"foo": "bar"})
 
     assert container.params.get("foo") == "bar"
 
@@ -344,7 +344,7 @@ def test_container_config_compat() -> None:
 
 
 async def test_async_container_config_compat() -> None:
-    container = wireup.create_async_container(services=[], parameters={"foo": "bar"})
+    container = wireup.create_async_container(injectables=[], parameters={"foo": "bar"})
 
     assert container.params.get("foo") == "bar"
 
@@ -353,3 +353,18 @@ async def test_async_container_config_compat() -> None:
         assert foo == "bar"
 
     await main()
+
+
+def test_container_registers_services_compat() -> None:
+    @wireup.service
+    class BackwardsCompatService: ...
+
+    with pytest.warns(FutureWarning, match="Services have been renamed to Injectables"):
+        container = wireup.create_sync_container(
+            service_modules=[services],
+            parameters={"env_name": "test"},
+            services=[BackwardsCompatService],
+        )
+
+    assert isinstance(container.get(RandomService, qualifier="foo"), RandomService)
+    assert isinstance(container.get(BackwardsCompatService), BackwardsCompatService)

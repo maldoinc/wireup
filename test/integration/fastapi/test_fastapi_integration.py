@@ -27,7 +27,7 @@ def create_app(*, expose_container_in_middleware: bool) -> FastAPI:
     app.include_router(wireup_route.router)
 
     container = wireup.create_async_container(
-        service_modules=[fastapi_test_services, shared_services, wireup.integration.fastapi],
+        injectables=[fastapi_test_services, shared_services, wireup.integration.fastapi],
         config={"foo": "bar"},
     )
     wireup.integration.fastapi.setup(
@@ -150,7 +150,7 @@ async def test_closes_container_on_lifespan_close() -> None:
         cleanup_done = True
 
     app = FastAPI()
-    container = wireup.create_async_container(services=[make_thing])
+    container = wireup.create_async_container(injectables=[make_thing])
 
     @app.get("/")
     async def _(thing: Injected[Thing]) -> Dict[str, Any]:
@@ -178,7 +178,7 @@ async def test_executes_fastapi_lifespan() -> None:
 
     app = FastAPI(lifespan=lifespan)
     container = wireup.create_async_container(
-        service_modules=[fastapi_test_services, shared_services, wireup.integration.fastapi]
+        injectables=[fastapi_test_services, shared_services, wireup.integration.fastapi]
     )
 
     wireup.integration.fastapi.setup(container, app)
@@ -191,7 +191,7 @@ async def test_executes_fastapi_lifespan() -> None:
 
 async def test_middleware_disabled_does_not_add_middleware() -> None:
     app = FastAPI()
-    container = wireup.create_async_container(services=[RandomService])
+    container = wireup.create_async_container(injectables=[RandomService])
 
     @app.get("/")
     async def _(random: Injected[RandomService]) -> Dict[str, Any]:

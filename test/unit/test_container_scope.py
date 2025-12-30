@@ -25,7 +25,7 @@ def test_scoped_exit_does_not_close_singleton_scopes() -> None:
         nonlocal singleton_service_factory_exited
         singleton_service_factory_exited = True
 
-    c = wireup.create_sync_container(services=[singleton_service_factory])
+    c = wireup.create_sync_container(injectables=[singleton_service_factory])
 
     with c.enter_scope() as scoped:
         scoped.get(SingletonService)
@@ -42,7 +42,7 @@ async def test_scoped_exit_does_not_close_singleton_scopes_async() -> None:
         nonlocal singleton_service_factory_exited
         singleton_service_factory_exited = True
 
-    c = wireup.create_async_container(services=[singleton_service_factory])
+    c = wireup.create_async_container(injectables=[singleton_service_factory])
 
     async with c.enter_scope() as scoped:
         await scoped.get(SingletonService)
@@ -51,7 +51,7 @@ async def test_scoped_exit_does_not_close_singleton_scopes_async() -> None:
 
 
 def test_scoped_container_singleton_in_scope() -> None:
-    c = wireup.create_sync_container(services=[SingletonService])
+    c = wireup.create_sync_container(injectables=[SingletonService])
 
     singleton1 = c.get(SingletonService)
 
@@ -60,21 +60,21 @@ def test_scoped_container_singleton_in_scope() -> None:
 
 
 def test_does_not_reuse_transient_service() -> None:
-    c = wireup.create_sync_container(services=[TransientService])
+    c = wireup.create_sync_container(injectables=[TransientService])
 
     with c.enter_scope() as scoped:
         assert scoped.get(TransientService) is not scoped.get(TransientService)
 
 
 def test_scoped_container_reuses_instance_container_get() -> None:
-    c = wireup.create_sync_container(services=[ScopedService])
+    c = wireup.create_sync_container(injectables=[ScopedService])
 
     with c.enter_scope() as scoped:
         assert scoped.get(ScopedService) is scoped.get(ScopedService)
 
 
 def test_scoped_container_multiple_scopes() -> None:
-    c = wireup.create_sync_container(services=[ScopedService])
+    c = wireup.create_sync_container(injectables=[ScopedService])
 
     with c.enter_scope() as scoped1, c.enter_scope() as scoped2:
         assert scoped1 is not scoped2
@@ -94,7 +94,7 @@ def test_scoped_container_cleansup_container_get() -> None:
         nonlocal done
         done = True
 
-    c = wireup.create_sync_container(services=[factory])
+    c = wireup.create_sync_container(injectables=[factory])
 
     with c.enter_scope() as scoped:
         assert scoped.get(SomeService)

@@ -21,7 +21,7 @@ def runner() -> CliRunner:
 @pytest.fixture
 def container() -> wireup.SyncContainer:
     return wireup.create_sync_container(
-        services=[NumberGenerator], config={"env": "test", "debug": True, "name": "test-app"}
+        injectables=[NumberGenerator], config={"env": "test", "debug": True, "name": "test-app"}
     )
 
 

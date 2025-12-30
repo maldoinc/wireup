@@ -41,7 +41,7 @@ async def test_injects_targets(container: Container) -> None:
 
 
 async def test_injects_targets_async() -> None:
-    container = wireup.create_async_container(service_modules=[services], config={"env_name": "test"})
+    container = wireup.create_async_container(injectables=[services], config={"env_name": "test"})
 
     class NotManagedByWireup: ...
 
@@ -124,7 +124,7 @@ async def test_raises_on_unknown_parameter(container: Container) -> None:
 
 
 async def test_injects_service_with_provided_async_scoped_container() -> None:
-    container = wireup.create_async_container(service_modules=[services], config={"env_name": "test"})
+    container = wireup.create_async_container(injectables=[services], config={"env_name": "test"})
 
     async with container.enter_scope() as scoped:
 
@@ -136,7 +136,7 @@ async def test_injects_service_with_provided_async_scoped_container() -> None:
 
 
 async def test_container_sync_raises_async_def() -> None:
-    container = wireup.create_sync_container(service_modules=[services], config={"env_name": "test"})
+    container = wireup.create_sync_container(injectables=[services], config={"env_name": "test"})
 
     with pytest.raises(
         WireupError,
@@ -152,8 +152,8 @@ async def test_container_sync_raises_async_def() -> None:
 
 
 def test_autowire_supports_multiple_containers_does_not_patch_function():
-    c1 = wireup.create_sync_container(service_modules=[services], config={"env_name": "test"})
-    c2 = wireup.create_sync_container(service_modules=[services], config={"env_name": "test"})
+    c1 = wireup.create_sync_container(injectables=[services], config={"env_name": "test"})
+    c2 = wireup.create_sync_container(injectables=[services], config={"env_name": "test"})
 
     def inner(foo: Annotated[Foo, Inject()], p1: Annotated[str, Inject(config="env_name")]):
         assert isinstance(foo, Foo)
@@ -164,7 +164,7 @@ def test_autowire_supports_multiple_containers_does_not_patch_function():
 
 
 def test_container_overrides_passed_parameters():
-    c1 = wireup.create_sync_container(service_modules=[services], config={"env_name": "test"})
+    c1 = wireup.create_sync_container(injectables=[services], config={"env_name": "test"})
 
     def inner(foo: Annotated[Foo, Inject()], p1: Annotated[str, Inject(config="env_name")]):
         assert isinstance(foo, Foo)
@@ -185,7 +185,7 @@ def test_container_wires_none_values_from_parameter_bag():
 
 
 def test_injects_ctor():
-    container = wireup.create_async_container(services=[random_service_factory], config={"env": "test"})
+    container = wireup.create_async_container(injectables=[random_service_factory], config={"env": "test"})
 
     class Dummy:
         @inject_from_container(container)
@@ -216,7 +216,7 @@ def test_inject_from_container_handles_optionals() -> None:
         return Thing()
 
     container = wireup.create_sync_container(
-        services=[wireup.injectable(make_maybe_thing), wireup.injectable(make_thing)]
+        injectables=[wireup.injectable(make_maybe_thing), wireup.injectable(make_thing)]
     )
 
     @wireup.inject_from_container(container)

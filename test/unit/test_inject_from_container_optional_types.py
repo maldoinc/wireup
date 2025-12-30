@@ -24,7 +24,7 @@ def test_inject_from_container_handles_optionals() -> None:
         return Thing(maybe_thing=maybe_thing)
 
     container = wireup.create_sync_container(
-        services=[wireup.injectable(make_maybe_thing), wireup.injectable(make_thing)]
+        injectables=[wireup.injectable(make_maybe_thing), wireup.injectable(make_thing)]
     )
 
     @wireup.inject_from_container(container)
@@ -56,7 +56,7 @@ def test_getting_optional_service_via_plain_type_emits_deprecation_warning() -> 
     def make_foo() -> Optional[Foo]:
         return Foo()
 
-    container = wireup.create_sync_container(services=[make_foo])
+    container = wireup.create_sync_container(injectables=[make_foo])
 
     with pytest.warns(DeprecationWarning) as record:
         inst = container.get(Foo)
@@ -79,4 +79,4 @@ def test_registering_optional_and_plain_type_raises_duplicate() -> None:
     # Registering both an Optional[T] factory and a T factory together raises since
     # wireup will add a backwards-compatible factory for T when registering it as optional.
     with pytest.raises(DuplicateServiceRegistrationError):
-        wireup.create_sync_container(services=[make_optional, Foo])
+        wireup.create_sync_container(injectables=[make_optional, Foo])

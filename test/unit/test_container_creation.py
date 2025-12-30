@@ -22,7 +22,7 @@ def test_dependencies_parameters_exist() -> None:
             "depends on an unknown Wireup config key 'foo'."
         ),
     ):
-        wireup.create_sync_container(services=[foo_service])
+        wireup.create_sync_container(injectables=[foo_service])
 
 
 def test_parameters_exist_checks_expression() -> None:
@@ -37,7 +37,7 @@ def test_parameters_exist_checks_expression() -> None:
             "depends on an unknown Wireup config key 'foo' requested in expression '${foo}-${foo}'."
         ),
     ):
-        wireup.create_sync_container(services=[foo_service])
+        wireup.create_sync_container(injectables=[foo_service])
 
 
 def test_checks_dependencies_exist() -> None:
@@ -55,7 +55,7 @@ def test_checks_dependencies_exist() -> None:
             "depends on an unknown injectable Type test.unit.test_container_creation.Foo with qualifier None."
         ),
     ):
-        wireup.create_sync_container(services=[Bar])
+        wireup.create_sync_container(injectables=[Bar])
 
 
 def test_lifetimes_match() -> None:
@@ -74,7 +74,7 @@ def test_lifetimes_match() -> None:
             "with a 'scoped' lifetime which is not supported. Singletons can only depend on other singletons."
         ),
     ):
-        wireup.create_sync_container(services=[SingletonService, ScopedService])
+        wireup.create_sync_container(injectables=[SingletonService, ScopedService])
 
 
 def test_validates_dependencies_does_not_raise_correct_lifetime_via_interface() -> None:
@@ -89,7 +89,7 @@ def test_validates_dependencies_does_not_raise_correct_lifetime_via_interface() 
     class ServiceB:
         foo: Foo
 
-    wireup.create_sync_container(services=[ServiceB, FooImpl, Foo])
+    wireup.create_sync_container(injectables=[ServiceB, FooImpl, Foo])
 
 
 def test_validates_dependencies_lifetimes_raises_when_using_interfaces() -> None:
@@ -111,7 +111,7 @@ def test_validates_dependencies_lifetimes_raises_when_using_interfaces() -> None
             "with a 'scoped' lifetime which is not supported. Singletons can only depend on other singletons."
         ),
     ):
-        wireup.create_sync_container(services=[ServiceB, FooImpl, Foo])
+        wireup.create_sync_container(injectables=[ServiceB, FooImpl, Foo])
 
 
 def test_validates_container_raises_when_cyclical_dependencies() -> None:
@@ -140,7 +140,7 @@ def test_validates_container_raises_when_cyclical_dependencies() -> None:
             " ! Cycle here"
         ),
     ):
-        wireup.create_sync_container(services=[make_foo, make_bar])
+        wireup.create_sync_container(injectables=[make_foo, make_bar])
 
 
 def test_validates_container_does_not_raise_when_no_dependency_cycle() -> None:
@@ -162,7 +162,7 @@ def test_validates_container_does_not_raise_when_no_dependency_cycle() -> None:
     def make_foo_no_dependency() -> Foo:
         return Foo(None)
 
-    wireup.create_sync_container(services=[make_foo, make_bar, make_foo_no_dependency])
+    wireup.create_sync_container(injectables=[make_foo, make_bar, make_foo_no_dependency])
 
 
 def test_lifetimes_match_factories() -> None:
@@ -188,7 +188,7 @@ def test_lifetimes_match_factories() -> None:
             "on other singletons."
         ),
     ):
-        wireup.create_sync_container(services=[_scoped_factory, _singleton_factory])
+        wireup.create_sync_container(injectables=[_scoped_factory, _singleton_factory])
 
 
 def test_errors_not_decorated_service() -> None:
@@ -198,7 +198,7 @@ def test_errors_not_decorated_service() -> None:
         WireupError,
         match=f"Injectable {NotDecorated} is not decorated with @abstract or @injectable",
     ):
-        wireup.create_sync_container(services=[NotDecorated])
+        wireup.create_sync_container(injectables=[NotDecorated])
 
 
 def test_registers_abstract() -> None:
@@ -208,5 +208,5 @@ def test_registers_abstract() -> None:
     @injectable
     class FooImpl(Foo): ...
 
-    container = wireup.create_sync_container(services=[Foo, FooImpl])
+    container = wireup.create_sync_container(injectables=[Foo, FooImpl])
     assert isinstance(container.get(Foo), FooImpl)

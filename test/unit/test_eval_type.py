@@ -33,7 +33,7 @@ def c_factory(b: B) -> Iterator[C]:
 
 
 def test_eval_type_evaluates_strings() -> None:
-    container = wireup.create_sync_container(config={"foo": "bar"}, service_modules=[importlib.import_module(__name__)])
+    container = wireup.create_sync_container(config={"foo": "bar"}, injectables=[importlib.import_module(__name__)])
 
     @inject_from_container(container)
     def test(
@@ -53,7 +53,7 @@ def test_eval_type_evaluates_strings() -> None:
 
 @pytest.mark.skipif(sys.version_info < (3, 11), reason="eval_type_backport only needed for Python < 3.11")
 def test_eval_type_backport_not_imported_on_py311_and_newer() -> None:
-    container = wireup.create_sync_container(service_modules=[importlib.import_module(__name__)])
+    container = wireup.create_sync_container(injectables=[importlib.import_module(__name__)])
 
     container.get(A)
     container.get(B)

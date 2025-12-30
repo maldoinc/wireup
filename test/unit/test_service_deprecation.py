@@ -22,6 +22,6 @@ def test_service_and_injectable_are_compatible():
         def __init__(self, foo: Foo):
             self.foo = foo
 
-    container = create_sync_container(services=[Foo, Bar])
+    container = create_sync_container(injectables=[Foo, Bar])
     bar = container.get(Bar)
     assert isinstance(bar.foo, Foo)
