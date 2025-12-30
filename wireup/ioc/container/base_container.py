@@ -1,27 +1,30 @@
+from __future__ import annotations
+
 from typing import (
+    TYPE_CHECKING,
     Any,
     AsyncGenerator,
-    Dict,
     Generator,
     List,
-    Optional,
-    Type,
     TypeVar,
     Union,
+    overload,
 )
 
 from wireup.errors import (
     UnknownServiceRequestedError,
     WireupError,
 )
-from wireup.ioc.factory_compiler import FactoryCompiler
-from wireup.ioc.override_manager import OverrideManager
-from wireup.ioc.parameter import ParameterBag
-from wireup.ioc.service_registry import ServiceRegistry
-from wireup.ioc.types import (
-    ContainerObjectIdentifier,
-    Qualifier,
-)
+
+if TYPE_CHECKING:
+    from wireup.ioc.factory_compiler import FactoryCompiler
+    from wireup.ioc.override_manager import OverrideManager
+    from wireup.ioc.parameter import ParameterBag
+    from wireup.ioc.service_registry import ServiceRegistry
+    from wireup.ioc.types import (
+        ContainerObjectIdentifier,
+        Qualifier,
+    )
 
 T = TypeVar("T")
 ContainerExitStack = List[Union[Generator[Any, Any, Any], AsyncGenerator[Any, Any]]]
@@ -46,10 +49,10 @@ class BaseContainer:
         override_manager: OverrideManager,
         factory_compiler: FactoryCompiler,
         scoped_compiler: FactoryCompiler,
-        global_scope_objects: Dict[ContainerObjectIdentifier, Any],
-        global_scope_exit_stack: List[Union[Generator[Any, Any, Any], AsyncGenerator[Any, Any]]],
-        current_scope_objects: Optional[Dict[ContainerObjectIdentifier, Any]] = None,
-        current_scope_exit_stack: Optional[List[Union[Generator[Any, Any, Any], AsyncGenerator[Any, Any]]]] = None,
+        global_scope_objects: dict[ContainerObjectIdentifier, Any],
+        global_scope_exit_stack: list[Generator[Any, Any, Any] | AsyncGenerator[Any, Any]],
+        current_scope_objects: dict[ContainerObjectIdentifier, Any] | None = None,
+        current_scope_exit_stack: list[Generator[Any, Any, Any] | AsyncGenerator[Any, Any]] | None = None,
     ) -> None:
         self._registry = registry
         self._override_mgr = override_manager
@@ -71,7 +74,16 @@ class BaseContainer:
         """Override registered container services with new values."""
         return self._override_mgr
 
-    def _synchronous_get(self, klass: Type[T], qualifier: Optional[Qualifier] = None) -> T:
+    @overload
+    def _synchronous_get(self, klass: type[T], qualifier: Qualifier | None = None) -> T: ...
+    @overload
+    def _synchronous_get(self, klass: type[T] | None, qualifier: Qualifier | None = None) -> T | None: ...
+
+    def _synchronous_get(
+        self,
+        klass: type[T] | None,
+        qualifier: Qualifier | None = None,
+    ) -> T | None:
         """Get an instance of the requested type.
 
         :param qualifier: Qualifier for the class if it was registered with one.

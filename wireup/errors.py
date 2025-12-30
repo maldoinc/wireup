@@ -71,7 +71,7 @@ class UnknownQualifiedServiceRequestedError(WireupError):
 class UnknownServiceRequestedError(WireupError):
     """Raised when requesting an unknown type."""
 
-    def __init__(self, klass: type[Any], qualifier: Qualifier | None = None) -> None:
+    def __init__(self, klass: type[Any] | None, qualifier: Qualifier | None = None) -> None:
         qualifier_str = f" with qualifier '{qualifier}'" if qualifier else ""
         msg = f"Cannot create unknown service {klass}{qualifier_str}. Make sure it is registered with the container."
         super().__init__(msg)

@@ -23,31 +23,31 @@ class Thing:
 
 def test_optional_basic_type():
     param = make_param(Optional[Thing])
-    result = param_get_annotation(param, globalns_supplier=globals())
+    result = param_get_annotation(param, globalns_supplier=lambda: globals())
     assert result is not None
-    assert result.klass is Thing
+    assert result.klass is Optional[Thing]
     assert result.annotation is None
 
 
 def test_optional_with_inject():
     param = make_param(Annotated[Optional[Thing], Inject(qualifier="foo")])
-    result = param_get_annotation(param, globalns_supplier=globals())
+    result = param_get_annotation(param, globalns_supplier=lambda: globals())
     assert result is not None
-    assert result.klass is Thing
+    assert result.klass is Optional[Thing]
     assert_has_qualifier(result, "foo")
 
 
 def test_optional_of_annotated():
     param = make_param(Optional[Annotated[Thing, Inject(qualifier="foo")]])
-    result = param_get_annotation(param, globalns_supplier=globals())
+    result = param_get_annotation(param, globalns_supplier=lambda: globals())
     assert result is not None
-    assert result.klass is Thing
+    assert result.klass is Optional[Thing]
     assert_has_qualifier(result, "foo")
 
 
 def test_non_optional_type():
     param = make_param(Thing)
-    result = param_get_annotation(param, globalns_supplier=globals())
+    result = param_get_annotation(param, globalns_supplier=lambda: globals())
     assert result is not None
     assert result.klass is Thing
     assert result.annotation is None
@@ -55,7 +55,7 @@ def test_non_optional_type():
 
 def test_non_optional_with_inject():
     param = make_param(Annotated[Thing, Inject(qualifier="foo")])
-    result = param_get_annotation(param, globalns_supplier=globals())
+    result = param_get_annotation(param, globalns_supplier=lambda: globals())
     assert result is not None
     assert result.klass is Thing
     assert_has_qualifier(result, "foo")
