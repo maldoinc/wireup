@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import warnings
 from contextlib import contextmanager
 from typing import TYPE_CHECKING, Any, Iterator
 
@@ -152,11 +153,21 @@ class OverrideManager:
         with the qualifier parameter set to a value.
         :param new: The new object to be injected instead of `target`.
         """
+        warnings.warn(
+            "Services are now called Injectables. Use container.override.injectable() instead.",
+            FutureWarning,
+            stacklevel=2,
+        )
         with self.injectable(target, new, qualifier):
             yield
 
     @contextmanager
     def services(self, overrides: list[InjectableOverride]) -> Iterator[None]:
         """Override a number of injectables with new for the duration of the context manager."""
+        warnings.warn(
+            "Services are now called Injectables. Use container.override.injectables() instead.",
+            FutureWarning,
+            stacklevel=2,
+        )
         with self.injectables(overrides):
             yield
