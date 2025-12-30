@@ -19,7 +19,7 @@ The `wireup.integration.starlette` module provides dependency injection for Star
 
 ### Setting Up the Integration
 
-First, [create an async container](../../container.md#async) with your service modules:
+First, [create an async container](../../container.md#async) with your injectables:
 
 ```python
 from starlette.applications import Starlette
@@ -29,7 +29,7 @@ import wireup
 app = Starlette()
 
 container = wireup.create_async_container(
-    service_modules=[services],
+    injectables=[services],
     config={"DEBUG": True}  # Optionally expose configuration to services
 )
 ```
@@ -51,7 +51,7 @@ from starlette.endpoints import HTTPEndpoint
 from starlette.requests import Request
 from starlette.responses import JSONResponse
 
-from wireup import Injected
+from wireup import injectable, Injected
 from wireup.integration.starlette import inject
 
 @inject
@@ -76,18 +76,18 @@ class HelloEndpoint(HTTPEndpoint):
 ### Inject Starlette request or WebSocket
 
 To inject the current request/websocket in services, include the `wireup.integration.starlette` module
-in the service modules when [creating the container](../../container.md).
+in the injectables when [creating the container](../../container.md).
 
 ```python
 container = wireup.create_async_container(
-    service_modules=[..., wireup.integration.starlette],
+    injectables=[..., wireup.integration.starlette],
 )
 ```
 
 ### Using Starlette Request
 
 ```python title="Example Service using Starlette Request"
-@service(lifetime="scoped")
+@injectable(lifetime="scoped")
 class RequestContext:
     def __init__(self, request: Request):
         self.request = request

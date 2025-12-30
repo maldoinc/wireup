@@ -24,14 +24,14 @@ First, [create a sync container](../../container.md#synchronous)
 
 ```python
 import click
-from wireup import Inject, Injected, service
+from wireup import Inject, Injected, injectable
 
 @click.group()
 def cli():
     pass
 
 container = wireup.create_sync_container(
-    service_modules=[services],
+    injectables=[services],
     config={
         "env": "development",
         "debug": True

@@ -31,6 +31,7 @@ The first step is to create a container.
 
 ```python title="container.py"
 import wireup
+from my_app import services
 
 container = wireup.create_async_container(
     # `config` is an optional key-value configuration store.
@@ -41,9 +42,10 @@ container = wireup.create_async_container(
         "redis_url": os.environ["APP_REDIS_URL"],
         "weather_api_key": os.environ["APP_WEATHER_API_KEY"],
     },
-    # Let the container know where service registrations are located.
-    # This is a list of top-level modules Wireup should scan for service declarations.
-    service_modules=[services]  # (2)!
+    # Let the container know where registrations are located.
+    # This is a list of modules containing injectable definitions,
+    # or functions/classes decorated with `@injectable` or `@abstract`.
+    injectables=[services]
 )
 ```
 
@@ -61,9 +63,6 @@ container = wireup.create_async_container(
     Note that the values can be literally anything you need to inject and not just int/strings or other scalars.
     You can put dataclasses for example in the config to inject structured configuration.
 
-2.  Service modules is a list of top-level python modules containing service definitions this container
-    needs to know about (Classes or functions decorated with `@service` or `@abstract`.).
-    The container will only create types that are explicitly registered with it.
 
 
 !!! note "Container variants: Sync and Async"
@@ -83,21 +82,20 @@ container = wireup.create_async_container(
     the container within your application factory and store it in your application's state instead.
 
 
-### 2. Define services
+### 2. Define injectables
 
-The container uses types and annotations to define services and the discover dependencies between them. This
-results in self-contained service declarations without having to create factories for every service.
+The container uses types and annotations to define injectables and the discover dependencies between them. This results in self-contained injectable declarations without having to create factories for every injectable.
 
 
 #### 🐍 `KeyValueStore`
-To create the `KeyValueStore`, we need a value for `redis_url`. The `@service` decorator registers the class, and the type hint tells the container to inject the value of the `redis_url` key into the `dsn` parameter.
+To create the `KeyValueStore`, we need a value for `redis_url`. The `@injectable` decorator registers the class, and the type hint tells the container to inject the value of the `redis_url` key into the `dsn` parameter.
 
 
 ```python title="services/key_value_store.py" hl_lines="4 6"
-from wireup import service, Inject
+from wireup import injectable, Inject
 from typing_extensions import Annotated
 
-@service  #(1)!
+@injectable  #(1)!
 class KeyValueStore:
     def __init__(self, dsn: Annotated[str, Inject(config="redis_url")]) -> None:  #(2)!
         self.client = redis.from_url(dsn)
@@ -121,19 +119,19 @@ Factories can define their dependencies in the function's signature.
     When using generator factories make sure to call `container.close` when the application is terminating for the necessary cleanup to take place.
 
 ```python title="services/factories.py" hl_lines="1 2"
-@service
+@injectable
 async def http_client_factory() -> AsyncIterator[aiohttp.ClientSession]:
     async with aiohttp.ClientSession() as client:
         yield client
 ```
 
 #### 🐍 `WeatherService`
-Creating `WeatherService` is also straightforward. The `@service` decorator is used to let Wireup know this is a service and we use the same syntax as above for the `api_key`. 
+Creating `WeatherService` is also straightforward. The `@injectable` decorator is used to let Wireup know this is an injectable and we use the same syntax as above for the `api_key`.
 
 Class dependencies do not need additional annotations, even though the http client is created via an async generator. This is transparently handled by the container.
 
 ```python title="services/weather_service.py" hl_lines="1 5 6 7"
-@service
+@injectable
 class WeatherService:
     def __init__(
         self,
@@ -150,12 +148,12 @@ class WeatherService:
 
 ### 3. Use
 
-All that's left now is to retrieve services from the container.
+All that's left now is to retrieve injectables from the container.
 
 
 === "Service Locator"
 
-    To fetch services from the container, call `.get` on the container instance with the type you wish to retrieve.
+    To fetch injectables from the container, call `.get` on the container instance with the type you want to retrieve.
 
     ```python title="views/posts.py"  hl_lines="3"
     @app.get("/weather/forecast")
@@ -269,6 +267,6 @@ This concludes the "Getting Started" walkthrough, covering the most common depen
 
 ## Next Steps
 
-* [Services](services.md)
+* [Injectables](injectables.md)
 * [Configuration](configuration.md)
 * [Factories](factories.md)

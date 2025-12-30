@@ -1,4 +1,4 @@
-The container manages application services and automatically resolves their dependencies. Create one at startup, register services, and let it handle the wiring.
+The container manages application objects and automatically resolves their dependencies. Create one at startup, register injectables, and let it handle the wiring.
 
 ## Creating Containers
 
@@ -11,7 +11,7 @@ For traditional synchronous Python applications:
 ```python
 import wireup
 
-container = wireup.create_sync_container(services=[UserService, Database])
+container = wireup.create_sync_container(injectables=[UserService, Database])
 
 user_service = container.get(UserService)
 ```
@@ -23,25 +23,25 @@ For applications using async/await:
 ```python
 import wireup
 
-container = wireup.create_async_container(services=[UserService, Database])
+container = wireup.create_async_container(injectables=[UserService, Database])
 
 user_service = await container.get(UserService)
 ```
 
-The async container can handle both sync and async services, but requires `await` for service retrieval.
+The async container can handle both sync and async injectables, but requires `await` for retrieval.
 
-## Registering Services
+## Registering Injectables
 
-### 1. Service Discovery
+### 1. Injectable Discovery
 
-Let Wireup automatically find services in modules:
+Let Wireup automatically find injectables in modules:
 
 ```python
 import wireup
 from myapp import services, repositories
 
 container = wireup.create_sync_container(
-    service_modules=[services, repositories],
+    injectables=[services, repositories],
     config={"api_key": "secret"}
 )
 ```
@@ -52,29 +52,29 @@ container = wireup.create_sync_container(
 myapp/
 ├── services/
 │   ├── __init__.py
-│   └── user_service.py      # Contains @service decorations
+│   └── user_service.py      # Contains @injectable decorations
 ├── repositories/
 │   ├── __init__.py
-│   └── user_repository.py   # Contains @service decorations
+│   └── user_repository.py   # Contains @injectable decorations
 └── main.py
 ```
 
 **How it works:**
 
 - Wireup scans the provided modules recursively
-- Finds classes and functions decorated with `@service` or `@abstract`
+- Finds classes and functions decorated with `@injectable` or `@abstract`
 - Automatically registers them and resolves their dependencies
 
 ### 2. Manual Registration
 
-Register specific services individually:
+Register specific injectables individually:
 
 ```python
 import wireup
 from myapp.services import UserService, EmailService
 
 container = wireup.create_sync_container(
-    services=[UserService, EmailService],
+    injectables=[UserService, EmailService],
     config={"db_url": "postgresql://localhost/myapp"}
 )
 ```
@@ -83,8 +83,7 @@ You can also mix both approaches as needed:
 
 ```python
 container = wireup.create_sync_container(
-    service_modules=[services],      # Auto-discover
-    services=[SpecialService],       # Manual addition
+    injectables=[services, SpecialService],  # Auto-discover and Manual addition
     config={"api_key": "secret"}
 )
 ```

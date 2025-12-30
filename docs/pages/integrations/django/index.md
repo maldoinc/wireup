@@ -53,7 +53,7 @@ MIDDLEWARE = [
 ]
 
 WIREUP = WireupSettings(
-    service_modules=["mysite.polls.services"]  # Service modules here
+    injectables=["mysite.polls.services"]  # Injectable modules here
 )
 
 # Additional application settings
@@ -62,13 +62,13 @@ S3_BUCKET_TOKEN = os.environ["S3_BUCKET_ACCESS_TOKEN"]
 
 ### Inject Django settings
 
-Django settings can be injected into services:
+Django settings can be injected into injectables:
 
 ```python title="mysite/polls/services/s3_manager.py"
-from wireup import service, Inject
+from wireup import injectable, Inject
 from typing import Annotated
 
-@service
+@injectable
 class S3Manager:
     def __init__(
         self,
@@ -82,13 +82,13 @@ class S3Manager:
 You can also use Django settings in factories:
 
 ```python title="mysite/polls/services/github_client.py"
-from wireup import service
+from wireup import injectable
 from django.conf import settings
 
 class GithubClient:
     def __init__(self, api_key: str) -> None: ...
 
-@service
+@injectable
 def github_client_factory() -> GithubClient:
     return GithubClient(api_key=settings.GH_API_KEY)
 ```
@@ -96,13 +96,13 @@ def github_client_factory() -> GithubClient:
 ### Inject the current request
 
 The integration exposes the current Django request as a `scoped` lifetime dependency, which can be injected
-into `scoped` or `transient` services:
+into `scoped` or `transient` injectables:
 
 ```python title="mysite/polls/services/auth_service.py"
 from django.http import HttpRequest
-from wireup import service
+from wireup import injectable
 
-@service(lifetime="scoped")
+@injectable(lifetime="scoped")
 class AuthService:
     def __init__(self, request: HttpRequest) -> None:
         self.request = request
@@ -229,7 +229,7 @@ This approach should work for any Django-based framework as long as it relies on
 
     ```python title="settings.py"
     WIREUP = WireupSettings(
-        service_modules=["mysite.polls.services"],
+        injectables=["mysite.polls.services"],
         auto_inject_views=False,  # Disable auto-injection
     )
     ```

@@ -5,7 +5,7 @@ nav:
     - Getting Started: getting_started.md
     - Basics:
       - Container: container.md
-      - Services: services.md
+      - Injectables: injectables.md
       - Configuration: configuration.md
     - Core Concepts:
       - Factories: factories.md

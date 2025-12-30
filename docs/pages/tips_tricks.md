@@ -1,14 +1,14 @@
 !!! tip "Reduce init boilerplate"
 
-    When building services with multiple dependencies, `__init__` methods may become repetitive.
-    Combine the `@service` decorator with Python's `@dataclass` to eliminate initialization boilerplate.
+    When building injectables with multiple dependencies, `__init__` methods may become repetitive.
+    Combine the `@injectable` decorator with Python's `@dataclass` to eliminate initialization boilerplate.
 
     Depending on class definitions some classes may benefit in readability from this more than others. Apply best judgement here.
 
     === "Before"
 
         ```python title="services/order_processor.py"
-        @service
+        @injectable
         class OrderProcessor:
             def __init__(
                 self,
@@ -26,7 +26,7 @@
         ```python title="services/order_processor.py"
         from dataclasses import dataclass
 
-        @service
+        @injectable
         @dataclass
         class OrderProcessor:
             payment_gateway: PaymentGateway
@@ -37,7 +37,7 @@
     === "Counter-example"
 
         ```python
-        @service
+        @injectable
         @dataclass
         class Foo:
             FOO_CONST = 1  # Not added to __init__ by @dataclass.
@@ -57,7 +57,7 @@
 
 !!! tip "Aliased config"
 
-    If you don't like having string configuration keys in your service objects you can alias them instead.
+    If you don't like having string configuration keys in your injectable objects you can alias them instead.
 
     === "Before"
 
@@ -79,7 +79,7 @@
 
 !!! tip "Eager loading"
 
-    By default, Wireup creates services lazily when they're first requested, but for singleton services that are expensive to create, you can pre-initialize them during application startup to avoid delays and ensure consistent response times when handling requests.
+    By default, Wireup creates injectables lazily when they're first requested, but for singleton injectables that are expensive to create, you can pre-initialize them during application startup to avoid delays and ensure consistent response times when handling requests.
 
     === "Application Setup"
 
@@ -117,9 +117,9 @@
 
         ```python
         import pickle
-        from wireup import service
+        from wireup import injectable
 
-        @service
+        @injectable
         class MLModelService:
             """Machine learning model that takes time to load"""
             def __init__(self):
@@ -143,7 +143,7 @@
 
 
     ```python title="services/cache.py"
-    from wireup import abstract, service
+    from wireup import abstract, injectable
     from typing import Any
     
     class Cache(Protocol):
@@ -158,7 +158,7 @@
         def set(self, key: str, value: str) -> None:
             return None  # Do nothing
 
-    @service
+    @injectable
     def cache_factory(
         redis_url: Annotated[str | None, Inject(config="redis_url")],
     ) -> Cache:
@@ -170,7 +170,7 @@
     === "Before: Optional Dependencies"
 
         ```python
-        @service
+        @injectable
         class UserService:
             def __init__(self, cache: Cache | None):
                 self.cache = cache
@@ -192,7 +192,7 @@
     === "After: Null Pattern"
 
         ```python
-        @service
+        @injectable
         class UserService:
             def __init__(self, cache: Cache):
                 self.cache = cache  # Always a Cache instance

@@ -41,7 +41,7 @@ First, [create an async container](../../container.md#async).
 
 ```python
 container = wireup.create_async_container(
-    service_modules=[services],
+    injectables=[services],
     config={"db_dsn": os.environ.get("APP_DB_DSN")}
 )
 ```
@@ -86,12 +86,12 @@ See [Annotations](../../annotations.md) for more details.
 
 ### Inject AIOHTTP request
 
-To inject `web.Request` in services, include `wireup.integration.aiohttp` module in the service modules
+To inject `web.Request` in services, include `wireup.integration.aiohttp` module in the injectables
 when creating the container.
 
 ```python hl_lines="4"
 container = wireup.create_async_container(
-    service_modules=[
+    injectables=[
         services,
         wireup.integration.aiohttp
     ],

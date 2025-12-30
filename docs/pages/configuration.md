@@ -1,5 +1,5 @@
-Wireup containers can store configuration that can be injected into services. This enables self-contained
-definition without having to create factories for every service.
+Wireup containers can store configuration that can be injected. This enables self-contained
+definitions without having to create factories for every injectable.
 
 ## Setting up configuration
 
@@ -26,9 +26,9 @@ Inject a specific configuration by key using `Inject(config="config_key")`:
 
 ```python
 from typing import Annotated
-from wireup import service, Inject
+from wireup import injectable, Inject
 
-@service
+@injectable
 class DatabaseService:
     def __init__(
         self,
@@ -44,7 +44,7 @@ class DatabaseService:
 Create dynamic configuration values by interpolating configuration using `${config_key}` syntax:
 
 ```python
-@service
+@injectable
 class FileStorageService:
     def __init__(
         self, 
