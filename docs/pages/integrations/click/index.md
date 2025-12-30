@@ -20,7 +20,7 @@ Dependency injection for Click is available in the `wireup.integration.click` mo
 
 ### Initialize the integration
 
-First, [create a sync container](../../container.md#synchronous)
+First, [create a sync container](../../container.md)
 
 ```python
 import click

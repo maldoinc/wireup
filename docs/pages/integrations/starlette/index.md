@@ -19,7 +19,7 @@ The `wireup.integration.starlette` module provides dependency injection for Star
 
 ### Setting Up the Integration
 
-First, [create an async container](../../container.md#async) with your injectables:
+First, [create an async container](../../container.md) with your injectables:
 
 ```python
 from starlette.applications import Starlette

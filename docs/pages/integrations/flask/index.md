@@ -19,7 +19,7 @@ Dependency injection for Flask is available in the `wireup.integration.flask` mo
 
 ### Initialize the integration
 
-First, [create a sync container](../../container.md#synchronous) with your injectables:
+First, [create a sync container](../../container.md) with your injectables:
 
 ```python
 from flask import Flask

@@ -37,7 +37,7 @@ Dependency injection for AIOHTTP is available in the `wireup.integration.aiohttp
 
 ### Initialize the integration
 
-First, [create an async container](../../container.md#async).
+First, [create an async container](../../container.md).
 
 ```python
 container = wireup.create_async_container(
