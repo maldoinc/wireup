@@ -67,20 +67,6 @@ class DatabaseService:
         self.connection = connect(config.url)
 ```
 
-### Default Values
-
-Wireup uses Python's native default arguments for optional configuration. If a config key is missing and a default value is provided in the `__init__`, Wireup will use the default instead of raising an error.
-
-```python
-@injectable
-class Server:
-    def __init__(
-        self,
-        # If "PORT" is not in config, 8080 is used
-        port: Annotated[int, Inject(config="PORT")] = 8080
-    ) -> None:
-        self.port = port
-```
 
 ## Interpolation
 
