@@ -103,10 +103,7 @@ class WireupConfig(AppConfig):
 
         self.container = wireup.create_async_container(
             injectables=[
-                *[
-                    importlib.import_module(m) if isinstance(m, str) else m
-                    for m in integration_settings.injectables
-                ],
+                *[importlib.import_module(m) if isinstance(m, str) else m for m in integration_settings.injectables],
                 _django_request_factory,
             ],
             config={
