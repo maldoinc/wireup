@@ -1,41 +1,68 @@
 # Injectables
 
-An injectable in Wireup is any class or function decorated with `@injectable`. 
-Injectables can live anywhere but must be registered with the container.
+An injectable is any class or function that Wireup manages. They are the building blocks of your application.
 
-For information about registering injectables, see the [Container](container.md#registering-injectables) documentation.
+## The `@injectable` Decorator
 
-## Class Injectables
-
-The simplest way to define an injectable is with a class:
+To register a class or function as an injectable, decorate it with `@injectable`.
 
 ```python
 from wireup import injectable
 
 @injectable
-class VehicleRepository: ...
+class UserRepository: ...
 
 @injectable
-class RentalService:
-    # VehicleRepository is automatically injected
-    def __init__(self, repository: VehicleRepository) -> None: ...
+def db_connection() -> DatabaseConnection: ...
 ```
 
-## Factory Functions
+### Arguments
 
-For complex initialization logic or resource management, wireup supports factories that can handle setup and cleanup operations. See the [Factory Functions](factories.md) documentation for detailed information on creating and using factory functions.
+The decorator accepts arguments to control how the injectable is registered:
 
-## Dependency Resolution
-
-Wireup uses type annotations to resolve dependencies. Factory name and parameter names are for readability only.
+| Argument | Description | Default |
+| :--- | :--- | :--- |
+| `lifetime` | Controls the lifespan of the object (e.g. `"singleton"`, `"scoped"`). See [Lifetimes](lifetimes_and_scopes.md). | `"singleton"` |
+| `qualifier` | A unique identifier to distinguish between multiple implementations of the same type. See [Multiple Registrations](multiple_registrations.md). | `None` |
 
 ```python
-# These are equivalent:
+from wireup import injectable
+
+@injectable(lifetime="scoped", qualifier="readonly")
+class DbSession: ...
+```
+
+## Defining Injectables
+
+Wireup resolves dependencies based on type hints in the `__init__` method for classes, or the function signature for factories.
+
+### Classes
+
+Use standard Python classes and type hints.
+
+```python
 @injectable
-def rental_service_factory(repo: VehicleRepository) -> RentalService:
-    return RentalService(repo)
+class UserService:
+    # UserRepository will be injected automatically
+    def __init__(self, repo: UserRepository) -> None:
+        self.repo = repo
+```
+
+### Factory Functions
+
+Functions can also be registered as injectables. This is useful for creating objects that you don't control (like 3rd party libraries) or that require complex setup.
+
+```python
+import boto3
+from wireup import injectable, Inject
+from typing import Annotated
 
 @injectable
-def make_rental_service(vehicle_store: VehicleRepository) -> RentalService:
-    return RentalService(vehicle_store)
+def create_s3_client(
+    region: Annotated[str, Inject(config="aws_region")]
+) -> boto3.client:
+    return boto3.client("s3", region_name=region)
 ```
+
+!!! tip "Learn More"
+    For details on handling resources (e.g. database connections) with generators, see [Factory Functions](factories.md).
