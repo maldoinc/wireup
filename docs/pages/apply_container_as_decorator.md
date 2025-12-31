@@ -2,14 +2,14 @@
     When using the provided integrations, this is automatically handled for you.
     Only use this if you're injecting Wireup dependencies in a framework without an integration.
 
-Instead of manually retrieving services via `container.get` or parameters via `container.params`, you can inject them directly into function parameters using the container as a decorator.
+Instead of manually retrieving services via `container.get` or configuration via `container.config`, you can inject them directly into function parameters using the container as a decorator.
 
 This transforms verbose manual dependency retrieval:
 
 ```python
 def client_function() -> None:
     random = container.get(RandomService)
-    env_name = container.params.get("env")
+    env_name = container.config.get("env")
 
     with container.enter_scope() as scoped_container:
         scoped_service = scoped_container.get(ScopedService)
@@ -33,7 +33,7 @@ from wireup import Injected
 def client_function(
     service: Injected[RandomService], 
     scoped_service: Injected[ScopedService], 
-    env_name: Annotated[str, Inject(param="env")]
+    env_name: Annotated[str, Inject(config="env")]
 ) -> None: ...
 ```
 
@@ -49,7 +49,7 @@ scoped_container: ContextVar[ScopedSyncContainer] = ContextVar("scoped_container
 def client_function(
     service: Injected[RandomService], 
     scoped_service: Injected[ScopedService], 
-    env_name: Annotated[str, Inject(param="env")]
+    env_name: Annotated[str, Inject(config="env")]
 ) -> None: ...
 ```
 
@@ -65,7 +65,7 @@ injected = wireup.inject_from_container(container, scoped_container.get)
 def client_function(
     service: Injected[RandomService], 
     scoped_service: Injected[ScopedService], 
-    env_name: Annotated[str, Inject(param="env")]
+    env_name: Annotated[str, Inject(config="env")]
 ) -> None: ...
 ```
 

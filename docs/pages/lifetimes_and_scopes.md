@@ -1,17 +1,17 @@
 # Lifetimes & Scopes
 
-Wireup controls how long service instances live and when they're shared through **lifetimes** and **scopes**.
+Wireup controls how long injectable instances live and when they're shared through **lifetimes** and **scopes**.
 
-## Service Lifetimes
+## Injectable Lifetimes
 
-Configure how long service instances live using the `lifetime` parameter in the `@service` decorator.
+Configure how long injectable instances live using the `lifetime` parameter in the `@injectable` decorator.
 
 ### Singleton (Default)
 
 One instance is created and shared across the entire application:
 
 ```python
-@service  # lifetime="singleton" is the default
+@injectable  # lifetime="singleton" is the default
 class Database:
     def __init__(self): ...
 
@@ -26,7 +26,7 @@ assert db1 is db2  # True
 One instance per scope, shared within that scope:
 
 ```python
-@service(lifetime="scoped")
+@injectable(lifetime="scoped")
 class RequestContext:
     def __init__(self):
         self.request_id = uuid.uuid4()
@@ -46,7 +46,7 @@ with container.enter_scope() as scope2:
 Creates a new instance on every resolution:
 
 ```python
-@service(lifetime="transient")
+@injectable(lifetime="transient")
 class MessageBuilder:
     def __init__(self):
         self.timestamp = time.time()
@@ -69,7 +69,7 @@ with container.enter_scope() as scope:
 | --------- | ------------------ | ------------------ | -------------------------------------------- |
 | Singleton | Once per container | Entire application | Configuration, database connections, caching |
 | Scoped    | Once per scope     | Current scope only | Request state, transactions, user sessions   |
-| Transient | Every resolution   | Never shared       | Stateless services, temporary objects        |
+| Transient | Every resolution   | Never shared       | Stateless objects, temporary objects         |
 
 ## Working with Scopes
 
@@ -79,7 +79,7 @@ Scopes provide isolated dependency contexts, particularly useful for web applica
 
 === "Synchronous"
     ```python
-    container = wireup.create_sync_container(services=[RequestService])
+    container = wireup.create_sync_container(injectables=[RequestService])
 
     with container.enter_scope() as scoped_container:
         service1 = scoped_container.get(RequestService)
@@ -93,7 +93,7 @@ Scopes provide isolated dependency contexts, particularly useful for web applica
 
 === "Asynchronous"
     ```python
-    container = wireup.create_async_container(services=[RequestService])
+    container = wireup.create_async_container(injectables=[RequestService])
 
     async with container.enter_scope() as scoped_container:
         service1 = await scoped_container.get(RequestService)
@@ -109,7 +109,7 @@ The provided [integrations](integrations/index.md) automatically create a scope 
 ```python
 @app.get("/users/me")
 def get_current_user(auth: Injected[AuthService]):
-    return auth.current_user()  # Fresh scoped services per request
+    return auth.current_user()  # Fresh scoped injectables per request
 ```
 
 **Function Decorator:**
@@ -128,7 +128,7 @@ def process_order(order_service: OrderService):
 Scoped containers automatically clean up resources when the scope exits:
 
 ```python
-@service(lifetime="scoped")
+@injectable(lifetime="scoped")
 def database_session() -> Iterator[Session]:
     session = Session()
     try:
@@ -149,8 +149,8 @@ When using [generator factories](factories.md#error-handling) with scoped lifeti
 
 ## Dependency Rules & Choosing Lifetimes
 
-Services have restrictions on what they can depend on based on their lifetime:
+Injectables have restrictions on what they can depend on based on their lifetime:
 
-- **Singletons** can only depend on other singletons and parameters
-- **Scoped** services can depend on singletons, other scoped services, and parameters  
-- **Transient** services can depend on any lifetime and parameters
+- **Singletons** can only depend on other singletons and config
+- **Scoped** injectables can depend on singletons, other scoped injectables, and config  
+- **Transient** injectables can depend on any lifetime and config

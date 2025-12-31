@@ -1,102 +1,76 @@
-The container manages application services and automatically resolves their dependencies. Create one at startup, register services, and let it handle the wiring.
+# The Container
 
-## Creating Containers
+The container is the central registry for all application dependencies. It manages the lifecycle of injectables, resolves dependencies, and holds configuration.
 
-Choose the container type based on the application's needs:
+## Creation
 
-### Synchronous
+Wireup provides two factory functions to create containers, depending on whether your application is synchronous or asynchronous.
 
-For traditional synchronous Python applications:
+### `create_sync_container`
 
-```python
-import wireup
-
-container = wireup.create_sync_container(services=[UserService, Database])
-
-user_service = container.get(UserService)
-```
-
-### Async
-
-For applications using async/await:
-
-```python
-import wireup
-
-container = wireup.create_async_container(services=[UserService, Database])
-
-user_service = await container.get(UserService)
-```
-
-The async container can handle both sync and async services, but requires `await` for service retrieval.
-
-## Registering Services
-
-### 1. Service Discovery
-
-Let Wireup automatically find services in modules:
-
-```python
-import wireup
-from myapp import services, repositories
-
-container = wireup.create_sync_container(
-    service_modules=[services, repositories],
-    parameters={"api_key": "secret"}
-)
-```
-
-**Example project structure:**
-
-```
-myapp/
-├── services/
-│   ├── __init__.py
-│   └── user_service.py      # Contains @service decorations
-├── repositories/
-│   ├── __init__.py
-│   └── user_repository.py   # Contains @service decorations
-└── main.py
-```
-
-**How it works:**
-
-- Wireup scans the provided modules recursively
-- Finds classes and functions decorated with `@service` or `@abstract`
-- Automatically registers them and resolves their dependencies
-
-### 2. Manual Registration
-
-Register specific services individually:
-
-```python
-import wireup
-from myapp.services import UserService, EmailService
-
-container = wireup.create_sync_container(
-    services=[UserService, EmailService],
-    parameters={"db_url": "postgresql://localhost/myapp"}
-)
-```
-
-You can also mix both approaches as needed:
+Use this for traditional, blocking Python applications (e.g., Flask, Django, scripts).
 
 ```python
 container = wireup.create_sync_container(
-    service_modules=[services],      # Auto-discover
-    services=[SpecialService],       # Manual addition
-    parameters={"api_key": "secret"}
+    injectables=[...],
+    config={...}
 )
 ```
 
-## Container Cleanup
+### `create_async_container`
 
-Clean up the container when shutting down. This is required to properly close factories that manage resources.
+Use this for `async/await` based applications (e.g., FastAPI, Starlette). It supports `async` factories and has `async` methods for retrieval and cleanup.
 
 ```python
-# For sync containers
+container = wireup.create_async_container(
+    injectables=[...],
+    config={...}
+)
+```
+
+### Arguments
+
+Both creation functions accept the following arguments:
+
+| Argument | Type | Description |
+| :--- | :--- | :--- |
+| `injectables` | `list[ModuleType | type | Callable]` | A list of modules to scan for `@injectable` / `@abstract` decorated classes, or direct references to the classes/functions themselves. |
+| `config` | `dict[str, Any]` | A detailed configuration dictionary. Values from this dictionary can be injected using `Inject(config="key")`. |
+
+
+## Core API
+
+### `get`
+
+Retrieve an instance of a registered injectable.
+
+```python
+# Sync
+db = container.get(Database)
+readonly_db = container.get(Database, qualifier="readonly")
+
+# Async
+db = await container.get(Database)
+readonly_db = await container.get(Database, qualifier="readonly")
+```
+
+**Qualifiers**: Use the `qualifier` argument to retrieve specific implementations when multiple are registered.
+See [Multiple Registrations](multiple_registrations.md) and [Interfaces](interfaces.md) for more details.
+
+### `close`
+
+Clean up the container and release resources. This triggers the cleanup phase of any generator-based factories.
+
+```python
+# Sync
 container.close()
 
-# For async containers
+# Async
 await container.close()
 ```
+
+## Next Steps
+
+* [Lifetimes & Scopes](lifetimes_and_scopes.md) - Learn how to control the lifetime of your injectables.
+* [Factories](factories.md) - Learn how to create complex injectables and manage resources.
+* [Testing](testing.md) - Learn how to test your application with Wireup.

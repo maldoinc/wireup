@@ -10,7 +10,7 @@ import wireup.integration
 import wireup.integration.fastapi
 from fastapi import FastAPI, Request, WebSocket
 from fastapi.testclient import TestClient
-from wireup._annotations import Injected, service
+from wireup._annotations import Injected, injectable
 from wireup.errors import WireupError
 from wireup.integration.fastapi import get_app_container
 
@@ -27,8 +27,8 @@ def create_app(*, expose_container_in_middleware: bool) -> FastAPI:
     app.include_router(wireup_route.router)
 
     container = wireup.create_async_container(
-        service_modules=[fastapi_test_services, shared_services, wireup.integration.fastapi],
-        parameters={"foo": "bar"},
+        injectables=[fastapi_test_services, shared_services, wireup.integration.fastapi],
+        config={"foo": "bar"},
     )
     wireup.integration.fastapi.setup(
         container,
@@ -78,7 +78,7 @@ def test_override(app: FastAPI, client: TestClient):
         def get_random(self) -> int:
             return super().get_random() ** 2
 
-    with get_app_container(app).override.service(RandomService, new=RealRandom()):
+    with get_app_container(app).override.injectable(RandomService, new=RealRandom()):
         response = client.get("/rng")
     assert response.status_code == 200
     assert response.json() == {"number": 16}
@@ -143,14 +143,14 @@ async def test_closes_container_on_lifespan_close() -> None:
 
     class Thing: ...
 
-    @service
+    @injectable
     def make_thing() -> Iterator[Thing]:
         yield Thing()
         nonlocal cleanup_done
         cleanup_done = True
 
     app = FastAPI()
-    container = wireup.create_async_container(services=[make_thing])
+    container = wireup.create_async_container(injectables=[make_thing])
 
     @app.get("/")
     async def _(thing: Injected[Thing]) -> Dict[str, Any]:
@@ -178,7 +178,7 @@ async def test_executes_fastapi_lifespan() -> None:
 
     app = FastAPI(lifespan=lifespan)
     container = wireup.create_async_container(
-        service_modules=[fastapi_test_services, shared_services, wireup.integration.fastapi]
+        injectables=[fastapi_test_services, shared_services, wireup.integration.fastapi]
     )
 
     wireup.integration.fastapi.setup(container, app)
@@ -191,7 +191,7 @@ async def test_executes_fastapi_lifespan() -> None:
 
 async def test_middleware_disabled_does_not_add_middleware() -> None:
     app = FastAPI()
-    container = wireup.create_async_container(services=[RandomService])
+    container = wireup.create_async_container(injectables=[RandomService])
 
     @app.get("/")
     async def _(random: Injected[RandomService]) -> Dict[str, Any]:
@@ -214,7 +214,7 @@ async def test_overrides_in_class_based_handlers() -> None:
 
     new_instance = FakeRandomService()
 
-    with get_app_container(app).override.service(RandomService, new=new_instance), TestClient(app) as client:
+    with get_app_container(app).override.injectable(RandomService, new=new_instance), TestClient(app) as client:
         res = client.get("/cbr")
         assert res.json() == {"counter": 1, "random": 100}
 

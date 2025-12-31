@@ -1,9 +1,9 @@
 from django.conf import settings
-from wireup import service
+from wireup import injectable
 
-from test.integration.django.service.random_service import RandomService
+from test.integration.django.injectable.random_service import RandomService
 
 
-@service
+@injectable
 def _make_random_service() -> RandomService:
     return RandomService(settings.START_NUM)

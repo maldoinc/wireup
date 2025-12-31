@@ -18,8 +18,8 @@ def create_app() -> Flask:
     app.register_blueprint(bp)
 
     container = wireup.create_sync_container(
-        service_modules=[shared_services, flask_integration_services],
-        parameters={**app.config, "custom_params": True},
+        injectables=[shared_services, flask_integration_services],
+        config={**app.config, "custom_params": True},
     )
     wireup.integration.flask.setup(container, app)
 
@@ -69,7 +69,7 @@ def test_service_override(client: FlaskClient, app: Flask):
     mocked_foo = MagicMock()
     mocked_foo.is_test = "mocked"
 
-    with get_app_container(app).override.service(IsTestService, new=mocked_foo):
+    with get_app_container(app).override.injectable(IsTestService, new=mocked_foo):
         res = client.get("/foo")
         assert res.status_code == 200
         assert res.json == {"test": "mocked"}

@@ -1,18 +1,18 @@
 import abc
 
 from typing_extensions import Annotated
-from wireup import Inject, Injected, abstract, service
+from wireup import Inject, Injected, abstract, injectable
 
 from test.unit.services.no_annotations.random.random_service import RandomService
 from test.unit.services.no_annotations.random.truly_random_service import TrulyRandomService
 
 
-@service(qualifier="foo")
+@injectable(qualifier="foo")
 def random_service_factory() -> RandomService:
     return RandomService()
 
 
-@service(qualifier="foo")
+@injectable(qualifier="foo")
 def truly_random_service_factory(
     random_service: Annotated[RandomService, Inject(qualifier="foo")],
 ) -> TrulyRandomService:
@@ -33,27 +33,27 @@ class InterfaceWithoutImpls(abc.ABC):
         raise NotImplementedError
 
 
-@service
+@injectable
 class FooImpl(Foo):
     def get_foo(self) -> str:
         return "foo"
 
 
-@service(qualifier="other")
+@injectable(qualifier="other")
 class OtherFooImpl(Foo):
     def get_foo(self) -> str:
         return "other foo"
 
 
-@service
+@injectable
 class FooImplWithInjected:
     def __init__(self, foo: Injected[Foo]) -> None:
         self.foo = foo
 
 
-@service(lifetime="scoped")
+@injectable(lifetime="scoped")
 class ScopedService: ...
 
 
-@service(lifetime="transient")
+@injectable(lifetime="transient")
 class TransientService: ...

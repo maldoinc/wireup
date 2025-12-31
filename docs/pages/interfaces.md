@@ -8,7 +8,7 @@ Register a class as an interface using the `@abstract` decorator. Then implement
 `abc.ABC`.
 
 ```python
-from wireup import abstract, container, service
+from wireup import abstract, container, injectable
 
 
 @abstract
@@ -18,7 +18,7 @@ class Engine(abc.ABC):
         raise NotImplementedError
 
 
-@service
+@injectable
 class CombustionEngine(Engine):
     @override
     def get_type(self) -> EngineType:
@@ -35,13 +35,13 @@ def target(engine: Engine):
 Use qualifiers to distinguish between different implementations of the same interface:
 
 ```python
-@service(qualifier="electric")
+@injectable(qualifier="electric")
 class ElectricEngine(Engine):
     def get_type(self):
         return EngineType.ELECTRIC
 
 
-@service(qualifier="combustion")
+@injectable(qualifier="combustion")
 class CombustionEngine(Engine):
     def get_type() -> EngineType:
         return EngineType.COMBUSTION
@@ -63,11 +63,11 @@ def target(
 To set a default implementation, register one class without a qualifier:
 
 ```python
-@service  # Default implementation
+@injectable  # Default implementation
 class ElectricEngine(Engine):
     pass
 
-@service(qualifier="combustion")
+@injectable(qualifier="combustion")
 class CombustionEngine(Engine):
     pass
 ```

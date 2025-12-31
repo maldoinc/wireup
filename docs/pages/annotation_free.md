@@ -1,5 +1,5 @@
 If you prefer not to add Wireup annotations to your classes and keep domain logic free of infrastructure concerns,
-you can use factories to create all services including configuration.
+you can use factories to create all injectables including configuration.
 
 ## Using Factory Functions
 
@@ -17,26 +17,26 @@ class UserRepository:
 ```
 
 ```python title="factories.py"
-from wireup import service
+from wireup import injectable
 
-@service
+@injectable
 def user_repository_factory(database: Database) -> UserRepository:
     return UserRepository(database)
 
-@service  
+@injectable  
 def user_service_factory(repository: UserRepository) -> UserService:
     return UserService(repository)
 ```
 
 ## Configuration Classes
 
-For deeply nested configuration, use typed classes instead of parameter injection:
+For deeply nested configuration, consider using typed classes instead of configuration injection:
 
 ```python title="factories.py"
-from wireup import service
+from wireup import injectable
 
 # Register configuration
-@service
+@injectable
 def app_config_factory() -> AppConfig:
     return AppConfig(
         database=DatabaseConfig(...),
@@ -44,11 +44,11 @@ def app_config_factory() -> AppConfig:
         api_key=...,
     )
 
-@service
+@injectable
 def database_factory(config: AppConfig) -> Database:
     return Database(config.database)
 
-@service
+@injectable
 def redis_factory(config: AppConfig) -> Redis:
     return Redis(config.redis.url, timeout=config.redis.timeout)
 ```

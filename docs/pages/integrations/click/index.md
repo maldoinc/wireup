@@ -20,19 +20,19 @@ Dependency injection for Click is available in the `wireup.integration.click` mo
 
 ### Initialize the integration
 
-First, [create a sync container](../../container.md#synchronous)
+First, [create a sync container](../../container.md)
 
 ```python
 import click
-from wireup import Inject, Injected, service
+from wireup import Inject, Injected, injectable
 
 @click.group()
 def cli():
     pass
 
 container = wireup.create_sync_container(
-    service_modules=[services],
-    parameters={
+    injectables=[services],
+    config={
         "env": "development",
         "debug": True
     }
@@ -59,8 +59,8 @@ def random_number(random: Injected[RandomService]):
 
 @cli.command()
 def env_info(
-    env: Annotated[str, Inject(param="env")],
-    debug: Annotated[bool, Inject(param="debug")]
+    env: Annotated[str, Inject(config="env")],
+    debug: Annotated[bool, Inject(config="debug")]
 ):
     click.echo(f"Environment: {env}")
     click.echo(f"Debug mode: {debug}")

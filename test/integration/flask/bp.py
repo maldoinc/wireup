@@ -17,7 +17,7 @@ def random(random: Injected[RandomService]):
 
 
 @bp.get("/env")
-def env(is_debug: Annotated[bool, Inject(param="DEBUG")], is_test: Annotated[bool, Inject(param="TESTING")]):
+def env(is_debug: Annotated[bool, Inject(config="DEBUG")], is_test: Annotated[bool, Inject(config="TESTING")]):
     return {"debug": is_debug, "test": is_test}
 
 

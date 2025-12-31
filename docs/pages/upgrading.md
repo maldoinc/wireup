@@ -1,3 +1,10 @@
+## Upgrading 2.x to 2.3
+
+* Parameters have been renamed to Configuration to better reflect their purpose.
+* When providing configuration use `config=` instead of `parameters=` during contaner creation: `wireup.create_{a}sync_container(..., config={...})`.
+* Instead of `container.params`, use `container.config`.
+* Instead of `Inject(param="name")`, use `Inject(config="key")`.
+
 ## Upgrade 1.x to 2.0.0
 
 * Wireup container itself has no breaking changes. The major version bump is due to a breaking change in the FastAPI

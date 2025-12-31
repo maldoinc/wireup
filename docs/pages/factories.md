@@ -1,6 +1,6 @@
 # Factories and Resource Management
 
-Use factories to handle complex service creation logic or resource management that can't be done with simple class constructors.
+Use factories to handle complex creation logic or resource management that can't be done with simple class constructors.
 
 ## Use cases
 
@@ -12,18 +12,18 @@ inheriting from the same base class/protocol.
 * Inject a class from another library where it's not possible to add annotations.
 * Inject strings, ints and other built-in types.
 
-In order for the container to inject these dependencies, you must decorate the factory with `@service` and register
+In order for the container to inject these dependencies, you must decorate the factory with `@injectable` and register
 it with the container. Return type annotation of the factory is required as it denotes what will be built.
 
 
 ## Generator Factories
 
-Use generator factories when a service requires cleanup (like database connections or network resources).
+Use generator factories when an injectable requires cleanup (like database connections or network resources).
 
 === "Generators"
 
     ```python
-    @service
+    @injectable
     def db_session_factory() -> Iterator[Session]:
         db = Session()
         try:
@@ -35,7 +35,7 @@ Use generator factories when a service requires cleanup (like database connectio
 === "Context Manager"
 
     ```python
-    @service
+    @injectable
     def db_session_factory() -> Iterator[Session]:
         with contextlib.closing(Session()) as db:
             yield db
@@ -44,7 +44,7 @@ Use generator factories when a service requires cleanup (like database connectio
 === "Async Context Manager"
 
     ```python
-    @service
+    @injectable
     async def client_session_factory() -> ClientSession:
         async with ClientSession() as sess:
             yield sess
@@ -60,9 +60,9 @@ Assume a base class `Notifier` with implementations that define how the notifica
 Given a user it is possible to instantiate the correct type of notifier based on user preferences.
 
 ```python
-from wireup import service
+from wireup import injectable
 
-@service(lifetime="scoped")
+@injectable(lifetime="scoped")
 def get_user_notifier(
     user: AuthenticatedUser, 
     slack_notifier: SlackNotifier, 
@@ -81,10 +81,10 @@ You can use factories to inject a class which you have not declared yourself and
 Let's take redis client as an example. 
 
 ```python
-from wireup import service
+from wireup import injectable
 
-@service
-def redis_factory(redis_url: Annotated[str, Inject(param="redis_url")]) -> Redis:
+@injectable
+def redis_factory(redis_url: Annotated[str, Inject(config="redis_url")]) -> Redis:
     return redis.from_url(redis_url)
 ```
 
@@ -96,9 +96,9 @@ instead of having to call `auth_service.get_current_user()` everywhere.
 
 
 ```python
-from wireup import service
+from wireup import injectable
 
-@service(lifetime="scoped")
+@injectable(lifetime="scoped")
 def get_current_user(auth_service: AuthService) -> AuthenticatedUser:
     return auth_service.get_current_user()
 ```
@@ -112,8 +112,8 @@ Note that since Wireup uses types to identify dependencies, new types are strong
 ```python title="factories.py"
 AuthenticatedUsername = NewType("AuthenticatedUsername", str)
 
-@service
-def authenticated_username_factory(auth: SomeAuthService) -> AuthenticatedUsername:
+@injectable
+def authenticated_username_factory(auth: AuthService) -> AuthenticatedUsername:
     return AuthenticatedUsername(...)
 ```
 
@@ -129,7 +129,7 @@ scope are  automatically propagated to the factories. This enables proper error 
 database transactions or cleaning up resources when operations fail.
 
 ```python
-@service(lifetime="scoped")
+@injectable(lifetime="scoped")
 def db_session_factory(engine: Engine) -> Iterator[Session]:
     session = Session(engine)
     try:
@@ -160,9 +160,9 @@ def db_session_factory(engine: Engine) -> Iterator[Session]:
 ```python
 from typing import Iterator
 from sqlalchemy.orm import Session
-from wireup import service, Injected
+from wireup import injectable, Injected
 
-@service(lifetime="scoped")
+@injectable(lifetime="scoped")
 class UserService:
     # Uses Session as defined above.
     def __init__(self, db: Session) -> None:
@@ -192,33 +192,33 @@ def create_user(
 
 ## Optional Dependencies and Factories
 
-You can both request Optional dependencies and create factories that return optional values. This is useful when a service might not be available or when you want to make a dependency optional.
+You can both request Optional dependencies and create factories that return optional values. This is useful when an injectable might not be available or when you want to make a dependency optional.
 
 
-!!! important "Service Registration Required"
-    When using optional dependencies, the service providing the optional dependency **must still be registered** in the container. The service cannot be absent - it can only return `None`. This means you must register a factory that can potentially return `None`,
-    rather than simply not registering the service at all.
+!!! important "Injectable Registration Required"
+    When using optional dependencies, the injectable providing the optional dependency **must still be registered** in the container. The injectable cannot be absent - it can only return `None`. This means you must register a factory that can potentially return `None`,
+    rather than simply not registering the injectable at all.
 
 ### Factories Returning Optional Values
 
-Sometimes you want a factory to return `None` when certain conditions aren't met. A common example is a service that requires configuration to be available:
+Sometimes you want a factory to return `None` when certain conditions aren't met. A common example is an injectable that requires configuration to be available:
 
 ```python
-@service
+@injectable
 def cache_factory(
-    redis_url: Annotated[str | None, Inject(param="redis_url")],
+    redis_url: Annotated[str | None, Inject(config="redis_url")],
 ) -> Redis | None:
     return Redis.from_url(redis_url) if redis_url else None
 ```
 
 ### Requesting Optional Dependencies
 
-When a service has an optional dependency, simply use `T | None` or `Optional[T]`.
+When an injectable has an optional dependency, simply use `T | None` or `Optional[T]`.
 
 === "Python 3.10+"
 
     ```python hl_lines="1 3"
-    @service
+    @injectable
     class UserService:
         def __init__(self, cache: Cache | None) -> None:
             self.cache = cache
@@ -235,7 +235,7 @@ When a service has an optional dependency, simply use `T | None` or `Optional[T]
 === "Python <3.10"
 
     ```python hl_lines="1 3"
-    @service
+    @injectable
     class UserService:
         def __init__(self, cache: Optional[Cache]) -> None:
             self.cache = cache
@@ -256,7 +256,7 @@ When a service has an optional dependency, simply use `T | None` or `Optional[T]
 
 **Direct Access**
 
-When accessing optional dependencies directly from the container, you can retrieve them using `container.get()` just like any other service. If the factory was registered with an optional return type you'll need to provide the union type when retrieving it.
+When accessing optional dependencies directly from the container, you can retrieve them using `container.get()` just like any other injectable. If the factory was registered with an optional return type you'll need to provide the union type when retrieving it.
 
 ```python
 # ✅ This works - getting the service directly

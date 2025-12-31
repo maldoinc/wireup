@@ -5,8 +5,8 @@ nav:
     - Getting Started: getting_started.md
     - Basics:
       - Container: container.md
-      - Services: services.md
-      - Configuration: parameters.md
+      - Injectables: injectables.md
+      - Configuration: configuration.md
     - Core Concepts:
       - Factories: factories.md
       - Annotations: annotations.md
@@ -45,7 +45,7 @@ nav:
   - API Reference:
       - wireup: class/wireup.md
       - OverrideManager: class/override_manager.md
-      - ParameterBag: class/parameter_bag.md
+      - ConfigStore: class/config_store.md
       - Integrations:
         - Django: class/django_integration.md
         - FastAPI: class/fastapi_integration.md

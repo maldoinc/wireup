@@ -12,7 +12,7 @@ class WireupError(Exception):
 
 
 class DuplicateServiceRegistrationError(WireupError):
-    """Raised when attempting to register a service with the same qualifier twice."""
+    """Raised when attempting to register a injectable with the same qualifier twice."""
 
     def __init__(self, klass: type[Any], qualifier: Qualifier | None) -> None:
         self.klass = klass
@@ -33,11 +33,11 @@ class DuplicateQualifierForInterfaceError(WireupError):
 
 
 class UnknownParameterError(WireupError):
-    """Raised when requesting a parameter by name which does not exist."""
+    """Raised when requesting a config by name which does not exist."""
 
     def __init__(self, parameter_name: str) -> None:
         self.parameter_name = parameter_name
-        super().__init__(f"Unknown parameter requested: {parameter_name}")
+        super().__init__(f"Unknown config key requested: {parameter_name}")
 
 
 class FactoryReturnTypeIsEmptyError(WireupError):
@@ -73,19 +73,19 @@ class UnknownServiceRequestedError(WireupError):
 
     def __init__(self, klass: type[Any] | None, qualifier: Qualifier | None = None) -> None:
         qualifier_str = f" with qualifier '{qualifier}'" if qualifier else ""
-        msg = f"Cannot create unknown service {klass}{qualifier_str}. Make sure it is registered with the container."
+        msg = f"Cannot create unknown injectable {klass}{qualifier_str}. Make sure it is registered with the container."
         super().__init__(msg)
 
 
 class InvalidRegistrationTypeError(WireupError):
-    """Raised when attempting to register an invalid object type as a service."""
+    """Raised when attempting to register an invalid object type as a injectable."""
 
     def __init__(self, attempted: Any) -> None:
         super().__init__(f"Cannot register {attempted} with the container. Allowed types are callables and types.")
 
 
 class UnknownOverrideRequestedError(WireupError):
-    """Raised when attempting to override a service which does not exist."""
+    """Raised when attempting to override a injectable which does not exist."""
 
     def __init__(self, klass: type, qualifier: Qualifier | None) -> None:
         super().__init__(f"Cannot override unknown {klass} with qualifier '{qualifier}'.")
