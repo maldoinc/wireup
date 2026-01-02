@@ -321,10 +321,7 @@ class ServiceRegistry:
                 try:
                     self.assert_dependency_exists(parameter=dependency, target=impl, name=name)
                 except WireupError:
-                    sig = inspect.signature(service_factory.factory)
-                    param = sig.parameters.get(name)
-
-                    if param and param.default is not inspect.Parameter.empty:
+                    if dependency.has_default_value:
                         unknown_dependencies_with_default.append(name)
                         continue
 
