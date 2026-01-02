@@ -315,8 +315,21 @@ class ServiceRegistry:
     def assert_dependencies_valid(self) -> None:
         """Assert that all required dependencies exist for this registry instance."""
         for (impl, impl_qualifier), service_factory in self.factories.items():
+            unknown_dependencies_with_default: list[str] = []
+
             for name, dependency in self.dependencies[service_factory.factory].items():
-                self.assert_dependency_exists(parameter=dependency, target=impl, name=name)
+                try:
+                    self.assert_dependency_exists(parameter=dependency, target=impl, name=name)
+                except WireupError:
+                    sig = inspect.signature(service_factory.factory)
+                    param = sig.parameters.get(name)
+
+                    if param and param.default is not inspect.Parameter.empty:
+                        unknown_dependencies_with_default.append(name)
+                        continue
+
+                    raise
+
                 self._assert_lifetime_valid(
                     impl=impl,
                     impl_qualifier=impl_qualifier,
@@ -325,6 +338,9 @@ class ServiceRegistry:
                     factory=service_factory.factory,
                 )
                 self._assert_valid_resolution_path(dependency=dependency, path=[])
+
+            for name in unknown_dependencies_with_default:
+                del self.dependencies[service_factory.factory][name]
 
     def _assert_lifetime_valid(
         self,

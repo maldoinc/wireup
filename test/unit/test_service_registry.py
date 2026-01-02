@@ -6,6 +6,7 @@ from wireup.errors import (
     DuplicateServiceRegistrationError,
     FactoryReturnTypeIsEmptyError,
     InvalidRegistrationTypeError,
+    WireupError,
 )
 from wireup.ioc.service_registry import ServiceRegistry
 
@@ -126,8 +127,22 @@ def test_register_invalid_target() -> None:
         ServiceRegistry(impls=[ServiceDeclaration(obj=1)])
 
 
-class MyService:
-    pass
+def test_register_factory_with_unknown_dependency_with_default() -> None:
+    # A factory depends on UnknownService but provides a default value.
+    def factory_with_default(_: UnknownService | None = None) -> MyLocalService:
+        return MyLocalService()
+
+    registry = ServiceRegistry(impls=[ServiceDeclaration(obj=factory_with_default, lifetime="singleton")])
+    assert MyLocalService in registry.impls
+
+
+def test_register_factory_with_unknown_dependency_no_default() -> None:
+    # A factory depends on UnknownService but DOES NOT provide a default value.
+    def factory_no_default(_: UnknownService) -> MyLocalService:
+        return MyLocalService()
+
+    with pytest.raises(WireupError, match="depends on an unknown service"):
+        ServiceRegistry(impls=[ServiceDeclaration(obj=factory_no_default, lifetime="singleton")])
 
 
 class MyInterface:
@@ -136,3 +151,15 @@ class MyInterface:
 
 def random_service_factory() -> RandomService:
     return RandomService()
+
+
+class MyService:
+    pass
+
+
+class UnknownService:
+    pass
+
+
+class MyLocalService:
+    pass
