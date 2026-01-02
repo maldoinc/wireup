@@ -4,7 +4,7 @@ from typing import Optional
 import pytest
 import wireup
 from typing_extensions import Annotated
-from wireup import Inject, inject_from_container
+from wireup import Inject, inject_from_container, service
 from wireup._annotations import Injected
 from wireup.errors import WireupError
 
@@ -121,6 +121,46 @@ async def test_raises_on_unknown_parameter(container: Container) -> None:
         def _(
             not_managed_by_wireup: Annotated[str, Inject(param="invalid")],
         ) -> None: ...
+
+
+async def test_unknown_service_without_default_value() -> None:
+    class UnknownClass: ...
+
+    @service
+    class BarWithoutDefaultValue:
+        def __init__(self, unknown_class: UnknownClass) -> None:
+            self.unknown_class = unknown_class
+
+    with pytest.raises(
+        WireupError,
+        match=re.escape(
+            "Parameter 'unknown_class' of Type test.unit.test_inject_from_container.BarWithoutDefaultValue "
+            "depends on an unknown service Type test.unit.test_inject_from_container.UnknownClass"
+            " with qualifier None."
+        ),
+    ):
+        container = wireup.create_async_container(services=[BarWithoutDefaultValue])
+
+        @inject_from_container(container)
+        def _(
+            _: Annotated[BarWithoutDefaultValue, Inject()],
+        ) -> None: ...
+
+
+async def test_unknown_service_with_default_value() -> None:
+    class UnknownClass: ...
+
+    @service
+    class BarWithDefaultValue:
+        def __init__(self, unknown_class: UnknownClass | None = None) -> None:
+            self.unknown_class = unknown_class
+
+    container = wireup.create_async_container(services=[BarWithDefaultValue])
+
+    @inject_from_container(container)
+    def _(
+        _: Annotated[BarWithDefaultValue, Inject()],
+    ) -> None: ...
 
 
 async def test_injects_service_with_provided_async_scoped_container() -> None:

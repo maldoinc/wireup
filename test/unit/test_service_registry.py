@@ -9,6 +9,8 @@ from wireup.errors import (
     WireupError,
 )
 from wireup.ioc.service_registry import ServiceRegistry
+from wireup import service
+from pydantic_settings import BaseSettings
 
 from test.unit.services.no_annotations.random.random_service import RandomService
 from test.unit.services.with_annotations.services import Foo, FooImpl, FooImplWithInjected
@@ -128,16 +130,18 @@ def test_register_invalid_target() -> None:
 
 
 def test_register_factory_with_unknown_dependency_with_default() -> None:
-    # A factory depends on UnknownService but provides a default value.
-    def factory_with_default(_: UnknownService | None = None) -> MyLocalService:
-        return MyLocalService()
+    @service
+    class Settings(BaseSettings): ...
 
-    registry = ServiceRegistry(impls=[ServiceDeclaration(obj=factory_with_default, lifetime="singleton")])
-    assert MyLocalService in registry.impls
+    registry = ServiceRegistry(impls=[ServiceDeclaration(obj=Settings, lifetime="singleton")])
+    assert Settings in registry.impls
 
 
 def test_register_factory_with_unknown_dependency_no_default() -> None:
-    # A factory depends on UnknownService but DOES NOT provide a default value.
+    class UnknownService: ...
+
+    class MyLocalService: ...
+
     def factory_no_default(_: UnknownService) -> MyLocalService:
         return MyLocalService()
 
@@ -154,12 +158,4 @@ def random_service_factory() -> RandomService:
 
 
 class MyService:
-    pass
-
-
-class UnknownService:
-    pass
-
-
-class MyLocalService:
     pass
