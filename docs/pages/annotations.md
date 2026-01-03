@@ -4,27 +4,27 @@ Wireup uses type annotations to figure out which dependencies to inject. Most of
 
 ## When Do You Need Annotations?
 
-Whether you need annotations depends on where you're injecting into Wireup services or into external targets.
+Whether you need annotations depends on where you're injecting into Wireup injectables or into external targets.
 
-### Injecting into Wireup Services
+### Injecting into Wireup Injectables
 
-For classes and functions marked with `@service`:
+For classes and functions marked with `@injectable`:
 
 | Dependency Type                         | Annotations Needed? | Required Information |
 | --------------------------------------- | ------------------- | -------------------- |
-| Services                                | No                  | -                    |
+| Injectables                             | No                  | -                    |
 | Interface with single implementation    | No                  | -                    |
 | Default implementation of interface     | No                  | -                    |
 | Interface with multiple implementations | Yes                 | Qualifier            |
-| Parameters                              | Yes                 | Parameter name       |
-| Parameter expressions                   | Yes                 | Expression template  |
+| Configuration                           | Yes                 | Config key           |
+| Configuration expression                | Yes                 | Expression template  |
 
 ### Injecting into External Code
 
 When you're injecting into code that Wireup doesn't manage (like framework route handlers), you always need annotations. Use either `Annotated[T, Inject(...)]` or the shorthand `Injected[T]`.
 
 !!! info "Why external code needs annotations"
-    Inside Wireup services, Wireup assumes full ownership of all dependencies, so basic `Injected[T]` annotations are redundant. For external targets, annotations explicitly tell Wireup to handle those parameters.
+    Inside Wireup injectables, Wireup assumes full ownership of all dependencies, so basic `Injected[T]` annotations are redundant. For external targets, annotations explicitly tell Wireup to handle those parameters.
 
 ## Usage Examples
 
@@ -33,16 +33,16 @@ Here's how to use annotations in Python 3.9+ (or Python 3.8+ with `typing_extens
 ```python
 @wireup.inject_from_container(container)
 def configure(
-    # Inject a configuration parameter by name
-    env: Annotated[str, Inject(param="app_env")],
+    # Inject configuration by referencing its key
+    env: Annotated[str, Inject(config="app_env")],
     
-    # Inject a computed value using parameter substitution
+    # Inject a computed value using expressions
     log_path: Annotated[str, Inject(expr="${data_dir}/logs")],
     
-    # Inject a service (explicit annotation required for external targets)
+    # Inject an injectable (explicit annotation required for external targets)
     service: Annotated[MyService, Inject()],
 
-    # Alternative shorthand syntax for service injection
+    # Alternative shorthand syntax for injectable injection
     service: Injected[MyService],
     
     # Inject a specific implementation when multiple exist

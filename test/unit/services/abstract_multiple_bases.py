@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 
-from wireup._annotations import abstract, service
+from wireup._annotations import abstract, injectable
 
 
 @dataclass
@@ -41,7 +41,7 @@ class FooBaz(FooBase):
         self.foo = "baz"
 
 
-@service
+@injectable
 class FooBarMultipleBases(FooBase, FooBaseAnother):
     def __init__(self):
         super().__init__()

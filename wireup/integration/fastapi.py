@@ -20,7 +20,7 @@ from starlette.routing import BaseRoute
 from typing_extensions import Protocol
 
 from wireup import inject_from_container
-from wireup._annotations import ServiceDeclaration
+from wireup._annotations import InjectableDeclaration
 from wireup.errors import WireupError
 from wireup.integration.starlette import (
     WireupAsgiMiddleware,
@@ -165,7 +165,7 @@ def _update_lifespan(
     async def lifespan(app: FastAPI) -> AsyncIterator[Any]:
         if class_based_routes:
             for cbr in class_based_routes:
-                container._registry.extend(impls=[ServiceDeclaration(cbr)])
+                container._registry.extend(impls=[InjectableDeclaration(cbr)])
             container._compiler.compile()
             container._scoped_compiler.compile()
 

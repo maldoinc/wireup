@@ -11,11 +11,11 @@ from typing_extensions import Annotated
 from wireup import Injected, inject_from_container
 
 
-@wireup.service
+@wireup.injectable
 class A: ...
 
 
-@wireup.service
+@wireup.injectable
 @dataclass
 class B:
     a: A
@@ -27,19 +27,17 @@ class C:
     b: B
 
 
-@wireup.service
+@wireup.injectable
 def c_factory(b: B) -> Iterator[C]:
     yield C(b)
 
 
 def test_eval_type_evaluates_strings() -> None:
-    container = wireup.create_sync_container(
-        parameters={"foo": "bar"}, service_modules=[importlib.import_module(__name__)]
-    )
+    container = wireup.create_sync_container(config={"foo": "bar"}, injectables=[importlib.import_module(__name__)])
 
     @inject_from_container(container)
     def test(
-        a: Injected[A], b: Injected[B], c: Injected[C], foo: Annotated[str, wireup.Inject(param="foo")], _: int = 1
+        a: Injected[A], b: Injected[B], c: Injected[C], foo: Annotated[str, wireup.Inject(config="foo")], _: int = 1
     ):
         assert isinstance(a, A)
         assert isinstance(b, B)
@@ -55,7 +53,7 @@ def test_eval_type_evaluates_strings() -> None:
 
 @pytest.mark.skipif(sys.version_info < (3, 11), reason="eval_type_backport only needed for Python < 3.11")
 def test_eval_type_backport_not_imported_on_py311_and_newer() -> None:
-    container = wireup.create_sync_container(service_modules=[importlib.import_module(__name__)])
+    container = wireup.create_sync_container(injectables=[importlib.import_module(__name__)])
 
     container.get(A)
     container.get(B)

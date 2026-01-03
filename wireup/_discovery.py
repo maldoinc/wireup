@@ -6,14 +6,14 @@ from pathlib import Path
 from types import FunctionType, ModuleType
 from typing import Any, Callable, Iterable
 
-from wireup._annotations import AbstractDeclaration, ServiceDeclaration
+from wireup._annotations import AbstractDeclaration, InjectableDeclaration
 
 
 def discover_wireup_registrations(
-    service_modules: Iterable[ModuleType],
-) -> tuple[list[AbstractDeclaration], list[ServiceDeclaration]]:
+    injectable_modules: Iterable[ModuleType],
+) -> tuple[list[AbstractDeclaration], list[InjectableDeclaration]]:
     abstract_registrations: list[AbstractDeclaration] = []
-    service_registrations: list[ServiceDeclaration] = []
+    injectable_registrations: list[InjectableDeclaration] = []
 
     def _is_valid_wireup_target(obj: Any) -> bool:
         # Check that the hasattr call is only made on user defined functions and classes.
@@ -22,18 +22,18 @@ def discover_wireup_registrations(
         return (isinstance(obj, FunctionType) or inspect.isclass(obj)) and hasattr(obj, "__wireup_registration__")
 
     all_targets = {
-        m for module in service_modules for m in _find_objects_in_module(module, predicate=_is_valid_wireup_target)
+        m for module in injectable_modules for m in _find_objects_in_module(module, predicate=_is_valid_wireup_target)
     }
 
     for cls in all_targets:
         reg = getattr(cls, "__wireup_registration__", None)
 
-        if isinstance(reg, ServiceDeclaration):
-            service_registrations.append(reg)
+        if isinstance(reg, InjectableDeclaration):
+            injectable_registrations.append(reg)
         elif isinstance(reg, AbstractDeclaration):
             abstract_registrations.append(reg)
 
-    return abstract_registrations, service_registrations
+    return abstract_registrations, injectable_registrations
 
 
 def _find_objects_in_module(module: ModuleType, predicate: Callable[[Any], bool]) -> set[type]:

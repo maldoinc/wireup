@@ -1,7 +1,7 @@
-from wireup import service
+from wireup import injectable
 
 
-@service
+@injectable
 class RandomService:
     def get_random(self) -> int:
         return 4

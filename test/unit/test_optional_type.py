@@ -3,13 +3,13 @@ from typing import Any, Optional
 
 from typing_extensions import Annotated
 from wireup import Inject
-from wireup.ioc.types import AnnotatedParameter, ServiceQualifier
+from wireup.ioc.types import AnnotatedParameter, InjectableQualifier
 from wireup.ioc.util import param_get_annotation
 
 
 def assert_has_qualifier(result: AnnotatedParameter, qualifier_value: str) -> None:
     assert result.annotation is not None
-    assert isinstance(result.annotation, ServiceQualifier)
+    assert isinstance(result.annotation, InjectableQualifier)
     assert result.annotation.qualifier == qualifier_value
 
 

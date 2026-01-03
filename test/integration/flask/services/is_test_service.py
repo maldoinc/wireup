@@ -1,10 +1,10 @@
 from dataclasses import dataclass
 
 from typing_extensions import Annotated
-from wireup import Inject, service
+from wireup import Inject, injectable
 
 
-@service
+@injectable
 @dataclass
 class IsTestService:
-    is_test: Annotated[bool, Inject(param="TESTING")]
+    is_test: Annotated[bool, Inject(config="TESTING")]

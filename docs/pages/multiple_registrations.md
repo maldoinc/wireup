@@ -1,6 +1,6 @@
-# Multiple Service Registrations
+# Multiple Injectable Registrations
 
-Use factories to register multiple instances of the same class with different qualifiers. This is useful for scenarios where you need multiple configurations of the same service type.
+Use factories to register multiple instances of the same class with different qualifiers. This is useful for scenarios where you need multiple configurations of the same injectable type.
 
 ## Example: Multi-Database Setup
 
@@ -10,7 +10,7 @@ Here's how to set up multiple database connections - a common scenario where you
 
 ```python title="db_service.py"
 from typing import Annotated
-from wireup import service, Inject
+from wireup import injectable, Inject
 
 class DatabaseService:
     def __init__(self, dsn: str) -> None:
@@ -19,15 +19,15 @@ class DatabaseService:
     def query(self) -> ...:
         return self.__connection.query(...)
 
-@service  # Default connection for writes
+@injectable  # Default connection for writes
 def primary_db(
-    dsn: Annotated[str, Inject(param="PRIMARY_DB_DSN")]
+    dsn: Annotated[str, Inject(config="PRIMARY_DB_DSN")]
 ) -> DatabaseService:
     return DatabaseService(dsn)
 
-@service(qualifier="replica")  # Read-only connection
+@injectable(qualifier="replica")  # Read-only connection
 def replica_db(
-    dsn: Annotated[str, Inject(param="REPLICA_DB_DSN")]
+    dsn: Annotated[str, Inject(config="REPLICA_DB_DSN")]
 ) -> DatabaseService:
     return DatabaseService(dsn)
 ```
@@ -35,7 +35,7 @@ def replica_db(
 ### Usage
 
 ```python title="repository.py"
-@service
+@injectable
 class Repository:
     def __init__(
         self,

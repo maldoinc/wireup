@@ -2,7 +2,7 @@ Unit testing service objects is meant to be easy as the container does not inter
 any way with the underlying classes.
 
 Classes can be instantiated as usual in tests, and you need to pass dependencies 
-such as services or parameters to them yourself.
+such as services or configuration to them yourself.
 
 To specify custom behavior for tests, provide a custom implementation 
 or a subclass that returns test data.

@@ -43,8 +43,8 @@ import wireup
 from myapp import services
 
 container = wireup.create_async_container(
-    service_modules=[services],
-    parameters={"debug": settings.DEBUG},
+    injectables=[services],
+    config={"debug": settings.DEBUG},
 )
 ```
 
@@ -80,7 +80,7 @@ See [Annotations](../../annotations.md) for more details.
     @app.get("/random")
     async def target(
         random_service: Injected[RandomService],
-        is_debug: Annotated[bool, Inject(param="debug")],
+        is_debug: Annotated[bool, Inject(config="debug")],
 
         # This is a regular FastAPI dependency.
         lucky_number: Annotated[int, Depends(get_lucky_number)]
@@ -117,14 +117,14 @@ See [Annotations](../../annotations.md) for more details.
 ### Inject FastAPI request or websocket
 
 To inject the current request/websocket in services, include `wireup.integration.fastapi` 
-module in the service modules when creating the container.
+module in the injectables when creating the container.
 
 ```python
 import wireup
 
 container = wireup.create_async_container(
-    service_modules=[services, wireup.integration.fastapi],
-    parameters={"debug": settings.DEBUG},
+    injectables=[services, wireup.integration.fastapi],
+    config={"debug": settings.DEBUG},
 )
 ```
 
@@ -132,18 +132,18 @@ container = wireup.create_async_container(
 
 ```python
 import fastapi
-from wireup import service
+from wireup import injectable
 
-@service(lifetime="scoped")
+@injectable(lifetime="scoped")
 class HttpAuthenticationService:
     def __init__(self, request: fastapi.Request) -> None: ...
 ```
 
 ```python
 import fastapi
-from wireup import service
+from wireup import injectable
 
-@service(lifetime="scoped")
+@injectable(lifetime="scoped")
 class ChatService:
     def __init__(self, websocket: fastapi.WebSocket) -> None:
         await self.websocket.accept()
