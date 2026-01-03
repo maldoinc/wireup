@@ -86,7 +86,7 @@ class InjectableDeclaration:
     obj: Any
     qualifier: Qualifier | None = None
     lifetime: InjectableLifetime = "singleton"
-    binds: Any | None = None
+    as_type: Any | None = None
 
 
 @dataclass
@@ -102,7 +102,7 @@ def injectable(
     *,
     qualifier: Qualifier | None = None,
     lifetime: InjectableLifetime = "singleton",
-    binds: Any | None = None,
+    as_type: Any | None = None,
 ) -> Callable[[T], T]:
     pass
 
@@ -113,7 +113,7 @@ def injectable(
     *,
     qualifier: Qualifier | None = None,
     lifetime: InjectableLifetime = "singleton",
-    binds: Any | None = None,
+    as_type: Any | None = None,
 ) -> T:
     pass
 
@@ -123,7 +123,7 @@ def injectable(
     *,
     qualifier: Qualifier | None = None,
     lifetime: InjectableLifetime = "singleton",
-    binds: Any | None = None,
+    as_type: Any | None = None,
 ) -> T | Callable[[T], T]:
     """Mark the decorated class or function as a Wireup injectable."""
 
@@ -133,7 +133,7 @@ def injectable(
             obj=decorated_obj,
             qualifier=qualifier,
             lifetime=lifetime,
-            binds=binds,
+            as_type=as_type,
         )
         return decorated_obj
 
@@ -187,7 +187,7 @@ def abstract(cls: type[T]) -> type[T]:
         (
             f"Deprecated: Using @abstract on {stringify_type(cls)}. "
             f"Remove the @abstract decorator and"
-            f"annotate concrete implementations with `@service(binds={cls.__name__})` instead. "
+            f"annotate concrete implementations with `@injectable(as_type={cls.__name__})` instead. "
             "See https://maldoinc.github.io/wireup/latest/interfaces/."
         ),
         stacklevel=2,

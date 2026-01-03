@@ -137,16 +137,12 @@ class ContainerRegistry:
             if klass is None:
                 raise FactoryReturnTypeIsEmptyError(obj)
 
-            if impl.binds:
-                self._register_abstract(impl.binds)
-                self.interfaces[impl.binds][impl.qualifier] = impl.obj
-
             self._register(
-                klass=klass,
+                klass=impl.as_type or klass,
                 factory_fn=obj,
                 lifetime=impl.lifetime,
                 qualifier=impl.qualifier,
-                auto_discover_interfaces=impl.binds is None,
+                auto_discover_interfaces=impl.as_type is None,
             )
 
         self.assert_dependencies_valid()
