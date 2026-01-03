@@ -6,7 +6,7 @@ import warnings
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Generic, TypeVar, overload
 
-from typing_extensions import Annotated
+from typing_extensions import Annotated, ParamSpec
 
 from wireup.ioc.types import (
     ConfigInjectionRequest,
@@ -70,6 +70,7 @@ def Inject(  # noqa: N802
     return res
 
 
+P = ParamSpec("P")
 T = TypeVar("T")
 
 Injected = Annotated[T, Inject()]
@@ -98,40 +99,22 @@ class AbstractDeclaration:
 
 class StrictInjectableDecorator(Generic[T]):
     @overload
-    def __call__(self, obj: type[T]) -> type[T]: ...
+    def __call__(self, obj: T) -> T: ...
 
     @overload
-    def __call__(self, obj: type[T] | None) -> type[T]: ...
+    def __call__(self, obj: Callable[P, T]) -> Callable[P, T]: ...
 
     @overload
-    def __call__(self, obj: Callable[..., T]) -> Callable[..., T]: ...
-
-    @overload
-    def __call__(self, obj: Callable[..., T | None]) -> Callable[..., T]: ...
+    def __call__(self, obj: Callable[P, T | None]) -> Callable[P, T | None]: ...
 
     def __call__(self, obj: Any) -> Any:
         return obj
 
 
-# Overload 1: Bare Usage
-# @injectable
 @overload
 def injectable(obj: T) -> T: ...
 
 
-# Overload 2: Configuration Only
-# @injectable(qualifier="foo")
-@overload
-def injectable(
-    *,
-    as_type: None = None,
-    qualifier: Qualifier | None = ...,
-    lifetime: InjectableLifetime = ...,
-) -> Callable[[T], T]: ...
-
-
-# Overload 3: Explicit Binding
-# @injectable(as_type=Cache)
 @overload
 def injectable(
     *,
@@ -147,7 +130,7 @@ def injectable(
     qualifier: Qualifier | None = None,
     lifetime: InjectableLifetime = "singleton",
     as_type: Any | None = None,
-) -> T | Callable[[T], T]:
+) -> T | StrictInjectableDecorator[T]:
     """Mark the decorated class or function as a Wireup injectable."""
 
     # Allow this to be used as a decorator factory or as a decorator directly.
@@ -160,7 +143,7 @@ def injectable(
         )
         return decorated_obj
 
-    return _injectable_decorator if obj is None else _injectable_decorator(obj)
+    return _injectable_decorator if obj is None else _injectable_decorator(obj)  # type:ignore[return-value]
 
 
 @overload
@@ -199,7 +182,7 @@ def service(
         FutureWarning,
         stacklevel=2,
     )
-    return injectable(obj, qualifier=qualifier, lifetime=lifetime)
+    return injectable(obj, qualifier=qualifier, lifetime=lifetime)  # type:ignore[no-any-return, call-overload]
 
 
 def abstract(cls: type[T]) -> type[T]:
