@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Protocol
+from typing import Optional, Protocol
 
 import pytest
 from wireup import create_sync_container, injectable
@@ -154,12 +154,10 @@ def test_as_type_on_optional_factory():
     # This requires the container to register it as Optional[OptionalProto] (or Proto | None)
     # because the factory returns Impl | None.
 
-    from typing import Optional
-
     instance = container.get(Optional[OptionalProto])
     assert isinstance(instance, OptionalImpl)
     assert instance.opt() == "opt"
 
-    # Verify None | T syntax (Python 3.10+) if applicable, but Optional[T] is safer for this test file
     instance_union = container.get(OptionalProto | None)
     assert isinstance(instance_union, OptionalImpl)
+    assert instance.opt() == "opt"
