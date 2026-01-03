@@ -4,7 +4,7 @@ import contextlib
 import importlib
 import warnings
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, TypeVar, overload
+from typing import TYPE_CHECKING, Any, Generic, TypeVar, overload
 
 from typing_extensions import Annotated
 
@@ -17,6 +17,7 @@ from wireup.ioc.types import (
     Qualifier,
     TemplatedString,
 )
+from wireup.ioc.util import stringify_type
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -85,6 +86,7 @@ class InjectableDeclaration:
     obj: Any
     qualifier: Qualifier | None = None
     lifetime: InjectableLifetime = "singleton"
+    as_type: Any | None = None
 
 
 @dataclass
@@ -94,24 +96,49 @@ class AbstractDeclaration:
     obj: Any
 
 
-@overload
-def injectable(
-    obj: None = None,
-    *,
-    qualifier: Qualifier | None = None,
-    lifetime: InjectableLifetime = "singleton",
-) -> Callable[[T], T]:
-    pass
+class StrictInjectableDecorator(Generic[T]):
+    @overload
+    def __call__(self, obj: type[T]) -> type[T]: ...
+
+    @overload
+    def __call__(self, obj: type[T] | None) -> type[T]: ...
+
+    @overload
+    def __call__(self, obj: Callable[..., T]) -> Callable[..., T]: ...
+
+    @overload
+    def __call__(self, obj: Callable[..., T | None]) -> Callable[..., T]: ...
+
+    def __call__(self, obj: Any) -> Any:
+        return obj
 
 
+# Overload 1: Bare Usage
+# @injectable
+@overload
+def injectable(obj: T) -> T: ...
+
+
+# Overload 2: Configuration Only
+# @injectable(qualifier="foo")
 @overload
 def injectable(
-    obj: T,
     *,
-    qualifier: Qualifier | None = None,
-    lifetime: InjectableLifetime = "singleton",
-) -> T:
-    pass
+    as_type: None = None,
+    qualifier: Qualifier | None = ...,
+    lifetime: InjectableLifetime = ...,
+) -> Callable[[T], T]: ...
+
+
+# Overload 3: Explicit Binding
+# @injectable(as_type=Cache)
+@overload
+def injectable(
+    *,
+    as_type: type[T],
+    qualifier: Qualifier | None = ...,
+    lifetime: InjectableLifetime = ...,
+) -> StrictInjectableDecorator[T]: ...
 
 
 def injectable(
@@ -119,13 +146,17 @@ def injectable(
     *,
     qualifier: Qualifier | None = None,
     lifetime: InjectableLifetime = "singleton",
+    as_type: Any | None = None,
 ) -> T | Callable[[T], T]:
     """Mark the decorated class or function as a Wireup injectable."""
 
     # Allow this to be used as a decorator factory or as a decorator directly.
     def _injectable_decorator(decorated_obj: T) -> T:
         decorated_obj.__wireup_registration__ = InjectableDeclaration(  # type: ignore[attr-defined]
-            obj=decorated_obj, qualifier=qualifier, lifetime=lifetime
+            obj=decorated_obj,
+            qualifier=qualifier,
+            lifetime=lifetime,
+            as_type=as_type,
         )
         return decorated_obj
 
@@ -160,6 +191,7 @@ def service(
 ) -> T | Callable[[T], T]:
     """Mark the decorated class or function as a Wireup service.
 
+
     DEPRECATED: Use @injectable instead.
     """
     warnings.warn(
@@ -173,5 +205,15 @@ def service(
 def abstract(cls: type[T]) -> type[T]:
     """Mark the decorated class as an abstract service."""
     cls.__wireup_registration__ = AbstractDeclaration(cls)  # type: ignore[attr-defined]
+
+    warnings.warn(
+        (
+            f"Deprecated: Using @abstract on {stringify_type(cls)}. "
+            f"Remove the @abstract decorator and"
+            f"annotate concrete implementations with `@injectable(as_type={cls.__name__})` instead. "
+            "See https://maldoinc.github.io/wireup/latest/interfaces/."
+        ),
+        stacklevel=2,
+    )
 
     return cls

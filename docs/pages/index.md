@@ -32,6 +32,8 @@ Use decorators and annotations for concise, co-located definitions, or factories
         def __init__(self, db: Database) -> None:
             self.db = db
 
+    # Now that the dependencies are defined, register them with the container.
+    # You can pass a list of classes, functions, or even modules to be scanned.
     container = create_sync_container(injectables=[Database, UserService])
     user_service = container.get(UserService)  # ✅ Dependencies resolved.
     ```
@@ -113,21 +115,20 @@ def process_users(service: Injected[UserService]):
     pass
 ```
 
-### 📝 Interfaces & Abstract Classes
+### 📝 Interfaces & Abstractions
 
 Define abstract types and have the container automatically inject the implementation.
 
 ```python
-from wireup import abstract, injectable, create_sync_container
-import abc
+from wireup import injectable, create_sync_container
+from typing import Protocol
 
-@abstract
-class Notifier(abc.ABC):
-    pass
+class Notifier(Protocol):
+    def notify(self) -> None: ...
 
-@injectable
-class SlackNotifier(Notifier):
-    pass
+@injectable(as_type=Notifier)
+class SlackNotifier:
+    def notify(self) -> None: ...
 
 container = create_sync_container(injectables=[SlackNotifier])
 notifier = container.get(Notifier) # ✅ SlackNotifier instance.
@@ -186,18 +187,23 @@ Full support for async and generators. Wireup handles cleanup at the correct tim
             yield WeatherClient(client=session)
     ```
 
-=== "Async"
+### ❓ Optional Dependencies
 
-    ```python
-    class WeatherClient:
-        def __init__(self, client: aiohttp.ClientSession) -> None:
-            self.client = client
+Wireup has first-class support for `Optional[T]` and `T | None`. Expose optional dependencies and let Wireup handle the rest.
 
-    @injectable
-    async def weather_client_factory() -> AsyncIterator[WeatherClient]:
-        async with aiohttp.ClientSession() as session:
-            yield WeatherClient(client=session)
-    ```
+```python
+@injectable
+def make_cache(settings: Settings) -> RedisCache | None:
+    return RedisCache(settings.redis_url) if settings.cache_enabled else None
+
+@injectable
+class UserService:
+    def __init__(self, cache: RedisCache | None):
+        self.cache = cache
+
+# You can also retrieve optional dependencies directly
+cache = container.get(RedisCache | None)
+```
 
 ### 🛡️ Improved Safety
 

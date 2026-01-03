@@ -109,7 +109,7 @@ container = wireup.create_async_container(
     },
     # Let the container know where registrations are located.
     # This is a list of modules containing injectable definitions,
-    # or functions/classes decorated with `@injectable` or `@abstract`.
+    # or functions/classes decorated with `@injectable`.
     injectables=[services]
 )
 ```

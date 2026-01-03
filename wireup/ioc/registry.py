@@ -137,7 +137,20 @@ class ContainerRegistry:
             if klass is None:
                 raise FactoryReturnTypeIsEmptyError(obj)
 
-            self._register(klass=klass, factory_fn=obj, lifetime=impl.lifetime, qualifier=impl.qualifier)
+            target_type = impl.as_type
+
+            if target_type and analyze_type(klass).is_optional:
+                from typing import Optional
+
+                target_type = Optional[target_type]
+
+            self._register(
+                klass=target_type or klass,
+                factory_fn=obj,
+                lifetime=impl.lifetime,
+                qualifier=impl.qualifier,
+                auto_discover_interfaces=impl.as_type is None,
+            )
 
         self.assert_dependencies_valid()
         self._precompute_ctors()
@@ -197,6 +210,8 @@ class ContainerRegistry:
         factory_fn: Callable[..., Any],
         lifetime: InjectableLifetime = "singleton",
         qualifier: Qualifier | None = None,
+        *,
+        auto_discover_interfaces: bool,
     ) -> None:
         type_analysis = analyze_type(klass)
         klass = type_analysis.normalized_type
@@ -213,7 +228,7 @@ class ContainerRegistry:
                     self.interfaces[base][qualifier] = klass
                 discover_interfaces(base.__bases__)
 
-        if hasattr(klass, "__bases__"):
+        if auto_discover_interfaces and hasattr(klass, "__bases__"):
             discover_interfaces(klass.__bases__)
 
         self._target_init_context(factory_fn)
@@ -255,7 +270,13 @@ class ContainerRegistry:
                 ],
             )
 
-            self._register(type_analysis.raw_type, factory_fn=compat_fn, lifetime=lifetime, qualifier=qualifier)
+            self._register(
+                type_analysis.raw_type,
+                factory_fn=compat_fn,
+                lifetime=lifetime,
+                qualifier=qualifier,
+                auto_discover_interfaces=True,
+            )
 
     def _register_abstract(self, klass: type) -> None:
         self.interfaces[klass] = {}
