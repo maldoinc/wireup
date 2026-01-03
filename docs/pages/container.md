@@ -34,7 +34,7 @@ Both creation functions accept the following arguments:
 
 | Argument | Type | Description |
 | :--- | :--- | :--- |
-| `injectables` | `list[ModuleType | type | Callable]` | A list of modules to scan for `@injectable` / `@abstract` decorated classes, or direct references to the classes/functions themselves. |
+| `injectables` | `list[ModuleType | type | Callable]` | A list of modules to scan for `@injectable` decorated classes, or direct references to the classes/functions themselves. |
 | `config` | `dict[str, Any]` | A detailed configuration dictionary. Values from this dictionary can be injected using `Inject(config="key")`. |
 
 

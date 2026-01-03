@@ -1,33 +1,31 @@
 # Interface Injection
 
-You can use abstract classes as interfaces when you need to inject dependencies. This pattern is particularly useful for testing, as it allows you to create mock implementations.
+You can use protocols, abstract classes, or even regular classes as interfaces when you need to inject dependencies. This pattern is particularly useful for testing, as it allows you to create mock implementations or easily swap implementations.
 
 ## Basic Usage
 
-Register a class as an interface using the `@abstract` decorator. Then implement and register concrete classes that inherit from it. Note that the class marked with `@abstract` doesn't actually have to inherit
-`abc.ABC`.
+You can use `as_type` to register a service as *any* type, such as a `Protocol`, an Abstract Base Class, or even another regular class.
+
+Define a `Protocol` and register concrete classes that implement it using `@injectable(as_type=...)`.
 
 ```python
-from wireup import abstract, container, injectable
+from wireup import container, injectable
+from typing import Protocol
 
 
-@abstract
-class Engine(abc.ABC):
-    @abc.abstractmethod
-    def get_type(self) -> EngineType:
-        raise NotImplementedError
+class Engine(Protocol):
+    def get_type(self) -> str: ...
 
 
-@injectable
-class CombustionEngine(Engine):
-    @override
-    def get_type(self) -> EngineType:
-        return EngineType.COMBUSTION
+@injectable(as_type=Engine)
+class CombustionEngine:
+    def get_type(self) -> str:
+        return "combustion"
 
 
 @wireup.inject_from_container(container)
 def target(engine: Engine):
-    engine_type = engine.get_type()  # Returns EngineType.COMBUSTION
+    engine_type = engine.get_type()  # Returns "combustion"
 ```
 
 ## Multiple Implementations
@@ -35,16 +33,16 @@ def target(engine: Engine):
 Use qualifiers to distinguish between different implementations of the same interface:
 
 ```python
-@injectable(qualifier="electric")
-class ElectricEngine(Engine):
+@injectable(as_type=Engine, qualifier="electric")
+class ElectricEngine:
     def get_type(self):
-        return EngineType.ELECTRIC
+        return "electric"
 
 
-@injectable(qualifier="combustion")
-class CombustionEngine(Engine):
-    def get_type() -> EngineType:
-        return EngineType.COMBUSTION
+@injectable(as_type=Engine, qualifier="combustion")
+class CombustionEngine:
+    def get_type() -> str:
+        return "combustion"
 
 
 @wireup.inject_from_container(container)
@@ -63,13 +61,25 @@ def target(
 To set a default implementation, register one class without a qualifier:
 
 ```python
-@injectable  # Default implementation
-class ElectricEngine(Engine):
+@injectable(as_type=Engine)  # Default implementation
+class ElectricEngine:
     pass
 
-@injectable(qualifier="combustion")
-class CombustionEngine(Engine):
+@injectable(as_type=Engine, qualifier="combustion")
+class CombustionEngine:
     pass
 ```
 
 When injecting `Engine` without a qualifier, the container will use the default implementation (`ElectricEngine` in this example). Use qualifiers to access other implementations.
+
+## Optional Binding
+
+When using factory functions that return an optional type (e.g. `T | None`), `as_type` will automatically be registered as optional as well.
+
+```python
+@injectable(as_type=Engine)
+def make_engine() -> CombustionEngine | None:
+    # ...
+```
+
+This acts as if the factory was registered with `as_type=Engine | None`, allowing you to inject `Engine | None` or `Optional[Engine]`.

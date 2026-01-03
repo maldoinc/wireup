@@ -1,9 +1,25 @@
-## Upgrading 2.x to 2.3
+## Upgrading 2.x to 2.x
 
 * Parameters have been renamed to Configuration to better reflect their purpose.
 * When providing configuration use `config=` instead of `parameters=` during contaner creation: `wireup.create_{a}sync_container(..., config={...})`.
 * Instead of `container.params`, use `container.config`.
 * Instead of `Inject(param="name")`, use `Inject(config="key")`.
+* **Deprecated `@abstract`**: The `@abstract` decorator is deprecated and will be removed in a future release. Use protocols or abstract base classes with `@injectable(as_type=...)` instead.
+
+```python
+# Before
+@abstract
+class MyInterface(abc.ABC): ...
+
+@injectable
+class MyImplementation(MyInterface): ...
+
+# After
+class MyInterface(Protocol): ...
+
+@injectable(as_type=MyInterface)
+class MyImplementation: ...
+```
 
 ## Upgrade 1.x to 2.0.0
 
