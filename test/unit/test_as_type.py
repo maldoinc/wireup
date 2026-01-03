@@ -2,7 +2,7 @@ from typing import Protocol
 
 import pytest
 from wireup import create_sync_container, injectable
-from wireup.errors import UnknownQualifiedServiceRequestedError, UnknownServiceRequestedError
+from wireup.errors import UnknownServiceRequestedError
 
 
 def test_register_with_as_type():
