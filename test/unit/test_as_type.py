@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from typing import Protocol
 
 import pytest
@@ -5,15 +7,17 @@ from wireup import create_sync_container, injectable
 from wireup.errors import UnknownServiceRequestedError
 
 
+class FooProtocol(Protocol):
+    def foo(self) -> str: ...
+
+
+@injectable(as_type=FooProtocol)
+class FooImpl:
+    def foo(self) -> str:
+        return "foo"
+
+
 def test_register_with_as_type():
-    class FooProtocol(Protocol):
-        def foo(self) -> str: ...
-
-    @injectable(as_type=FooProtocol)
-    class FooImpl:
-        def foo(self) -> str:
-            return "foo"
-
     container = create_sync_container(injectables=[FooImpl])
 
     # Should be resolvable via the abstraction
@@ -26,19 +30,22 @@ def test_register_with_as_type():
         container.get(FooImpl)
 
 
+class BarProtocol(Protocol):
+    def bar(self) -> str: ...
+
+
+@injectable
+class BarImpl:
+    def bar(self) -> str:
+        return "bar"
+
+
+@injectable
+def make_bar_protocol(impl: BarImpl) -> BarProtocol:
+    return impl
+
+
 def test_as_type_adapter_pattern():
-    class BarProtocol(Protocol):
-        def bar(self) -> str: ...
-
-    @injectable
-    class BarImpl:
-        def bar(self) -> str:
-            return "bar"
-
-    @injectable
-    def make_bar_protocol(impl: BarImpl) -> BarProtocol:
-        return impl
-
     container = create_sync_container(injectables=[BarImpl, make_bar_protocol])
 
     # Implementation should be resolvable (standard registration)
@@ -55,15 +62,17 @@ def test_as_type_adapter_pattern():
     assert proto_instance is impl_instance
 
 
+class QualifierProto(Protocol):
+    def q(self) -> str: ...
+
+
+@injectable(as_type=QualifierProto, qualifier="foo")
+class QualifierImpl:
+    def q(self) -> str:
+        return "q"
+
+
 def test_as_type_with_qualifier():
-    class QualifierProto(Protocol):
-        def q(self) -> str: ...
-
-    @injectable(as_type=QualifierProto, qualifier="foo")
-    class QualifierImpl:
-        def q(self) -> str:
-            return "q"
-
     container = create_sync_container(injectables=[QualifierImpl])
 
     # Should be resolvable with qualifier
@@ -80,14 +89,16 @@ def test_as_type_with_qualifier():
         container.get(QualifierProto, qualifier="bar")
 
 
+class FactoryProto(Protocol):
+    def f(self) -> str: ...
+
+
+class FactoryImpl:
+    def f(self) -> str:
+        return "f"
+
+
 def test_as_type_on_factory():
-    class FactoryProto(Protocol):
-        def f(self) -> str: ...
-
-    class FactoryImpl:
-        def f(self) -> str:
-            return "f"
-
     @injectable(as_type=FactoryProto)
     def make_factory_impl() -> FactoryImpl:
         return FactoryImpl()
@@ -104,17 +115,51 @@ def test_as_type_on_factory():
         container.get(FactoryImpl)
 
 
+class DuckProto(Protocol):
+    def quack(self) -> str: ...
+
+
+@injectable(as_type=DuckProto)
+class Duck:
+    def quack(self) -> str:
+        return "quack"
+
+
 def test_as_type_duck_typing():
-    class DuckProto(Protocol):
-        def quack(self) -> str: ...
-
-    @injectable(as_type=DuckProto)
-    class Duck:
-        def quack(self) -> str:
-            return "quack"
-
     container = create_sync_container(injectables=[Duck])
 
     instance = container.get(DuckProto)
     assert isinstance(instance, Duck)
     assert instance.quack() == "quack"
+
+
+class OptionalProto(Protocol):
+    def opt(self) -> str: ...
+
+
+class OptionalImpl:
+    def opt(self) -> str:
+        return "opt"
+
+
+@injectable(as_type=OptionalProto)
+def make_optional_impl() -> OptionalImpl | None:
+    return OptionalImpl()
+
+
+def test_as_type_on_optional_factory():
+    container = create_sync_container(injectables=[make_optional_impl])
+
+    # Should be resolvable via Optional[OptionalProto]
+    # This requires the container to register it as Optional[OptionalProto] (or Proto | None)
+    # because the factory returns Impl | None.
+
+    from typing import Optional
+
+    instance = container.get(Optional[OptionalProto])
+    assert isinstance(instance, OptionalImpl)
+    assert instance.opt() == "opt"
+
+    # Verify None | T syntax (Python 3.10+) if applicable, but Optional[T] is safer for this test file
+    instance_union = container.get(OptionalProto | None)
+    assert isinstance(instance_union, OptionalImpl)

@@ -137,8 +137,15 @@ class ContainerRegistry:
             if klass is None:
                 raise FactoryReturnTypeIsEmptyError(obj)
 
+            target_type = impl.as_type
+
+            if target_type and analyze_type(klass).is_optional:
+                from typing import Optional
+
+                target_type = Optional[target_type]
+
             self._register(
-                klass=impl.as_type or klass,
+                klass=target_type or klass,
                 factory_fn=obj,
                 lifetime=impl.lifetime,
                 qualifier=impl.qualifier,

@@ -4,7 +4,7 @@ import contextlib
 import importlib
 import warnings
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, TypeVar, overload
+from typing import TYPE_CHECKING, Any, Generic, TypeVar, overload
 
 from typing_extensions import Annotated
 
@@ -96,26 +96,49 @@ class AbstractDeclaration:
     obj: Any
 
 
-@overload
-def injectable(
-    obj: None = None,
-    *,
-    qualifier: Qualifier | None = None,
-    lifetime: InjectableLifetime = "singleton",
-    as_type: Any | None = None,
-) -> Callable[[T], T]:
-    pass
+class StrictInjectableDecorator(Generic[T]):
+    @overload
+    def __call__(self, obj: type[T]) -> type[T]: ...
+
+    @overload
+    def __call__(self, obj: type[T] | None) -> type[T]: ...
+
+    @overload
+    def __call__(self, obj: Callable[..., T]) -> Callable[..., T]: ...
+
+    @overload
+    def __call__(self, obj: Callable[..., T | None]) -> Callable[..., T]: ...
+
+    def __call__(self, obj: Any) -> Any:
+        return obj
 
 
+# Overload 1: Bare Usage
+# @injectable
+@overload
+def injectable(obj: T) -> T: ...
+
+
+# Overload 2: Configuration Only
+# @injectable(qualifier="foo")
 @overload
 def injectable(
-    obj: T,
     *,
-    qualifier: Qualifier | None = None,
-    lifetime: InjectableLifetime = "singleton",
-    as_type: Any | None = None,
-) -> T:
-    pass
+    as_type: None = None,
+    qualifier: Qualifier | None = ...,
+    lifetime: InjectableLifetime = ...,
+) -> Callable[[T], T]: ...
+
+
+# Overload 3: Explicit Binding
+# @injectable(as_type=Cache)
+@overload
+def injectable(
+    *,
+    as_type: type[T],
+    qualifier: Qualifier | None = ...,
+    lifetime: InjectableLifetime = ...,
+) -> StrictInjectableDecorator[T]: ...
 
 
 def injectable(
