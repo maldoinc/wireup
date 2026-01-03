@@ -67,13 +67,10 @@ ServiceLifetime = Literal["singleton", "scoped", "transient"]
 class AnnotatedParameter:
     """Represent an annotated dependency parameter."""
 
-    __slots__ = ("annotation", "is_parameter", "klass", "obj_id", "qualifier_value", "has_default_value")
+    __slots__ = ("annotation", "has_default_value", "is_parameter", "klass", "obj_id", "qualifier_value")
 
     def __init__(
-        self,
-        klass: type[Any],
-        annotation: InjectableType | None = None,
-        has_default_value: bool = False,
+        self, klass: type[Any], annotation: InjectableType | None = None, *, has_default_value: bool = False
     ) -> None:
         """Create a new AnnotatedParameter.
 

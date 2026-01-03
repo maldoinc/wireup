@@ -152,7 +152,7 @@ async def test_unknown_service_with_default_value() -> None:
 
     @service
     class BarWithDefaultValue:
-        def __init__(self, unknown_class: UnknownClass | None = None) -> None:
+        def __init__(self, unknown_class: Optional[UnknownClass] = None) -> None:
             self.unknown_class = unknown_class
 
     container = wireup.create_async_container(services=[BarWithDefaultValue])

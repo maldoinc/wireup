@@ -1,6 +1,8 @@
 from typing import NewType
 
 import pytest
+from pydantic_settings import BaseSettings
+from wireup import service
 from wireup._annotations import AbstractDeclaration, ServiceDeclaration
 from wireup.errors import (
     DuplicateServiceRegistrationError,
@@ -9,8 +11,6 @@ from wireup.errors import (
     WireupError,
 )
 from wireup.ioc.service_registry import ServiceRegistry
-from wireup import service
-from pydantic_settings import BaseSettings
 
 from test.unit.services.no_annotations.random.random_service import RandomService
 from test.unit.services.with_annotations.services import Foo, FooImpl, FooImplWithInjected
