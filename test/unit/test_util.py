@@ -54,7 +54,7 @@ class TestUtilityFunctions(unittest.TestCase):
         )
         self.assertEqual(
             _param_get_annotation(params.parameters["_e"]),
-            AnnotatedParameter(str),
+            AnnotatedParameter(str, has_default_value=True),
         )
         self.assertIsNone(
             _param_get_annotation(params.parameters["_f"]),
