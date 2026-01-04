@@ -386,7 +386,7 @@ class ServiceRegistry:
         elif not self.is_type_with_qualifier_known(parameter.klass, qualifier=parameter.qualifier_value):
             msg = (
                 f"Parameter '{name}' of {stringify_type(target)} "
-                f"depends on an unknown service {stringify_type(parameter.klass)} "
+                f"depends on an unknown service {stringify_type(analyze_type(parameter.klass).raw_type)} "
                 f"with qualifier {parameter.qualifier_value}."
             )
             raise WireupError(msg)
