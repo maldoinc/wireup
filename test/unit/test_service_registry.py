@@ -1,7 +1,10 @@
+import sys
 from typing import NewType
 
 import pytest
-from pydantic_settings import BaseSettings
+
+if sys.version_info >= (3, 10):
+    from pydantic_settings import BaseSettings
 from wireup import service
 from wireup._annotations import AbstractDeclaration, ServiceDeclaration
 from wireup.errors import (
@@ -129,6 +132,7 @@ def test_register_invalid_target() -> None:
         ServiceRegistry(impls=[ServiceDeclaration(obj=1)])
 
 
+@pytest.mark.skipif(sys.version_info < (3, 10), reason="Pydantic settings only works on Python >= 3.10")
 def test_register_factory_with_unknown_dependency_with_default() -> None:
     @service
     class Settings(BaseSettings): ...
