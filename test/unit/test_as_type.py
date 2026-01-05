@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import sys
 from typing import Optional, Protocol
 
 import pytest
@@ -158,6 +159,15 @@ def test_as_type_on_optional_factory():
     assert isinstance(instance, OptionalImpl)
     assert instance.opt() == "opt"
 
-    instance_union = container.get(OptionalProto | None)
-    assert isinstance(instance_union, OptionalImpl)
+
+@pytest.mark.skipif(sys.version_info < (3, 10), reason="Union types not available in python versions")
+def test_as_type_on_optional_factory_new_union_optional():
+    container = create_sync_container(injectables=[make_optional_impl])
+
+    # Should be resolvable via Optional[OptionalProto]
+    # This requires the container to register it as Optional[OptionalProto] (or Proto | None)
+    # because the factory returns Impl | None.
+
+    instance = container.get(OptionalProto | None)
+    assert isinstance(instance, OptionalImpl)
     assert instance.opt() == "opt"
