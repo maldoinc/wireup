@@ -1,11 +1,14 @@
+import sys
 from typing import NewType
 
 import pytest
+from wireup import service
 from wireup._annotations import AbstractDeclaration, ServiceDeclaration
 from wireup.errors import (
     DuplicateServiceRegistrationError,
     FactoryReturnTypeIsEmptyError,
     InvalidRegistrationTypeError,
+    WireupError,
 )
 from wireup.ioc.service_registry import ServiceRegistry
 
@@ -126,8 +129,30 @@ def test_register_invalid_target() -> None:
         ServiceRegistry(impls=[ServiceDeclaration(obj=1)])
 
 
-class MyService:
-    pass
+@pytest.mark.skipif(
+    sys.version_info < (3, 10) or sys.version_info >= (3, 14),
+    reason="Pydantic settings is only compatible with Python 3.10-3.13",
+)
+def test_register_factory_with_unknown_dependency_with_default() -> None:
+    from pydantic_settings import BaseSettings
+
+    @service
+    class Settings(BaseSettings): ...
+
+    registry = ServiceRegistry(impls=[ServiceDeclaration(obj=Settings, lifetime="singleton")])
+    assert Settings in registry.impls
+
+
+def test_register_factory_with_unknown_dependency_no_default() -> None:
+    class UnknownService: ...
+
+    class MyLocalService: ...
+
+    def factory_no_default(_: UnknownService) -> MyLocalService:
+        return MyLocalService()
+
+    with pytest.raises(WireupError, match="depends on an unknown service"):
+        ServiceRegistry(impls=[ServiceDeclaration(obj=factory_no_default, lifetime="singleton")])
 
 
 class MyInterface:
@@ -136,3 +161,7 @@ class MyInterface:
 
 def random_service_factory() -> RandomService:
     return RandomService()
+
+
+class MyService:
+    pass
