@@ -138,7 +138,7 @@ def injectable(
         )
         return decorated_obj
 
-    return _injectable_decorator if obj is None else _injectable_decorator(obj)  # type:ignore[return-value]
+    return _injectable_decorator if obj is None else _injectable_decorator(obj)
 
 
 @overload
@@ -177,7 +177,7 @@ def service(
         FutureWarning,
         stacklevel=2,
     )
-    return injectable(obj, qualifier=qualifier, lifetime=lifetime)  # type:ignore[no-any-return, call-overload]
+    return injectable(obj, qualifier=qualifier, lifetime=lifetime)  # type:ignore[reportReturnType, unused-ignore]
 
 
 def abstract(cls: type[T]) -> type[T]:
