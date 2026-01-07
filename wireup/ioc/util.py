@@ -135,7 +135,7 @@ def ensure_is_type(value: type[T] | str, globalns_supplier: Callable[[], dict[st
         return _eval_type_native(forward_ref, globalns=globalns_supplier())  # type:ignore[no-any-return]
     except TypeError as eval_type_error:
         try:
-            import eval_type_backport
+            import eval_type_backport  # noqa: PLC0415
         except ImportError as import_error:
             msg = (
                 f"Error evaluating type annotation '{value}'. "

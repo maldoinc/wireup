@@ -7,7 +7,7 @@ from starlette.requests import Request
 from starlette.types import ASGIApp, Receive, Scope, Send
 from starlette.websockets import WebSocket
 
-from wireup._annotations import service
+from wireup._annotations import injectable
 from wireup._decorators import inject_from_container_unchecked
 from wireup.errors import WireupError
 from wireup.ioc.container.async_container import AsyncContainer, ScopedAsyncContainer
@@ -15,7 +15,7 @@ from wireup.ioc.container.async_container import AsyncContainer, ScopedAsyncCont
 current_request: ContextVar[Union[Request, WebSocket]] = ContextVar("wireup_starlette_request")
 
 
-@service(lifetime="scoped")
+@injectable(lifetime="scoped")
 def request_factory() -> Request:
     """Provide the current request as a dependency."""
     msg = "Request in Wireup is only available during a request."
@@ -29,7 +29,7 @@ def request_factory() -> Request:
         raise WireupError(msg) from e
 
 
-@service(lifetime="scoped")
+@injectable(lifetime="scoped")
 def websocket_factory() -> WebSocket:
     """Provide the current WebSocket as a dependency."""
     msg = "WebSocket in Wireup is only available in a websocket connection."

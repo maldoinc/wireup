@@ -19,18 +19,18 @@ Dependency injection for Flask is available in the `wireup.integration.flask` mo
 
 ### Initialize the integration
 
-First, [create a sync container](../../container.md#synchronous) with your service modules:
+First, [create a sync container](../../container.md) with your injectables:
 
 ```python
 from flask import Flask
-from wireup import Inject, Injected, service
+from wireup import Inject, Injected, injectable
 
 app = Flask(__name__)
 app.config["FOO"] = "bar"
 
 container = wireup.create_sync_container(
-    service_modules=[services],
-    parameters={
+    injectables=[services],
+    config={
         **app.config,  # Optionally expose flask configuration to the container
         "API_KEY": "secret"
     }
@@ -57,8 +57,8 @@ def get_random(random: Injected[RandomService]):
 
 @app.get("/env")
 def get_environment(
-    is_debug: Annotated[bool, Inject(param="DEBUG")], 
-    foo: Annotated[str, Inject(param="FOO")]
+    is_debug: Annotated[bool, Inject(config="DEBUG")], 
+    foo: Annotated[str, Inject(config="FOO")]
 ):
     return {"debug": is_debug, "foo": foo}
 ```

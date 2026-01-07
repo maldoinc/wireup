@@ -1,13 +1,13 @@
 from dataclasses import dataclass
 
-from wireup import service
+from wireup import injectable
 
 
-@service(lifetime="scoped")
+@injectable(lifetime="scoped")
 class ScopedServiceDependency: ...
 
 
-@service(lifetime="scoped")
+@injectable(lifetime="scoped")
 @dataclass
 class ScopedService:
     other: ScopedServiceDependency

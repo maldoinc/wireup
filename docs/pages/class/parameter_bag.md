@@ -1,2 +1,0 @@
-::: wireup.ioc.parameter.ParameterBag
-

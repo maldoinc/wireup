@@ -12,7 +12,7 @@ from test.unit.services.with_annotations.services import Foo
 
 class ModuleLoadingTest(unittest.TestCase):
     def test_warmup_loads_all_in_module_with_annotations(self):
-        container = wireup.create_sync_container(service_modules=[with_annotations], parameters={"env_name": "dev"})
+        container = wireup.create_sync_container(injectables=[with_annotations], config={"env_name": "dev"})
 
         self.assertEqual("dev", container.get(EnvService).env_name)
         self.assertEqual("foo", container.get(Foo).get_foo())
@@ -21,7 +21,7 @@ class ModuleLoadingTest(unittest.TestCase):
 
     def test_loads_module_is_file(self):
         # Assert that loading works when the module is a file instead of the entire module
-        container = wireup.create_sync_container(parameters={"env_name": "dev"}, service_modules=[services])
+        container = wireup.create_sync_container(config={"env_name": "dev"}, injectables=[services])
 
         self.assertEqual("foo", container.get(services.Foo).get_foo())
         self.assertEqual(4, container.get(RandomService, qualifier="foo").get_random())

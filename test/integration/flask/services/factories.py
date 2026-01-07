@@ -1,5 +1,5 @@
 from flask import g
-from wireup import service
+from wireup import injectable
 
 
 class FlaskG:
@@ -7,6 +7,6 @@ class FlaskG:
         self.g = g
 
 
-@service
+@injectable
 def thing() -> FlaskG:
     return FlaskG(g)

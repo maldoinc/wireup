@@ -58,14 +58,14 @@ wireup.integration.fastapi.setup(
      - Injected once at startup
      - No `Injected[T]` syntax needed
      - Cannot be overridden after startup
-     - Only parameters and singleton services
+     - Only configuration and singleton services
 
 1. **Route Dependencies**
       - Use `Injected[T]` syntax
       - Supports all scopes*
       - Injected per-request
 
-\*  Injecting parameters and singletons here has no benefit and is not zero-cost. Inject those in `__init__` instead.
+\*  Injecting configuration and singletons here has no benefit and is not zero-cost. Inject those in `__init__` instead.
 
 !!! note "Testing"
     This feature uses FastAPI lifespan events. When testing, create the test client using a context manager for the

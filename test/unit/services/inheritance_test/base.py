@@ -3,7 +3,7 @@ from __future__ import annotations
 import wireup
 
 
-@wireup.service
+@wireup.injectable
 class Thing: ...
 
 

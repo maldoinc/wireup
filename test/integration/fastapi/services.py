@@ -1,23 +1,23 @@
 from dataclasses import dataclass
 
 from fastapi import Request, WebSocket
-from wireup import service
+from wireup import injectable
 
 
-@service(lifetime="scoped")
+@injectable(lifetime="scoped")
 @dataclass
 class ServiceUsingFastapiRequest:
     req: Request
 
 
-@service(lifetime="scoped")
+@injectable(lifetime="scoped")
 @dataclass
 class WSService:
     ws: WebSocket
 
 
 @dataclass
-@service(lifetime="scoped")
+@injectable(lifetime="scoped")
 class WebsocketInjectedGreeterService:
     websocket: WebSocket
 
@@ -28,7 +28,7 @@ class WebsocketInjectedGreeterService:
         await self.websocket.close()
 
 
-@service(lifetime="scoped")
+@injectable(lifetime="scoped")
 @dataclass
 class ScopedWebsocketService:
     other: WebSocket
