@@ -4,7 +4,7 @@ import contextlib
 import importlib
 import warnings
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, Generic, TypeVar, overload
+from typing import TYPE_CHECKING, Any, TypeVar, overload
 
 from typing_extensions import Annotated, ParamSpec
 
@@ -97,31 +97,26 @@ class AbstractDeclaration:
     obj: Any
 
 
-class StrictInjectableDecorator(Generic[T]):
-    @overload
-    def __call__(self, obj: T) -> T: ...
-
-    @overload
-    def __call__(self, obj: Callable[P, T]) -> Callable[P, T]: ...
-
-    @overload
-    def __call__(self, obj: Callable[P, T | None]) -> Callable[P, T | None]: ...
-
-    def __call__(self, obj: Any) -> Any:
-        return obj
-
-
 @overload
-def injectable(obj: T) -> T: ...
+def injectable(
+    obj: None = None,
+    *,
+    qualifier: Qualifier | None = None,
+    lifetime: InjectableLifetime = "singleton",
+    as_type: type[Any] | None = None,
+) -> Callable[[T], T]:
+    pass
 
 
 @overload
 def injectable(
+    obj: T,
     *,
-    as_type: type[T],
-    qualifier: Qualifier | None = ...,
-    lifetime: InjectableLifetime = ...,
-) -> StrictInjectableDecorator[T]: ...
+    qualifier: Qualifier | None = None,
+    lifetime: InjectableLifetime = "singleton",
+    as_type: type[Any] | None = None,
+) -> T:
+    pass
 
 
 def injectable(
@@ -129,8 +124,8 @@ def injectable(
     *,
     qualifier: Qualifier | None = None,
     lifetime: InjectableLifetime = "singleton",
-    as_type: Any | None = None,
-) -> T | StrictInjectableDecorator[T]:
+    as_type: type[Any] | None = None,
+) -> T | Callable[[T], T]:
     """Mark the decorated class or function as a Wireup injectable."""
 
     # Allow this to be used as a decorator factory or as a decorator directly.
