@@ -5,6 +5,7 @@ from typing import (
     TYPE_CHECKING,
     Any,
     AsyncGenerator,
+    Callable,
     Generator,
     List,
     TypeVar,
@@ -83,13 +84,13 @@ class BaseContainer:
         return self._override_mgr
 
     @overload
-    def _synchronous_get(self, klass: type[T], qualifier: Qualifier | None = None) -> T: ...
+    def _synchronous_get(self, klass: Callable[..., T], qualifier: Qualifier | None = None) -> T: ...
     @overload
-    def _synchronous_get(self, klass: type[T] | None, qualifier: Qualifier | None = None) -> T | None: ...
+    def _synchronous_get(self, klass: Callable[..., T] | None, qualifier: Qualifier | None = None) -> T | None: ...
 
     def _synchronous_get(
         self,
-        klass: type[T] | None,
+        klass: Callable[..., T] | None,
         qualifier: Qualifier | None = None,
     ) -> T | None:
         """Get an instance of the requested type.

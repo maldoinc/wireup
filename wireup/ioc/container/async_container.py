@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, TypeVar, overload
+from typing import TYPE_CHECKING, Callable, TypeVar, overload
 
 from typing_extensions import Self
 
@@ -19,13 +19,13 @@ T = TypeVar("T")
 
 class BareAsyncContainer(BaseContainer):
     @overload
-    async def get(self, klass: type[T], qualifier: Qualifier | None = None) -> T: ...
+    async def get(self, klass: Callable[..., T], qualifier: Qualifier | None = None) -> T: ...
     @overload
-    async def get(self, klass: type[T] | None, qualifier: Qualifier | None = None) -> T | None: ...
+    async def get(self, klass: Callable[..., T] | None, qualifier: Qualifier | None = None) -> T | None: ...
 
     async def get(
         self,
-        klass: type[T] | None,
+        klass: Callable[..., T] | None,
         qualifier: Qualifier | None = None,
     ) -> T | None:
         """Get an instance of the requested type.
