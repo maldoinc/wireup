@@ -46,8 +46,6 @@ class UserService:
     def __init__(self, db: Database) -> None:
         self.db = db
 
-# Now that the dependencies are defined, register them with the container.
-# You can pass a list of classes, functions, or even modules to be scanned.
 container = create_sync_container(injectables=[Database, UserService])
 user_service = container.get(UserService)  # ✅ Dependencies resolved.
 ```
@@ -118,6 +116,25 @@ container = create_sync_container(injectables=[make_settings, make_database])
 database = container.get(Database)  # ✅ Dependencies resolved.
 ```
 
+**4. Auto-Discover**
+
+No need to list every injectable manually. Scan entire modules or packages to register all at once.
+
+```python
+import wireup
+import app
+
+container = wireup.create_sync_container(
+    injectables=[
+        app.services,
+        app.repositories,
+        app.factories
+    ]
+)
+
+user_service = container.get(UserService)  # ✅ Dependencies resolved.
+```
+
 ### 🎯 Function Injection
 
 Inject dependencies directly into functions with a simple decorator.
@@ -131,7 +148,7 @@ def process_users(service: Injected[UserService]):
 
 ### 📝 Interfaces & Abstractions
 
-Define abstract types and have the container automatically inject the implementation.
+Depend on abstractions, not implementations. Bind implementations to interfaces using Protocols or ABCs.
 
 ```python
 from wireup import injectable, create_sync_container
@@ -297,10 +314,10 @@ graph LR
         Worker[Celery / Worker]
     end
 
-    API -->|Injects| Services
-    CLI -->|Injects| Services
-    Worker -->|Injects| Services
-    
+    API -->|Uses| Services
+    CLI -->|Uses| Services
+    Worker -->|Uses| Services
+
     Services --> Domain
 ```
 
