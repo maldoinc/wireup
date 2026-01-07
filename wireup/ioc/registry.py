@@ -140,7 +140,7 @@ class ContainerRegistry:
             target_type = impl.as_type
 
             if target_type and analyze_type(klass).is_optional:
-                from typing import Optional
+                from typing import Optional  # noqa: PLC0415
 
                 target_type = Optional[target_type]
 

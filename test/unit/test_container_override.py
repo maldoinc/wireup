@@ -1,3 +1,4 @@
+import re
 import unittest
 from unittest.mock import MagicMock
 
@@ -69,7 +70,7 @@ async def test_container_override_many_with_qualifier(container: Container):
 async def test_raises_on_unknown_override(container: Container):
     with pytest.raises(
         UnknownOverrideRequestedError,
-        match="Cannot override unknown <class 'unittest.case.TestCase'> with qualifier 'foo'.",
+        match=re.escape("Cannot override unknown <class 'unittest.case.TestCase'> with qualifier 'foo'."),
     ):
         with container.override.injectable(target=unittest.TestCase, qualifier="foo", new=MagicMock()):
             pass

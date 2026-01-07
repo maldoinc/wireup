@@ -17,7 +17,7 @@ def test_dependencies_parameters_exist() -> None:
 
     with pytest.raises(
         WireupError,
-        match=(
+        match=re.escape(
             "Parameter '_param' of Type test.unit.services.no_annotations.random.random_service.RandomService "
             "depends on an unknown Wireup config key 'foo'."
         ),
