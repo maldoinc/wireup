@@ -1,4 +1,4 @@
-# :simple-click: Click Integration
+# Click Integration
 
 Dependency injection for Click is available in the `wireup.integration.click` module.
 
