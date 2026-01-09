@@ -14,7 +14,6 @@ nav:
       - Lifetimes & Scopes: lifetimes_and_scopes.md
     - Guides:
       - Function Injection: apply_container_as_decorator.md
-      - Clean Domain Code: annotation_free.md
       - Multiple registrations: multiple_registrations.md
       - Testing: testing.md
     - Misc:
