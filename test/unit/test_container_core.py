@@ -167,16 +167,24 @@ async def test_container_config_returns_store(container: Container) -> None:
 
 
 async def test_container_raises_get_transient_scoped(container: Container) -> None:
-    msg = (
-        "Cannot create 'transient' or 'scoped' lifetime objects from the base container. "
-        "Please enter a scope using container.enter_scope. "
-        "If you are within a scope, use the scoped container instance to create dependencies."
-    )
-
-    with pytest.raises(WireupError, match=msg):
+    with pytest.raises(
+        WireupError,
+        match=re.escape(
+            "Cannot create transient dependency Type test.unit.services.with_annotations.services.TransientService "
+            "from the root container. You likely attempted to resolve it outside of a scope. "
+            "Use container.enter_scope() and resolve it from the scoped container instead"
+        ),
+    ):
         await run(container.get(TransientService))
 
-    with pytest.raises(WireupError, match=msg):
+    with pytest.raises(
+        WireupError,
+        match=re.escape(
+            "Cannot create scoped dependency Type test.unit.services.with_annotations.services.ScopedService "
+            "from the root container. You likely attempted to resolve it outside of a scope. "
+            "Use container.enter_scope() and resolve it from the scoped container instead."
+        ),
+    ):
         await run(container.get(ScopedService))
 
 

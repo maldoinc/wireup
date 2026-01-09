@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING, Any, Callable, Hashable
 from wireup.errors import WireupError
 from wireup.ioc.registry import GENERATOR_FACTORY_TYPES, ContainerRegistry, FactoryType
 from wireup.ioc.types import ConfigInjectionRequest, TemplatedString
+from wireup.ioc.util import stringify_type
 
 if TYPE_CHECKING:
     from wireup.ioc.container.base_container import BaseContainer
@@ -19,10 +20,12 @@ class CompiledFactory:
 
 
 _CONTAINER_SCOPE_ERROR_MSG = (
-    "Cannot create 'transient' or 'scoped' lifetime objects from the base container. "
-    "Please enter a scope using container.enter_scope. "
-    "If you are within a scope, use the scoped container instance to create dependencies."
+    r"Cannot create {lifetime} dependency {klass}{qualifier} from the root container. "
+    r"You likely attempted to resolve it outside of a scope. "
+    r"Use container.enter_scope() and resolve it from the scoped container instead.\n"
+    r"See: https://maldoinc.github.io/wireup/latest/lifetimes_and_scopes/"
 )
+
 _WIREUP_GENERATED_FACTORY_NAME = "_wireup_factory"
 _SENTINEL = object()
 
@@ -68,8 +71,15 @@ class FactoryCompiler:
             lifetime = self._registry.lifetime[impl, qualifier]
 
         if lifetime != "singleton" and not self._is_scoped_container:
+            fmt_map = {
+                "klass": stringify_type(impl),
+                "qualifier": f"with qualifier {qualifier}" if qualifier is not None else "",
+                "lifetime": lifetime,
+            }
+
             code = f"def {_WIREUP_GENERATED_FACTORY_NAME}(container):\n"
-            code += "    raise WireupError(_CONTAINER_SCOPE_ERROR_MSG)\n"
+            code += f'    msg = "{_CONTAINER_SCOPE_ERROR_MSG.format_map(fmt_map)}"\n'
+            code += "    raise WireupError(msg)\n"
 
             return code, False
 
