@@ -74,7 +74,7 @@ When injecting `Engine` without a qualifier, the container will use the default 
 
 ## Optional Binding
 
-When using factory functions that return an optional type (e.g. `T | None`), `as_type` will automatically be registered as optional as well.
+When using factories that return an optional type (e.g. `T | None`), `as_type` will automatically be registered as optional as well.
 
 ```python
 @injectable(as_type=Engine)

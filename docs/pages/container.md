@@ -4,7 +4,7 @@ The container is the central registry for all application dependencies. It manag
 
 ## Creation
 
-Wireup provides two factory functions to create containers, depending on whether your application is synchronous or asynchronous.
+Wireup provides two ways to create containers, depending on whether your application is synchronous or asynchronous.
 
 ### `create_sync_container`
 

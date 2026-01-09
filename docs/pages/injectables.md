@@ -48,7 +48,7 @@ class UserService:
         self.repo = repo
 ```
 
-### Factory Functions
+### Factories
 
 Functions can also be registered as injectables. This is useful for creating objects that you don't control (like 3rd party libraries) or that require complex setup.
 

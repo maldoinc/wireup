@@ -45,7 +45,7 @@ class FactoryReturnTypeIsEmptyError(WireupError):
 
     def __init__(self, fn: AnyCallable) -> None:
         super().__init__(
-            "Factory functions must specify a return type denoting the type of dependency it can create. "
+            "Factories must specify a return type denoting the type of dependency it can create. "
             f"Please add a return type to {fn}"
         )
 
