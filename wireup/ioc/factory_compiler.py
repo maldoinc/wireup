@@ -147,7 +147,7 @@ class FactoryCompiler:
                 "factories": self.factories,
                 "ORIGINAL_OBJ_ID": obj_id,
                 "OBJ_ID": resolved_obj_id,
-                "ORIGINAL_FACTORY": self._registry.ctors[obj_id][0],
+                "ORIGINAL_FACTORY": self._registry.factories[resolved_obj_id].factory,
                 "TemplatedString": TemplatedString,
                 "WireupError": WireupError,
                 "_CONTAINER_SCOPE_ERROR_MSG": _CONTAINER_SCOPE_ERROR_MSG,

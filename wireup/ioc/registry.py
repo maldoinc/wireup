@@ -6,7 +6,7 @@ import warnings
 from collections import defaultdict
 from dataclasses import dataclass
 from enum import Enum, auto
-from typing import TYPE_CHECKING, Any, Callable, Tuple, TypeVar, Union
+from typing import TYPE_CHECKING, Any, Callable, TypeVar, Union
 
 from wireup.errors import (
     DuplicateQualifierForInterfaceError,
@@ -61,9 +61,6 @@ class InjectableFactory:
     raw_type: type
 
 
-InjectableCreationDetails = Tuple[Callable[..., Any], ContainerObjectIdentifier, FactoryType, InjectableLifetime]
-
-
 def _get_factory_type(fn: Callable[..., T]) -> FactoryType:
     """Determine the type of factory based on the function signature."""
     if inspect.iscoroutinefunction(fn):
@@ -101,7 +98,7 @@ def _function_get_unwrapped_return_type(fn: Callable[..., T]) -> type[T] | None:
 class ContainerRegistry:
     """Container class holding injectable registration info and dependencies among them."""
 
-    __slots__ = ("ctors", "dependencies", "factories", "impls", "interfaces", "lifetime", "parameters")
+    __slots__ = ("dependencies", "factories", "impls", "interfaces", "lifetime", "parameters")
 
     def __init__(
         self,
@@ -115,7 +112,6 @@ class ContainerRegistry:
         self.factories: dict[ContainerObjectIdentifier, InjectableFactory] = {}
         self.dependencies: dict[InjectionTarget, dict[str, AnnotatedParameter]] = defaultdict(defaultdict)
         self.lifetime: dict[ContainerObjectIdentifier, InjectableLifetime] = {}
-        self.ctors: dict[ContainerObjectIdentifier, InjectableCreationDetails] = {}
         self.extend(abstracts=abstracts or [], impls=impls or [])
 
     def extend(
@@ -153,12 +149,9 @@ class ContainerRegistry:
             )
 
         self.assert_dependencies_valid()
-        self._precompute_ctors()
         self._update_factories_async_flag()
 
     def _update_factories_async_flag(self) -> None:
-        """Update the is_async flag for factories"""
-
         def _is_dependency_async(impl: type, qualifier: Qualifier) -> bool:
             if self.is_interface_known(impl):
                 impl = self.interface_resolve_impl(impl, qualifier)
@@ -182,27 +175,6 @@ class ContainerRegistry:
                 factory = self.factories[impl, qualifier]
 
                 factory.is_async = _is_dependency_async(impl, qualifier)
-
-    def _precompute_ctors(self) -> None:
-        for interface, impls in self.interfaces.items():
-            for qualifier, impl in impls.items():
-                factory = self.factories[impl, qualifier]
-                self.ctors[interface, qualifier] = (
-                    factory.factory,
-                    (impl, qualifier),
-                    factory.factory_type,
-                    self.lifetime[impl, qualifier],
-                )
-
-        for impl, qualifiers in self.impls.items():
-            for qualifier in qualifiers:
-                factory = self.factories[impl, qualifier]
-                self.ctors[impl, qualifier] = (
-                    factory.factory,
-                    (impl, qualifier),
-                    factory.factory_type,
-                    self.lifetime[impl, qualifier],
-                )
 
     def _register(
         self,
