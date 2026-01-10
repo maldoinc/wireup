@@ -44,6 +44,7 @@ class BareAsyncContainer(BaseContainer):
         raise UnknownServiceRequestedError(klass, qualifier)
 
     async def close(self) -> None:
+        """Close the container and clean up all resources."""
         await async_clean_exit_stack(self._global_scope_exit_stack)
 
 
@@ -63,6 +64,17 @@ class ScopedAsyncContainer(BareAsyncContainer):
 
 class AsyncContainer(BareAsyncContainer):
     def enter_scope(self) -> ScopedAsyncContainer:
+        """Enter a new scope.
+
+        The returned scope context manager controls the lifetime of scoped dependencies.
+        It must be used as an async context manager: `async with container.enter_scope() as scope:`.
+
+        Scoped dependencies are created once per scope and shared within that scope.
+        They are discarded when the context manager exits.
+
+        See the documentation for more details:
+        https://maldoinc.github.io/wireup/latest/lifetimes_and_scopes/#working-with-scopes
+        """
         return ScopedAsyncContainer(
             registry=self._registry,
             override_manager=self._override_mgr,

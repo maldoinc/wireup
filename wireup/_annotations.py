@@ -30,18 +30,22 @@ def Inject(  # noqa: N802
     expr: str | None = None,
     qualifier: Qualifier | None = None,
 ) -> InjectableType:
-    """Let the Wireup container know it must inject this parameter.
+    """Let the Wireup container know how to inject this parameter.
 
-    When used without parameters as `Annotated[T, Inject()]`,
-    you can also use the alias `Injected[T]`.
+    This function is used with `Annotated` to specify what should be injected.
+    For example: `Annotated[str, Inject(config="env")]`.
 
-    :param config: Inject a specific config by name.
-    :param param: Deprecated. Use `Inject(config="")` instead.
-    :param expr: Inject a string value using a templated string.
-    Parameters within `${}` will be replaced with their corresponding values.
+    If used without arguments, it tells the container to inject the dependency based on the type hint.
+    This is equivalent to `Injected[T]`.
 
-    :param qualifier: Specify which implementation to bind when multiple components
-    implement an interface registered in the container via `@abstract`.
+    See the documentation for more details:
+    https://maldoinc.github.io/wireup/latest/annotations/
+
+    :param config: The configuration key to inject.
+    :param param: Deprecated: Use `config` instead.
+    :param expr: A templated string to inject.
+        Variables in the format `${variable}` will be replaced with the value of the configuration key `variable`.
+    :param qualifier: The qualifier to use when injecting a type that has multiple implementations.
     """
     res: InjectableType
     if config:
@@ -126,7 +130,19 @@ def injectable(
     lifetime: InjectableLifetime = "singleton",
     as_type: type[Any] | None = None,
 ) -> T | Callable[[T], T]:
-    """Mark the decorated class or function as a Wireup injectable."""
+    """Mark the decorated class or function as a Wireup injectable.
+
+    This decorator registers the class or function with the Wireup container.
+    Dependencies will be automatically injected based on type hints.
+
+    See the documentation for more details:
+    https://maldoinc.github.io/wireup/latest/injectables/
+
+    :param qualifier: A unique identifier to distinguish between multiple implementations of the same type.
+    :param lifetime: Controls the lifespan of the object (e.g. "singleton", "scoped", "transient").
+        Default is "singleton".
+    :param as_type: Register the injectable as a different type (e.g. a Protocol or ABC).
+    """
 
     # Allow this to be used as a decorator factory or as a decorator directly.
     def _injectable_decorator(decorated_obj: T) -> T:
@@ -181,7 +197,13 @@ def service(
 
 
 def abstract(cls: type[T]) -> type[T]:
-    """Mark the decorated class as an abstract service."""
+    """Mark the decorated class as an abstract injectable.
+
+    DEPRECATED: Use `@injectable(as_type=...)` instead.
+
+    See the documentation for more details:
+    https://maldoinc.github.io/wireup/latest/interfaces/
+    """
     cls.__wireup_registration__ = AbstractDeclaration(cls)  # type: ignore[attr-defined]
 
     warnings.warn(

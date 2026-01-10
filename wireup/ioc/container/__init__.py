@@ -142,19 +142,18 @@ def create_sync_container(
     config: dict[str, Any] | None = None,
     injectables: list[Any] | None = None,
 ) -> SyncContainer:
-    """Create a Wireup container.
+    """Create a synchronous Wireup container.
 
-    :param service_modules: Deprecated: Use injectables instead.
-        This is a list of top-level modules containing services registered
-        with `@injectable` or `@abstract`. Wireup will recursively scan the modules and register services found in them.
-    :param services: Deprecated: Use injectables instead.
-        A list of classes or functions decorated with `@injectable` or `@abstract` to register with the
-        container instance. Use this when you want to explicitly list services.
-    :param parameters: Deprecated. Parameters was renamed to config, use that instead.
+    See the documentation for more details:
+    https://maldoinc.github.io/wireup/latest/container/
+
     :param config: Configuration to expose to the container. Injectables or factories can
         request config via the `Inject(config="name")` annotation.
     :param injectables: A list of classes or functions decorated with `@injectable` or `@abstract` or modules containing
         injectables to register with the container instance.
+    :param service_modules: Deprecated: Use injectables instead.
+    :param services: Deprecated: Use injectables instead.
+    :param parameters: Deprecated. Parameters was renamed to config, use that instead.
     :raises WireupError: Raised if the dependencies cannot be fully resolved.
     """
     return _create_container(
@@ -175,19 +174,18 @@ def create_async_container(
     config: dict[str, Any] | None = None,
     injectables: list[Any] | None = None,
 ) -> AsyncContainer:
-    """Create a Wireup container.
+    """Create an asynchronous Wireup container.
 
-    :param service_modules: Deprecated: Use injectables instead.
-        This is a list of top-level modules containing services registered
-        with `@injectable` or `@abstract`. Wireup will recursively scan the modules and register services found in them.
-    :param services: Deprecated: Use injectables instead.
-        A list of classes or functions decorated with `@injectable` or `@abstract` to register with the
-        container instance. Use this when you want to explicitly list services.
-    :param parameters: Deprecated. Parameters was renamed to config, use that instead.
+    See the documentation for more details:
+    https://maldoinc.github.io/wireup/latest/container/
+
     :param config: Configuration to expose to the container. Injectables or factories can
         request config via the `Inject(config="name")` annotation.
     :param injectables: A list of classes or functions decorated with `@injectable` or `@abstract` or modules containing
         injectables to register with the container instance.
+    :param service_modules: Deprecated: Use injectables instead.
+    :param services: Deprecated: Use injectables instead.
+    :param parameters: Deprecated. Parameters was renamed to config, use that instead.
     :raises WireupError: Raised if the dependencies cannot be fully resolved.
     """
     return _create_container(

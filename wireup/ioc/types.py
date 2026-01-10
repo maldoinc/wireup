@@ -106,7 +106,12 @@ class AnnotatedParameter:
 class InjectableOverride:
     """
     Data class to represent a injectable override.
-    Target type will be replaced with the new type by the container.
+
+    This is used to replace a dependency with a new value (mock/stub) during testing.
+
+    :param target: The type of the dependency to override.
+    :param new: The new value to use.
+    :param qualifier: The qualifier of the dependency to override (if any).
     """
 
     target: type[Any]

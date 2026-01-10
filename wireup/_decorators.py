@@ -47,15 +47,17 @@ def inject_from_container(
     ]
     | None = None,
 ) -> Callable[..., Any]:
-    """Inject dependencies into the decorated function based on annotations.
+    """Inject dependencies into the decorated function based on annotations. Wireup containers will
+    attempt to provide only parameters annotated with `Inject`.
 
-    :param container: The main container instance created via `wireup.create_sync_container` or
-    `wireup.create_async_container`.
+    See the documentation for more details:
+    https://maldoinc.github.io/wireup/latest/function_injection/
+
+    :param container: The root container created via `wireup.create_sync_container` or
+        `wireup.create_async_container`.
     :param scoped_container_supplier: An optional callable that returns the current scoped container instance.
-    If provided, it will be used to create scoped dependencies. If not provided, the container will automatically
-    enter a scope. Provide a scoped_container_supplier if you need to manage the container's scope manually. For
-    example, in web frameworks, you might enter the scope at the start of a request in middleware so that other
-    middlewares can access the scoped container if needed.
+        If provided, it will be used to create scoped dependencies. If not provided, the container will automatically
+        enter a scope. Provide a scoped_container_supplier if you need to manage the container's scope manually.
     :param middleware: A context manager that wraps the execution of the target function.
     """
 

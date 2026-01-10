@@ -94,7 +94,6 @@ class BaseContainer:
         qualifier: Qualifier | None = None,
     ) -> T | None:
         """Get an instance of the requested type.
-
         :param qualifier: Qualifier for the class if it was registered with one.
         :param klass: Class of the dependency already registered in the container.
         :return: An instance of the requested object. Always returns an existing instance when one is available.
