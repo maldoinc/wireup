@@ -1,41 +1,40 @@
-.PHONY: install lint check-fmt check-ruff check-mypy test profile fix format docs-deploy
+.PHONY: install lint check-fmt check-ruff check-mypy test profile fix format docs-deploy publish
 
 ifdef GITHUB_ACTIONS
 RUFF_ARGS := --output-format github
 endif
 
 install:
-	.venv/bin/python -m pip install --upgrade pip
-	.venv/bin/pip install poetry
-	.venv/bin/poetry install --no-root
+	pip install uv
+	uv sync --group dev
 
 lint: check-fmt check-ruff check-mypy
 
 check-fmt:
-	.venv/bin/ruff format . --check
+	uv run ruff format . --check
 
 check-ruff:
-	.venv/bin/ruff check wireup test $(RUFF_ARGS)
+	uv run ruff check wireup test $(RUFF_ARGS)
 
 check-mypy:
-	.venv/bin/mypy wireup --strict
+	uv run mypy wireup --strict
 
 test:
-	.venv/bin/pytest test/unit
+	uv run pytest test/unit
 
 profile ./profile_tests $(num_runs):
-	./.venv/bin/python ./profile_tests.py $(num_runs)
+	uv run python ./profile_tests.py $(num_runs)
 
 format:
-	./.venv/bin/ruff format .
+	uv run ruff format .
 
 fix:
-	./.venv/bin/ruff wireup --fix
+	uv run ruff wireup --fix
 
 # make docs-deploy version=...
 docs-deploy $(version):
-	cd docs && ../.venv/bin/mike deploy --push --update-aliases $(version) latest
+	cd docs && uv run mike deploy --push --update-aliases $(version) latest
 
 publish:
-	./.venv/bin/poetry build
-	./.venv/bin/poetry publish
+	uv build
+	uv publish
