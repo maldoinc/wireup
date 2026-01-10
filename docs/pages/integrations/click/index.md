@@ -8,7 +8,7 @@ Dependency injection for Click is available in the `wireup.integration.click` mo
 
     ---
 
-    Inject dependencies in Click commands and automatically manage container lifecycle.
+    Inject dependencies in Click commands.
 
 -   :material-share-circle:{ .lg .middle } __Shared business logic__
 
@@ -23,6 +23,7 @@ Dependency injection for Click is available in the `wireup.integration.click` mo
 First, [create a sync container](../../container.md)
 
 ```python
+from typing import Annotated
 import click
 from wireup import Inject, Injected, injectable
 

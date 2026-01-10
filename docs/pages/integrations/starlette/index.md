@@ -49,7 +49,7 @@ and annotate parameters accordingly. Refer to [Annotations](../../annotations.md
 ```python title="Starlette Endpoint" hl_lines="5 6 8 11 17 20"
 from starlette.endpoints import HTTPEndpoint
 from starlette.requests import Request
-from starlette.responses import JSONResponse
+from starlette.responses import JSONResponse, PlainTextResponse
 
 from wireup import injectable, Injected
 from wireup.integration.starlette import inject
@@ -139,6 +139,10 @@ def test_override():
 ```
 
 For more examples, see the [Starlette integration tests](https://github.com/maldoinc/wireup/blob/master/test/integration/starlette/test_starlette_integration.py).
+
+### Lifecycle Management
+
+The integration automatically manages the container lifecycle by hooking into Starlette's lifespan context to ensure the container is properly closed and resources are released when the application stops.
 
 ### API Reference
 

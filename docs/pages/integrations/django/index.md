@@ -112,20 +112,49 @@ class AuthService:
 
 To inject dependencies in views, simply request them by their type:
 
-```python title="app/views.py"
-from django.http import HttpRequest, HttpResponse
-from mysite.polls.services import S3Manager
-from wireup import Injected
+=== "Sync Views"
 
-def upload_file_view(
-    request: HttpRequest, 
-    s3_manager: Injected[S3Manager]
-) -> HttpResponse:
-    # Use the injected S3Manager instance
-    return HttpResponse(...)
-```
+    ```python title="app/views.py"
+    from django.http import HttpRequest, HttpResponse
+    from mysite.polls.services import S3Manager
+    from wireup import Injected
 
-Class-based views are also supported. Specify dependencies in the class `__init__` function.
+    def upload_file_view(
+        request: HttpRequest, 
+        s3_manager: Injected[S3Manager]
+    ) -> HttpResponse:
+        return HttpResponse(...)
+    ```
+
+=== "Async Views"
+
+    ```python title="app/views.py"
+    from django.http import HttpRequest, HttpResponse
+    from mysite.polls.services import S3Manager
+    from wireup import Injected
+
+    async def upload_file_view(
+        request: HttpRequest, 
+        s3_manager: Injected[S3Manager]
+    ) -> HttpResponse:
+        return HttpResponse(...)
+    ```
+
+=== "Class-Based Views"
+
+    ```python title="app/views.py"
+    from django.http import HttpRequest, HttpResponse
+    from django.views import View
+    from mysite.polls.services import S3Manager
+    from wireup import Injected
+
+    class UploadFileView(View):
+        def __init__(self, s3_manager: Injected[S3Manager]) -> None:
+            self.s3_manager = s3_manager
+
+        def post(self, request: HttpRequest) -> HttpResponse:
+            return HttpResponse(...)
+    ```
 
 For more examples, see the [Wireup Django integration tests](https://github.com/maldoinc/wireup/tree/master/test/integration/django/view.py).
 
@@ -321,6 +350,20 @@ def test_override():
         response = await async_client.get("/async-endpoint/")
         assert response.status_code == 200
     ```
+
+### Closing the Container
+
+Django doesn't have built-in lifecycle events like FastAPI. If you use [generator factories](../../resources.md) that require cleanup, register a shutdown handler using Python's `atexit` module:
+
+```python title="myapp/__init__.py"
+import atexit
+from wireup.integration.django import get_app_container
+
+def close_container():
+    get_app_container().close()
+
+atexit.register(close_container)
+```
 
 ### API Reference
 

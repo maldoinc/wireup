@@ -146,7 +146,7 @@ from wireup import injectable
 @injectable(lifetime="scoped")
 class ChatService:
     def __init__(self, websocket: fastapi.WebSocket) -> None:
-        await self.websocket.accept()
+        self.websocket = websocket
 
     async def send(self, data: str):
         await self.websocket.send_text(data)

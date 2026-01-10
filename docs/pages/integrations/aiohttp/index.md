@@ -80,7 +80,7 @@ See [Annotations](../../annotations.md) for more details.
             super().__init__(request)
             self.user_repository = user_repository
 
-        async def get() -> web.Response: ...
+        async def get(self) -> web.Response: ...
     ```
 
 
@@ -131,9 +131,13 @@ def test_override(aiohttp_client):
         res = aiohttp_client.get("/greet?name=Test")
 ```
 
-See [AIOHTTP integration tests](https://github.com/maldoinc/wireup/blob/master/test/integration/test_aiohttp_integration.py)
+See [AIOHTTP integration tests](https://github.com/maldoinc/wireup/blob/master/test/integration/aiohttp/test_aiohttp_integration.py)
 for more examples.
 
+
+### Lifecycle Management
+
+The integration automatically manages the container lifecycle. It hooks into AIOHTTP's `on_cleanup` signal to ensure the container is properly closed and resources are released when the application stops.
 
 ### Routes and type checker
 

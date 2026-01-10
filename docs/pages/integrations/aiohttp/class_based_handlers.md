@@ -50,5 +50,5 @@ wireup.integration.aiohttp.setup(
 ```
 
 **Overriding**: Handlers are created once on startup, their dependencies cannot be overridden once the application
-starts. If you need to override dependencies in the handler's init, then it must be done before application
+starts. If you need to override dependencies in the handler's `__init__`, then it must be done before application
 startup.

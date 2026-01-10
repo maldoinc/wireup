@@ -42,12 +42,12 @@ def require_not_bob(fn):
     async def wrapper(*args: Any, **kwargs: Any) -> Any:
         request = await get_request_container().get(fastapi.Request)
 
-    if request.query_params.get("name") == "Bob":
-        raise HTTPException(status_code=401, detail="Bob is not allowed")
+        if request.query_params.get("name") == "Bob":
+            raise HTTPException(status_code=401, detail="Bob is not allowed")
 
-    return await fn(*args, **kwargs)
+        return await fn(*args, **kwargs)
 
-return wrapper
+    return wrapper
 
 @router.get("/users")
 @require_not_bob

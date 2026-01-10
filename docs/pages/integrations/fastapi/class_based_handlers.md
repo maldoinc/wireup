@@ -19,7 +19,7 @@ class UserHandler:
     router = fastapi.Router(prefix="/users", route_class=WireupRoute)  # (1)!
 
     def __init__(self, user_service: UserProfileService) -> None:  # (2)!
-        self.user_service = user_profile_service
+        self.user_service = user_service
 
 
     @router.get("/")
@@ -30,7 +30,7 @@ class UserHandler:
     async def get_current_user_profile(
         self,
         auth_service: Injected[AuthenticationService]  # (3)!
-    ) -> web.Response:
+    ) -> fastapi.Response:
         return self.user_service.get_profile(auth_service.current_user)
 ```
 
@@ -55,15 +55,15 @@ wireup.integration.fastapi.setup(
 ### How Dependencies Work
 
 1. **Constructor Dependencies**
-     - Injected once at startup
-     - No `Injected[T]` syntax needed
-     - Cannot be overridden after startup
-     - Only configuration and singleton services
+    - Injected once at startup
+    - No `Injected[T]` syntax needed
+    - Cannot be overridden after startup
+    - Only configuration and singleton services
 
-1. **Route Dependencies**
-      - Use `Injected[T]` syntax
-      - Supports all scopes*
-      - Injected per-request
+2. **Route Dependencies**
+    - Use `Injected[T]` syntax
+    - Supports all scopes*
+    - Injected per-request
 
 \*  Injecting configuration and singletons here has no benefit and is not zero-cost. Inject those in `__init__` instead.
 
