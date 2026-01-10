@@ -24,6 +24,7 @@ The decorator accepts arguments to control how the injectable is registered:
 | :--- | :--- | :--- |
 | `lifetime` | Controls the lifespan of the object (e.g. `"singleton"`, `"scoped"`). See [Lifetimes](lifetimes_and_scopes.md). | `"singleton"` |
 | `qualifier` | A unique identifier to distinguish between multiple implementations of the same type. See [Multiple Registrations](multiple_registrations.md). | `None` |
+| `as_type` | Register the injectable as a different type (e.g., a Protocol or ABC). See [Interfaces](interfaces.md). | `None` |
 
 ```python
 from wireup import injectable
