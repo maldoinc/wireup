@@ -158,6 +158,35 @@ To inject dependencies in views, simply request them by their type:
 
 For more examples, see the [Wireup Django integration tests](https://github.com/maldoinc/wireup/tree/master/test/integration/django/view.py).
 
+### Forms and Model Methods
+
+Use the `@inject` decorator to inject dependencies into Django Forms, Model methods, or any other function or method during a request.
+
+```python title="forms.py"
+from django import forms
+from wireup import Injected
+from wireup.integration.django import inject
+
+class UserRegistrationForm(forms.Form):
+    username = forms.CharField()
+
+    @inject
+    def __init__(
+        self, 
+        *args, 
+        user_service: Injected[UserService], 
+        **kwargs
+    ):
+        super().__init__(*args, **kwargs)
+        self.user_service = user_service
+
+    def clean_username(self):
+        username = self.cleaned_data["username"]
+        if self.user_service.is_taken(username):
+            raise forms.ValidationError("Username taken")
+        return username
+```
+
 ### Third-party Django frameworks
 
 If your project uses third-party packages to create views, such as [Django REST framework](https://www.django-rest-framework.org/) or [Django Ninja](https://django-ninja.dev/), you must use the `@inject` decorator explicitly.
