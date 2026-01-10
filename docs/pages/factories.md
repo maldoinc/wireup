@@ -1,5 +1,3 @@
-# Factories and Resource Management
-
 Use factories to handle complex creation logic or resource management that can't be done with simple class constructors.
 
 ## Use cases
@@ -15,43 +13,8 @@ inheriting from the same base class/protocol.
 In order for the container to inject these dependencies, you must decorate the factory with `@injectable` and register
 it with the container. Return type annotation of the factory is required as it denotes what will be built.
 
-
-## Generator Factories
-
-Use generator factories when an injectable requires cleanup (like database connections or network resources).
-
-=== "Generators"
-
-    ```python
-    @injectable
-    def db_session_factory() -> Iterator[Session]:
-        db = Session()
-        try:
-            yield db
-        finally:
-            db.close()
-    ```
-
-=== "Context Manager"
-
-    ```python
-    @injectable
-    def db_session_factory() -> Iterator[Session]:
-        with contextlib.closing(Session()) as db:
-            yield db
-    ```
-
-=== "Async Context Manager"
-
-    ```python
-    @injectable
-    async def client_session_factory() -> ClientSession:
-        async with ClientSession() as sess:
-            yield sess
-    ```
-
 !!! note "Generator Factories"
-    Generator factories must yield exactly once. Yielding multiple times will result in cleanup not being performed.
+    If you need to perform cleanup (like database connections or network resources), use [generator factories](resources.md).
 
 
 ## Implement strategy pattern
@@ -75,9 +38,9 @@ def get_user_notifier(
 
 When injecting `Notifier` the correct type will be injected based on the authenticated user's preferences.
 
-## Inject a third-party class
+## Third-party classes
 
-You can use factories to inject a class which you have not declared yourself and as such, cannot annotate. 
+You can use factories to create classes which you have not declared yourself and as such, cannot annotate. 
 Let's take redis client as an example. 
 
 ```python
@@ -89,7 +52,7 @@ def redis_factory(redis_url: Annotated[str, Inject(config="redis_url")]) -> Redi
 ```
 
 
-## Inject Models
+## Models and DTOs
 
 Assume the authenticated user is provided by `AuthService`. You may choose to allow the user to be injected directly
 instead of having to call `auth_service.get_current_user()` everywhere.
@@ -103,7 +66,7 @@ def get_current_user(auth_service: AuthService) -> AuthenticatedUser:
     return auth_service.get_current_user()
 ```
 
-## Inject built-in types
+## Built-in types
 
 If you want to inject resources which are just strings, ints, or other built-in types then you can use a factory in
 combination with `NewType`.
@@ -118,75 +81,6 @@ def authenticated_username_factory(auth: AuthService) -> AuthenticatedUsername:
 ```
 
 This can now be injected as usual by annotating the dependency with the new type.
-
----
-
-
-## Error Handling
-
-When using generator factories with scoped or transient lifetimes, unhandled errors that occur within the 
-scope are  automatically propagated to the factories. This enables proper error handling, such as rolling back 
-database transactions or cleaning up resources when operations fail.
-
-```python
-@injectable(lifetime="scoped")
-def db_session_factory(engine: Engine) -> Iterator[Session]:
-    session = Session(engine)
-    try:
-        yield session
-    except Exception as e:
-        # Error occurred somewhere in the scope - rollback the transaction
-        session.rollback()
-        raise
-    else:
-        # No errors - commit the transaction
-        session.commit()
-    finally:
-        # Always close the session
-        session.close()
-```
-
-!!! note "Suppressing Errors"
-    Factories may perform cleanup (for example, rolling back a transaction), but they cannot suppress the original error, that exception will still be propagated. Wireup enforces this so cleanup code cannot
-    change the program's control flow by swallowing errors.
-
-    If a factory raises additional exceptions during teardown, Wireup will temporarily catch those exceptions
-    so it can finish cleaning up all generator factories. After cleanup completes, the teardown exceptions are
-    re-raised alongside the primary exception.
-
-
-### Database Transaction Example
-
-```python
-from typing import Iterator
-from sqlalchemy.orm import Session
-from wireup import injectable, Injected
-
-@injectable(lifetime="scoped")
-class UserService:
-    # Uses Session as defined above.
-    def __init__(self, db: Session) -> None:
-        self.db = db
-    
-    def create_user(self, user_data: UserCreate) -> User:
-        # Database operations here
-        ...
-
-# Usage in a web framework (FastAPI example)
-@app.post("/users")
-def create_user(
-    user_data: UserCreate, 
-    user_service: Injected[UserService]
-) -> User:
-    # If this raises an exception, the database transaction
-    # will automatically be rolled back
-    return user_service.create_user(user_data)
-```
-
-!!! tip "Framework Integration"
-    When using Wireup with web frameworks, each request automatically gets its own scope. 
-    When using this feature, database transactions and other resources are automatically managed per request,
-    with automatic rollback on any unhandled exception.
 
 ---
 
@@ -249,10 +143,6 @@ When an injectable has an optional dependency, simply use `T | None` or `Optiona
             ...
     ```
 
-!!! tip "Null Object Pattern"
-    For cleaner code when dealing with optional dependencies, consider using the [Null Object Pattern](tips_tricks.md#)
-    instead of conditional checks throughout your code.
-
 
 **Direct Access**
 
@@ -263,3 +153,75 @@ When accessing optional dependencies directly from the container, you can retrie
 cache = container.get(Optional[Cache]) 
 cache = container.get(Cache | None) 
 ```
+
+
+!!! tip "Null Object Pattern for Optional Dependencies"
+
+    Instead of adding conditional checks throughout your code, use the pattern to handle
+    optional dependencies cleanly. It involves creating a noop implementation
+    that can be used when the real implementation is not available.
+
+
+    ```python title="services/cache.py"
+    from wireup import abstract, injectable
+    from typing import Any
+    
+    class Cache(Protocol):
+        def get(self, key: str) -> Any | None: ...
+        def set(self, key: str, value: str) -> None: ...
+
+    class RedisCache: ...  # Real Redis implementation
+
+    class NullCache:
+        def get(self, key: str) -> Any | None:
+            return None  # Always cache miss
+        def set(self, key: str, value: str) -> None:
+            return None  # Do nothing
+
+    @injectable
+    def cache_factory(
+        redis_url: Annotated[str | None, Inject(config="redis_url")],
+    ) -> Cache:
+        return RedisCache(redis_url) if redis_url else NullCache()
+    ```
+
+    **Usage**
+
+    === "Before: Optional Dependencies"
+
+        ```python
+        @injectable
+        class UserService:
+            def __init__(self, cache: Cache | None):
+                self.cache = cache
+                
+            def get_user(self, user_id: str) -> User:
+                # Guard required
+                if self.cache and (cached := self.cache.get(f"user:{user_id}")):
+                    return User.from_json(cached)
+                
+                user = self.db.get_user(user_id)
+                
+                # Guard required
+                if self.cache:
+                    self.cache.set(f"user:{user_id}", user.to_json())
+                
+                return user
+        ```
+
+    === "After: Null Pattern"
+
+        ```python
+        @injectable
+        class UserService:
+            def __init__(self, cache: Cache):
+                self.cache = cache  # Always a Cache instance
+                
+            def get_user(self, user_id: str) -> User:
+                if cached := self.cache.get(f"user:{user_id}"):
+                    return User.from_json(cached)
+                
+                user = self.db.get_user(user_id) 
+                self.cache.set(f"user:{user_id}", user.to_json())
+                return user
+        ```

@@ -1,5 +1,3 @@
-# Injectables
-
 An injectable is any class or function that Wireup manages. They are the building blocks of your application.
 
 ## The `@injectable` Decorator
@@ -65,5 +63,63 @@ def create_s3_client(
     return boto3.client("s3", region_name=region)
 ```
 
-!!! tip "Learn More"
-    For details on handling resources (e.g. database connections) with generators, see [Factory Functions](factories.md).
+!!! tip "Reduce init boilerplate"
+
+    When building injectables with multiple dependencies, `__init__` methods may become repetitive.
+    Combine the `@injectable` decorator with Python's `@dataclass` to eliminate initialization boilerplate.
+
+    Depending on class definitions some classes may benefit in readability from this more than others. Apply best judgement here.
+
+    === "Before"
+
+        ```python title="services/order_processor.py"
+        @injectable
+        class OrderProcessor:
+            def __init__(
+                self,
+                payment_gateway: PaymentGateway,
+                inventory_service: InventoryService,
+                order_repository: OrderRepository,
+            ):
+                self.payment_gateway = payment_gateway
+                self.inventory_service = inventory_service
+                self.order_repository = order_repository
+        ```
+
+    === "After"
+
+        ```python title="services/order_processor.py"
+        from dataclasses import dataclass
+
+        @injectable
+        @dataclass
+        class OrderProcessor:
+            payment_gateway: PaymentGateway
+            inventory_service: InventoryService
+            order_repository: OrderRepository
+        ```
+
+    === "Counter-example"
+
+        ```python
+        @injectable
+        @dataclass
+        class Foo:
+            FOO_CONST = 1  # Not added to __init__ by @dataclass.
+            logger = logging.getLogger(__name__)  # Not added to __init__ by @dataclass.
+
+            # These will be added to __init__ by @dataclass
+            # and marked as dependencies by Wireup.
+            payment_gateway: PaymentGateway
+            inventory_service: InventoryService
+            order_repository: OrderRepository
+        ```
+
+        In this example, due to how the `@dataclass` decorator works, combining the two
+        leads to code that's more difficult to read, since it's not immediately what are dependencies and what are class fields.
+
+## Next Steps
+
+* [Configuration](configuration.md) - Inject configuration values from environment variables or structured objects.
+* [Lifetimes & Scopes](lifetimes_and_scopes.md) - Control singleton, scoped, and transient lifetimes.
+* [Factories](factories.md) - Advanced patterns for creating complex injectables.

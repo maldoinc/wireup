@@ -159,7 +159,7 @@ All that's left now is to retrieve injectables from the container.
 
 === "Injection via decorator"
 
-    You can also apply Wireup containers as decorators. See [Apply the container as a decorator](apply_container_as_decorator.md) docs for more info, but the end result is that you can
+    You can also apply Wireup containers as decorators. See [Apply the container as a decorator](function_injection.md) docs for more info, but the end result is that you can
     decorate any function and specify dependencies to inject in it's signature.
 
     ```python title="views/posts.py"  hl_lines="4 5"

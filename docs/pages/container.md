@@ -1,5 +1,3 @@
-# The Container
-
 The container is the central registry for all application dependencies. It manages the lifecycle of injectables, resolves dependencies, and holds configuration.
 
 ## Creation
@@ -54,8 +52,7 @@ db = await container.get(Database)
 readonly_db = await container.get(Database, qualifier="readonly")
 ```
 
-**Qualifiers**: Use the `qualifier` argument to retrieve specific implementations when multiple are registered.
-See [Multiple Registrations](multiple_registrations.md) and [Interfaces](interfaces.md) for more details.
+**Qualifiers**: Use the `qualifier` argument to retrieve specific implementations when multiple are registered. See [Interfaces](interfaces.md) for more details.
 
 ### `close`
 
@@ -69,8 +66,38 @@ container.close()
 await container.close()
 ```
 
+### `enter_scope`
+
+Create a scoped container for request-scoped or unit-of-work lifetimes.
+
+=== "Synchronous"
+    ```python
+    with container.enter_scope() as scoped:
+        db_session = scoped.get(DbSession)  # Fresh instance per scope
+    ```
+
+=== "Async"
+    ```python
+    async with container.enter_scope() as scoped:
+        db_session = await scoped.get(DbSession)  # Fresh instance per scope
+    ```
+
+See [Lifetimes & Scopes](lifetimes_and_scopes.md) for details.
+
+### `override`
+
+Substitute dependencies for testing. Access via `container.override`.
+
+```python
+with container.override.injectable(target=Database, new=mock_db):
+    ...  # All injections of Database use mock_db
+```
+
+See [Testing](testing.md) for details.
+
 ## Next Steps
 
-* [Lifetimes & Scopes](lifetimes_and_scopes.md) - Learn how to control the lifetime of your injectables.
-* [Factories](factories.md) - Learn how to create complex injectables and manage resources.
-* [Testing](testing.md) - Learn how to test your application with Wireup.
+* [Lifetimes & Scopes](lifetimes_and_scopes.md) - Control singleton, scoped, and transient lifetimes.
+* [Factories](factories.md) - Create complex injectables and third-party objects.
+* [Testing](testing.md) - Override dependencies and test with the container.
+

@@ -1,6 +1,4 @@
-# Interface Injection
-
-You can use protocols, abstract classes, or even regular classes as interfaces when you need to inject dependencies. This pattern is particularly useful for testing, as it allows you to create mock implementations or easily swap implementations.
+Use protocols, abstract classes, or even regular classes as interfaces when you need to inject dependencies. This pattern is particularly useful for testing, as it allows you to create mock implementations or easily swap implementations.
 
 ## Basic Usage
 

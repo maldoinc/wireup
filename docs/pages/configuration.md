@@ -1,5 +1,3 @@
-# Configuration
-
 Wireup containers can store configuration that can be injected. This enables self-contained
 definitions without having to create factories for every injectable.
 
@@ -85,3 +83,21 @@ class FileStorageService:
 
 !!! note "Expression results are strings"
     Configuration expressions always return strings. Non-string configuration values are converted using `str()` before interpolation.
+
+## Aliasing Configuration Keys
+
+If you don't like having string configuration keys in your injectable objects you can alias them instead.
+
+```python
+# Create an alias for the configuration injection
+EnvConfig = Annotated[str, Inject(config="env")]
+
+def list_users(env: EnvConfig) -> None: ...
+def get_users(env: EnvConfig) -> None: ...
+```
+
+## Next Steps
+
+* [Lifetimes & Scopes](lifetimes_and_scopes.md) - Control singleton, scoped, and transient lifetimes.
+* [Factories](factories.md) - Create complex injectables and third-party objects.
+* [Testing](testing.md) - Override configuration values for testing.

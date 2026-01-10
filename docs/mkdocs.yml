@@ -3,22 +3,23 @@ nav:
   - 📚 Documentation:
     - Wireup: index.md
     - Getting Started: getting_started.md
-    - Basics:
+    - Essentials:
       - Container: container.md
       - Injectables: injectables.md
       - Configuration: configuration.md
-    - Core Concepts:
-      - Factories: factories.md
-      - Annotations: annotations.md
-      - Interfaces: interfaces.md
       - Lifetimes & Scopes: lifetimes_and_scopes.md
-    - Guides:
-      - Function Injection: apply_container_as_decorator.md
-      - Multiple registrations: multiple_registrations.md
+
+    - Features:
+      - Factories: factories.md
+      - Interfaces: interfaces.md
+      - Resources Management: resources.md
+
+    - Usage:
+      - Function Injection: function_injection.md
       - Testing: testing.md
-    - Misc:
-      - Use with __future__ annotations: future_annotations.md
-      - Tips & Tricks: tips_tricks.md
+      - Annotations: annotations.md
+
+    - More:
       - Versioning: versioning.md
       - Upgrading: upgrading.md
 
@@ -65,7 +66,6 @@ theme:
     - content.code.annotate
     - navigation.instant
     - navigation.tabs
-    - navigation.footer
     - navigation.indexes
   font:
     code: JetBrains Mono 

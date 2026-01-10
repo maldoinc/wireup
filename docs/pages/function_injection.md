@@ -2,7 +2,7 @@
     When using the provided integrations, this is automatically handled for you.
     Only use this if you're injecting Wireup dependencies in a framework without an integration.
 
-Instead of manually retrieving services via `container.get` or configuration via `container.config`, you can inject them directly into function parameters using the container as a decorator.
+Instead of manually retrieving services via `container.get` or configuration via `container.config`, you can inject them directly into function parameters using the container as a decorator. Works with both sync and async containers.
 
 This transforms verbose manual dependency retrieval:
 
@@ -25,6 +25,8 @@ The container enters a scope before function execution, injects all dependencies
 !!! note
     The decorator only injects parameters annotated with `Injected[T]` or `Annotated[T, Inject()]`.
     These annotations are equivalent—`Injected[T]` is simply an alias for convenience.
+    
+    For details on when annotations are required, see [Dependency Annotations](annotations.md).
 
 ```python
 from wireup import Injected
@@ -43,6 +45,9 @@ If you have already created a scoped container elsewhere, provide a callable tha
 Wireup will use that container instead of creating a new scope:
 
 ```python
+from contextvars import ContextVar
+from wireup import ScopedSyncContainer
+
 scoped_container: ContextVar[ScopedSyncContainer] = ContextVar("scoped_container")
 
 @wireup.inject_from_container(container, scoped_container.get)
@@ -58,6 +63,9 @@ def client_function(
 For cleaner code, you can alias the decorator:
 
 ```python
+from contextvars import ContextVar
+from wireup import ScopedSyncContainer
+
 scoped_container: ContextVar[ScopedSyncContainer] = ContextVar("scoped_container")
 injected = wireup.inject_from_container(container, scoped_container.get)
 
@@ -68,12 +76,6 @@ def client_function(
     env_name: Annotated[str, Inject(config="env")]
 ) -> None: ...
 ```
-
-
-## Additional notes
-
-* Works with both sync and async containers
-* For `async def` functions, use an async container created via `wireup.create_async_container`
 
 ## API Reference
 

@@ -1,5 +1,3 @@
-# Lifetimes & Scopes
-
 Wireup controls how long injectable instances live and when they're shared through **lifetimes** and **scopes**.
 
 ## Injectable Lifetimes
@@ -19,6 +17,21 @@ class Database:
 db1 = container.get(Database)  # Instance created
 db2 = container.get(Database)  # Reuses instance
 assert db1 is db2  # True
+```
+
+#### Eager Initialization
+
+By default, Wireup creates injectables lazily when they're first requested. For singleton injectables that are expensive to create, you can pre-initialize them during application startup to avoid delays on the first request.
+
+```python title="Example with FastAPI"
+@contextlib.asynccontextmanager
+async def lifespan(app: FastAPI):
+    container = get_app_container(app)
+    
+    # Pre-initialize expensive singletons during startup
+    await container.get(MLModelService)
+    
+    yield
 ```
 
 ### Scoped
@@ -114,7 +127,7 @@ def get_current_user(auth: Injected[AuthService]):
 
 **Function Decorator:**
 
-The [`@wireup.inject_from_container`](apply_container_as_decorator.md) decorator will also enter a new scope if none is provided in the parameters.
+The [`@wireup.inject_from_container`](function_injection.md) decorator will also enter a new scope if none is provided in the parameters.
 
 ```python
 @wireup.inject_from_container(container)
@@ -154,3 +167,11 @@ Injectables have restrictions on what they can depend on based on their lifetime
 - **Singletons** can only depend on other singletons and config
 - **Scoped** injectables can depend on singletons, other scoped injectables, and config  
 - **Transient** injectables can depend on any lifetime and config
+
+Violating these rules (e.g., a singleton depending on a scoped injectable) will result in an error during container creation.
+
+## Next Steps
+
+* [Factories](factories.md) - Create complex injectables with setup and teardown logic.
+* [Interfaces](interfaces.md) - Register multiple implementations of the same type.
+* [Testing](testing.md) - Override dependencies for testing.

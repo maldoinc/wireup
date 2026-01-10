@@ -1,5 +1,3 @@
-# Dependency Annotations
-
 Wireup uses type annotations to figure out which dependencies to inject. Most of the time, just the type is enough, but sometimes you need to add extra information using injection annotations.
 
 ## When Do You Need Annotations?
