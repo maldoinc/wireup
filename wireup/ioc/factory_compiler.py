@@ -20,9 +20,10 @@ class CompiledFactory:
 
 
 _CONTAINER_SCOPE_ERROR_MSG = (
-    r"Cannot create {lifetime} dependency {klass}{qualifier} from the root container. "
-    r"You likely attempted to resolve it outside of a scope. "
-    r"Use container.enter_scope() and resolve it from the scoped container instead.\n"
+    r"Scope mismatch: Cannot resolve {lifetime} injectable {klass}{qualifier} "
+    r"from the root container. "
+    r"Only Singleton injectables can be resolved without a scope. "
+    r"To resolve {lifetime} injectables, you must create a scope.\n"
     r"See: https://maldoinc.github.io/wireup/latest/lifetimes_and_scopes/"
 )
 

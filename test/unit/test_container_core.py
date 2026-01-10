@@ -170,9 +170,11 @@ async def test_container_raises_get_transient_scoped(container: Container) -> No
     with pytest.raises(
         WireupError,
         match=re.escape(
-            "Cannot create transient dependency Type test.unit.services.with_annotations.services.TransientService "
-            "from the root container. You likely attempted to resolve it outside of a scope. "
-            "Use container.enter_scope() and resolve it from the scoped container instead"
+            "Scope mismatch: Cannot resolve transient injectable "
+            "Type test.unit.services.with_annotations.services.TransientService "
+            "from the root container. Only Singleton injectables can be resolved without a scope. "
+            "To resolve transient injectables, you must create a scope.\n"
+            "See: https://maldoinc.github.io/wireup/latest/lifetimes_and_scopes/"
         ),
     ):
         await run(container.get(TransientService))
@@ -180,9 +182,11 @@ async def test_container_raises_get_transient_scoped(container: Container) -> No
     with pytest.raises(
         WireupError,
         match=re.escape(
-            "Cannot create scoped dependency Type test.unit.services.with_annotations.services.ScopedService "
-            "from the root container. You likely attempted to resolve it outside of a scope. "
-            "Use container.enter_scope() and resolve it from the scoped container instead."
+            "Scope mismatch: Cannot resolve scoped injectable "
+            "Type test.unit.services.with_annotations.services.ScopedService "
+            "from the root container. Only Singleton injectables can be resolved without a scope. "
+            "To resolve scoped injectables, you must create a scope.\n"
+            "See: https://maldoinc.github.io/wireup/latest/lifetimes_and_scopes/"
         ),
     ):
         await run(container.get(ScopedService))
