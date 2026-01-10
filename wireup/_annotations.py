@@ -209,10 +209,11 @@ def abstract(cls: type[T]) -> type[T]:
     warnings.warn(
         (
             f"Deprecated: Using @abstract on {stringify_type(cls)}. "
-            f"Remove the @abstract decorator and"
+            f"Remove the @abstract decorator and "
             f"annotate concrete implementations with `@injectable(as_type={cls.__name__})` instead. "
             "See https://maldoinc.github.io/wireup/latest/interfaces/."
         ),
+        FutureWarning,
         stacklevel=2,
     )
 
