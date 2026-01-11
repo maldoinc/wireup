@@ -36,6 +36,8 @@ Both creation functions accept the following arguments:
 | `config` | `dict[str, Any]` | A detailed configuration dictionary. Values from this dictionary can be injected using `Inject(config="key")`. |
 
 
+
+
 ## Core API
 
 ### `get`
@@ -94,6 +96,21 @@ with container.override.injectable(target=Database, new=mock_db):
 ```
 
 See [Testing](testing.md) for details.
+
+
+## Eager Initialization
+
+By default, injectables are created lazily when first requested. 
+For most this is fine, but some may perform expensive work during initialization (e.g. loading ML models, warming up caches, or establishing connection pools).
+To avoid latency on the first request, you can force initialization of these during startup.
+
+```python
+# Sync
+container.get(HeavyComputeService)
+
+# Async
+await container.get(HeavyComputeService)
+```
 
 ## Next Steps
 

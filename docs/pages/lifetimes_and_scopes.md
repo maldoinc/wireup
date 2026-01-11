@@ -19,20 +19,10 @@ db2 = container.get(Database)  # Reuses instance
 assert db1 is db2  # True
 ```
 
-#### Eager Initialization
 
-By default, Wireup creates injectables lazily when they're first requested. For singleton injectables that are expensive to create, you can pre-initialize them during application startup to avoid delays on the first request.
 
-```python title="Example with FastAPI"
-@contextlib.asynccontextmanager
-async def lifespan(app: FastAPI):
-    container = get_app_container(app)
-    
-    # Pre-initialize expensive singletons during startup
-    await container.get(MLModelService)
-    
-    yield
-```
+!!! tip
+    Singletons are lazy by default. See [Eager Initialization](container.md#eager-initialization) to initialize them at startup.
 
 ### Scoped
 
@@ -86,89 +76,69 @@ with container.enter_scope() as scope:
 
 ## Working with Scopes
 
-Scopes provide isolated dependency contexts, particularly useful for web applications where you want fresh instances per request.
+Scopes provide isolated contexts. This is useful for things like database sessions or user context that should only exist for a short duration (like a single HTTP request).
 
-### Creating Scopes
+=== "Web Frameworks"
 
-=== "Synchronous"
+    When using [Integrations](integrations/index.md) (like FastAPI, Flask, Django), **scopes are handled automatically**.
+    A new scope is created for every incoming request and closed when the request finishes.
+
+    ```python
+    @app.get("/users/me")
+    def get_current_user(auth_service: Injected[AuthService]):
+        return auth_service.get_current_user()
+    ```
+
+=== "Function Decorator"
+
+    The [`@wireup.inject_from_container`](function_injection.md) decorator behaves similarly to web frameworks: it automatically enters a new scope before the function runs and closes it afterwards. This is useful for background tasks or CLI commands.
+
+    ```python
+    @wireup.inject_from_container(container)
+    def process_order(order_service: Injected[OrderService]):
+        return order_service.process()
+    ```
+
+=== "Manual Context"
+
+    For granular control, you can manage scopes manually using `container.enter_scope()`.
+
+    **Synchronous**
+
     ```python
     container = wireup.create_sync_container(injectables=[RequestService])
 
-    with container.enter_scope() as scoped_container:
-        service1 = scoped_container.get(RequestService)
-        service2 = scoped_container.get(RequestService)
-        # service1 and service2 are the same instance (if scoped lifetime)
-
-    with container.enter_scope() as another_scope:
-        service3 = another_scope.get(RequestService)
-        # service3 is a different instance from service1/service2
+    with container.enter_scope() as scope:
+        # Resolve dependencies from this specific scope
+        service = scope.get(RequestService)
+        service.process()
+    
+    # When the block exits, the scope is closed and cleanup runs.
     ```
 
-=== "Asynchronous"
+    **Asynchronous**
+
     ```python
     container = wireup.create_async_container(injectables=[RequestService])
 
-    async with container.enter_scope() as scoped_container:
-        service1 = await scoped_container.get(RequestService)
-        service2 = await scoped_container.get(RequestService)
-    ```
-
-### Automatic Scope Management
-
-**Web Framework Integrations:**
-
-The provided [integrations](integrations/index.md) automatically create a scope for every request.
-
-```python
-@app.get("/users/me")
-def get_current_user(auth: Injected[AuthService]):
-    return auth.current_user()  # Fresh scoped injectables per request
-```
-
-**Function Decorator:**
-
-The [`@wireup.inject_from_container`](function_injection.md) decorator will also enter a new scope if none is provided in the parameters.
-
-```python
-@wireup.inject_from_container(container)
-def process_order(order_service: OrderService):
-    # Scope automatically created and cleaned up
-    return order_service.process()
-```
+    async with container.enter_scope() as scope:
+        service = await scope.get(RequestService)
+        service.process()
+    ``` 
 
 ### Resource Cleanup
 
-Scoped containers automatically clean up resources when the scope exits:
+Scoped containers ensure that resources are released when the scope exits. This simplifies resource management for things like database transactions or file handles.
 
-```python
-@injectable(lifetime="scoped")
-def database_session() -> Iterator[Session]:
-    session = Session()
-    try:
-        yield session
-        session.commit()
-    except Exception:
-        session.rollback()
-        raise
-    finally:
-        session.close()
+See [Resources & Cleanup](resources.md) for details on creating cleanable resources using generator factories.
 
-with container.enter_scope() as scope:
-    session = scope.get(Session)
-    # session.close() is automatically called when exiting this "with" block
-```
-
-When using [generator factories](resources.md#error-handling) with scoped lifetime, errors that occur anywhere within the scope are automatically propagated to the factories for proper error handling like rolling back database transactions.
-
-## Dependency Rules & Choosing Lifetimes
+## Lifetime Rules
 
 Injectables have restrictions on what they can depend on based on their lifetime:
 
 - **Singletons** can only depend on other singletons and config
-- **Scoped** injectables can depend on singletons, other scoped injectables, and config  
-- **Transient** injectables can depend on any lifetime and config
-
-Violating these rules (e.g., a singleton depending on a scoped injectable) will result in an error during container creation.
+- **Scoped** can depend on singletons, scoped, and config  
+- **Transient** can depend on any lifetime and config
 
 ## Next Steps
 
