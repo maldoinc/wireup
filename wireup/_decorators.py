@@ -6,6 +6,9 @@ import inspect
 from contextlib import AsyncExitStack, ExitStack
 from typing import TYPE_CHECKING, Any, Callable
 
+import wireup
+import wireup.ioc
+import wireup.ioc.util
 from wireup.errors import WireupError
 from wireup.ioc.container.async_container import AsyncContainer, ScopedAsyncContainer, async_container_force_sync_scope
 from wireup.ioc.container.sync_container import SyncContainer
@@ -13,9 +16,6 @@ from wireup.ioc.types import AnnotatedParameter, ConfigInjectionRequest
 from wireup.ioc.util import (
     get_inject_annotated_parameters,
     get_valid_injection_annotated_parameters,
-)
-from wireup.ioc.util import (
-    hide_annotated_names as _util_hide_annotated_names,
 )
 
 if TYPE_CHECKING:
@@ -104,9 +104,6 @@ def inject_from_container_util(  # noqa: C901, PLR0913
     *,
     hide_annotated_names: bool = False,
 ) -> Callable[..., Any]:
-    if hide_annotated_names:
-        _util_hide_annotated_names(target)
-
     if not (container or scoped_container_supplier):
         msg = "Container or scoped_container_supplier must be provided for injection."
         raise WireupError(msg)
@@ -140,35 +137,41 @@ def inject_from_container_util(  # noqa: C901, PLR0913
 
                 return await target(*args, **{**kwargs, **injected_names})
 
-        return _inject_async_target
+        res = _inject_async_target
+    else:
 
-    @functools.wraps(target)
-    def _inject_target(*args: Any, **kwargs: Any) -> Any:
-        with ExitStack() as cm:
-            if scoped_container_supplier:
-                scoped_container = scoped_container_supplier()
-            elif container:
-                scoped_container = cm.enter_context(
-                    container.enter_scope()
-                    if isinstance(container, SyncContainer)
-                    else async_container_force_sync_scope(container)
-                )
-            else:
-                msg = "scoped_container_supplier or container must be provided for injection."
-                raise ValueError(msg)
+        @functools.wraps(target)
+        def _inject_target(*args: Any, **kwargs: Any) -> Any:
+            with ExitStack() as cm:
+                if scoped_container_supplier:
+                    scoped_container = scoped_container_supplier()
+                elif container:
+                    scoped_container = cm.enter_context(
+                        container.enter_scope()
+                        if isinstance(container, SyncContainer)
+                        else async_container_force_sync_scope(container)
+                    )
+                else:
+                    msg = "scoped_container_supplier or container must be provided for injection."
+                    raise ValueError(msg)
 
-            if middleware:
-                cm.enter_context(middleware(scoped_container, args, kwargs))
+                if middleware:
+                    cm.enter_context(middleware(scoped_container, args, kwargs))
 
-            get = scoped_container._synchronous_get
+                get = scoped_container._synchronous_get
 
-            injected_names = {
-                name: scoped_container.config.get(param.annotation.config_key)
-                if isinstance(param.annotation, ConfigInjectionRequest)
-                else get(param.klass, qualifier=param.qualifier_value)
-                for name, param in names_to_inject.items()
-                if param.annotation
-            }
-            return target(*args, **{**kwargs, **injected_names})
+                injected_names = {
+                    name: scoped_container.config.get(param.annotation.config_key)
+                    if isinstance(param.annotation, ConfigInjectionRequest)
+                    else get(param.klass, qualifier=param.qualifier_value)
+                    for name, param in names_to_inject.items()
+                    if param.annotation
+                }
+                return target(*args, **{**kwargs, **injected_names})
 
-    return _inject_target
+        res = _inject_target
+
+    if hide_annotated_names:
+        wireup.ioc.util.hide_annotated_names(res)
+
+    return res
