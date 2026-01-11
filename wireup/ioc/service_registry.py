@@ -266,9 +266,15 @@ class ServiceRegistry:
     ) -> None:
         """Init and collect all the necessary dependencies to initialize the specified target."""
         for name, parameter in inspect.signature(target).parameters.items():
+            if parameter.kind in {inspect.Parameter.VAR_POSITIONAL, inspect.Parameter.VAR_KEYWORD}:
+                continue
+
             annotated_param = param_get_annotation(parameter, globalns_supplier=lambda: get_globals(target))
 
             if not annotated_param:
+                if parameter.default is not inspect.Parameter.empty:
+                    continue
+
                 msg = f"Wireup dependencies must have types. Please add a type to the '{name}' parameter in {target}."
                 raise WireupError(msg)
 

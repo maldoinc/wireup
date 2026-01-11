@@ -1,8 +1,8 @@
 import sys
-from typing import NewType
+from typing import Annotated, Any, NewType, Optional
 
 import pytest
-from wireup import service
+from wireup import Inject, service
 from wireup._annotations import AbstractDeclaration, ServiceDeclaration
 from wireup.errors import (
     DuplicateServiceRegistrationError,
@@ -153,6 +153,21 @@ def test_register_factory_with_unknown_dependency_no_default() -> None:
 
     with pytest.raises(WireupError, match="depends on an unknown service"):
         ServiceRegistry(impls=[ServiceDeclaration(obj=factory_no_default, lifetime="singleton")])
+
+
+def test_register_service_with_untyped_defaults_and_varargs() -> None:
+    class Thing:
+        def __init__(
+            self,
+            x=1,
+            some_config: Annotated[Optional[str], Inject(param="test_config")] = None,
+            *args: Any,
+            **kwargs: Any,
+        ) -> None:
+            pass
+
+    registry = ServiceRegistry(impls=[ServiceDeclaration(obj=Thing, lifetime="singleton")])
+    assert Thing in registry.impls
 
 
 class MyInterface:
