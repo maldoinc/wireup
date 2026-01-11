@@ -67,6 +67,7 @@ tox = "^4.14.2"
 pytest = "^8.3.3"
 pytest-asyncio = "^0.24.0"
 eval-type-backport = "^0.2.0"
+pydantic-settings = { version = "^2.12.0", python = ">=3.10,<3.14" }
 
 [tool.ruff]
 target-version = "py38"

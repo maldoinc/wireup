@@ -266,9 +266,15 @@ class ServiceRegistry:
     ) -> None:
         """Init and collect all the necessary dependencies to initialize the specified target."""
         for name, parameter in inspect.signature(target).parameters.items():
+            if parameter.kind in {inspect.Parameter.VAR_POSITIONAL, inspect.Parameter.VAR_KEYWORD}:
+                continue
+
             annotated_param = param_get_annotation(parameter, globalns_supplier=lambda: get_globals(target))
 
             if not annotated_param:
+                if parameter.default is not inspect.Parameter.empty:
+                    continue
+
                 msg = f"Wireup dependencies must have types. Please add a type to the '{name}' parameter in {target}."
                 raise WireupError(msg)
 
@@ -315,8 +321,18 @@ class ServiceRegistry:
     def assert_dependencies_valid(self) -> None:
         """Assert that all required dependencies exist for this registry instance."""
         for (impl, impl_qualifier), service_factory in self.factories.items():
+            unknown_dependencies_with_default: list[str] = []
+
             for name, dependency in self.dependencies[service_factory.factory].items():
-                self.assert_dependency_exists(parameter=dependency, target=impl, name=name)
+                try:
+                    self.assert_dependency_exists(parameter=dependency, target=impl, name=name)
+                except WireupError:
+                    if dependency.has_default_value:
+                        unknown_dependencies_with_default.append(name)
+                        continue
+
+                    raise
+
                 self._assert_lifetime_valid(
                     impl=impl,
                     impl_qualifier=impl_qualifier,
@@ -325,6 +341,9 @@ class ServiceRegistry:
                     factory=service_factory.factory,
                 )
                 self._assert_valid_resolution_path(dependency=dependency, path=[])
+
+            for name in unknown_dependencies_with_default:
+                del self.dependencies[service_factory.factory][name]
 
     def _assert_lifetime_valid(
         self,
@@ -373,7 +392,7 @@ class ServiceRegistry:
         elif not self.is_type_with_qualifier_known(parameter.klass, qualifier=parameter.qualifier_value):
             msg = (
                 f"Parameter '{name}' of {stringify_type(target)} "
-                f"depends on an unknown service {stringify_type(parameter.klass)} "
+                f"depends on an unknown service {stringify_type(analyze_type(parameter.klass).raw_type)} "
                 f"with qualifier {parameter.qualifier_value}."
             )
             raise WireupError(msg)
