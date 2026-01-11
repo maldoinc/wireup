@@ -57,6 +57,11 @@ user_service = container.get(UserService)  # ✅ Dependencies resolved.
 Seamlessly inject configuration alongside other dependencies, eliminating the need for 
 manually wiring them up via factories.
 
+<details>
+<summary>View Code</summary>
+
+
+
 ```python
 from wireup import injectable, create_sync_container, Inject
 from typing import Annotated
@@ -69,17 +74,14 @@ class Database:
     def __init__(self, url: Annotated[str, Inject(config="db_url")]) -> None:
         self.engine = create_engine(url)
 
-@injectable
-class UserService:
-    def __init__(self, db: Database) -> None:
-        self.db = db
-
 container = create_sync_container(
-    injectables=[Database, UserService],
+    injectables=[Database],
     config={"db_url": os.environ["DB_URL"]}
 )
-user_service = container.get(UserService)  # ✅ Dependencies resolved.
+db = container.get(Database)  # ✅ Dependencies resolved.
 ```
+
+</details>
 
 **3. Clean Architecture**
  
@@ -120,6 +122,9 @@ database = container.get(Database)  # ✅ Dependencies resolved.
 
 No need to list every injectable manually. Scan entire modules or packages to register all at once.
 
+<details>
+<summary>View Code</summary>
+
 ```python
 import wireup
 import app
@@ -134,6 +139,8 @@ container = wireup.create_sync_container(
 
 user_service = container.get(UserService)  # ✅ Dependencies resolved.
 ```
+
+</details>
 
 ### 🎯 Function Injection
 
