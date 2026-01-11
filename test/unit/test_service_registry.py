@@ -1,7 +1,8 @@
 import sys
-from typing import Annotated, Any, NewType, Optional
+from typing import Any, NewType, Optional
 
 import pytest
+from typing_extensions import Annotated
 from wireup import Inject, service
 from wireup._annotations import AbstractDeclaration, ServiceDeclaration
 from wireup.errors import (
