@@ -158,7 +158,7 @@ with container.enter_scope() as scope:
     # session.close() is automatically called when exiting this "with" block
 ```
 
-When using [generator factories](factories.md#error-handling) with scoped lifetime, errors that occur anywhere within the scope are automatically propagated to the factories for proper error handling like rolling back database transactions.
+When using [generator factories](resources.md#error-handling) with scoped lifetime, errors that occur anywhere within the scope are automatically propagated to the factories for proper error handling like rolling back database transactions.
 
 ## Dependency Rules & Choosing Lifetimes
 

@@ -46,7 +46,7 @@ Changes include:
 * Removed `@container.abstract`
     * Similar to above, use the `@abstract` decorator.
 * Removed `@container.autowire`
-    * This is removed. See the [Apply the container as a decorator](apply_container_as_decorator.md) docs for details.
+    * This is removed. See the [Apply the container as a decorator](function_injection.md) docs for details.
 * Removed `container.has_type`.
 * `wireup.create_container` is now `wireup.create_sync_container` and `wireup.create_async_container`.
 
