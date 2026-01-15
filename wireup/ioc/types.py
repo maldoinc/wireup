@@ -67,12 +67,10 @@ InjectableLifetime = Literal["singleton", "scoped", "transient"]
 class AnnotatedParameter:
     """Represent an annotated dependency parameter."""
 
-    __slots__ = ("annotation", "is_parameter", "klass", "obj_id", "qualifier_value")
+    __slots__ = ("annotation", "has_default_value", "is_parameter", "klass", "obj_id", "qualifier_value")
 
     def __init__(
-        self,
-        klass: type[Any],
-        annotation: InjectableType | None = None,
+        self, klass: type[Any], annotation: InjectableType | None = None, *, has_default_value: bool = False
     ) -> None:
         """Create a new AnnotatedParameter.
 
@@ -85,6 +83,7 @@ class AnnotatedParameter:
         self.annotation = annotation
         self.qualifier_value = self.annotation.qualifier if isinstance(self.annotation, InjectableQualifier) else None
         self.is_parameter = isinstance(self.annotation, ConfigInjectionRequest)
+        self.has_default_value = has_default_value
         self.obj_id = self.klass, self.qualifier_value
 
     def __eq__(self, other: object) -> bool:
@@ -95,11 +94,12 @@ class AnnotatedParameter:
             and self.annotation == other.annotation
             and self.qualifier_value == other.qualifier_value
             and self.is_parameter == other.is_parameter
+            and self.has_default_value == other.has_default_value
         )
 
     def __hash__(self) -> int:
         """Hash things."""
-        return hash((self.klass, self.annotation, self.qualifier_value, self.is_parameter))
+        return hash((self.klass, self.annotation, self.qualifier_value, self.is_parameter, self.has_default_value))
 
 
 @dataclass(frozen=True, eq=True)

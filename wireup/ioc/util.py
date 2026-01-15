@@ -69,6 +69,7 @@ def param_get_annotation(
     return AnnotatedParameter(
         klass=type_analysis.normalized_type,
         annotation=_get_wireup_annotation(type_analysis.annotations),
+        has_default_value=parameter.default is not Parameter.empty,
     )
 
 

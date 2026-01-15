@@ -64,6 +64,7 @@ dev = [
     "pytest>=8.3.3",
     "pytest-asyncio>=0.24.0",
     "eval-type-backport>=0.2.0",
+    "pydantic-settings>=2.12.0,<3; python_version >= '3.10' and python_version < '3.14'",
 ]
 
 [build-system]

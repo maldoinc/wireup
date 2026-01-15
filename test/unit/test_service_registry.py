@@ -1,11 +1,15 @@
-from typing import NewType
+import sys
+from typing import Any, NewType, Optional
 
 import pytest
+from typing_extensions import Annotated
+from wireup import Inject, service
 from wireup._annotations import AbstractDeclaration, InjectableDeclaration
 from wireup.errors import (
     DuplicateServiceRegistrationError,
     FactoryReturnTypeIsEmptyError,
     InvalidRegistrationTypeError,
+    WireupError,
 )
 from wireup.ioc.registry import ContainerRegistry
 
@@ -137,8 +141,45 @@ def test_register_invalid_target() -> None:
         ContainerRegistry(impls=[InjectableDeclaration(obj=1)])
 
 
-class MyService:
-    pass
+@pytest.mark.skipif(
+    sys.version_info < (3, 10) or sys.version_info >= (3, 14),
+    reason="Pydantic settings is only compatible with Python 3.10-3.13",
+)
+def test_register_factory_with_unknown_dependency_with_default() -> None:
+    from pydantic_settings import BaseSettings  # noqa: PLC0415
+
+    @service
+    class Settings(BaseSettings): ...
+
+    registry = ContainerRegistry(impls=[InjectableDeclaration(obj=Settings, lifetime="singleton")])
+    assert Settings in registry.impls
+
+
+def test_register_factory_with_unknown_dependency_no_default() -> None:
+    class UnknownService: ...
+
+    class MyLocalService: ...
+
+    def factory_no_default(_: UnknownService) -> MyLocalService:
+        return MyLocalService()
+
+    with pytest.raises(WireupError, match="has an unknown dependency"):
+        ContainerRegistry(impls=[InjectableDeclaration(obj=factory_no_default, lifetime="singleton")])
+
+
+def test_register_service_with_untyped_defaults_and_varargs() -> None:
+    class Thing:
+        def __init__(
+            self,
+            x=1,
+            some_config: Annotated[Optional[str], Inject(param="test_config")] = None,
+            *args: Any,
+            **kwargs: Any,
+        ) -> None:
+            pass
+
+    registry = ContainerRegistry(impls=[InjectableDeclaration(obj=Thing, lifetime="singleton")])
+    assert Thing in registry.impls
 
 
 class MyInterface:
@@ -147,3 +188,7 @@ class MyInterface:
 
 def random_service_factory() -> RandomService:
     return RandomService()
+
+
+class MyService:
+    pass

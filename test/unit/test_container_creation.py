@@ -52,7 +52,7 @@ def test_checks_dependencies_exist() -> None:
         WireupError,
         match=re.escape(
             "Parameter 'foo' of Type test.unit.test_container_creation.Bar "
-            "depends on an unknown injectable Type test.unit.test_container_creation.Foo with qualifier None."
+            "has an unknown dependency on Type test.unit.test_container_creation.Foo with qualifier None."
         ),
     ):
         wireup.create_sync_container(injectables=[Bar])
