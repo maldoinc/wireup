@@ -157,8 +157,6 @@ def ensure_is_type(value: type[T] | str, globalns_supplier: Callable[[], dict[st
         raise WireupError(msg) from e
 
 
-def stringify_type(target: type | AnyCallable) -> str:
-    return f"{type(target).__name__.capitalize()} {target.__module__}.{target.__name__}"
 
 
 def hide_annotated_names(func: AnyCallable) -> None:

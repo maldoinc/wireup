@@ -17,6 +17,7 @@ from wireup.errors import (
     UnknownQualifiedServiceRequestedError,
     WireupError,
 )
+from wireup.util import format_name, stringify_type
 from wireup.ioc.configuration import ConfigStore
 from wireup.ioc.type_analysis import analyze_type
 from wireup.ioc.types import (
@@ -27,7 +28,7 @@ from wireup.ioc.types import (
     EmptyContainerInjectionRequest,
     InjectableLifetime,
 )
-from wireup.ioc.util import ensure_is_type, get_globals, param_get_annotation, stringify_type
+from wireup.ioc.util import ensure_is_type, get_globals, param_get_annotation
 
 if TYPE_CHECKING:
     from wireup._annotations import AbstractDeclaration, InjectableDeclaration
@@ -385,8 +386,7 @@ class ContainerRegistry:
         elif not self.is_type_with_qualifier_known(parameter.klass, qualifier=parameter.qualifier_value):
             msg = (
                 f"Parameter '{name}' of {stringify_type(target)} "
-                f"has an unknown dependency on {stringify_type(analyze_type(parameter.klass).raw_type)} "
-                f"with qualifier {parameter.qualifier_value}."
+                f"has an unknown dependency on {format_name(analyze_type(parameter.klass).raw_type, parameter.qualifier_value)}."
             )
             raise WireupError(msg)
 
@@ -403,12 +403,12 @@ class ContainerRegistry:
 
             def stringify_dependency(p: AnnotatedParameter, factory: Any) -> str:
                 descriptors = [
-                    f'with qualifier "{p.qualifier_value}"' if p.qualifier_value else None,
                     f"created via {factory.factory.__module__}.{factory.factory.__name__}" if factory else None,
                 ]
-                return (
-                    f"{p.klass.__module__}.{p.klass.__name__} ({', '.join([d for d in descriptors if d is not None])})"
-                )
+                qualifier_desc = ", ".join([d for d in descriptors if d is not None])
+                qualifier_desc = f" ({qualifier_desc})" if qualifier_desc else ""
+
+                return f"{format_name(p.klass, p.qualifier_value)}{qualifier_desc}"
 
             cycle_path = "\n -> ".join(f"{stringify_dependency(p, factory)}" for p, factory in new_path)
             msg = f"Circular dependency detected for {cycle_path} ! Cycle here"

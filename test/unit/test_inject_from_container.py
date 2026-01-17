@@ -93,12 +93,13 @@ async def test_injects_targets_async() -> None:
 async def test_raises_on_unknown_service(container: Container, qualifier: str) -> None:
     class NotManagedByWireup: ...
 
+    expected_qualifier_str = f" with qualifier '{qualifier}'" if qualifier else ""
     with pytest.raises(
         WireupError,
         match=re.escape(
             "Parameter 'not_managed_by_wireup' of Function test.unit.test_inject_from_container._ "
-            "has an unknown dependency on Type test.unit.test_inject_from_container.NotManagedByWireup "
-            f"with qualifier {qualifier}."
+            "has an unknown dependency on Type test.unit.test_inject_from_container.NotManagedByWireup"
+            f"{expected_qualifier_str}."
         ),
     ):
 
@@ -135,8 +136,7 @@ async def test_unknown_service_without_default_value() -> None:
         WireupError,
         match=re.escape(
             "Parameter 'unknown_class' of Type test.unit.test_inject_from_container.BarWithoutDefaultValue "
-            "has an unknown dependency on Type test.unit.test_inject_from_container.UnknownClass"
-            " with qualifier None."
+            "has an unknown dependency on Type test.unit.test_inject_from_container.UnknownClass."
         ),
     ):
         container = wireup.create_async_container(services=[BarWithoutDefaultValue])

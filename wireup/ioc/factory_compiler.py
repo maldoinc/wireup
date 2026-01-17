@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, Any, Callable, Hashable
 from wireup.errors import WireupError
 from wireup.ioc.registry import GENERATOR_FACTORY_TYPES, ContainerRegistry, FactoryType
 from wireup.ioc.types import ConfigInjectionRequest, TemplatedString
-from wireup.ioc.util import stringify_type
+from wireup.util import format_name
 
 if TYPE_CHECKING:
     from wireup.ioc.container.base_container import BaseContainer
@@ -20,7 +20,7 @@ class CompiledFactory:
 
 
 _CONTAINER_SCOPE_ERROR_MSG = (
-    r"Scope mismatch: Cannot resolve {lifetime} injectable {klass}{qualifier} "
+    r"Scope mismatch: Cannot resolve {lifetime} injectable {fmt_klass} "
     r"from the root container. "
     r"Only Singleton injectables can be resolved without a scope. "
     r"To resolve {lifetime} injectables, you must create a scope.\n"
@@ -73,8 +73,7 @@ class FactoryCompiler:
 
         if lifetime != "singleton" and not self._is_scoped_container:
             fmt_map = {
-                "klass": stringify_type(impl),
-                "qualifier": f"with qualifier {qualifier}" if qualifier is not None else "",
+                "fmt_klass": format_name(impl, qualifier),
                 "lifetime": lifetime,
             }
 

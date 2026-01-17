@@ -52,7 +52,7 @@ def test_checks_dependencies_exist() -> None:
         WireupError,
         match=re.escape(
             "Parameter 'foo' of Type test.unit.test_container_creation.Bar "
-            "has an unknown dependency on Type test.unit.test_container_creation.Foo with qualifier None."
+            "has an unknown dependency on Type test.unit.test_container_creation.Foo."
         ),
     ):
         wireup.create_sync_container(injectables=[Bar])
@@ -132,11 +132,11 @@ def test_validates_container_raises_when_cyclical_dependencies() -> None:
     with pytest.raises(
         WireupError,
         match=re.escape(
-            "Circular dependency detected for test.unit.test_container_creation.Bar "
-            '(with qualifier "qualifier_name", created via test.unit.test_container_creation.make_bar)'
-            "\n -> test.unit.test_container_creation.Foo (created via test.unit.test_container_creation.make_foo)"
-            '\n -> test.unit.test_container_creation.Bar (with qualifier "qualifier_name", '
-            "created via test.unit.test_container_creation.make_bar)"
+            "Circular dependency detected for Type test.unit.test_container_creation.Bar with qualifier 'qualifier_name' "
+            "(created via test.unit.test_container_creation.make_bar)"
+            "\n -> Type test.unit.test_container_creation.Foo (created via test.unit.test_container_creation.make_foo)"
+            "\n -> Type test.unit.test_container_creation.Bar with qualifier 'qualifier_name' "
+            "(created via test.unit.test_container_creation.make_bar)"
             " ! Cycle here"
         ),
     ):

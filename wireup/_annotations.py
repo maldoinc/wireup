@@ -17,7 +17,7 @@ from wireup.ioc.types import (
     Qualifier,
     TemplatedString,
 )
-from wireup.ioc.util import stringify_type
+from wireup.util import stringify_type
 
 if TYPE_CHECKING:
     from collections.abc import Callable

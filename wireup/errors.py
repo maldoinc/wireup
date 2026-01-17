@@ -3,12 +3,14 @@ from __future__ import annotations
 import sys
 from typing import TYPE_CHECKING, Any, Callable
 
+from wireup.util import format_name, stringify_type
+
 if TYPE_CHECKING:
     from wireup.ioc.types import AnyCallable, Qualifier
 
 
 class WireupError(Exception):
-    """Base type for all exceptions raised by Wireup."""
+    """Base type for all exceptions raised by wireup."""
 
 
 class DuplicateServiceRegistrationError(WireupError):
@@ -18,8 +20,7 @@ class DuplicateServiceRegistrationError(WireupError):
         self.klass = klass
         self.qualifier = qualifier
 
-        msg = f"Cannot register type {klass} with qualifier '{qualifier}' as it already exists."
-        super().__init__(msg)
+        super().__init__(f"Cannot register type {format_name(klass, qualifier)} as it already exists.")
 
 
 class DuplicateQualifierForInterfaceError(WireupError):
@@ -27,8 +28,8 @@ class DuplicateQualifierForInterfaceError(WireupError):
 
     def __init__(self, klass: type[Any], qualifier: Qualifier | None) -> None:
         super().__init__(
-            f"Cannot register implementation class {klass} for {klass.__base__} "
-            f"with qualifier '{qualifier}' as it already exists",
+            f"Cannot register implementation class {format_name(klass, qualifier)} for {klass.__base__} "
+            "as it already exists",
         )
 
 
@@ -72,8 +73,10 @@ class UnknownServiceRequestedError(WireupError):
     """Raised when requesting an unknown type."""
 
     def __init__(self, klass: Callable[..., Any] | None, qualifier: Qualifier | None = None) -> None:
-        qualifier_str = f" with qualifier '{qualifier}'" if qualifier else ""
-        msg = f"Cannot create unknown injectable {klass}{qualifier_str}. Make sure it is registered with the container."
+        msg = (
+            f"Cannot create unknown injectable {format_name(klass, qualifier)}. "
+            "Make sure it is registered with the container."
+        )
         super().__init__(msg)
 
 
@@ -88,7 +91,7 @@ class UnknownOverrideRequestedError(WireupError):
     """Raised when attempting to override a injectable which does not exist."""
 
     def __init__(self, klass: type, qualifier: Qualifier | None) -> None:
-        super().__init__(f"Cannot override unknown {klass} with qualifier '{qualifier}'.")
+        super().__init__(f"Cannot override unknown {format_name(klass, qualifier)}.")
 
 
 if sys.version_info >= (3, 11):

@@ -109,7 +109,10 @@ async def test_get_unknown_class(container: Container):
 
     with pytest.raises(
         UnknownServiceRequestedError,
-        match=f"Cannot create unknown injectable {TestGetUnknown}. Make sure it is registered with the container.",
+        match=re.escape(
+            f"Cannot create unknown injectable Type {TestGetUnknown.__module__}.{TestGetUnknown.__name__}. "
+            "Make sure it is registered with the container."
+        ),
     ):
         await run(container.get(TestGetUnknown))
 
@@ -118,7 +121,9 @@ async def test_container_get_interface_without_impls_raises(container: Container
     with pytest.raises(
         WireupError,
         match=re.escape(
-            f"Cannot create unknown injectable {InterfaceWithoutImpls}. Make sure it is registered with the container."
+            "Cannot create unknown injectable Abcmeta "
+            f"{InterfaceWithoutImpls.__module__}.{InterfaceWithoutImpls.__name__}. "
+            "Make sure it is registered with the container."
         ),
     ):
         await run(container.get(InterfaceWithoutImpls))
@@ -128,8 +133,8 @@ async def test_container_get_interface_unknown_impl_errors_known_impls(container
     with pytest.raises(
         WireupError,
         match=re.escape(
-            f"Cannot create unknown injectable {Foo} with qualifier 'does-not-exist'. "
-            "Make sure it is registered with the container."
+            f"Cannot create unknown injectable Abcmeta {Foo.__module__}.{Foo.__name__} "
+            "with qualifier 'does-not-exist'. Make sure it is registered with the container."
         ),
     ):
         await run(container.get(Foo, qualifier="does-not-exist"))
@@ -237,7 +242,7 @@ def test_raises_multiple_definitions():
 
     with pytest.raises(
         DuplicateServiceRegistrationError,
-        match=re.escape(f"Cannot register type {Multiple} with qualifier 'None' as it already exists."),
+        match=re.escape(f"Cannot register type Type {Multiple.__module__}.{Multiple.__name__} as it already exists."),
     ):
         wireup.create_sync_container(injectables=[Multiple, Multiple])
 
@@ -255,7 +260,8 @@ def test_register_same_qualifier_should_raise():
     with pytest.raises(
         DuplicateQualifierForInterfaceError,
         match=re.escape(
-            f"Cannot register implementation class {F11} for {F1Base} with qualifier 'f1' as it already exists",
+            f"Cannot register implementation class Type {F11.__module__}.{F11.__name__} "
+            f"with qualifier 'f1' for {F1Base} as it already exists",
         ),
     ):
         wireup.create_async_container(injectables=[F1Base, F1, F11])
@@ -296,7 +302,7 @@ def test_inject_qualifier_on_unknown_type():
     with pytest.raises(
         UnknownServiceRequestedError,
         match=re.escape(
-            f"Cannot create unknown injectable {str} with qualifier '{__name__}'. "
+            f"Cannot create unknown injectable Type builtins.str with qualifier '{__name__}'. "
             "Make sure it is registered with the container."
         ),
     ):
