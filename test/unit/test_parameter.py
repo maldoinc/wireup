@@ -35,6 +35,53 @@ def test_get_templated_string():
     assert bag.get(templated_string) == "value1 and value2"
 
 
+def test_get_templated_string_with_dot_notation():
+    values = {
+        "param1": {
+            "nested1": "value1",
+        },
+        "param2": {
+            "nested2": None,
+        },
+    }
+    bag = ParameterBag(values)
+    templated_string = TemplatedString("${param1.nested1} and ${param2.nested2}")
+    assert bag.get(templated_string) == "value1 and None"
+
+
+def test_get_templated_string_with_dot_notation_with_non_existing_param():
+    values = {
+        "param1": {
+            "nested1": {
+                "nested1_1": "value1",
+            },
+        }
+    }
+    bag = ParameterBag(values)
+    templated_string = TemplatedString("${param1.nested2.nested1_1}")
+    with pytest.raises(UnknownParameterError):
+        bag.get(templated_string)
+
+    templated_string = TemplatedString("${param1.nested1.nested1_2}")
+    with pytest.raises(UnknownParameterError):
+        bag.get(templated_string)
+
+
+def test_get_templated_string_with_dot_notation__param_is_object():
+    class TestObject:
+        def __init__(self) -> None:
+            self.property1 = "value1"
+
+    values = {"param1": TestObject()}
+    bag = ParameterBag(values)
+    templated_string = TemplatedString("${param1.property1}")
+    assert bag.get(templated_string) == "value1"
+
+    templated_string = TemplatedString("${param1.property2}")
+    with pytest.raises(UnknownParameterError):
+        bag.get(templated_string)
+
+
 def test_get_templated_string_with_non_existing_param():
     values = {"param1": "value1"}
     bag = ConfigStore(values)
