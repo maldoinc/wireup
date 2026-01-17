@@ -157,8 +157,6 @@ def ensure_is_type(value: type[T] | str, globalns_supplier: Callable[[], dict[st
         raise WireupError(msg) from e
 
 
-
-
 def hide_annotated_names(func: AnyCallable) -> None:
     if hasattr(func, "__wireup_names__"):
         return

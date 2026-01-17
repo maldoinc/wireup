@@ -33,8 +33,7 @@
 </div>
 
 ??? example "See how Wireup compares to `Depends()`"
-    This comparison shows the boilerplate reduction when using Wireup's type-based injection versus `Depends()`
-    chains.
+    This comparison shows the boilerplate reduction when using Wireup's type-based injection versus `Depends()` chains.
 
     === "Before"
         ```python

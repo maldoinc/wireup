@@ -141,12 +141,12 @@ class Settings(BaseSettings):
     debug: bool = False
 ```
 
-In this example, Pydantic's `BaseSettings` adds parameters that Wireup doesn't manage. Since they have defaults,
-Wireup allows the class to be registered without errors.
+In this example, Pydantic's `BaseSettings` adds parameters that Wireup doesn't manage. Since they have defaults, Wireup
+allows the class to be registered without errors.
 
 !!! note
-    This only applies to parameters with explicit default values. Parameters without defaults that reference unknown
-    types will still raise an error to catch configuration mistakes early.
+    This only applies to parameters with explicit default values. Parameters without defaults that reference unknown types
+    will still raise an error to catch configuration mistakes early.
 
 ## Next Steps
 
