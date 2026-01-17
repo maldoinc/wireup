@@ -1,8 +1,23 @@
-Unit testing service objects is meant to be easy as the container does not interfere in
-any way with the underlying classes.
+Unit testing dependencies is meant to be easy as the container does not interfere in
+any way with the decorated classes or functions.
 
 Classes can be instantiated as usual in tests, and you need to pass dependencies 
 such as services or configuration to them yourself.
+
+```python
+def test_user_service_logic():
+    # Arrange: Create dependencies manually (mocks or real)
+    repo_mock = MagicMock()
+    repo_mock.get.return_value = User(id=1, name="Test User")
+    
+    # Act: Instantiate the service with the mock
+    service = UserService(repository=repo_mock)
+    result = service.get_user_name(1)
+    
+    # Assert: Verify behavior
+    assert result == "Test User"
+    repo_mock.get.assert_called_once_with(1)
+```
 
 To specify custom behavior for tests, provide a custom implementation 
 or a subclass that returns test data.
@@ -34,7 +49,7 @@ random_mock = MagicMock()
 # Chosen by fair dice roll. Guaranteed to be random.
 random_mock.get_random.return_value = 4
 
-with container.override.service(target=RandomService, new=random_mock):
+with container.override.injectable(target=RandomService, new=random_mock):
     # Assuming in the context of a web app:
     # /random endpoint has a dependency on RandomService
     # requests to inject RandomService during the lifetime
@@ -67,7 +82,7 @@ def app():
 from wireup.integration.fastapi import get_app_container
 
 def test_something_with_mocked_db_service(client: TestClient, app):
-    with get_app_container(app).override.service(DBService, new=...):
+    with get_app_container(app).override.injectable(DBService, new=...):
         response = client.get("/some/path")
 
     # Assert response and mock calls.

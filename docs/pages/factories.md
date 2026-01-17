@@ -17,7 +17,7 @@ it with the container. Return type annotation of the factory is required as it d
     If you need to perform cleanup (like database connections or network resources), use [generator factories](resources.md).
 
 
-## Implement strategy pattern
+## Strategy pattern
 
 Assume a base class `Notifier` with implementations that define how the notification is sent (IMAP, POP, WebHooks, etc.)
 Given a user it is possible to instantiate the correct type of notifier based on user preferences.
@@ -66,7 +66,7 @@ def get_current_user(auth_service: AuthService) -> AuthenticatedUser:
     return auth_service.get_current_user()
 ```
 
-## Built-in types
+## Injecting Primitives
 
 If you want to inject resources which are just strings, ints, or other built-in types then you can use a factory in
 combination with `NewType`.

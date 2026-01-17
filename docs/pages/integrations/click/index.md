@@ -20,7 +20,7 @@ Dependency injection for Click is available in the `wireup.integration.click` mo
 
 ### Initialize the integration
 
-First, [create a sync container](../../container.md)
+First, [create a container](../../container.md).
 
 ```python
 from typing import Annotated
@@ -88,6 +88,9 @@ from click.testing import CliRunner
 
 
 def test_random_number_command():
+    class MockRandomService:
+        def get_random(self):
+            return 4
     
     # Create test container with mocked service
     with container.override.service(RandomService, new=MockRandomService()):

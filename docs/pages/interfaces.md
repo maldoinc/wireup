@@ -5,30 +5,46 @@ This allows you to easily switch between different implementations, for example 
 
 You can use the `as_type` parameter in `@injectable` to register a service as any other type. This is commonly used to bind a concrete class to a Protocol or an Abstract Base Class.
 
-```python
-import wireup
-from typing import Protocol
-from wireup import injectable, container
+=== "Protocol"
 
-class Cache(Protocol):
-    def get(self, key: str) -> str | None: ...
-    def set(self, key: str, value: str): ...
+    ```python hl_lines="8 11"
+    from typing import Protocol
+    from wireup import injectable
+    
+    class Cache(Protocol):
+        def get(self, key: str) -> str | None: ...
+        def set(self, key: str, value: str): ...
+    
+    @injectable(as_type=Cache)
+    class InMemoryCache: ...
+    ```
 
-@injectable(as_type=Cache)
-class InMemoryCache: ...
+=== "Abstract Base Class"
 
-@wireup.inject_from_container(container)
-def main(cache: Cache): ...
-```
+    ```python hl_lines="11 16"
+    from abc import ABC, abstractmethod
+    from wireup import injectable
+    
+    class Cache(ABC):
+        @abstractmethod
+        def get(self, key: str) -> str | None: ...
+        
+        @abstractmethod
+        def set(self, key: str, value: str): ...
+    
+    @injectable(as_type=Cache)
+    class InMemoryCache(Cache):
+        def get(self, key: str) -> str | None: ...
+        def set(self, key: str, value: str): ...
+    ```
 
 ## Multiple Implementations
 
 When you have multiple implementations of the same type, use **qualifiers** to distinguish between them.
 
 ```python
-import wireup
 from typing import Annotated
-from wireup import Inject, injectable, container
+from wireup import Inject, injectable, inject_from_container
 
 @injectable(as_type=Cache, qualifier="memory")
 class InMemoryCache: ...
@@ -36,12 +52,24 @@ class InMemoryCache: ...
 @injectable(as_type=Cache, qualifier="redis")
 class RedisCache: ...
 
-@wireup.inject_from_container(container)
+@inject_from_container(container)
 def main(
     memory_cache: Annotated[Cache, Inject(qualifier="memory")],
     redis_cache: Annotated[Cache, Inject(qualifier="redis")],
 ): ...
 ```
+
+!!! tip "Qualifiers don't have to be strings"
+    You can avoid magic strings by using Enums or hashable types for qualifiers. This prevents typos and makes refactoring easier.
+    
+    ```python
+    class CacheType(StrEnum):
+        MEMORY = "memory"
+        REDIS = "redis"
+    
+    @injectable(as_type=Cache, qualifier=CacheType.REDIS)
+    class RedisCache: ...
+    ```
 
 ## Default Implementation
 

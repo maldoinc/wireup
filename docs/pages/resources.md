@@ -2,7 +2,11 @@ Use generator factories when an injectable requires cleanup, such as database co
 
 ## Generator Factories
 
-Generator factories use Python's `yield` statement to manage resource lifecycle. The code before `yield` runs during creation, and the code after `yield` runs during cleanup.
+Generator factories use Python's `yield` statement to manage resource lifecycle:
+
+1.  **Setup**: Code before `yield` runs when the dependency is created.
+2.  **Use**: The yielded value is injected into consumers.
+3.  **Teardown**: Code after `yield` runs when the scope closes.
 
 === "Generators"
 
@@ -28,8 +32,10 @@ Generator factories use Python's `yield` statement to manage resource lifecycle.
 === "Async Context Manager"
 
     ```python
+    from typing import AsyncIterator
+
     @injectable
-    async def client_session_factory() -> ClientSession:
+    async def client_session_factory() -> AsyncIterator[ClientSession]:
         async with ClientSession() as sess:
             yield sess
     ```
@@ -61,4 +67,4 @@ def db_session_factory(engine: Engine) -> Iterator[Session]:
 
 
 !!! note "Suppressing Errors"
-    Factories cannot suppress exceptions—they can perform cleanup, but the original error will always propagate. This ensures cleanup code doesn't accidentally change your program's control flow.
+    Factories cannot suppress exceptions, they can perform cleanup, but the original error will always propagate. This ensures cleanup code doesn't accidentally change your program's control flow.

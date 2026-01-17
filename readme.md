@@ -144,12 +144,12 @@ user_service = container.get(UserService)  # ✅ Dependencies resolved.
 
 ### 🎯 Function Injection
 
-Inject dependencies directly into functions with a simple decorator.
+Inject dependencies directly into any function. This is useful for CLI commands, background tasks, event handlers, or any standalone function that needs access to the container.
 
 ```python
 @inject_from_container(container)
-def process_users(service: Injected[UserService]):
-    # ✅ UserService injected.
+def migrate_database(db: Injected[Database], settings: Injected[Settings]):
+    # ✅ Database and Settings injected.
     pass
 ```
 
@@ -201,7 +201,7 @@ class OrderProcessor:
 ### 🏭 Flexible Creation Patterns
 
 Defer instantiation to specialized factories when complex initialization or cleanup is required.
-Full support for async and generators. Wireup handles cleanup at the correct time depending on the service lifetime.
+Full support for async and generators. Wireup handles cleanup at the correct time depending on the injectable lifetime.
 
 ```python
 class WeatherClient:
@@ -213,6 +213,22 @@ def weather_client_factory() -> Iterator[WeatherClient]:
     with requests.Session() as session:
         yield WeatherClient(client=session)
 ```
+
+<details>
+<summary>Async Example</summary>
+
+```python
+class WeatherClient:
+    def __init__(self, client: aiohttp.ClientSession) -> None:
+        self.client = client
+
+@injectable
+async def weather_client_factory() -> AsyncIterator[WeatherClient]:
+    async with aiohttp.ClientSession() as session:
+        yield WeatherClient(client=session)
+```
+
+</details>
 
 ### ❓ Optional Dependencies
 
@@ -351,10 +367,16 @@ wireup.integration.fastapi.setup(container, app)
 
 ### 🧪 Simplified Testing
 
-Wireup does not patch your services and lets you test them in isolation.
+Wireup decorators only collect metadata. Injectables remain plain classes or functions with no added magic to them. Test them directly with mocks or fakes, no special setup required.
 
-If you need to use the container in your tests, you can have it create parts of your services
-or perform dependency substitution.
+```python
+def test_user_repository():
+    fake_db = FakeDatabase()
+    repo = UserRepository(db=fake_db)  # Just instantiate directly.
+    assert repo.get_user(1) == expected_user
+```
+
+You can also use `container.override` to swap dependencies during tests:
 
 ```python
 with container.override.injectable(target=Database, new=in_memory_database):

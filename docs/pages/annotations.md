@@ -22,7 +22,7 @@ For classes and functions marked with `@injectable`:
 When you're injecting into code that Wireup doesn't manage (like framework route handlers), you always need annotations. Use either `Annotated[T, Inject(...)]` or the shorthand `Injected[T]`.
 
 !!! info "Why external code needs annotations"
-    Inside Wireup injectables, Wireup assumes full ownership of all dependencies, so basic `Injected[T]` annotations are redundant. For external targets, annotations explicitly tell Wireup to handle those parameters.
+    Inside Wireup injectables, Wireup assumes full ownership of all dependencies, so basic `Injected[T]` annotations are redundant. For external targets, annotations explicitly tell Wireup to handle those parameters without interfering with parameters provided by the framework or runtime.
 
 ## Usage Examples
 
@@ -41,7 +41,7 @@ def configure(
     service: Annotated[MyService, Inject()],
 
     # Alternative shorthand syntax for injectable injection
-    service: Injected[MyService],
+    my_service: Injected[MyService],
     
     # Inject a specific implementation when multiple exist
     db: Annotated[Database, Inject(qualifier="readonly")]

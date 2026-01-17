@@ -12,7 +12,7 @@ nav:
     - Features:
       - Factories: factories.md
       - Interfaces: interfaces.md
-      - Resources Management: resources.md
+      - Resource Management: resources.md
 
     - Usage:
       - Function Injection: function_injection.md

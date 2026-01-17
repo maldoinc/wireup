@@ -49,7 +49,8 @@ class UserService:
 
 ### Factories
 
-Functions can also be registered as injectables. This is useful for creating objects that you don't control (like 3rd party libraries) or that require complex setup.
+Functions can also be registered as injectables. This is useful for creating objects that you don't control (like 3rd party libraries), require complex setup or cleanup.
+See [Factories](factories.md) and [Resource Management](resources.md) for more details.
 
 ```python
 import boto3

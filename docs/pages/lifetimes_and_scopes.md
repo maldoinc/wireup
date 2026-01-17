@@ -61,10 +61,11 @@ with container.enter_scope() as scope:
 ```
 
 !!! note "Scope Required"
-    Only singletons may be resolved using the base container instance. Scoped and Transient dependencies must
+    Only singletons may be resolved using the root container instance. Scoped and Transient dependencies must
     be resolved within a scope to ensure proper cleanup of resources.
 
-    Singleton dependencies will be cleaned up when the container's `.close()` method is called.
+    Singleton dependencies will be cleaned up when the root container's `.close()` method is called.
+    Transient dependencies are cleaned up when the **scope that created them** closes.
 
 ## Lifetime Summary
 
@@ -91,7 +92,7 @@ Scopes provide isolated contexts. This is useful for things like database sessio
 
 === "Function Decorator"
 
-    The [`@wireup.inject_from_container`](function_injection.md) decorator behaves similarly to web frameworks: it automatically enters a new scope before the function runs and closes it afterwards. This is useful for background tasks or CLI commands.
+    The [`@wireup.inject_from_container`](function_injection.md) automatically enters a new scope before the function runs and closes it afterwards, ensuring cleanup is performed.
 
     ```python
     @wireup.inject_from_container(container)
@@ -134,11 +135,14 @@ See [Resources & Cleanup](resources.md) for details on creating cleanable resour
 
 ## Lifetime Rules
 
-Injectables have restrictions on what they can depend on based on their lifetime:
+### Lifetime Rules
 
-- **Singletons** can only depend on other singletons and config
-- **Scoped** can depend on singletons, scoped, and config  
-- **Transient** can depend on any lifetime and config
+Injectables have restrictions on what they can depend on to prevent **Scope Leakage**:
+
+- **Singletons** can only depend on other singletons and config.
+    - *Why?* A Singleton is alive for the duration of the application. If it depended on a short-lived object (Scoped or Transient), that object would be kept alive indefinitely, preventing cleanup and causing memory leaks. Wireup prevents this common pitfall by design.
+- **Scoped** can depend on singletons, scoped, and config.
+- **Transient** can depend on any lifetime and config.
 
 ## Next Steps
 

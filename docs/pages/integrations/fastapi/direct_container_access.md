@@ -2,6 +2,12 @@
 
 Wireup primarily handles dependency injection in FastAPI routes. However, you can directly access the request or application container to retrieve services when needed outside of standard dependency injection.
 
+Some examples of when you might need to do this:
+
+* Middleware: logging, tracing, authentication checks
+* Route decorators: `@require_admin`, `@rate_limit`, etc.
+* FastAPI Dependencies: when composing Wireup services with `Depends()`
+
 
 ```python
 from wireup.integration.fastapi import get_app_container, get_request_container
@@ -22,6 +28,10 @@ app_container = get_app_container(app)
 The app container is always retrievable given an instance of the application.
 
 If you need the request-scoped container outside the route handler (middleware, FastAPI dependencies, decorators), enable `middleware_mode` during setup. 
+
+```python
+wireup.integration.fastapi.setup(container, app, middleware_mode=True)
+``` 
 
 Normally, the container is created just before the route handler is called, and only on endpoints with Wireup dependencies. With this mode enabled, the request-scoped container is created at the start of the request lifecycle, making it available everywhere. This offers the greatest flexibility but runs on every request.
 

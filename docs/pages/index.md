@@ -18,7 +18,7 @@ Use decorators and annotations for concise, co-located definitions, or factories
     Start simple. Register classes directly using decorators and let the container resolve 
     dependencies automatically.
 
-    ```python
+    ```python hl_lines="4 9 11"
     from wireup import injectable, create_sync_container
     from sqlalchemy import create_engine
 
@@ -43,7 +43,7 @@ Use decorators and annotations for concise, co-located definitions, or factories
     Seamlessly inject configuration alongside other dependencies, eliminating the need for 
     manually wiring them up via factories.
 
-    ```python
+    ```python hl_lines="6 9 12 14"
     from wireup import injectable, create_sync_container, Inject
     from typing import Annotated
     import os
@@ -51,7 +51,7 @@ Use decorators and annotations for concise, co-located definitions, or factories
 
     @injectable
     class Database:
-        # Inject "db_url" directly
+        # Inject "db_url" from the container configuration.
         def __init__(self, url: Annotated[str, Inject(config="db_url")]) -> None:
             self.engine = create_engine(url)
 
@@ -86,7 +86,7 @@ Use decorators and annotations for concise, co-located definitions, or factories
         db_url: str = "sqlite://"
     ```
 
-    ```python title="Wiring"
+    ```python title="Wiring" hl_lines="4 8 9"
     from wireup import injectable, create_sync_container
 
     # 3. Wireup factories
@@ -104,14 +104,14 @@ Use decorators and annotations for concise, co-located definitions, or factories
 
 ### 🎯 Function Injection
 
-Inject dependencies directly into functions with a simple decorator.
+Inject dependencies directly into any function. This is useful for CLI commands, background tasks, event handlers, or any standalone function that needs access to the container.
 
 ```python
 from wireup import inject_from_container, Injected
 
 @inject_from_container(container)
-def process_users(service: Injected[UserService]):
-    # ✅ UserService injected.
+def migrate_database(db: Injected[Database], settings: Injected[Settings]):
+    # ✅ Database and Settings injected.
     pass
 ```
 
@@ -181,12 +181,24 @@ Full support for async and generators. Wireup handles cleanup at the correct tim
         def __init__(self, client: requests.Session) -> None:
             self.client = client
 
-    @injectable
+    @service
     def weather_client_factory() -> Iterator[WeatherClient]:
         with requests.Session() as session:
             yield WeatherClient(client=session)
     ```
 
+=== "Async"
+
+    ```python
+    class WeatherClient:
+        def __init__(self, client: aiohttp.ClientSession) -> None:
+            self.client = client
+
+    @service
+    async def weather_client_factory() -> AsyncIterator[WeatherClient]:
+        async with aiohttp.ClientSession() as session:
+            yield WeatherClient(client=session)
+    ```
 ### ❓ Optional Dependencies
 
 Wireup has first-class support for `Optional[T]` and `T | None`. Expose optional dependencies and let Wireup handle the rest.
@@ -337,10 +349,17 @@ wireup.integration.fastapi.setup(container, app)
 
 ### 🧪 Simplified Testing
 
-Wireup does not patch services and lets them be tested in isolation.
+Wireup decorators only collect metadata. Injectables remain plain classes or functions with no added magic to them. Test them directly with mocks or fakes, no special setup required.
 
-If the container is needed in tests, it can create parts of services
-or perform dependency substitution.
+
+```python
+def test_user_repository():
+    fake_db = FakeDatabase()
+    repo = UserRepository(db=fake_db)  # Just instantiate directly.
+    assert repo.get_user(1) == expected_user
+```
+
+You can also use `container.override` to swap dependencies during tests:
 
 ```python
 with container.override.injectable(target=Database, new=in_memory_database):

@@ -16,7 +16,7 @@ Register class-based handlers during setup through Wireup. Do not include these 
 
 ```python title="Class-Based Handler example"
 class UserHandler:
-    router = fastapi.Router(prefix="/users", route_class=WireupRoute)  # (1)!
+    router = fastapi.APIRouter(prefix="/users", route_class=WireupRoute)  # (1)!
 
     def __init__(self, user_service: UserProfileService) -> None:  # (2)!
         self.user_service = user_service

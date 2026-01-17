@@ -2,6 +2,13 @@
 
 <div class="grid cards annotate" markdown>
 
+-   :material-needle:{ .lg .middle } __Inject by Type__
+
+    ---
+
+    Declare dependencies by using type annotations. No `Depends()` factory chains required.
+
+
 -   :material-speedometer:{ .lg .middle } __Zero Runtime Overhead__
 
     ---
@@ -11,28 +18,73 @@
     [:octicons-arrow-right-24: Learn more](class_based_handlers.md)
 
 
--   :material-cog-refresh:{ .lg .middle } __Automatic Dependency Management__
+-   :octicons-package-dependents-24:{ .lg .middle } __Access Anywhere__
 
     ---
 
-    Inject dependencies in routes and automatically manage container lifecycle.
-
-
-
--   :octicons-package-dependents-24:{ .lg .middle } __Global Access__
-
-    ---
-
-    Retrieve dependencies in middleware and route handler decorators where they are normally unavailable in FastAPI.
+    Retrieve the container in middleware, decorators, and other places where FastAPI's DI can't reach.
 
     [:octicons-arrow-right-24: Learn more](direct_container_access.md)
 
--   :material-share-circle:{ .lg .middle } __Shared business logic__
+
+-   :material-share-circle:{ .lg .middle } __Framework-Agnostic__
 
     ---
 
-    Wireup is framework-agnostic. Use it to share the service layer between web applications and other interfaces, such as a CLI.
+    Share your service layer with CLI tools, background workers, and other frameworks.
+
 </div>
+
+??? example "See how Wireup compares to `Depends()`"
+
+    This concise comparison highlights the boilerplate reduction when using Wireup's type-based injection versus `Depends()` chains.
+
+    === "Before"
+
+        ```python
+        # Define your services
+        class UserRepository:
+            def __init__(self, db: Database) -> None:
+                self.db = db
+
+        class UserService:
+            def __init__(self, repo: UserRepository) -> None:
+                self.repo = repo
+
+        # Create factory functions for each dependency
+        def get_db() -> Database: ...
+
+        def get_user_repo(db: Annotated[Database, Depends(get_db)]) -> UserRepository:
+            return UserRepository(db)
+
+        def get_user_service(repo: Annotated[UserRepository, Depends(get_user_repo)]) -> UserService:
+            return UserService(repo)
+
+        # Wire up the dependency chain in the route
+        @app.get("/users")
+        async def list_users(service: Annotated[UserService, Depends(get_user_service)]):
+            return service.find_all()
+        ```
+
+    === "After"
+
+        ```python
+        # Just add @injectable
+        @injectable
+        class UserRepository:
+            def __init__(self, db: Database) -> None:
+                self.db = db
+
+        @injectable
+        class UserService:
+            def __init__(self, repo: UserRepository) -> None:
+                self.repo = repo
+
+        # Inject directly by type
+        @app.get("/users")
+        async def list_users(service: Injected[UserService]):
+            return service.find_all()
+        ```
 
 ### Getting started
 
@@ -61,7 +113,7 @@ app = FastAPI()
 wireup.integration.fastapi.setup(
     container, 
     app, 
-    class_based_handlers=[...]  # Include Wireup Class-Based Handlers
+    class_based_handlers=[UserHandler, OrderHandler]  # Optional: Wireup Class-Based Handlers
 )
 ```
 
@@ -95,6 +147,9 @@ See [Annotations](../../annotations.md) for more details.
     @app.websocket("/ws")
     async def ws(websocket: WebSocket, greeter: Injected[GreeterService]): ...
     ```
+
+!!! note "Coexistence with `Depends()`"
+    Wireup and FastAPI's `Depends()` can coexist. Use `Depends()` when required and Wireup for your service layer.
 
 !!! tip
     Improve performance by using a custom APIRoute class. 

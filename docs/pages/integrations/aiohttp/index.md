@@ -143,7 +143,9 @@ The integration automatically manages the container lifecycle. It hooks into AIO
 
 If you're using a type checker, then you may notice it showing type errors when adding
 dependencies to aio handlers. This is because the signature as defined in aiohttp only allows for `web.Request` in the signature. 
-To make the type checker happy you can annotate them with `wireup.integration.aiohttp.route`.
+
+To address this, you can decorate the handler with `@wireup.integration.aiohttp.route`.
+This decorator is a no-op at runtime but provides the necessary type hints to satisfy type checkers.
 
 ```python hl_lines="4 7"
 from wireup.integration.aiohttp import route

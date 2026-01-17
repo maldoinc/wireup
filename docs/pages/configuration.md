@@ -3,7 +3,7 @@ definitions without having to create factories for every injectable.
 
 ## Loading Configuration
 
-Configuration is passed to the container during creation as a dictionary. A common pattern is to read from environment variables and map them to known configuration keys.
+Configuration is passed to the container during creation as a dictionary.
 
 ```python
 import wireup
@@ -42,24 +42,44 @@ class DatabaseService:
 
 You are not limited to primitives. You can inject entire configuration objects, such as Dataclasses or Pydantic models. This allows you to group related settings and inject only what a service needs.
 
+=== "Dataclass"
+
+    ```python
+    from dataclasses import dataclass
+
+    @dataclass
+    class DatabaseConfig:
+        url: str
+        max_connections: int
+
+    container = wireup.create_sync_container(
+        config={"db_config": DatabaseConfig(url="...", max_connections=10)},
+        injectables=[...]
+    )
+    ```
+
+=== "Pydantic"
+
+    ```python
+    from pydantic_settings import BaseSettings
+
+    class DatabaseSettings(BaseSettings):
+        url: str
+        max_connections: int = 10
+
+    container = wireup.create_sync_container(
+        config={"db": DatabaseSettings()},  # Loads from env automatically
+        injectables=[...]
+    )
+    ```
+
+Then inject the configuration object:
+
 ```python
-from dataclasses import dataclass
-
-@dataclass
-class DatabaseConfig:
-    url: str
-    max_connections: int
-
-container = wireup.create_sync_container(
-    config={"db_config": DatabaseConfig(url="...", max_connections=10)},
-    injectables=[...]
-)
-
 @injectable
 class DatabaseService:
     def __init__(
         self,
-        # Inject only the database configuration
         config: Annotated[DatabaseConfig, Inject(config="db_config")]
     ) -> None:
         self.connection = connect(config.url)
@@ -71,12 +91,16 @@ class DatabaseService:
 You can create dynamic configuration values by interpolating other configuration keys using the `${key}` syntax.
 
 ```python
+# config = {"env": "prod", "host": "localhost", "port": 5432}
+
 @injectable
 class FileStorageService:
     def __init__(
         self,
-        # If config is {"env": "prod"}, this becomes "/tmp/uploads/prod"
-        upload_path: Annotated[str, Inject(expr="/tmp/uploads/${env}")]
+        # Becomes "/tmp/uploads/prod"
+        upload_path: Annotated[str, Inject(expr="/tmp/uploads/${env}")],
+        # Becomes "postgresql://localhost:5432/mydb"
+        db_url: Annotated[str, Inject(expr="postgresql://${host}:${port}/mydb")]
     ) -> None:
         self.upload_path = upload_path
 ```
@@ -86,12 +110,13 @@ class FileStorageService:
 
 ## Aliasing Configuration Keys
 
-If you don't like having string configuration keys in your injectable objects you can alias them instead.
+Avoid repeating string keys across your codebase by creating type aliases. This also makes refactoring easier if configuration keys change.
 
 ```python
 # Create an alias for the configuration injection
 EnvConfig = Annotated[str, Inject(config="env")]
 
+# Use the alias instead of repeating Inject(config="env")
 def list_users(env: EnvConfig) -> None: ...
 def get_users(env: EnvConfig) -> None: ...
 ```

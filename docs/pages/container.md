@@ -44,15 +44,17 @@ Both creation functions accept the following arguments:
 
 Retrieve an instance of a registered injectable.
 
-```python
-# Sync
-db = container.get(Database)
-readonly_db = container.get(Database, qualifier="readonly")
+=== "Synchronous"
+    ```python
+    db = container.get(Database)
+    readonly_db = container.get(Database, qualifier="readonly")
+    ```
 
-# Async
-db = await container.get(Database)
-readonly_db = await container.get(Database, qualifier="readonly")
-```
+=== "Async"
+    ```python
+    db = await container.get(Database)
+    readonly_db = await container.get(Database, qualifier="readonly")
+    ```
 
 **Qualifiers**: Use the `qualifier` argument to retrieve specific implementations when multiple are registered. See [Interfaces](interfaces.md) for more details.
 
@@ -60,13 +62,15 @@ readonly_db = await container.get(Database, qualifier="readonly")
 
 Clean up the container and release resources. This triggers the cleanup phase of any generator-based factories.
 
-```python
-# Sync
-container.close()
+=== "Synchronous"
+    ```python
+    container.close()
+    ```
 
-# Async
-await container.close()
-```
+=== "Async"
+    ```python
+    await container.close()
+    ```
 
 ### `enter_scope`
 
@@ -100,16 +104,12 @@ See [Testing](testing.md) for details.
 
 ## Eager Initialization
 
-By default, injectables are created lazily when first requested. 
-For most this is fine, but some may perform expensive work during initialization (e.g. loading ML models, warming up caches, or establishing connection pools).
-To avoid latency on the first request, you can force initialization of these during startup.
+By default, objects are created lazily when first requested. 
+To avoid latency on first request for expensive services, initialize them at startup:
 
 ```python
-# Sync
-container.get(HeavyComputeService)
-
-# Async
-await container.get(HeavyComputeService)
+for dependency in [HeavyComputeService, MLModelService, Database]:
+    container.get(dependency)  # or `await container.get(dependency)` for async
 ```
 
 ## Next Steps
