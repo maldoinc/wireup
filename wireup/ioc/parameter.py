@@ -69,7 +69,7 @@ class ParameterBag:
             # a value in baggage that matches the full name first
             name = match.group(1)
             try:
-                return self.__get_value_from_name(name)
+                return str(self.__get_value_from_name(name))
             except UnknownParameterError:
                 pass
 

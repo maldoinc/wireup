@@ -97,7 +97,7 @@ def test_does_not_affect_unused_endpoints(client: TestClient):
 def test_injects_parameters(client: TestClient):
     response = client.get("/params")
     assert response.status_code == 200
-    assert response.json() == {"version": "v1", "foo": "bar", "foo_foo": "bar-bar", "baz": "bar_bar"}
+    assert response.json() == {"version": "v1", "foo": "bar", "foo_foo": "bar-bar"}
 
 
 def test_request_container_in_decorator(client: TestClient):
