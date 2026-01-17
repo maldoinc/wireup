@@ -40,6 +40,7 @@ def clean_exit_stack(
             if e is not exc_val:
                 errors.append(e)
 
+    exit_stack.clear()
     maybe_raise_exc(exc_val=exc_val, exc_tb=exc_tb, container_close_errors=errors)
 
 
@@ -70,6 +71,7 @@ async def async_clean_exit_stack(
             if e is not exc_val:
                 errors.append(e)
 
+    exit_stack.clear()
     maybe_raise_exc(exc_val=exc_val, exc_tb=exc_tb, container_close_errors=errors)
 
 

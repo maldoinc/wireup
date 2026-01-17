@@ -187,3 +187,40 @@ async def test_raises_errors_async() -> None:
     assert len(e.value.errors) == 1
     assert isinstance(e.value.errors[0], ValueError)
     assert str(e.value.errors[0]) == "boom"
+
+
+def test_sync_container_clears_exit_stack_on_close() -> None:
+    Something = NewType("Something", str)
+
+    @injectable
+    def my_gen() -> Iterator[Something]:
+        yield Something("start")
+
+    container = wireup.create_sync_container(injectables=[my_gen])
+    container.get(Something)
+    assert len(container._global_scope_exit_stack) == 1
+
+    container.close()
+    assert len(container._global_scope_exit_stack) == 0
+
+    container.close()
+
+
+async def test_async_container_clears_exit_stack_on_close() -> None:
+    Something = NewType("Something", str)
+
+    @injectable
+    async def my_gen() -> AsyncIterator[Something]:
+        yield Something("start")
+
+    container = wireup.create_async_container(injectables=[my_gen])
+
+    @inject_from_container(container)
+    async def target(val: Injected[Something]) -> None:
+        pass
+
+    await target()
+    assert len(container._global_scope_exit_stack) == 1
+    await container.close()
+    assert len(container._global_scope_exit_stack) == 0
+    await container.close()
