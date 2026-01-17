@@ -53,11 +53,11 @@ class ParameterBag:
                 raise UnknownParameterError(name)
 
             return holder[name]
-        else:
-            if not hasattr(holder, name):
-                raise UnknownParameterError(name)
 
-            return getattr(holder, name)
+        if not hasattr(holder, name):
+            raise UnknownParameterError(name)
+
+        return getattr(holder, name)
 
     def __interpolate(self, val: str) -> str:
         if val in self.__cache:
