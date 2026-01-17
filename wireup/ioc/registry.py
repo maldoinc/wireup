@@ -17,7 +17,6 @@ from wireup.errors import (
     UnknownQualifiedServiceRequestedError,
     WireupError,
 )
-from wireup.util import format_name, stringify_type
 from wireup.ioc.configuration import ConfigStore
 from wireup.ioc.type_analysis import analyze_type
 from wireup.ioc.types import (
@@ -29,6 +28,7 @@ from wireup.ioc.types import (
     InjectableLifetime,
 )
 from wireup.ioc.util import ensure_is_type, get_globals, param_get_annotation
+from wireup.util import format_name, stringify_type
 
 if TYPE_CHECKING:
     from wireup._annotations import AbstractDeclaration, InjectableDeclaration
@@ -384,10 +384,8 @@ class ContainerRegistry:
                 )
                 raise WireupError(msg) from e
         elif not self.is_type_with_qualifier_known(parameter.klass, qualifier=parameter.qualifier_value):
-            msg = (
-                f"Parameter '{name}' of {stringify_type(target)} "
-                f"has an unknown dependency on {format_name(analyze_type(parameter.klass).raw_type, parameter.qualifier_value)}."
-            )
+            type_str = format_name(analyze_type(parameter.klass).raw_type, parameter.qualifier_value)
+            msg = f"Parameter '{name}' of {stringify_type(target)} has an unknown dependency on {type_str}."
             raise WireupError(msg)
 
     def _assert_valid_resolution_path(

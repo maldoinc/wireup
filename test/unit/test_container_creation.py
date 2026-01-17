@@ -132,7 +132,8 @@ def test_validates_container_raises_when_cyclical_dependencies() -> None:
     with pytest.raises(
         WireupError,
         match=re.escape(
-            "Circular dependency detected for Type test.unit.test_container_creation.Bar with qualifier 'qualifier_name' "
+            "Circular dependency detected for Type test.unit.test_container_creation.Bar "
+            "with qualifier 'qualifier_name' "
             "(created via test.unit.test_container_creation.make_bar)"
             "\n -> Type test.unit.test_container_creation.Foo (created via test.unit.test_container_creation.make_foo)"
             "\n -> Type test.unit.test_container_creation.Bar with qualifier 'qualifier_name' "
