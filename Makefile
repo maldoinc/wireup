@@ -38,6 +38,9 @@ format-docs:
 	find docs -name "*.md" -not -path "docs/pages/class/*" | xargs uv run mdformat --wrap 120
 	find docs -name "*.md" -not -path "docs/pages/class/*" | xargs uv run blacken-docs -l 80 || true
 
+build-docs:
+	uv run mkdocs build --strict -f docs/mkdocs.yml
+
 
 # make docs-deploy version=...
 docs-deploy $(version):

@@ -26,5 +26,9 @@ jobs:
         run: make check-mypy
       - name: Check formatting
         run: make check-fmt
+      - name: Check documentation
+        run: make check-docs
+      - name: Build documentation
+        run: make build-docs
       - name: Run tests
         run: make test
