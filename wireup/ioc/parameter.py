@@ -48,17 +48,16 @@ class ParameterBag:
 
     @classmethod
     def __get_value_from_name_and_holder(cls, name: str, holder: Any) -> Any:
-        match holder:
-            case dict():
-                if name not in holder:
-                    raise UnknownParameterError(name)
+        if isinstance(holder, dict):
+            if name not in holder:
+                raise UnknownParameterError(name)
 
-                return holder[name]
-            case object():
-                if not hasattr(holder, name):
-                    raise UnknownParameterError(name)
+            return holder[name]
+        else:
+            if not hasattr(holder, name):
+                raise UnknownParameterError(name)
 
-                return getattr(holder, name)
+            return getattr(holder, name)
 
     def __interpolate(self, val: str) -> str:
         if val in self.__cache:
