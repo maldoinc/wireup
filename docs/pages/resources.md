@@ -1,15 +1,15 @@
-Use generator factories when an injectable requires cleanup, such as database connections, file handles, or network resources.
+Use generator factories when an injectable requires cleanup, such as database connections, file handles, or network
+resources.
 
 ## Generator Factories
 
 Generator factories use Python's `yield` statement to manage resource lifecycle:
 
-1.  **Setup**: Code before `yield` runs when the dependency is created.
-2.  **Use**: The yielded value is injected into consumers.
-3.  **Teardown**: Code after `yield` runs when the scope closes.
+1. **Setup**: Code before `yield` runs when the dependency is created.
+1. **Use**: The yielded value is injected into consumers.
+1. **Teardown**: Code after `yield` runs when the scope closes.
 
 === "Generators"
-
     ```python
     @injectable
     def db_session_factory() -> Iterator[Session]:
@@ -21,7 +21,6 @@ Generator factories use Python's `yield` statement to manage resource lifecycle:
     ```
 
 === "Context Manager"
-
     ```python
     @injectable
     def db_session_factory() -> Iterator[Session]:
@@ -30,9 +29,9 @@ Generator factories use Python's `yield` statement to manage resource lifecycle:
     ```
 
 === "Async Context Manager"
-
     ```python
     from typing import AsyncIterator
+
 
     @injectable
     async def client_session_factory() -> AsyncIterator[ClientSession]:
@@ -43,12 +42,11 @@ Generator factories use Python's `yield` statement to manage resource lifecycle:
 !!! note "Generator Factories"
     Generator factories must yield exactly once. Yielding multiple times will result in cleanup not being performed.
 
-
 ## Error Handling
 
-When using generator factories with scoped or transient lifetimes, unhandled errors that occur within the 
-scope are automatically propagated to the factories. This enables conditional cleanup, such as rolling back 
-uncommitted database changes when operations fail.
+When using generator factories with scoped or transient lifetimes, unhandled errors that occur within the scope are
+automatically propagated to the factories. This enables conditional cleanup, such as rolling back uncommitted database
+changes when operations fail.
 
 ```python
 @injectable(lifetime="scoped")
@@ -65,6 +63,6 @@ def db_session_factory(engine: Engine) -> Iterator[Session]:
         session.close()
 ```
 
-
 !!! note "Suppressing Errors"
-    Factories cannot suppress exceptions, they can perform cleanup, but the original error will always propagate. This ensures cleanup code doesn't accidentally change your program's control flow.
+    Factories cannot suppress exceptions, they can perform cleanup, but the original error will always propagate. This
+    ensures cleanup code doesn't accidentally change your program's control flow.

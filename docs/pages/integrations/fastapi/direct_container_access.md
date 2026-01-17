@@ -1,13 +1,13 @@
 # Direct Container Access in FastAPI
 
-Wireup primarily handles dependency injection in FastAPI routes. However, you can directly access the request or application container to retrieve services when needed outside of standard dependency injection.
+Wireup primarily handles dependency injection in FastAPI routes. However, you can directly access the request or
+application container to retrieve services when needed outside of standard dependency injection.
 
 Some examples of when you might need to do this:
 
-* Middleware: logging, tracing, authentication checks
-* Route decorators: `@require_admin`, `@rate_limit`, etc.
-* FastAPI Dependencies: when composing Wireup services with `Depends()`
-
+- Middleware: logging, tracing, authentication checks
+- Route decorators: `@require_admin`, `@rate_limit`, etc.
+- FastAPI Dependencies: when composing Wireup services with `Depends()`
 
 ```python
 from wireup.integration.fastapi import get_app_container, get_request_container
@@ -27,13 +27,16 @@ app_container = get_app_container(app)
 
 The app container is always retrievable given an instance of the application.
 
-If you need the request-scoped container outside the route handler (middleware, FastAPI dependencies, decorators), enable `middleware_mode` during setup. 
+If you need the request-scoped container outside the route handler (middleware, FastAPI dependencies, decorators),
+enable `middleware_mode` during setup.
 
 ```python
 wireup.integration.fastapi.setup(container, app, middleware_mode=True)
-``` 
+```
 
-Normally, the container is created just before the route handler is called, and only on endpoints with Wireup dependencies. With this mode enabled, the request-scoped container is created at the start of the request lifecycle, making it available everywhere. This offers the greatest flexibility but runs on every request.
+Normally, the container is created just before the route handler is called, and only on endpoints with Wireup
+dependencies. With this mode enabled, the request-scoped container is created at the start of the request lifecycle,
+making it available everywhere. This offers the greatest flexibility but runs on every request.
 
 ```python
 @router.get("/users")
@@ -59,16 +62,17 @@ def require_not_bob(fn):
 
     return wrapper
 
+
 @router.get("/users")
 @require_not_bob
-async def get_users(user_service: Injected[UserService]):
-    ...
+async def get_users(user_service: Injected[UserService]): ...
 ```
 
 #### In Middleware (Requires Middleware Mode)
 
-```python hl_lines="4"
+```python hl_lines="5"
 from wireup.integration.fastapi import get_request_container
+
 
 async def example_middleware(request: Request, call_next) -> Response:
     container = get_request_container()
@@ -81,20 +85,25 @@ async def example_middleware(request: Request, call_next) -> Response:
 ```python hl_lines="6"
 from wireup.integration.fastapi import get_request_container
 
+
 async def get_example_dependency(
-    request: Request, 
-    other_dependency: Annotated[Other, Depends(...)]
+    request: Request,
+    other_dependency: Annotated[Other, Depends(...)],
 ):
     container = get_request_container()
     ...
 
+
 @router.get("/users")
-async def get_users(example: Annotated[Example, Depends(get_example_dependency)]):
-    ...
+async def get_users(
+    example: Annotated[Example, Depends(get_example_dependency)],
+): ...
 ```
 
-    !!! warning
-        Mixing Wireup and `fastapi.Depends` is discouraged and should be avoided unless necessary.
+```
+!!! warning
+    Mixing Wireup and `fastapi.Depends` is discouraged and should be avoided unless necessary.
 
-        Keep in mind that while accessing the Wireup container in FastAPI dependencies is possible, the reverse is not: Wireup services cannot depend on objects provided by `fastapi.Depends`.
-        ...
+    Keep in mind that while accessing the Wireup container in FastAPI dependencies is possible, the reverse is not: Wireup services cannot depend on objects provided by `fastapi.Depends`.
+    ...
+```

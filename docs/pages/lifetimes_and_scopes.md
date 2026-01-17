@@ -13,16 +13,16 @@ One instance is created and shared across the entire application:
 class Database:
     def __init__(self): ...
 
+
 # Same instance everywhere
 db1 = container.get(Database)  # Instance created
 db2 = container.get(Database)  # Reuses instance
 assert db1 is db2  # True
 ```
 
-
-
 !!! tip
-    Singletons are lazy by default. See [Eager Initialization](container.md#eager-initialization) to initialize them at startup.
+    Singletons are lazy by default. See [Eager Initialization](container.md#eager-initialization) to initialize them at
+    startup.
 
 ### Scoped
 
@@ -33,6 +33,7 @@ One instance per scope, shared within that scope:
 class RequestContext:
     def __init__(self):
         self.request_id = uuid.uuid4()
+
 
 with container.enter_scope() as scope1:
     ctx1 = scope1.get(RequestContext)
@@ -54,6 +55,7 @@ class MessageBuilder:
     def __init__(self):
         self.timestamp = time.time()
 
+
 with container.enter_scope() as scope:
     builder1 = scope.get(MessageBuilder)
     builder2 = scope.get(MessageBuilder)
@@ -61,11 +63,11 @@ with container.enter_scope() as scope:
 ```
 
 !!! note "Scope Required"
-    Only singletons may be resolved using the root container instance. Scoped and Transient dependencies must
-    be resolved within a scope to ensure proper cleanup of resources.
+    Only singletons may be resolved using the root container instance. Scoped and Transient dependencies must be resolved
+    within a scope to ensure proper cleanup of resources.
 
-    Singleton dependencies will be cleaned up when the root container's `.close()` method is called.
-    Transient dependencies are cleaned up when the **scope that created them** closes.
+    Singleton dependencies will be cleaned up when the root container's `.close()` method is called. Transient dependencies
+    are cleaned up when the **scope that created them** closes.
 
 ## Lifetime Summary
 
@@ -77,12 +79,12 @@ with container.enter_scope() as scope:
 
 ## Working with Scopes
 
-Scopes provide isolated contexts. This is useful for things like database sessions or user context that should only exist for a short duration (like a single HTTP request).
+Scopes provide isolated contexts. This is useful for things like database sessions or user context that should only
+exist for a short duration (like a single HTTP request).
 
 === "Web Frameworks"
-
-    When using [Integrations](integrations/index.md) (like FastAPI, Flask, Django), **scopes are handled automatically**.
-    A new scope is created for every incoming request and closed when the request finishes.
+    When using [Integrations](integrations/index.md) (like FastAPI, Flask, Django), **scopes are handled automatically**. A
+    new scope is created for every incoming request and closed when the request finishes.
 
     ```python
     @app.get("/users/me")
@@ -91,8 +93,8 @@ Scopes provide isolated contexts. This is useful for things like database sessio
     ```
 
 === "Function Decorator"
-
-    The [`@wireup.inject_from_container`](function_injection.md) automatically enters a new scope before the function runs and closes it afterwards, ensuring cleanup is performed.
+    The [`@wireup.inject_from_container`](function_injection.md) automatically enters a new scope before the function runs
+    and closes it afterwards, ensuring cleanup is performed.
 
     ```python
     @wireup.inject_from_container(container)
@@ -101,7 +103,6 @@ Scopes provide isolated contexts. This is useful for things like database sessio
     ```
 
 === "Manual Context"
-
     For granular control, you can manage scopes manually using `container.enter_scope()`.
 
     **Synchronous**
@@ -113,7 +114,7 @@ Scopes provide isolated contexts. This is useful for things like database sessio
         # Resolve dependencies from this specific scope
         service = scope.get(RequestService)
         service.process()
-    
+
     # When the block exits, the scope is closed and cleanup runs.
     ```
 
@@ -125,11 +126,12 @@ Scopes provide isolated contexts. This is useful for things like database sessio
     async with container.enter_scope() as scope:
         service = await scope.get(RequestService)
         service.process()
-    ``` 
+    ```
 
 ### Resource Cleanup
 
-Scoped containers ensure that resources are released when the scope exits. This simplifies resource management for things like database transactions or file handles.
+Scoped containers ensure that resources are released when the scope exits. This simplifies resource management for
+things like database transactions or file handles.
 
 See [Resources & Cleanup](resources.md) for details on creating cleanable resources using generator factories.
 
@@ -140,12 +142,14 @@ See [Resources & Cleanup](resources.md) for details on creating cleanable resour
 Injectables have restrictions on what they can depend on to prevent **Scope Leakage**:
 
 - **Singletons** can only depend on other singletons and config.
-    - *Why?* A Singleton is alive for the duration of the application. If it depended on a short-lived object (Scoped or Transient), that object would be kept alive indefinitely, preventing cleanup and causing memory leaks. Wireup prevents this common pitfall by design.
+    - *Why?* A Singleton is alive for the duration of the application. If it depended on a short-lived object (Scoped or
+        Transient), that object would be kept alive indefinitely, preventing cleanup and causing memory leaks. Wireup
+        prevents this common pitfall by design.
 - **Scoped** can depend on singletons, scoped, and config.
 - **Transient** can depend on any lifetime and config.
 
 ## Next Steps
 
-* [Factories](factories.md) - Create complex injectables with setup and teardown logic.
-* [Interfaces](interfaces.md) - Register multiple implementations of the same type.
-* [Testing](testing.md) - Override dependencies for testing.
+- [Factories](factories.md) - Create complex injectables with setup and teardown logic.
+- [Interfaces](interfaces.md) - Register multiple implementations of the same type.
+- [Testing](testing.md) - Override dependencies for testing.

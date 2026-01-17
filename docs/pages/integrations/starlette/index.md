@@ -4,17 +4,19 @@ The `wireup.integration.starlette` module provides dependency injection for Star
 
 <div class="grid cards annotate" markdown>
 
--   :material-cog-refresh:{ .lg .middle } __Automatic Dependency Management__
+- :material-cog-refresh:{ .lg .middle } __Automatic Dependency Management__
 
-    ---
+    ______________________________________________________________________
 
     Automatically manage the container lifecycle and inject dependencies into endpoints.
 
--   :material-share-circle:{ .lg .middle } __Shared Business Logic__
+- :material-share-circle:{ .lg .middle } __Shared Business Logic__
 
-    ---
+    ______________________________________________________________________
 
-    Wireup is framework-agnostic, allowing the service layer to be shared across web applications and other interfaces, such as CLIs.
+    Wireup is framework-agnostic, allowing the service layer to be shared across web applications and other interfaces,
+    such as CLIs.
+
 </div>
 
 ### Setting Up the Integration
@@ -30,7 +32,7 @@ app = Starlette()
 
 container = wireup.create_async_container(
     injectables=[services],
-    config={"DEBUG": True}  # Optionally expose configuration to services
+    config={"DEBUG": True},  # Optionally expose configuration to services
 )
 ```
 
@@ -43,10 +45,10 @@ wireup.integration.starlette.setup(container, app)
 
 ### Injecting Dependencies into Endpoints
 
-To inject dependencies, apply the `@inject` decorator from the `wireup.integration.starlette` module to endpoints
-and annotate parameters accordingly. Refer to [Annotations](../../annotations.md) for more details.
+To inject dependencies, apply the `@inject` decorator from the `wireup.integration.starlette` module to endpoints and
+annotate parameters accordingly. Refer to [Annotations](../../annotations.md) for more details.
 
-```python title="Starlette Endpoint" hl_lines="5 6 8 11 17 20"
+```python title="Starlette Endpoint" hl_lines="9 11 18 22"
 from starlette.endpoints import HTTPEndpoint
 from starlette.requests import Request
 from starlette.responses import JSONResponse, PlainTextResponse
@@ -54,9 +56,10 @@ from starlette.responses import JSONResponse, PlainTextResponse
 from wireup import injectable, Injected
 from wireup.integration.starlette import inject
 
+
 @inject
 async def get_random(
-    request: Request, 
+    request: Request,
     random: Injected[RandomService],
 ) -> JSONResponse:
     return JSONResponse({"lucky_number": random.get_random()})
@@ -64,9 +67,10 @@ async def get_random(
 
 class HelloEndpoint(HTTPEndpoint):
     @inject
-    async def get(self,
+    async def get(
+        self,
         request: Request,
-        greeter: Injected[GreeterService]
+        greeter: Injected[GreeterService],
     ) -> PlainTextResponse:
         greeting = greeter.greet(request.query_params.get("name", "World"))
 
@@ -75,8 +79,8 @@ class HelloEndpoint(HTTPEndpoint):
 
 ### Inject Starlette request or WebSocket
 
-To inject the current request/websocket in services, include the `wireup.integration.starlette` module
-in the injectables when [creating the container](../../container.md).
+To inject the current request/websocket in services, include the `wireup.integration.starlette` module in the
+injectables when [creating the container](../../container.md).
 
 ```python
 container = wireup.create_async_container(
@@ -102,7 +106,10 @@ class RequestContext:
 You can directly access the Wireup container using the following functions:
 
 ```python
-from wireup.integration.starlette import get_app_container, get_request_container
+from wireup.integration.starlette import (
+    get_app_container,
+    get_request_container,
+)
 
 # Access the request-scoped container (used for the current request).
 # This is what you almost always want.
@@ -118,7 +125,8 @@ app_container = get_app_container(app)
 
 ### Testing
 
-For general testing tips, see the [testing documentation](../../testing.md). To override dependencies in the container during tests, use the following approach:
+For general testing tips, see the [testing documentation](../../testing.md). To override dependencies in the container
+during tests, use the following approach:
 
 ```python title="test_thing.py"
 from wireup.integration.starlette import get_app_container
@@ -138,12 +146,14 @@ def test_override():
     assert response.text == "HELLO WORLD"
 ```
 
-For more examples, see the [Starlette integration tests](https://github.com/maldoinc/wireup/blob/master/test/integration/starlette/test_starlette_integration.py).
+For more examples, see the
+[Starlette integration tests](https://github.com/maldoinc/wireup/blob/master/test/integration/starlette/test_starlette_integration.py).
 
 ### Lifecycle Management
 
-The integration automatically manages the container lifecycle by hooking into Starlette's lifespan context to ensure the container is properly closed and resources are released when the application stops.
+The integration automatically manages the container lifecycle by hooking into Starlette's lifespan context to ensure the
+container is properly closed and resources are released when the application stops.
 
 ### API Reference
 
-* [starlette_integration](../../class/starlette_integration.md)
+- [starlette_integration](../../class/starlette_integration.md)

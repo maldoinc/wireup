@@ -7,8 +7,10 @@ To register a class or function as an injectable, decorate it with `@injectable`
 ```python
 from wireup import injectable
 
+
 @injectable
 class UserRepository: ...
+
 
 @injectable
 def db_connection() -> DatabaseConnection: ...
@@ -18,14 +20,15 @@ def db_connection() -> DatabaseConnection: ...
 
 The decorator accepts arguments to control how the injectable is registered:
 
-| Argument | Description | Default |
-| :--- | :--- | :--- |
-| `lifetime` | Controls the lifespan of the object (e.g. `"singleton"`, `"scoped"`). See [Lifetimes](lifetimes_and_scopes.md). | `"singleton"` |
-| `qualifier` | A unique identifier to distinguish between multiple implementations of the same type. See [Interfaces](interfaces.md). | `None` |
-| `as_type` | Register the injectable as a different type (e.g., a Protocol or ABC). See [Interfaces](interfaces.md). | `None` |
+| Argument    | Description                                                                                                            | Default       |
+| :---------- | :--------------------------------------------------------------------------------------------------------------------- | :------------ |
+| `lifetime`  | Controls the lifespan of the object (e.g. `"singleton"`, `"scoped"`). See [Lifetimes](lifetimes_and_scopes.md).        | `"singleton"` |
+| `qualifier` | A unique identifier to distinguish between multiple implementations of the same type. See [Interfaces](interfaces.md). | `None`        |
+| `as_type`   | Register the injectable as a different type (e.g., a Protocol or ABC). See [Interfaces](interfaces.md).                | `None`        |
 
 ```python
 from wireup import injectable
+
 
 @injectable(lifetime="scoped", qualifier="readonly")
 class DbSession: ...
@@ -33,7 +36,8 @@ class DbSession: ...
 
 ## Defining Injectables
 
-Wireup resolves dependencies based on type hints in the `__init__` method for classes, or the function signature for factories.
+Wireup resolves dependencies based on type hints in the `__init__` method for classes, or the function signature for
+factories.
 
 ### Classes
 
@@ -49,13 +53,15 @@ class UserService:
 
 ### Factories
 
-Functions can also be registered as injectables. This is useful for creating objects that you don't control (like 3rd party libraries), require complex setup or cleanup.
-See [Factories](factories.md) and [Resource Management](resources.md) for more details.
+Functions can also be registered as injectables. This is useful for creating objects that you don't control (like 3rd
+party libraries), require complex setup or cleanup. See [Factories](factories.md) and
+[Resource Management](resources.md) for more details.
 
 ```python
 import boto3
 from wireup import injectable, Inject
 from typing import Annotated
+
 
 @injectable
 def create_s3_client(
@@ -65,14 +71,13 @@ def create_s3_client(
 ```
 
 !!! tip "Reduce init boilerplate"
+    When building injectables with multiple dependencies, `__init__` methods may become repetitive. Combine the
+    `@injectable` decorator with Python's `@dataclass` to eliminate initialization boilerplate.
 
-    When building injectables with multiple dependencies, `__init__` methods may become repetitive.
-    Combine the `@injectable` decorator with Python's `@dataclass` to eliminate initialization boilerplate.
-
-    Depending on class definitions some classes may benefit in readability from this more than others. Apply best judgement here.
+    Depending on class definitions some classes may benefit in readability from this more than others. Apply best judgement
+    here.
 
     === "Before"
-
         ```python title="services/order_processor.py"
         @injectable
         class OrderProcessor:
@@ -88,9 +93,9 @@ def create_s3_client(
         ```
 
     === "After"
-
         ```python title="services/order_processor.py"
         from dataclasses import dataclass
+
 
         @injectable
         @dataclass
@@ -101,7 +106,6 @@ def create_s3_client(
         ```
 
     === "Counter-example"
-
         ```python
         @injectable
         @dataclass
@@ -116,11 +120,11 @@ def create_s3_client(
             order_repository: OrderRepository
         ```
 
-        In this example, due to how the `@dataclass` decorator works, combining the two
-        leads to code that's more difficult to read, since it's not immediately what are dependencies and what are class fields.
+        In this example, due to how the `@dataclass` decorator works, combining the two leads to code that's more difficult to
+        read, since it's not immediately what are dependencies and what are class fields.
 
 ## Next Steps
 
-* [Configuration](configuration.md) - Inject configuration values from environment variables or structured objects.
-* [Lifetimes & Scopes](lifetimes_and_scopes.md) - Control singleton, scoped, and transient lifetimes.
-* [Factories](factories.md) - Advanced patterns for creating complex injectables.
+- [Configuration](configuration.md) - Inject configuration values from environment variables or structured objects.
+- [Lifetimes & Scopes](lifetimes_and_scopes.md) - Control singleton, scoped, and transient lifetimes.
+- [Factories](factories.md) - Advanced patterns for creating complex injectables.

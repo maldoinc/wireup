@@ -4,15 +4,15 @@ Dependency injection for Click is available in the `wireup.integration.click` mo
 
 <div class="grid cards annotate" markdown>
 
--   :material-cog-refresh:{ .lg .middle } __Automatic Dependency Management__
+- :material-cog-refresh:{ .lg .middle } __Automatic Dependency Management__
 
-    ---
+    ______________________________________________________________________
 
     Inject dependencies in Click commands.
 
--   :material-share-circle:{ .lg .middle } __Shared business logic__
+- :material-share-circle:{ .lg .middle } __Shared business logic__
 
-    ---
+    ______________________________________________________________________
 
     Wireup is framework-agnostic. Share the service layer between CLIs and other interfaces, such as a web application.
 
@@ -27,16 +27,14 @@ from typing import Annotated
 import click
 from wireup import Inject, Injected, injectable
 
+
 @click.group()
 def cli():
     pass
 
+
 container = wireup.create_sync_container(
-    injectables=[services],
-    config={
-        "env": "development",
-        "debug": True
-    }
+    injectables=[services], config={"env": "development", "debug": True}
 )
 ```
 
@@ -50,18 +48,19 @@ wireup.integration.click.setup(container, cli)
 
 ### Inject in Click Commands
 
-To inject dependencies, add the type to the commands' signature and annotate them as necessary.
-See [Annotations](../../annotations.md) for more details.
+To inject dependencies, add the type to the commands' signature and annotate them as necessary. See
+[Annotations](../../annotations.md) for more details.
 
 ```python title="Click Command"
 @cli.command()
 def random_number(random: Injected[RandomService]):
     click.echo(f"Your lucky number is: {random.get_random()}")
 
+
 @cli.command()
 def env_info(
     env: Annotated[str, Inject(config="env")],
-    debug: Annotated[bool, Inject(config="debug")]
+    debug: Annotated[bool, Inject(config="debug")],
 ):
     click.echo(f"Environment: {env}")
     click.echo(f"Debug mode: {debug}")
@@ -80,8 +79,8 @@ container = get_app_container(cli)
 
 ### Testing
 
-When testing Click commands with dependency injection, services can be swapped out in tests by overriding
-services before executing the Click runner.
+When testing Click commands with dependency injection, services can be swapped out in tests by overriding services
+before executing the Click runner.
 
 ```python
 from click.testing import CliRunner
@@ -91,12 +90,12 @@ def test_random_number_command():
     class MockRandomService:
         def get_random(self):
             return 4
-    
+
     # Create test container with mocked service
     with container.override.service(RandomService, new=MockRandomService()):
         runner = CliRunner()
         result = runner.invoke(cli, ["random-number"])
-        
+
         assert result.exit_code == 0
         assert "Your lucky number is:" in result.output
 ```

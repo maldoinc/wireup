@@ -8,7 +8,7 @@ install:
 	pip install uv
 	uv sync --group dev
 
-lint: check-fmt check-ruff check-mypy
+lint: check-fmt check-ruff check-mypy check-docs
 
 check-fmt:
 	uv run ruff format . --check
@@ -19,17 +19,25 @@ check-ruff:
 check-mypy:
 	uv run mypy wireup --strict
 
+check-docs:
+	find docs -name "*.md" -not -path "docs/pages/class/*" | xargs uv run mdformat --wrap 120 --check
+
 test:
 	uv run pytest test/unit
 
 profile ./profile_tests $(num_runs):
 	uv run python ./profile_tests.py $(num_runs)
 
-format:
+format: format-docs
 	uv run ruff format .
 
 fix:
 	uv run ruff wireup --fix
+
+format-docs:
+	find docs -name "*.md" -not -path "docs/pages/class/*" | xargs uv run mdformat --wrap 120
+	find docs -name "*.md" -not -path "docs/pages/class/*" | xargs uv run blacken-docs -l 80 || true
+
 
 # make docs-deploy version=...
 docs-deploy $(version):

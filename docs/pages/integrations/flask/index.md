@@ -4,17 +4,18 @@ Dependency injection for Flask is available in the `wireup.integration.flask` mo
 
 <div class="grid cards annotate" markdown>
 
--   :material-cog-refresh:{ .lg .middle } __Automatic Dependency Management__
+- :material-cog-refresh:{ .lg .middle } __Automatic Dependency Management__
 
-    ---
+    ______________________________________________________________________
 
     Inject dependencies in routes and automatically manage container lifecycle.
 
--   :material-share-circle:{ .lg .middle } __Shared business logic__
+- :material-share-circle:{ .lg .middle } __Shared business logic__
 
-    ---
+    ______________________________________________________________________
 
     Wireup is framework-agnostic. Share the service layer between web applications and other interfaces, such as a CLI.
+
 </div>
 
 ### Initialize the integration
@@ -32,8 +33,8 @@ container = wireup.create_sync_container(
     injectables=[services],
     config={
         **app.config,  # Optionally expose flask configuration to the container
-        "API_KEY": "secret"
-    }
+        "API_KEY": "secret",
+    },
 )
 ```
 
@@ -47,18 +48,19 @@ wireup.integration.flask.setup(container, app)
 
 ### Inject in Flask Views
 
-To inject dependencies, add the type to the views' signature and annotate them as necessary.
-See [Annotations](../../annotations.md) for more details.
+To inject dependencies, add the type to the views' signature and annotate them as necessary. See
+[Annotations](../../annotations.md) for more details.
 
 ```python title="Flask View"
 @app.get("/random")
 def get_random(random: Injected[RandomService]):
     return {"lucky_number": random.get_random()}
 
+
 @app.get("/env")
 def get_environment(
-    is_debug: Annotated[bool, Inject(config="DEBUG")], 
-    foo: Annotated[str, Inject(config="FOO")]
+    is_debug: Annotated[bool, Inject(config="DEBUG")],
+    foo: Annotated[str, Inject(config="FOO")],
 ):
     return {"debug": is_debug, "foo": foo}
 ```
@@ -79,24 +81,28 @@ request_container = get_request_container()
 
 ### Testing
 
-For general testing tips with Wireup refer to the [test docs](../../testing.md). 
-With the Flask integration, you can override dependencies in the container as follows.
+For general testing tips with Wireup refer to the [test docs](../../testing.md). With the Flask integration, you can
+override dependencies in the container as follows.
 
 ```python title="test_thing.py"
 from wireup.integration.flask import get_app_container
+
 
 def test_override():
     class DummyGreeter(GreeterService):
         def greet(self, name: str) -> str:
             return f"Hi, {name}"
 
-    with get_app_container(app).override.service(GreeterService, new=DummyGreeter()):
+    with get_app_container(app).override.service(
+        GreeterService, new=DummyGreeter()
+    ):
         res = self.client.get("/greet?name=Test")
 ```
 
-See [Flask integration tests](https://github.com/maldoinc/wireup/blob/master/test/integration/flask/test_flask_integration.py)
+See
+[Flask integration tests](https://github.com/maldoinc/wireup/blob/master/test/integration/flask/test_flask_integration.py)
 for more examples.
 
 ### API Reference
 
-* [flask_integration](../../class/flask_integration.md)
+- [flask_integration](../../class/flask_integration.md)

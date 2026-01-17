@@ -1,6 +1,7 @@
 # Integrations
 
-Wireup is framework-agnostic and can be used in any project, but it also provides integrations for the following frameworks:
+Wireup is framework-agnostic and can be used in any project, but it also provides integrations for the following
+frameworks:
 
 - [AIOHTTP](aiohttp/index.md)
 - [Click](click/index.md)

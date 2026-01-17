@@ -1,6 +1,7 @@
 # Versioning Policy
 
-Wireup follows [Semantic Versioning](https://semver.org/) (SemVer) to provide clear expectations about version compatibility.
+Wireup follows [Semantic Versioning](https://semver.org/) (SemVer) to provide clear expectations about version
+compatibility.
 
 ## Version Numbers
 
@@ -23,6 +24,6 @@ Versions starting with `0` (e.g., `0.1.0`) are considered pre-release. During th
 The following components constitute Wireup's public API:
 
 1. All direct exports from the `wireup` package
-2. All public members and interfaces of the exported objects
+1. All public members and interfaces of the exported objects
 
 Changes to these components are subject to semantic versioning rules.

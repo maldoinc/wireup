@@ -1,2 +1,1 @@
 ::: wireup.ioc.configuration.ConfigStore
-
