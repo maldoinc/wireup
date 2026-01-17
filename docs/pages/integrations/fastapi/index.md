@@ -33,7 +33,7 @@
 </div>
 
 ??? example "See how Wireup compares to `Depends()`"
-    This concise comparison highlights the boilerplate reduction when using Wireup's type-based injection versus `Depends()`
+    This comparison shows the boilerplate reduction when using Wireup's type-based injection versus `Depends()`
     chains.
 
     === "Before"
@@ -156,9 +156,6 @@ To inject dependencies, add the type to the route's signature and annotate them 
     @app.websocket("/ws")
     async def ws(websocket: WebSocket, greeter: Injected[GreeterService]): ...
     ```
-
-!!! note "Coexistence with `Depends()`"
-    Wireup and FastAPI's `Depends()` can coexist. Use `Depends()` when required and Wireup for your service layer.
 
 !!! tip
     Improve performance by using a custom APIRoute class. This reduces overhead in endpoints that use Wireup injection by
