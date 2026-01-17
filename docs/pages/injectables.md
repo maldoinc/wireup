@@ -123,6 +123,31 @@ def create_s3_client(
         In this example, due to how the `@dataclass` decorator works, combining the two leads to code that's more difficult to
         read, since it's not immediately what are dependencies and what are class fields.
 
+## Dependencies with Default Values
+
+When Wireup encounters a dependency it doesn't recognize, it normally raises an error. However, if that parameter has a
+**default value**, Wireup will skip it and let Python use the default instead.
+
+This is useful when integrating with libraries that add their own `__init__` parameters, such as Pydantic Settings:
+
+```python
+from pydantic_settings import BaseSettings
+from wireup import injectable
+
+
+@injectable
+class Settings(BaseSettings):
+    app_name: str = "myapp"
+    debug: bool = False
+```
+
+In this example, Pydantic's `BaseSettings` adds parameters that Wireup doesn't manage. Since they have defaults,
+Wireup allows the class to be registered without errors.
+
+!!! note
+    This only applies to parameters with explicit default values. Parameters without defaults that reference unknown
+    types will still raise an error to catch configuration mistakes early.
+
 ## Next Steps
 
 - [Configuration](configuration.md) - Inject configuration values from environment variables or structured objects.
