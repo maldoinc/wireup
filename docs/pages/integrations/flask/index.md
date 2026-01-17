@@ -93,8 +93,9 @@ def test_override():
         def greet(self, name: str) -> str:
             return f"Hi, {name}"
 
-    with get_app_container(app).override.service(
-        GreeterService, new=DummyGreeter()
+    with get_app_container(app).override.injectable(
+        GreeterService,
+        new=DummyGreeter(),
     ):
         res = self.client.get("/greet?name=Test")
 ```

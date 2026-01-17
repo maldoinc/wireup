@@ -300,7 +300,7 @@ def test_ninja_override_injected_service(client: Client):
             return f"Go away, {name}"
 
     # WHEN using override context manager
-    with get_app_container().override.service(GreeterService, new=RudeGreeter()):
+    with get_app_container().override.injectable(GreeterService, new=RudeGreeter()):
         res = client.get("/ninja/greet?name=Bob")
 
     # THEN the overridden service is used

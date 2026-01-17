@@ -118,7 +118,7 @@ def test_override(aiohttp_client):
         def greet(self, name: str) -> str:
             return f"Hi, {name}"
 
-    with get_app_container(app).override.service(
+    with get_app_container(app).override.injectable(
         GreeterService,
         new=DummyGreeter(),
     ):

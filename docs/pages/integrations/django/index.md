@@ -337,8 +337,9 @@ def test_override():
         def greet(self, name: str):
             return f"Hi, {name}"
 
-    with get_app_container().override.service(
-        GreeterService, new=DummyGreeter()
+    with get_app_container().override.injectable(
+        GreeterService,
+        new=DummyGreeter(),
     ):
         res = self.client.get("/greet?name=Test")
         assert res.status_code == 200

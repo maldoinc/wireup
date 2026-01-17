@@ -63,7 +63,7 @@ async def test_container_override_many_with_qualifier(container: Container):
         assert scoped is rand1_mock
         assert transient is rand2_mock
 
-    with container.override.services(overrides=overrides):
+    with container.override.injectables(overrides=overrides):
         target()
 
 
