@@ -84,6 +84,33 @@ with container.enter_scope() as scope:
 Scopes provide isolated contexts. This is useful for things like database sessions or user context that should only
 exist for a short duration (like a single HTTP request).
 
+```mermaid
+graph TD
+    Root["Root Container<br/>(Singletons)"]
+    
+    Root -->|enter_scope| Scope1
+    Root -->|enter_scope| Scope2
+    Root -->|enter_scope| Scope3
+    
+    subgraph Scope1["Request 1"]
+        S1_scoped["Scoped deps"]
+        S1_transient["Transient deps"]
+    end
+    
+    subgraph Scope2["Request 2"]
+        S2_scoped["Scoped deps"]
+        S2_transient["Transient deps"]
+    end
+
+    
+    subgraph Scope3["Request 3"]
+        S3_scoped["Scoped deps"]
+        S3_transient["Transient deps"]
+    end
+```
+
+Each call to `enter_scope()` creates an isolated scoped container with its own scoped and transient dependencies.
+
 === "Web Frameworks"
 
     When using [Integrations](integrations/index.md) (like FastAPI, Flask, Django), **scopes are handled automatically**. A
