@@ -251,7 +251,7 @@ cache = container.get(RedisCache | None)
 
 ### 🛡️ Improved Safety
 
-Wireup is mypy strict compliant and will not introduce type errors in your code. It will also warn you at the earliest possible stage about configuration errors to avoid surprises.
+Wireup is compatible with mypy strict mode. It will also warn you at the earliest possible stage about configuration errors to avoid surprises.
 
 **Container Creation**
 

@@ -158,10 +158,14 @@ like any other injectable. If the factory was registered with an optional return
 type when retrieving it.
 
 ```python
-# ✅ This works - getting the service directly
 cache = container.get(Optional[Cache])
 cache = container.get(Cache | None)
 ```
+
+!!! warning "Type Checking Limitation"
+
+    Type checkers cannot fully verify `container.get(T | None)` or `container.get(Optional[T])` due to Python type system
+    limitations. The call works correctly at runtime. Prefer using injection where possible.
 
 !!! tip "Null Object Pattern for Optional Dependencies"
 

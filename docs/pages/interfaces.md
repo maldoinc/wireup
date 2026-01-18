@@ -44,6 +44,11 @@ bind a concrete class to a Protocol or an Abstract Base Class.
         def set(self, key: str, value: str): ...
     ```
 
+!!! warning "Type Checking Limitation"
+
+    Type checkers cannot verify that the decorated class implements the protocol or ABC specified in `as_type`. This is a
+    Python type system limitation. Ensure your implementation is correct or use explicit inheritance.
+
 ## Multiple Implementations
 
 When you have multiple implementations of the same type, use **qualifiers** to distinguish between them.
