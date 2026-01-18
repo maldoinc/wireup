@@ -24,6 +24,7 @@ When you're injecting into code that Wireup doesn't manage (like framework route
 Use either `Annotated[T, Inject(...)]` or the shorthand `Injected[T]`.
 
 !!! info "Why external code needs annotations"
+
     Inside Wireup injectables, Wireup assumes full ownership of all dependencies, so basic `Injected[T]` annotations are
     redundant. For external targets, annotations explicitly tell Wireup to handle those parameters without interfering with
     parameters provided by the framework or runtime.

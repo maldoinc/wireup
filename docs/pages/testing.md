@@ -29,6 +29,7 @@ The `container.override` property provides access to a number of useful methods 
 overriding dependencies (See [override manager](class/override_manager.md)).
 
 !!! info "Good to know"
+
     - Overriding only applies to future injections.
     - Once a singleton service has been instantiated, it is not possible to directly replace any of its direct or transitive
         dependencies via overriding as the object is already in memory.
@@ -36,6 +37,7 @@ overriding dependencies (See [override manager](class/override_manager.md)).
         that will be injected.
 
 !!! tip
+
     If you're using an integration to get the container instance you can use the `wireup.integration.xxx.get_app_container`
     method. This returns the container associated with your application.
 

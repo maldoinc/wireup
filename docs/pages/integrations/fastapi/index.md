@@ -33,9 +33,11 @@
 </div>
 
 ??? example "See how Wireup compares to `Depends()`"
+
     This comparison shows the boilerplate reduction when using Wireup's type-based injection versus `Depends()` chains.
 
     === "Before"
+
         ```python
         # Define your services
         class UserRepository:
@@ -57,7 +59,7 @@
 
 
         def get_user_service(
-            repo: Annotated[UserRepository, Depends(get_user_repo)]
+            repo: Annotated[UserRepository, Depends(get_user_repo)],
         ) -> UserService:
             return UserService(repo)
 
@@ -65,12 +67,13 @@
         # Wire up the dependency chain in the route
         @app.get("/users")
         async def list_users(
-            service: Annotated[UserService, Depends(get_user_service)]
+            service: Annotated[UserService, Depends(get_user_service)],
         ):
             return service.find_all()
         ```
 
     === "After"
+
         ```python
         # Just add @injectable
         @injectable
@@ -131,6 +134,7 @@ To inject dependencies, add the type to the route's signature and annotate them 
 [Annotations](../../annotations.md) for more details.
 
 === "HTTP"
+
     ```python title="HTTP Route"
     from typing import Annotated
     from fastapi import Depends
@@ -147,6 +151,7 @@ To inject dependencies, add the type to the route's signature and annotate them 
     ```
 
 === "WebSocket"
+
     ```python title="WebSocket Route"
     from fastapi import WebSocket
     from wireup import Injected
@@ -157,6 +162,7 @@ To inject dependencies, add the type to the route's signature and annotate them 
     ```
 
 !!! tip
+
     Improve performance by using a custom APIRoute class. This reduces overhead in endpoints that use Wireup injection by
     avoiding redundant processing.
 
@@ -239,6 +245,7 @@ See
 for more examples.
 
 !!! warning
+
     FastAPI's lifespan events are required to close the Wireup container properly. Use a context manager when instantiating
     the test client if using class-based handlers or generator factories in the application.
 

@@ -54,6 +54,7 @@ To inject dependencies, add the type to the handler's signature and annotate the
 [Annotations](../../annotations.md) for more details.
 
 === "Function Handlers"
+
     ```python title="Function Handler" hl_lines="3"
     async def get_users(
         request: web.Request,
@@ -62,6 +63,7 @@ To inject dependencies, add the type to the handler's signature and annotate the
     ```
 
 === "Class-Based Views"
+
     In Class-based views dependencies must be declared in the init method.
 
     ```python title="Class Based View" hl_lines="5"

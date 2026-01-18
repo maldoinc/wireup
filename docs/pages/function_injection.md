@@ -1,4 +1,5 @@
 !!! note
+
     When using the provided integrations, this is automatically handled for you. Only use this if you're injecting Wireup
     dependencies in a framework without an integration.
 
@@ -24,6 +25,7 @@ Use the `inject_from_container` decorator to automatically inject dependencies i
 enters a scope before function execution, injects all dependencies, and exits the scope when the function returns.
 
 !!! note
+
     The decorator only injects parameters annotated with `Injected[T]` or `Annotated[T, Inject()]`. These annotations are
     equivalent, `Injected[T]` is simply an alias for convenience.
 

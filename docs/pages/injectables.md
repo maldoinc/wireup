@@ -65,12 +65,13 @@ from typing import Annotated
 
 @injectable
 def create_s3_client(
-    region: Annotated[str, Inject(config="aws_region")]
+    region: Annotated[str, Inject(config="aws_region")],
 ) -> boto3.client:
     return boto3.client("s3", region_name=region)
 ```
 
 !!! tip "Reduce init boilerplate"
+
     When building injectables with multiple dependencies, `__init__` methods may become repetitive. Combine the
     `@injectable` decorator with Python's `@dataclass` to eliminate initialization boilerplate.
 
@@ -78,6 +79,7 @@ def create_s3_client(
     here.
 
     === "Before"
+
         ```python title="services/order_processor.py"
         @injectable
         class OrderProcessor:
@@ -93,6 +95,7 @@ def create_s3_client(
         ```
 
     === "After"
+
         ```python title="services/order_processor.py"
         from dataclasses import dataclass
 
@@ -106,6 +109,7 @@ def create_s3_client(
         ```
 
     === "Counter-example"
+
         ```python
         @injectable
         @dataclass
@@ -145,6 +149,7 @@ In this example, Pydantic's `BaseSettings` adds parameters that Wireup doesn't m
 allows the class to be registered without errors.
 
 !!! note
+
     This only applies to parameters with explicit default values. Parameters without defaults that reference unknown types
     will still raise an error to catch configuration mistakes early.
 

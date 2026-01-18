@@ -45,6 +45,7 @@ You are not limited to primitives. You can inject entire configuration objects, 
 This allows you to group related settings and inject only what a service needs.
 
 === "Dataclass"
+
     ```python
     from dataclasses import dataclass
 
@@ -62,6 +63,7 @@ This allows you to group related settings and inject only what a service needs.
     ```
 
 === "Pydantic"
+
     ```python
     from pydantic_settings import BaseSettings
 
@@ -111,6 +113,7 @@ class FileStorageService:
 ```
 
 !!! note "Expression results are strings"
+
     Configuration expressions always return strings. Non-string configuration values are converted using `str()` before
     interpolation.
 

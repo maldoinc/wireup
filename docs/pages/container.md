@@ -38,12 +38,14 @@ Both creation functions accept the following arguments:
 Retrieve an instance of a registered injectable.
 
 === "Synchronous"
+
     ```python
     db = container.get(Database)
     readonly_db = container.get(Database, qualifier="readonly")
     ```
 
 === "Async"
+
     ```python
     db = await container.get(Database)
     readonly_db = await container.get(Database, qualifier="readonly")
@@ -57,11 +59,13 @@ Retrieve an instance of a registered injectable.
 Clean up the container and release resources. This triggers the cleanup phase of any generator-based factories.
 
 === "Synchronous"
+
     ```python
     container.close()
     ```
 
 === "Async"
+
     ```python
     await container.close()
     ```
@@ -71,12 +75,14 @@ Clean up the container and release resources. This triggers the cleanup phase of
 Create a scoped container for request-scoped or unit-of-work lifetimes.
 
 === "Synchronous"
+
     ```python
     with container.enter_scope() as scoped:
         db_session = scoped.get(DbSession)  # Fresh instance per scope
     ```
 
 === "Async"
+
     ```python
     async with container.enter_scope() as scoped:
         db_session = await scoped.get(DbSession)  # Fresh instance per scope

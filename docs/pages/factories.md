@@ -14,6 +14,7 @@ In order for the container to inject these dependencies, you must decorate the f
 it with the container. Return type annotation of the factory is required as it denotes what will be built.
 
 !!! note "Generator Factories"
+
     If you need to perform cleanup (like database connections or network resources), use
     [generator factories](resources.md).
 
@@ -50,7 +51,7 @@ from wireup import injectable
 
 @injectable
 def redis_factory(
-    redis_url: Annotated[str, Inject(config="redis_url")]
+    redis_url: Annotated[str, Inject(config="redis_url")],
 ) -> Redis:
     return redis.from_url(redis_url)
 ```
@@ -94,6 +95,7 @@ You can both request Optional dependencies and create factories that return opti
 injectable might not be available or when you want to make a dependency optional.
 
 !!! important "Injectable Registration Required"
+
     When using optional dependencies, the injectable providing the optional dependency **must still be registered** in the
     container. The injectable cannot be absent - it can only return `None`. This means you must register a factory that can
     potentially return `None`, rather than simply not registering the injectable at all.
@@ -116,6 +118,7 @@ def cache_factory(
 When an injectable has an optional dependency, simply use `T | None` or `Optional[T]`.
 
 === "Python 3.10+"
+
     ```python hl_lines="1 3"
     @injectable
     class UserService:
@@ -132,6 +135,7 @@ When an injectable has an optional dependency, simply use `T | None` or `Optiona
     ```
 
 === "Python <3.10"
+
     ```python hl_lines="1 3"
     @injectable
     class UserService:
@@ -160,6 +164,7 @@ cache = container.get(Cache | None)
 ```
 
 !!! tip "Null Object Pattern for Optional Dependencies"
+
     Instead of adding conditional checks throughout your code, use the pattern to handle optional dependencies cleanly. It
     involves creating a noop implementation that can be used when the real implementation is not available.
 
@@ -194,6 +199,7 @@ cache = container.get(Cache | None)
     **Usage**
 
     === "Before: Optional Dependencies"
+
         ```python
         @injectable
         class UserService:
@@ -215,6 +221,7 @@ cache = container.get(Cache | None)
         ```
 
     === "After: Null Pattern"
+
         ```python
         @injectable
         class UserService:

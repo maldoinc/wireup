@@ -8,6 +8,7 @@ Automate dependency management using Python's type system. Build complex applica
 generators, plus integrations for popular frameworks out of the box.
 
 !!! tip "Zero Runtime Overhead"
+
     **New**: Inject Dependencies in FastAPI with zero runtime overhead using
     [Class-Based Handlers](integrations/fastapi/class_based_handlers.md).
 
@@ -17,6 +18,7 @@ Use decorators and annotations for concise, co-located definitions, or factories
 decoupled.
 
 === "1. Basic Usage"
+
     Start simple. Register classes directly using decorators and let the container resolve dependencies automatically.
 
     ```python hl_lines="5 11 13"
@@ -43,6 +45,7 @@ decoupled.
     ```
 
 === "2. Inject Configuration"
+
     Seamlessly inject configuration alongside other dependencies, eliminating the need for manually wiring them up via
     factories.
 
@@ -73,6 +76,7 @@ decoupled.
     ```
 
 === "3. Clean Architecture"
+
     Need strict boundaries? Use factories to wire pure domain objects and integrate external libraries like Pydantic.
 
     ```python title="Domain Layer"
@@ -153,6 +157,7 @@ Declare dependencies as singletons, scoped, or transient to control whether to i
 instances.
 
 === "Singleton"
+
     One instance per application. `@injectable(lifetime="singleton")` is the default.
 
     ```python
@@ -162,6 +167,7 @@ instances.
     ```
 
 === "Scoped"
+
     One instance per scope/request, shared within that scope/request.
 
     ```python
@@ -172,6 +178,7 @@ instances.
     ```
 
 === "Transient"
+
     When full isolation and clean state is required. Every request to create transient services results in a new instance.
 
     ```python
@@ -186,6 +193,7 @@ Defer instantiation to specialized factories when complex initialization or clea
 and generators. Wireup handles cleanup at the correct time depending on the injectable lifetime.
 
 === "Synchronous"
+
     ```python
     class WeatherClient:
         def __init__(self, client: requests.Session) -> None:
@@ -199,6 +207,7 @@ and generators. Wireup handles cleanup at the correct time depending on the inje
     ```
 
 === "Async"
+
     ```python
     class WeatherClient:
         def __init__(self, client: aiohttp.ClientSession) -> None:
@@ -238,6 +247,7 @@ Wireup is mypy strict compliant and will not introduce type errors. It will also
 about configuration errors to avoid surprises at runtime.
 
 === "Container Creation"
+
     The container will raise errors at creation time about missing dependencies or other issues.
 
     ```python
@@ -254,6 +264,7 @@ about configuration errors to avoid surprises at runtime.
     ```
 
 === "Function Injection"
+
     Injected functions will raise errors at module import time rather than when called.
 
     ```python
@@ -268,6 +279,7 @@ about configuration errors to avoid surprises at runtime.
     ```
 
 === "Integrations"
+
     Wireup integrations assert that requested injections in the framework are valid.
 
     ```python
@@ -286,6 +298,7 @@ about configuration errors to avoid surprises at runtime.
     ```
 
 === "Configuration Checks"
+
     Configuration injection is also checked for validity.
 
     ```python

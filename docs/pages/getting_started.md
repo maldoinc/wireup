@@ -17,6 +17,7 @@ graph LR
 ```
 
 !!! tip
+
     There will be little `+` icons in code fragments. You can click on those for more detailed information as to what is
     happening in that particular line.
 
@@ -58,6 +59,7 @@ regular or generator functions if cleanup needs to take place.
 Factories can define their dependencies in the function's signature.
 
 !!! note ""
+
     When using generator factories make sure to call `container.close` when the application is terminating for the necessary
     cleanup to take place.
 
@@ -136,6 +138,7 @@ container = wireup.create_async_container(
     put dataclasses for example in the config to inject structured configuration.
 
 !!! note "Container variants: Sync and Async"
+
     Wireup includes two types of containers: async and sync. The difference is that the async one exposes `async def`
     methods for the common operations and is capable of creating resources from `async def` factories.
 
@@ -150,6 +153,7 @@ container = wireup.create_async_container(
 All that's left now is to retrieve injectables from the container.
 
 === "Service Locator"
+
     To fetch injectables from the container, call `.get` on the container instance with the type you want to retrieve.
 
     ```python title="views/posts.py"  hl_lines="3"
@@ -160,6 +164,7 @@ All that's left now is to retrieve injectables from the container.
     ```
 
 === "Injection via decorator"
+
     You can also apply Wireup containers as decorators. See [Apply the container as a decorator](function_injection.md) docs
     for more info, but the end result is that you can decorate any function and specify dependencies to inject in it's
     signature.
@@ -175,6 +180,7 @@ All that's left now is to retrieve injectables from the container.
     ```
 
 === "FastAPI"
+
     With the FastAPI integration you can just declare dependencies in http or websocket routes.
 
     ```python title="views/posts.py"  hl_lines="5"
@@ -189,6 +195,7 @@ All that's left now is to retrieve injectables from the container.
     Learn More: [FastAPI Integration](integrations/fastapi/index.md).
 
 === "Flask"
+
     With the Flask integration you can just declare dependencies in views.
 
     ```python title="views/posts.py"  hl_lines="5"
@@ -203,6 +210,7 @@ All that's left now is to retrieve injectables from the container.
     Learn More: [Flask Integration](integrations/flask/index.md).
 
 === "Django"
+
     With the Django integration you can just declare dependencies in views. The integration provides support for async
     views, regular views as well as class-based views.
 
@@ -247,6 +255,7 @@ being injected instead.
 This concludes the "Getting Started" walkthrough, covering the most common dependency injection use cases.
 
 !!! info
+
     - Wireup can perform injection on both sync and async targets.
     - If you need to create multiple containers, every container you create is separate from the rest and has its own state.
 

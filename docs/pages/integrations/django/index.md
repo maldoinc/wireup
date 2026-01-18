@@ -114,6 +114,7 @@ class AuthService:
 To inject dependencies in views, simply request them by their type:
 
 === "Sync Views"
+
     ```python title="app/views.py"
     from django.http import HttpRequest, HttpResponse
     from mysite.polls.services import S3Manager
@@ -127,6 +128,7 @@ To inject dependencies in views, simply request them by their type:
     ```
 
 === "Async Views"
+
     ```python title="app/views.py"
     from django.http import HttpRequest, HttpResponse
     from mysite.polls.services import S3Manager
@@ -140,6 +142,7 @@ To inject dependencies in views, simply request them by their type:
     ```
 
 === "Class-Based Views"
+
     ```python title="app/views.py"
     from django.http import HttpRequest, HttpResponse
     from django.views import View
@@ -194,6 +197,7 @@ This approach should work for any Django-based framework as long as it relies on
 mechanisms.
 
 === "Django REST Framework"
+
     ```python title="app/views.py"
     from rest_framework.decorators import api_view
     from rest_framework.request import Request
@@ -235,6 +239,7 @@ mechanisms.
     ```
 
 === "Django Ninja"
+
     ```python title="app/views.py"
     from ninja import Router, Schema
 
@@ -267,6 +272,7 @@ mechanisms.
     ```
 
 !!! tip "Best practice for mixing core and non-core Django views"
+
     If your project shares core and non core-django views, consider disabling auto-injection and using `@inject` explicitly
     across all your views for consistency:
 
@@ -278,6 +284,7 @@ mechanisms.
     ```
 
     === "Do"
+
         ```python
         # Consistent approach: use @inject everywhere
         @inject
@@ -294,6 +301,7 @@ mechanisms.
         ```
 
     === "Don't"
+
         ```python
         # Inconsistent: mixing auto-injection and @inject
         def core_django_view(
@@ -346,6 +354,7 @@ def test_override():
 ```
 
 !!! info "Testing async views"
+
     When testing async views, use Django's `AsyncClient` instead of the regular `Client`:
 
     ```python

@@ -10,6 +10,7 @@ Generator factories use Python's `yield` statement to manage resource lifecycle:
 1. **Teardown**: Code after `yield` runs when the scope closes.
 
 === "Generators"
+
     ```python
     @injectable
     def db_session_factory() -> Iterator[Session]:
@@ -21,6 +22,7 @@ Generator factories use Python's `yield` statement to manage resource lifecycle:
     ```
 
 === "Context Manager"
+
     ```python
     @injectable
     def db_session_factory() -> Iterator[Session]:
@@ -29,6 +31,7 @@ Generator factories use Python's `yield` statement to manage resource lifecycle:
     ```
 
 === "Async Context Manager"
+
     ```python
     from typing import AsyncIterator
 
@@ -40,6 +43,7 @@ Generator factories use Python's `yield` statement to manage resource lifecycle:
     ```
 
 !!! note "Generator Factories"
+
     Generator factories must yield exactly once. Yielding multiple times will result in cleanup not being performed.
 
 ## Error Handling
@@ -64,5 +68,6 @@ def db_session_factory(engine: Engine) -> Iterator[Session]:
 ```
 
 !!! note "Suppressing Errors"
+
     Factories cannot suppress exceptions, they can perform cleanup, but the original error will always propagate. This
     ensures cleanup code doesn't accidentally change your program's control flow.

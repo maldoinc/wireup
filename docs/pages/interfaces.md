@@ -8,6 +8,7 @@ You can use the `as_type` parameter in `@injectable` to register a service as an
 bind a concrete class to a Protocol or an Abstract Base Class.
 
 === "Protocol"
+
     ```python hl_lines="10"
     from typing import Protocol
     from wireup import injectable
@@ -23,6 +24,7 @@ bind a concrete class to a Protocol or an Abstract Base Class.
     ```
 
 === "Abstract Base Class"
+
     ```python hl_lines="13"
     from abc import ABC, abstractmethod
     from wireup import injectable
@@ -67,6 +69,7 @@ def main(
 ```
 
 !!! tip "Qualifiers don't have to be strings"
+
     You can avoid magic strings by using Enums or hashable types for qualifiers. This prevents typos and makes refactoring
     easier.
 

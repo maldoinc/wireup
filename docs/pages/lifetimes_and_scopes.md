@@ -21,6 +21,7 @@ assert db1 is db2  # True
 ```
 
 !!! tip
+
     Singletons are lazy by default. See [Eager Initialization](container.md#eager-initialization) to initialize them at
     startup.
 
@@ -63,6 +64,7 @@ with container.enter_scope() as scope:
 ```
 
 !!! note "Scope Required"
+
     Only singletons may be resolved using the root container instance. Scoped and Transient dependencies must be resolved
     within a scope to ensure proper cleanup of resources.
 
@@ -83,6 +85,7 @@ Scopes provide isolated contexts. This is useful for things like database sessio
 exist for a short duration (like a single HTTP request).
 
 === "Web Frameworks"
+
     When using [Integrations](integrations/index.md) (like FastAPI, Flask, Django), **scopes are handled automatically**. A
     new scope is created for every incoming request and closed when the request finishes.
 
@@ -93,6 +96,7 @@ exist for a short duration (like a single HTTP request).
     ```
 
 === "Function Decorator"
+
     The [`@wireup.inject_from_container`](function_injection.md) automatically enters a new scope before the function runs
     and closes it afterwards, ensuring cleanup is performed.
 
@@ -103,6 +107,7 @@ exist for a short duration (like a single HTTP request).
     ```
 
 === "Manual Context"
+
     For granular control, you can manage scopes manually using `container.enter_scope()`.
 
     **Synchronous**
