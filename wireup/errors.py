@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import sys
-from typing import TYPE_CHECKING, Any, Callable
+from typing import TYPE_CHECKING, Any
 
 from wireup.util import format_name
 
@@ -72,7 +72,7 @@ class UnknownQualifiedServiceRequestedError(WireupError):
 class UnknownServiceRequestedError(WireupError):
     """Raised when requesting an unknown type."""
 
-    def __init__(self, klass: Callable[..., Any], qualifier: Qualifier | None = None) -> None:
+    def __init__(self, klass: Any, qualifier: Qualifier | None = None) -> None:
         msg = (
             f"Cannot create unknown injectable {format_name(klass, qualifier)}. "
             "Make sure it is registered with the container."
