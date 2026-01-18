@@ -56,6 +56,27 @@ with container.override.injectable(target=RandomService, new=random_mock):
     response = client.get("/random")
 ```
 
+### Overriding Multiple Injectables
+
+When you need to override several dependencies at once, use `container.override.injectables` with a list of
+`InjectableOverride` objects:
+
+```python
+from wireup import InjectableOverride
+
+user_service_mock = MagicMock()
+order_service_mock = MagicMock()
+
+overrides = [
+    InjectableOverride(target=UserService, new=user_service_mock),
+    InjectableOverride(target=OrderService, new=order_service_mock),
+]
+
+with container.override.injectables(overrides=overrides):
+    # Both UserService and OrderService are now mocked
+    response = client.get("/checkout")
+```
+
 ### Pytest
 
 ```python title="app.py"

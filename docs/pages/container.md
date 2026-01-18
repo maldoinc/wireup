@@ -72,7 +72,8 @@ Clean up the container and release resources. This triggers the cleanup phase of
 
 ### `enter_scope`
 
-Create a scoped container for request-scoped or unit-of-work lifetimes.
+Create a scoped container. Scoped containers manage their own scoped and transient dependencies while sharing singletons
+with the root container. See [Lifetimes & Scopes](lifetimes_and_scopes.md) for details on how scopes work.
 
 === "Synchronous"
 

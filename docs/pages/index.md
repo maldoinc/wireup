@@ -200,7 +200,7 @@ and generators. Wireup handles cleanup at the correct time depending on the inje
             self.client = client
 
 
-    @service
+    @injectable
     def weather_client_factory() -> Iterator[WeatherClient]:
         with requests.Session() as session:
             yield WeatherClient(client=session)
@@ -214,7 +214,7 @@ and generators. Wireup handles cleanup at the correct time depending on the inje
             self.client = client
 
 
-    @service
+    @injectable
     async def weather_client_factory() -> AsyncIterator[WeatherClient]:
         async with aiohttp.ClientSession() as session:
             yield WeatherClient(client=session)
