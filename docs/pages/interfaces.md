@@ -49,6 +49,30 @@ bind a concrete class to a Protocol or an Abstract Base Class.
     Type checkers cannot verify that the decorated class implements the protocol or ABC specified in `as_type`. This is a
     Python type system limitation. Ensure your implementation is correct or use explicit inheritance.
 
+!!! tip "Factories Control Registration Type"
+
+    With factories, you control the type the dependency is registered as by specifying the return type annotation. This
+    makes `as_type` largely unnecessary for factories and allows type checkers to verify the return type.
+
+    ```python
+    from wireup import injectable
+
+
+    @injectable
+    def make_cache() -> Cache:
+        return InMemoryCache()
+    ```
+
+    This is equivalent to:
+
+    ```python
+    @injectable(as_type=Cache)
+    class InMemoryCache: ...
+    ```
+
+    The `as_type` parameter is still useful when you want the function or class to retain its original type for other
+    purposes (e.g., testing, direct usage) while registering it under a different type in the container.
+
 ## Multiple Implementations
 
 When you have multiple implementations of the same type, use **qualifiers** to distinguish between them.

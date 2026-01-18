@@ -2,7 +2,8 @@ An injectable is any class or function that Wireup manages. They are the buildin
 
 ## The `@injectable` Decorator
 
-To register a class or function as an injectable, decorate it with `@injectable`.
+To register a class or function as an injectable, decorate it with `@injectable`. For classes, define dependencies in
+the `__init__` method using type hints. For functions, use type hints in the function signature.
 
 ```python
 from wireup import injectable
