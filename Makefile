@@ -20,7 +20,7 @@ check-mypy:
 	uv run mypy wireup --strict
 
 check-docs:
-	find docs -name "*.md" -not -path "docs/pages/class/*" | xargs uv run mdformat --wrap 120 --check
+	find docs -name "*.md" -not -path "docs/pages/class/*" | xargs uv run --python 3.14 mdformat --wrap 120 --check
 
 test:
 	uv run pytest test/unit
@@ -35,11 +35,11 @@ fix:
 	uv run ruff wireup --fix
 
 format-docs:
-	find docs -name "*.md" -not -path "docs/pages/class/*" | xargs uv run mdformat --wrap 120
-	find docs -name "*.md" -not -path "docs/pages/class/*" | xargs uv run blacken-docs -l 80 || true
+	find docs -name "*.md" -not -path "docs/pages/class/*" | xargs uv run --python 3.14 mdformat --wrap 120
+	find docs -name "*.md" -not -path "docs/pages/class/*" | xargs uv run --python 3.14 blacken-docs -l 80 || true
 
 build-docs:
-	uv run mkdocs build --strict -f docs/mkdocs.yml
+	uv run --python 3.14 mkdocs build --strict -f docs/mkdocs.yml
 
 
 # make docs-deploy version=...
