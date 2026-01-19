@@ -50,8 +50,8 @@ wireup.integration.aiohttp.setup(container, app)
 
 ### Inject in AIOHTTP handlers
 
-To inject dependencies, add the type to the handler's signature and annotate them as necessary. See
-[Annotations](../../annotations.md) for more details.
+To inject dependencies, add the type to the handler's signature and annotate with `Injected[T]` or
+`Annotated[T, Inject(...)]`.
 
 === "Function Handlers"
 
@@ -81,8 +81,8 @@ To inject dependencies, add the type to the handler's signature and annotate the
 
 ### Inject AIOHTTP request
 
-To inject `web.Request` in services, include `wireup.integration.aiohttp` module in the injectables when creating the
-container.
+To be able to inject `web.Request`, include the `wireup.integration.aiohttp` module in the `injectables` parameter when
+creating the container.
 
 ```python hl_lines="2"
 container = wireup.create_async_container(

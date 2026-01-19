@@ -1,65 +1,135 @@
-Use factories to handle complex creation logic or resource management that can't be done with simple class constructors.
+Use factories to handle complex creation logic, instantiate third-party classes, or manage resources that can't be
+handled by simple class constructors.
 
-## Use cases
+## Third-party Classes
 
-- Object construction needs additional logic or configuration.
-- Create optional dependencies.
-- Depending on the runtime environment or configuration, you may need to create different objects inheriting from the
-    same base class/protocol.
-- Inject a model/dto which represents the result of an action, such as the current authenticated user.
-- Inject a class from another library where it's not possible to add annotations.
-- Inject strings, ints and other built-in types.
+You can't add `@injectable` to code you don't own. Factories solve this by wrapping third-party classes in a function
+you control. The factory creates and configures the object, and Wireup registers it by the return type.
 
-In order for the container to inject these dependencies, you must decorate the factory with `@injectable` and register
-it with the container. Return type annotation of the factory is required as it denotes what will be built.
-
-!!! note "Generator Factories"
-
-    If you need to perform cleanup (like database connections or network resources), use
-    [generator factories](resources.md).
-
-## Strategy pattern
-
-Assume a base class `Notifier` with implementations that define how the notification is sent (IMAP, POP, WebHooks, etc.)
-Given a user it is possible to instantiate the correct type of notifier based on user preferences.
+**Example: Redis Client**
 
 ```python
-from wireup import injectable
+from typing import Annotated
+
+import redis
+from wireup import Inject, injectable
 
 
-@injectable(lifetime="scoped")
-def get_user_notifier(
-    user: AuthenticatedUser,
-    slack_notifier: SlackNotifier,
-    email_mailer: EmailNotifier,
-) -> Notifier:
-    notifier = ...  # get notifier type from preferences.
+@injectable
+def redis_factory(
+    url: Annotated[str, Inject(config="redis_url")],
+) -> redis.Redis:
+    return redis.from_url(url)
 
-    return notifier
+
+# Usage:
+@injectable
+class AuthService:
+    def __init__(self, cache: redis.Redis):
+        self.cache = cache
 ```
 
-When injecting `Notifier` the correct type will be injected based on the authenticated user's preferences.
+## Pure Domain Objects
 
-## Third-party classes
+If you prefer to keep your domain layer free of Wireup imports, don't use `@injectable` on those classes. Instead,
+create factory functions in a separate wiring module that construct and return them.
 
-You can use factories to create classes which you have not declared yourself and as such, cannot annotate. Let's take
-redis client as an example.
+```python title="domain/services.py"
+# No Wireup imports here
+class UserService:
+    def __init__(self, repository: UserRepository) -> None:
+        self.repository = repository
+```
+
+```python title="wiring/factories.py"
+from wireup import injectable
+from domain.services import UserService
+
+
+@injectable
+def user_service_factory(repository: UserRepository) -> UserService:
+    return UserService(repository)
+```
+
+## Complex Initialization
+
+Some objects need conditional logic, multi-step setup, or configuration that depends on the environment. Factories let
+you encapsulate this logic in one place rather than scattering it across your codebase.
 
 ```python
 from wireup import injectable
 
 
 @injectable
-def redis_factory(
-    redis_url: Annotated[str, Inject(config="redis_url")],
-) -> Redis:
-    return redis.from_url(redis_url)
+def db_connection_factory(config: AppConfig) -> DatabaseConnection:
+    timeout = config.timeout if config.is_production else 30
+
+    conn = DatabaseConnection(dsn=config.dsn, timeout=timeout)
+    conn.set_encoding("utf-8")
+
+    return conn
+```
+
+## Injecting Primitives
+
+If you register two factories that both return `str`, Wireup can't tell them apart. Use `typing.NewType` to create
+distinct types so each primitive can be requested independently.
+
+```python title="factories.py"
+from typing import NewType
+from wireup import injectable
+
+AuthenticatedUsername = NewType("AuthenticatedUsername", str)
+
+
+@injectable(lifetime="scoped")
+def authenticated_username_factory(auth: AuthService) -> AuthenticatedUsername:
+    user = auth.get_current_user()
+    return AuthenticatedUsername(user.username)
+```
+
+Usage:
+
+```python
+from wireup import injectable
+
+
+@injectable(lifetime="scoped")
+class UserProfileService:
+    def __init__(self, username: AuthenticatedUsername):
+        self.username = username
+```
+
+## Strategy Pattern
+
+When the correct implementation depends on runtime state (user preferences, feature flags, environment), a factory can
+inspect other dependencies and return the appropriate one.
+
+```python
+from typing import Protocol
+from wireup import injectable
+
+
+class Notifier(Protocol):
+    def notify(self, message: str): ...
+
+
+@injectable(lifetime="scoped")
+def get_user_notifier(
+    user: AuthenticatedUser,
+    slack: SlackNotifier,
+    email: EmailNotifier,
+) -> Notifier:
+    if user.prefers_slack:
+        return slack
+
+    return email
 ```
 
 ## Models and DTOs
 
-Assume the authenticated user is provided by `AuthService`. You may choose to allow the user to be injected directly
-instead of having to call `auth_service.get_current_user()` everywhere.
+Sometimes you want to inject data that comes from another service, like the currently authenticated user. A factory can
+call that service and return the result, making it available as a dependency.
 
 ```python
 from wireup import injectable
@@ -70,111 +140,54 @@ def get_current_user(auth_service: AuthService) -> AuthenticatedUser:
     return auth_service.get_current_user()
 ```
 
-## Injecting Primitives
+## Optional Dependencies
 
-If you want to inject resources which are just strings, ints, or other built-in types then you can use a factory in
-combination with `NewType`. Note that since Wireup uses types to identify dependencies, new types are strongly
-recommended for this use case.
+Some dependencies are only available under certain conditions, like a cache that's disabled in development. Factories
+can return `None` to signal the dependency isn't available, and consumers can handle this gracefully.
 
-```python title="factories.py"
-AuthenticatedUsername = NewType("AuthenticatedUsername", str)
+!!! important "Registration Required"
+
+    The factory **must still be registered** even if it returns `None`. Wireup needs to know *how* to resolve the specific
+    type, even if the result is nothing.
+
+```python
+from wireup import injectable
 
 
 @injectable
-def authenticated_username_factory(auth: AuthService) -> AuthenticatedUsername:
-    return AuthenticatedUsername(...)
+def cache_factory(settings: Settings) -> Redis | None:
+    if not settings.use_cache:
+        return None
+
+    return Redis.from_url(settings.redis_url)
 ```
 
-This can now be injected as usual by annotating the dependency with the new type.
-
-______________________________________________________________________
-
-## Optional Dependencies and Factories
-
-You can both request Optional dependencies and create factories that return optional values. This is useful when an
-injectable might not be available or when you want to make a dependency optional.
-
-!!! important "Injectable Registration Required"
-
-    When using optional dependencies, the injectable providing the optional dependency **must still be registered** in the
-    container. The injectable cannot be absent - it can only return `None`. This means you must register a factory that can
-    potentially return `None`, rather than simply not registering the injectable at all.
-
-### Factories Returning Optional Values
-
-Sometimes you want a factory to return `None` when certain conditions aren't met. A common example is an injectable that
-requires configuration to be available:
+**Requesting Optional Dependencies**
 
 ```python
+from wireup import injectable
+
+
 @injectable
-def cache_factory(
-    redis_url: Annotated[str | None, Inject(config="redis_url")],
-) -> Redis | None:
-    return Redis.from_url(redis_url) if redis_url else None
+class UserService:
+    # Use T | None (Python 3.10+) or Optional[T]
+    def __init__(self, cache: Redis | None) -> None:
+        self.cache = cache
+
+    def get(self, user_id: str):
+        if self.cache:
+            return self.cache.get(user_id)
+        # ...
 ```
 
-### Requesting Optional Dependencies
-
-When an injectable has an optional dependency, simply use `T | None` or `Optional[T]`.
-
-=== "Python 3.10+"
-
-    ```python hl_lines="1 3"
-    @injectable
-    class UserService:
-        def __init__(self, cache: Cache | None) -> None:
-            self.cache = cache
-
-        def get_user(self, id: str) -> User:
-            if self.cache:
-                cached = self.cache.get(id)
-                if cached:
-                    return cached
-            # Fallback to database
-            ...
-    ```
-
-=== "Python <3.10"
-
-    ```python hl_lines="1 3"
-    @injectable
-    class UserService:
-        def __init__(self, cache: Optional[Cache]) -> None:
-            self.cache = cache
-
-        def get_user(self, id: str) -> User:
-            if self.cache:
-                cached = self.cache.get(id)
-                if cached:
-                    return cached
-            # Fallback to database
-            ...
-    ```
-
-**Direct Access**
-
-When accessing optional dependencies directly from the container, you can retrieve them using `container.get()` just
-like any other injectable. If the factory was registered with an optional return type you'll need to provide the union
-type when retrieving it.
-
-```python
-cache = container.get(Optional[Cache])
-cache = container.get(Cache | None)
-```
-
-!!! warning "Type Checking Limitation"
-
-    Type checkers cannot fully verify `container.get(T | None)` or `container.get(Optional[T])` due to Python type system
-    limitations. The call works correctly at runtime. Prefer using injection where possible.
-
-!!! tip "Null Object Pattern for Optional Dependencies"
+??? tip "Null Object Pattern for Optional Dependencies"
 
     Instead of adding conditional checks throughout your code, use the pattern to handle optional dependencies cleanly. It
     involves creating a noop implementation that can be used when the real implementation is not available.
 
     ```python title="services/cache.py"
-    from wireup import injectable
-    from typing import Any
+    from typing import Annotated, Any, Protocol
+    from wireup import Inject, injectable
 
 
     class Cache(Protocol):

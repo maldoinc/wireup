@@ -21,7 +21,7 @@ The `wireup.integration.starlette` module provides dependency injection for Star
 
 ### Setting Up the Integration
 
-First, [create an async container](../../container.md) with your injectables:
+First, [create an async container](../../container.md) with your dependencies:
 
 ```python
 from starlette.applications import Starlette
@@ -46,7 +46,7 @@ wireup.integration.starlette.setup(container, app)
 ### Injecting Dependencies into Endpoints
 
 To inject dependencies, apply the `@inject` decorator from the `wireup.integration.starlette` module to endpoints and
-annotate parameters accordingly. Refer to [Annotations](../../annotations.md) for more details.
+annotate parameters with `Injected[T]` or `Annotated[T, Inject(...)]`.
 
 ```python title="Starlette Endpoint" hl_lines="9 11 18 22"
 from starlette.endpoints import HTTPEndpoint

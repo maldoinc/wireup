@@ -1,10 +1,10 @@
-Unit testing dependencies is meant to be easy as the container does not interfere in any way with the decorated classes
-or functions.
-
-Classes can be instantiated as usual in tests, and you need to pass dependencies such as services or configuration to
-them yourself.
+The `@injectable` decorator doesn't modify your classes, so they can be instantiated and tested like any regular Python
+class. Pass dependencies manually in your tests.
 
 ```python
+from unittest.mock import MagicMock
+
+
 def test_user_service_logic():
     # Arrange: Create dependencies manually (mocks or real)
     repo_mock = MagicMock()
@@ -23,7 +23,7 @@ To specify custom behavior for tests, provide a custom implementation or a subcl
 
 ## Overriding
 
-Sometimes you need to be able to swap a service object on the fly for a different one such as a mock.
+Sometimes you need to be able to swap a dependency on the fly for a different one such as a mock.
 
 The `container.override` property provides access to a number of useful methods and context managers which help with
 overriding dependencies (See [override manager](class/override_manager.md)).
@@ -31,7 +31,7 @@ overriding dependencies (See [override manager](class/override_manager.md)).
 !!! info "Good to know"
 
     - Overriding only applies to future injections.
-    - Once a singleton service has been instantiated, it is not possible to directly replace any of its direct or transitive
+    - Once a singleton has been instantiated, it is not possible to directly replace any of its direct or transitive
         dependencies via overriding as the object is already in memory.
     - When injecting interfaces and/or qualifiers, override the interface and/or qualifier rather than the implementation
         that will be injected.
@@ -44,15 +44,14 @@ overriding dependencies (See [override manager](class/override_manager.md)).
 ### Context Manager
 
 ```python
+from unittest.mock import MagicMock
+
 random_mock = MagicMock()
-# Chosen by fair dice roll. Guaranteed to be random.
 random_mock.get_random.return_value = 4
 
 with container.override.injectable(target=RandomService, new=random_mock):
-    # Assuming in the context of a web app:
-    # /random endpoint has a dependency on RandomService
-    # requests to inject RandomService during the lifetime
-    # of this context manager will result in random_mock being injected instead.
+    # Requests to inject RandomService during the lifetime
+    # of this context manager will use random_mock instead.
     response = client.get("/random")
 ```
 
@@ -62,6 +61,7 @@ When you need to override several dependencies at once, use `container.override.
 `InjectableOverride` objects:
 
 ```python
+from unittest.mock import MagicMock
 from wireup import InjectableOverride
 
 user_service_mock = MagicMock()
@@ -80,11 +80,14 @@ with container.override.injectables(overrides=overrides):
 ### Pytest
 
 ```python title="app.py"
+import wireup
+
+
 def create_app():
     app = ...
 
-    container = wireup.create_container(...)
-    # Example shows FastAPI but any integration will work the same.
+    container = wireup.create_async_container(...)
+    # Example shows FastAPI but any integration works the same.
     wireup.integration.fastapi.setup(container, app)
 
     return app
@@ -108,3 +111,8 @@ def test_something_with_mocked_db_service(client: TestClient, app):
 
     # Assert response and mock calls.
 ```
+
+## Next Steps
+
+- [Container](container.md) - Learn about the container API.
+- [Lifetimes & Scopes](lifetimes_and_scopes.md) - Understand how lifetimes affect testing.

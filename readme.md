@@ -33,20 +33,17 @@ Start simple. Register classes directly using decorators and let the container r
 dependencies automatically.
  
 ```python
-from wireup import injectable, create_sync_container
-from sqlalchemy import create_engine
-
 @injectable
 class Database:
     def __init__(self) -> None:
-        self.engine = create_engine("sqlite://")
+        self.engine = sqlalchemy.create_engine("sqlite://")
 
 @injectable
 class UserService:
     def __init__(self, db: Database) -> None:
         self.db = db
 
-container = create_sync_container(injectables=[Database, UserService])
+container = wireup.create_sync_container(injectables=[Database, UserService])
 user_service = container.get(UserService)  # ✅ Dependencies resolved.
 ```
 
@@ -63,18 +60,13 @@ manually wiring them up via factories.
 
 
 ```python
-from wireup import injectable, create_sync_container, Inject
-from typing import Annotated
-import os
-from sqlalchemy import create_engine
-
 @injectable
 class Database:
     # Inject "db_url" directly
     def __init__(self, url: Annotated[str, Inject(config="db_url")]) -> None:
-        self.engine = create_engine(url)
+        self.engine = sqlalchemy.create_engine(url)
 
-container = create_sync_container(
+container = wireup.create_sync_container(
     injectables=[Database],
     config={"db_url": os.environ["DB_URL"]}
 )
@@ -89,9 +81,6 @@ Need strict boundaries? Use factories to wire pure domain objects and integrate
 external libraries like Pydantic.
 
 ```python
-from pydantic import BaseModel
-from sqlalchemy import create_engine
-
 # 1. No Wireup imports
 class Database:
     def __init__(self, url: str) -> None:
@@ -103,8 +92,6 @@ class Settings(BaseModel):
 ```
 
 ```python
-from wireup import injectable, create_sync_container
-
 # 3. Wireup factories
 @injectable
 def make_settings() -> Settings:
@@ -114,7 +101,7 @@ def make_settings() -> Settings:
 def make_database(settings: Settings) -> Database:
     return Database(url=settings.db_url)
 
-container = create_sync_container(injectables=[make_settings, make_database])
+container = wireup.create_sync_container(injectables=[make_settings, make_database])
 database = container.get(Database)  # ✅ Dependencies resolved.
 ```
 
@@ -158,9 +145,6 @@ def migrate_database(db: Injected[Database], settings: Injected[Settings]):
 Depend on abstractions, not implementations. Bind implementations to interfaces using Protocols or ABCs.
 
 ```python
-from wireup import injectable, create_sync_container
-from typing import Protocol
-
 class Notifier(Protocol):
     def notify(self) -> None: ...
 
@@ -258,8 +242,6 @@ Wireup is compatible with mypy strict mode. It will also warn you at the earlies
 The container will raise errors at creation time about missing dependencies or other issues.
 
 ```python
-from wireup import injectable
-
 @injectable
 class Foo:
     def __init__(self, unknown: NotManagedByWireup) -> None:
@@ -274,8 +256,6 @@ container = wireup.create_sync_container(injectables=[Foo])
 Injected functions will raise errors at module import time rather than when called.
 
 ```python
-from wireup import inject_from_container, Injected
-
 @inject_from_container(container)
 def my_function(oops: Injected[NotManagedByWireup]): ...
 
@@ -287,9 +267,6 @@ def my_function(oops: Injected[NotManagedByWireup]): ...
 Wireup integrations assert that requested injections in the framework are valid.
 
 ```python
-from wireup import Injected
-from fastapi import FastAPI
-
 app = FastAPI()
 
 @app.get("/")
@@ -350,9 +327,6 @@ Integrate with popular frameworks for a smoother developer experience.
 Integrations manage request scopes, injection in endpoints, and dependency lifetimes.
 
 ```python title="Full FastAPI example"
-from wireup import injectable, create_async_container, Injected
-from fastapi import FastAPI
-
 app = FastAPI()
 container = create_async_container(injectables=[UserService, Database])
 
@@ -368,13 +342,6 @@ wireup.integration.fastapi.setup(container, app)
 ### 🧪 Simplified Testing
 
 Wireup decorators only collect metadata. Injectables remain plain classes or functions with no added magic to them. Test them directly with mocks or fakes, no special setup required.
-
-```python
-def test_user_repository():
-    fake_db = FakeDatabase()
-    repo = UserRepository(db=fake_db)  # Just instantiate directly.
-    assert repo.get_user(1) == expected_user
-```
 
 You can also use `container.override` to swap dependencies during tests:
 

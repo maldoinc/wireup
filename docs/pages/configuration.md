@@ -1,5 +1,5 @@
-Wireup containers can store configuration that can be injected. This enables self-contained definitions without having
-to create factories for every injectable.
+Wireup containers can store and inject configuration. This enables self-contained definitions without having to create
+factories for every injectable.
 
 ## Loading Configuration
 
@@ -82,12 +82,15 @@ This allows you to group related settings and inject only what a service needs.
 Then inject the configuration object:
 
 ```python
+import sqlite3
+
+
 @injectable
 class DatabaseService:
     def __init__(
         self, config: Annotated[DatabaseConfig, Inject(config="db_config")]
     ) -> None:
-        self.connection = connect(config.url)
+        self.connection = sqlite3.connect(config.url)
 ```
 
 ## Interpolation
@@ -134,6 +137,6 @@ def get_users(env: EnvConfig) -> None: ...
 
 ## Next Steps
 
-- [Lifetimes & Scopes](lifetimes_and_scopes.md) - Control singleton, scoped, and transient lifetimes.
-- [Factories](factories.md) - Create complex injectables and third-party objects.
+- [Lifetimes & Scopes](lifetimes_and_scopes.md) - Control how long objects live.
+- [Factories](factories.md) - Create complex dependencies and third-party objects.
 - [Testing](testing.md) - Override configuration values for testing.

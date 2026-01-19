@@ -21,10 +21,10 @@ graph LR
     There will be little `+` icons in code fragments. You can click on those for more detailed information as to what is
     happening in that particular line.
 
-### 1. Define Injectables
+### 1. Define Dependencies
 
-The container uses types and annotations to define injectables and discover dependencies between them. This results in
-self-contained injectable declarations without having to create factories for every injectable.
+The container uses types and annotations to define dependencies and discover relationships between them. This results in
+self-contained definitions without having to create factories for every dependency.
 
 #### 🐍 `KeyValueStore`
 
@@ -103,7 +103,7 @@ class WeatherService:
 
 ### 2. Create the container
 
-The next step is to create a container and register the services we just defined.
+The next step is to create a container and register the dependencies we just defined.
 
 ```python title="container.py"
 import wireup
@@ -150,11 +150,11 @@ container = wireup.create_async_container(
 
 ### 3. Use
 
-All that's left now is to retrieve injectables from the container.
+All that's left now is to retrieve dependencies from the container.
 
-=== "Service Locator"
+=== "Direct Retrieval"
 
-    To fetch injectables from the container, call `.get` on the container instance with the type you want to retrieve.
+    To fetch dependencies from the container, call `.get` on the container instance with the type you want to retrieve.
 
     ```python title="views/posts.py"  hl_lines="3"
     @app.get("/weather/forecast")
@@ -181,7 +181,7 @@ All that's left now is to retrieve injectables from the container.
 
 === "FastAPI"
 
-    With the FastAPI integration you can just declare dependencies in http or websocket routes.
+    With the FastAPI integration you can declare dependencies in http or websocket routes.
 
     ```python title="views/posts.py"  hl_lines="5"
     from wireup import Injected
@@ -196,23 +196,23 @@ All that's left now is to retrieve injectables from the container.
 
 === "Flask"
 
-    With the Flask integration you can just declare dependencies in views.
+    With the Flask integration you can declare dependencies in views.
 
     ```python title="views/posts.py"  hl_lines="5"
     from wireup import Injected
 
 
     @app.get("/weather/forecast")
-    async def get_forecast(weather_service: Injected[WeatherService]):
-        return await weather_service.get_forecast(...)
+    def get_forecast(weather_service: Injected[WeatherService]):
+        return weather_service.get_forecast(...)
     ```
 
     Learn More: [Flask Integration](integrations/flask/index.md).
 
 === "Django"
 
-    With the Django integration you can just declare dependencies in views. The integration provides support for async
-    views, regular views as well as class-based views.
+    With the Django integration you can declare dependencies in views. The integration provides support for async views,
+    regular views as well as class-based views.
 
     ```python title="views/posts.py"  hl_lines="4"
     from wireup import Injected
@@ -237,7 +237,7 @@ Check out the [Integrations](integrations/index.md) page.
 
 ### 4. Test
 
-Wireup does not patch your injectables, which means they can be instantiated and tested independently of the container.
+Wireup does not patch your classes, which means they can be instantiated and tested independently of the container.
 
 To substitute dependencies on targets such as views in a web application you can override dependencies with new ones on
 the fly.

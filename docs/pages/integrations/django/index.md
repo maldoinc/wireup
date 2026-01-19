@@ -111,7 +111,7 @@ class AuthService:
 
 ### Inject dependencies in views
 
-To inject dependencies in views, simply request them by their type:
+To inject dependencies in views, request them by their type:
 
 === "Sync Views"
 

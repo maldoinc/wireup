@@ -1,8 +1,37 @@
-Wireup controls how long injectable instances live and when they're shared through **lifetimes** and **scopes**.
+Wireup controls how long instances live and when they're shared through **lifetimes** and **scopes**.
 
-## Injectable Lifetimes
+## Why Scopes?
 
-Configure how long injectable instances live using the `lifetime` parameter in the `@injectable` decorator.
+Some resources need isolation. For example:
+
+- **Database transactions** should be independent per request
+- **User context** should not leak between requests
+- **Temporary objects** should be created fresh each time
+
+Scopes solve this by providing isolated contexts with automatic cleanup. When a scope ends, Wireup automatically
+releases resources created within that scope.
+
+## Lifetimes
+
+Wireup provides three lifetime options that control instance creation and sharing. Configure the lifetime using the
+`@injectable` decorator.
+
+### Quick Reference
+
+| Lifetime  | Instance Creation  | Shared Within      | Retrieved From | Best For                                     |
+| --------- | ------------------ | ------------------ | -------------- | -------------------------------------------- |
+| Singleton | Once per container | Entire application | Root or scoped | Configuration, database connections, caching |
+| Scoped    | Once per scope     | Current scope only | Scoped only    | Request state, transactions, user sessions   |
+| Transient | Every resolution   | Never shared       | Scoped only    | Stateless objects, temporary objects         |
+
+!!! important "Container Access Rules"
+
+    The **root container** is the one you create during setup via `wireup.create_sync_container` or
+    `wireup.create_async_container`. A **scoped container** is created from it using `container.enter_scope()`.
+
+    - Root container (`container.get()`) can only retrieve **singletons**
+    - Scoped container (`scope.get()`) can retrieve **singletons, scoped, and transient** dependencies
+    - Scoped containers automatically look up singletons from the root container
 
 ### Singleton (Default)
 
@@ -63,21 +92,11 @@ with container.enter_scope() as scope:
     assert builder1 is not builder2  # Always different instances
 ```
 
-!!! note "Scope Required"
+### Cleanup Timing
 
-    Only singletons may be resolved using the root container instance. Scoped and Transient dependencies must be resolved
-    within a scope to ensure proper cleanup of resources.
-
-    Singleton dependencies will be cleaned up when the root container's `.close()` method is called. Transient dependencies
-    are cleaned up when the **scope that created them** closes.
-
-## Lifetime Summary
-
-| Lifetime  | Instance Creation  | Shared Within      | Best For                                     |
-| --------- | ------------------ | ------------------ | -------------------------------------------- |
-| Singleton | Once per container | Entire application | Configuration, database connections, caching |
-| Scoped    | Once per scope     | Current scope only | Request state, transactions, user sessions   |
-| Transient | Every resolution   | Never shared       | Stateless objects, temporary objects         |
+- **Singleton** cleanup happens when `container.close()` is called (application shutdown)
+- **Scoped** cleanup happens when the scope exits (end of request/context)
+- **Transient** cleanup happens when the **scope that created them** exits
 
 ## Working with Scopes
 
@@ -167,21 +186,16 @@ things like database transactions or file handles.
 
 See [Resources & Cleanup](resources.md) for details on creating cleanable resources using generator factories.
 
-## Lifetime Rules
+## Lifetime Dependency Rules
 
-### Lifetime Rules
-
-Injectables have restrictions on what they can depend on to prevent **Scope Leakage**:
+Dependencies have restrictions on what they can depend on to prevent **Scope Leakage**:
 
 - **Singletons** can only depend on other singletons and config.
-    - *Why?* A Singleton is alive for the duration of the application. If it depended on a short-lived object (Scoped or
-        Transient), that object would be kept alive indefinitely, preventing cleanup and causing memory leaks. Wireup
-        prevents this common pitfall by design.
 - **Scoped** can depend on singletons, scoped, and config.
 - **Transient** can depend on any lifetime and config.
 
 ## Next Steps
 
-- [Factories](factories.md) - Create complex injectables with setup and teardown logic.
+- [Factories](factories.md) - Create complex dependencies with setup and teardown logic.
 - [Interfaces](interfaces.md) - Register multiple implementations of the same type.
 - [Testing](testing.md) - Override dependencies for testing.

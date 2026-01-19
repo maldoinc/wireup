@@ -48,8 +48,8 @@ wireup.integration.click.setup(container, cli)
 
 ### Inject in Click Commands
 
-To inject dependencies, add the type to the commands' signature and annotate them as necessary. See
-[Annotations](../../annotations.md) for more details.
+To inject dependencies, add the type to the command's signature and annotate with `Injected[T]` or
+`Annotated[T, Inject(...)]`.
 
 ```python title="Click Command"
 @cli.command()

@@ -20,7 +20,7 @@ Dependency injection for Flask is available in the `wireup.integration.flask` mo
 
 ### Initialize the integration
 
-First, [create a sync container](../../container.md) with your injectables:
+First, [create a sync container](../../container.md) with your dependencies:
 
 ```python
 from flask import Flask
@@ -48,8 +48,8 @@ wireup.integration.flask.setup(container, app)
 
 ### Inject in Flask Views
 
-To inject dependencies, add the type to the views' signature and annotate them as necessary. See
-[Annotations](../../annotations.md) for more details.
+To inject dependencies, add the type to the view's signature and annotate with `Injected[T]` or
+`Annotated[T, Inject(...)]`.
 
 ```python title="Flask View"
 @app.get("/random")

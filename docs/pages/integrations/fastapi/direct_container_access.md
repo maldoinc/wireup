@@ -1,4 +1,8 @@
-# Direct Container Access in FastAPI
+!!! warning "Advanced Feature"
+
+    You should rarely need this. Prefer standard `@injectable` classes and method injection `Injected[T]` whenever possible.
+    Direct container access couples your code to the Service Locator pattern, which is generally less testable and harder to
+    maintain than Dependency Injection.
 
 Wireup primarily handles dependency injection in FastAPI routes. However, you can directly access the request or
 application container to retrieve services when needed outside of standard dependency injection.
@@ -100,10 +104,9 @@ async def get_users(
 ): ...
 ```
 
-```
 !!! warning
+
     Mixing Wireup and `fastapi.Depends` is discouraged and should be avoided unless necessary.
 
-    Keep in mind that while accessing the Wireup container in FastAPI dependencies is possible, the reverse is not: Wireup services cannot depend on objects provided by `fastapi.Depends`.
-    ...
-```
+    Keep in mind that while accessing the Wireup container in FastAPI dependencies is possible, the reverse is not: Wireup
+    services cannot depend on objects provided by `fastapi.Depends`.

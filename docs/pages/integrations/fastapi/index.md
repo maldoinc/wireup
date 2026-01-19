@@ -2,17 +2,17 @@
 
 <div class="grid cards annotate" markdown>
 
-- :material-needle:{ .lg .middle } __Inject by Type__
+- :material-needle:{ .lg .middle } __Clean Injection__
 
     ______________________________________________________________________
 
-    Declare dependencies by using type annotations. No `Depends()` factory chains required.
+    Declare dependencies by using type annotations. No `Depends()` chains required.
 
 - :material-speedometer:{ .lg .middle } __Zero Runtime Overhead__
 
     ______________________________________________________________________
 
-    Inject dependencies with __zero__ runtime overhead using Class-Based Handlers.
+    Inject dependencies with **zero** runtime overhead using Class-Based Handlers.
 
     [:octicons-arrow-right-24: Learn more](class_based_handlers.md)
 
@@ -32,11 +32,54 @@
 
 </div>
 
+## Quick Start
+
+Here is a complete, copy-pasteable example to get you running in under 2 minutes.
+
+Create an [async container](../../container.md), define your services, then initialize the integration by calling
+`wireup.integration.fastapi.setup` **after adding all routers**:
+
+```python title="main.py"
+import wireup
+from fastapi import FastAPI
+from wireup import injectable, Injected
+import wireup.integration.fastapi
+
+
+# 1. Define a service (add @injectable)
+@injectable
+class GreeterService:
+    def greet(self, name: str) -> str:
+        return f"Hello, {name}!"
+
+
+# 2. Create the container
+container = wireup.create_async_container(injectables=[GreeterService])
+
+# 3. Create the FastAPI app and define your routes
+app = FastAPI()
+
+
+@app.get("/")
+async def greet(greeter: Injected[GreeterService]):
+    return {"message": greeter.greet("World")}
+
+
+# 4. Initialize Wireup (after all routes are added)
+wireup.integration.fastapi.setup(container, app)
+```
+
+Run the server with:
+
+```bash
+fastapi dev main.py
+```
+
 ??? example "See how Wireup compares to `Depends()`"
 
     This comparison shows the boilerplate reduction when using Wireup's type-based injection versus `Depends()` chains.
 
-    === "Before"
+    === "Before (Standard FastAPI)"
 
         ```python
         # Define your services
@@ -72,10 +115,10 @@
             return service.find_all()
         ```
 
-    === "After"
+    === "After (Wireup)"
 
         ```python
-        # Just add @injectable
+        # Add @injectable
         @injectable
         class UserRepository:
             def __init__(self, db: Database) -> None:
@@ -94,48 +137,15 @@
             return service.find_all()
         ```
 
-### Getting started
+## Features
 
-First, [create an async container](../../container.md)
+### HTTP and WebSocket Injection
 
-```python
-import wireup
-from myapp import services
+Inject dependencies in HTTP routes and WebSockets.
 
-container = wireup.create_async_container(
-    injectables=[services],
-    config={"debug": settings.DEBUG},
-)
-```
+=== "HTTP Route"
 
-Then initialize the integration by calling `wireup.integration.fastapi.setup` after adding all routers:
-
-```python
-from fastapi import FastAPI
-
-app = FastAPI()
-
-# Add routers here
-# app.include_router(...)
-
-wireup.integration.fastapi.setup(
-    container,
-    app,
-    class_based_handlers=[
-        UserHandler,
-        OrderHandler,
-    ],  # Optional: Wireup Class-Based Handlers
-)
-```
-
-### Inject in HTTP and WebSocket routes
-
-To inject dependencies, add the type to the route's signature and annotate them as necessary. See
-[Annotations](../../annotations.md) for more details.
-
-=== "HTTP"
-
-    ```python title="HTTP Route"
+    ```python
     from typing import Annotated
     from fastapi import Depends
     from wireup import Injected, Inject
@@ -143,16 +153,18 @@ To inject dependencies, add the type to the route's signature and annotate them 
 
     @app.get("/random")
     async def target(
+        # Inject custom services
         random_service: Injected[RandomService],
+        # Inject configuration values
         is_debug: Annotated[bool, Inject(config="debug")],
-        # This is a regular FastAPI dependency.
-        lucky_number: Annotated[int, Depends(get_lucky_number)],
+        # You can still use regular FastAPI dependencies alongside Wireup
+        user_agent: Annotated[str | None, Header()] = None,
     ): ...
     ```
 
-=== "WebSocket"
+=== "WebSocket Route"
 
-    ```python title="WebSocket Route"
+    ```python
     from fastapi import WebSocket
     from wireup import Injected
 
@@ -161,10 +173,31 @@ To inject dependencies, add the type to the route's signature and annotate them 
     async def ws(websocket: WebSocket, greeter: Injected[GreeterService]): ...
     ```
 
-!!! tip
+### Class-Based Handlers (Zero Overhead)
 
-    Improve performance by using a custom APIRoute class. This reduces overhead in endpoints that use Wireup injection by
-    avoiding redundant processing.
+For the best performance and organization, use **Class-Based Handlers**. Dependencies injected into the constructor are
+resolved **only once** at startup, removing the overhead of dependency resolution from the request cycle entirely.
+
+```python
+class UserHandler:
+    router = fastapi.APIRouter()
+
+    # Injected ONCE at startup (Zero runtime cost)
+    def __init__(self, user_service: UserProfileService) -> None:
+        self.user_service = user_service
+
+    @router.get("/")
+    async def list_all(self):
+        return self.user_service.find_all()
+```
+
+[:octicons-arrow-right-24: Read the Class-Based Handlers guide](class_based_handlers.md) (similar to `@cbv` from
+`fastapi-utils`, but with zero per-request overhead)
+
+!!! tip "Performance Tip: Use WireupRoute"
+
+    Improve performance in **function-based routes** by using a custom `APIRoute` class. This reduces overhead in endpoints
+    that use Wireup injection by avoiding redundant processing.
 
     ```python
     from fastapi import APIRouter
@@ -173,31 +206,28 @@ To inject dependencies, add the type to the route's signature and annotate them 
     router = APIRouter(route_class=WireupRoute)
     ```
 
-    If you already have a custom route class, you can inherit from WireupRoute instead.
-
-    **Under the hood**: FastAPI processes all route parameters, including ones meant for Wireup. The WireupRoute class
+    **Under the hood**: FastAPI processes all route parameters, including ones meant for Wireup. The `WireupRoute` class
     optimizes this by making Wireup-specific parameters only visible to Wireup, removing unnecessary processing by FastAPI's
     dependency injection system.
 
-### Inject FastAPI request or websocket
+### Injecting Request & WebSocket
 
-To inject the current request/websocket in services, include `wireup.integration.fastapi` module in the injectables when
-creating the container.
+To inject the `Request` or `WebSocket` object into your scoped-lifetime services (e.g. for logging or auth), add
+`wireup.integration.fastapi` to your container and request `fastapi.Request` or `fastapi.WebSocket` in your
+dependencies.
 
-```python
+```python hl_lines="6"
 import wireup
+import wireup.integration.fastapi
 
 container = wireup.create_async_container(
+    # Add the integration module to injectables
     injectables=[services, wireup.integration.fastapi],
-    config={"debug": settings.DEBUG},
 )
 ```
 
-#### Use Request and WebSocket
-
-```python
+```python hl_lines="6"
 import fastapi
-from wireup import injectable
 
 
 @injectable(lifetime="scoped")
@@ -205,21 +235,7 @@ class HttpAuthenticationService:
     def __init__(self, request: fastapi.Request) -> None: ...
 ```
 
-```python
-import fastapi
-from wireup import injectable
-
-
-@injectable(lifetime="scoped")
-class ChatService:
-    def __init__(self, websocket: fastapi.WebSocket) -> None:
-        self.websocket = websocket
-
-    async def send(self, data: str):
-        await self.websocket.send_text(data)
-```
-
-### Testing
+## Testing
 
 For general testing tips with Wireup refer to the [test docs](../../testing.md). With the FastAPI integration, you can
 override dependencies in the container as follows.
@@ -240,8 +256,35 @@ def test_override(client):
         res = client.get("/greet?name=Test")
 ```
 
+??? example "Pitfall: Why `lru_cache` leaks state in tests"
+
+    In standard FastAPI applications, singletons are often implemented using `@lru_cache`. This can cause state to leak
+    between tests because the cache persists globally in memory.
+
+    ```python
+    # Standard FastAPI
+    @lru_cache
+    def get_settings():
+        return Settings()
+
+
+    def test_one():
+        # Modifies the cached settings instance
+        get_settings().debug = True
+
+
+    def test_two():
+        # FAILS: This test inherits the modified state from test_one!
+        assert get_settings().debug is False
+    ```
+
+    **Wireup avoids this automatically.**
+
+    When you create a fresh container/app for each test (via a pytest fixture), Wireup creates fresh instances of all your
+    services. There is no global cache to clear.
+
 See
-[FastAPI integration tests](https://github.com/maldoinc/wireup/blob/master/test/integration/test_fastapi_integration.py)
+[FastAPI integration tests](https://github.com/maldoinc/wireup/blob/master/test/integration/fastapi/test_fastapi_integration.py)
 for more examples.
 
 !!! warning
@@ -256,6 +299,8 @@ for more examples.
             yield client
     ```
 
-### API Reference
+[:octicons-arrow-right-24: Read the full Testing guide](../../testing.md)
+
+## API Reference
 
 - [fastapi_integration](../../class/fastapi_integration.md)

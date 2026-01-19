@@ -1,5 +1,9 @@
-The container is the central registry for all application dependencies. It manages the lifecycle of injectables,
-resolves dependencies, and holds configuration.
+The container is the object responsible for creating and managing your application's dependencies. When you request a
+dependency, whether via type hints, `container.get()`, or a framework integration, the container builds it and any
+dependencies it requires.
+
+In practice, you mainly interact with the container directly during setup. Once configured, dependencies flow
+automatically through type hints and decorators.
 
 ## Creation
 
@@ -26,10 +30,15 @@ container = wireup.create_async_container(injectables=[...], config={...})
 
 Both creation functions accept the following arguments:
 
-| Argument      | Type               | Description                                                                                                    |
-| :------------ | :----------------- | :------------------------------------------------------------------------------------------------------------- |
-| `injectables` | `list[ModuleType]` | type                                                                                                           |
-| `config`      | `dict[str, Any]`   | A detailed configuration dictionary. Values from this dictionary can be injected using `Inject(config="key")`. |
+| Argument      | Type                                      | Description                                                                                                                                               |
+| :------------ | :---------------------------------------- | :-------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `injectables` | `list[Union[type, Callable, ModuleType]]` | Classes, functions decorated with `@injectable`, or modules to scan. Modules are scanned recursively, collecting only items decorated with `@injectable`. |
+| `config`      | `dict[str, Any]`                          | Configuration dictionary. Values from this dictionary can be injected using `Inject(config="key")`.                                                       |
+
+!!! note "Multiple Containers"
+
+    The `@injectable` decorator only stores metadata, it doesn't register anything globally. Each container you create is
+    fully independent with its own state.
 
 ## Core API
 
@@ -53,6 +62,11 @@ Retrieve an instance of a registered injectable.
 
 **Qualifiers**: Use the `qualifier` argument to retrieve specific implementations when multiple are registered. See
 [Interfaces](interfaces.md) for more details.
+
+!!! important
+
+    Prefer constructor-based dependency injection over calling `get` directly. Use `get` as an escape hatch for advanced
+    scenarios like dynamic service lookup or when working with framework integration code.
 
 ### `close`
 
@@ -91,6 +105,20 @@ with the root container. See [Lifetimes & Scopes](lifetimes_and_scopes.md) for d
 
 See [Lifetimes & Scopes](lifetimes_and_scopes.md) for details.
 
+### `config`
+
+Access configuration values directly from the container. This provides programmatic access to the configuration
+dictionary passed during container creation.
+
+```python
+env = container.config.get("app_env")
+db_url = container.config.get("database_url")
+```
+
+!!! important
+
+    Prefer `Inject(config="key")` in dependency constructors over accessing `container.config` directly.
+
 ### `override`
 
 Substitute dependencies for testing. Access via `container.override`.
@@ -114,6 +142,6 @@ for dependency in [HeavyComputeService, MLModelService, Database]:
 
 ## Next Steps
 
-- [Lifetimes & Scopes](lifetimes_and_scopes.md) - Control singleton, scoped, and transient lifetimes.
-- [Factories](factories.md) - Create complex injectables and third-party objects.
+- [Lifetimes & Scopes](lifetimes_and_scopes.md) - Control how long objects live.
+- [Factories](factories.md) - Create complex dependencies and third-party objects.
 - [Testing](testing.md) - Override dependencies and test with the container.

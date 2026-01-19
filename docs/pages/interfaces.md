@@ -4,8 +4,8 @@ repository during testing instead of a real database.
 
 ## Basic Usage
 
-You can use the `as_type` parameter in `@injectable` to register a service as any other type. This is commonly used to
-bind a concrete class to a Protocol or an Abstract Base Class.
+You can use the `as_type` parameter in `@injectable` to register an injectable as any other type. This is commonly used
+to bind a concrete class to a Protocol or an Abstract Base Class.
 
 === "Protocol"
 
@@ -47,7 +47,7 @@ bind a concrete class to a Protocol or an Abstract Base Class.
 !!! warning "Type Checking Limitation"
 
     Type checkers cannot verify that the decorated class implements the protocol or ABC specified in `as_type`. This is a
-    Python type system limitation. Ensure your implementation is correct or use explicit inheritance.
+    Python type system limitation.
 
 !!! tip "Factories Control Registration Type"
 
@@ -70,12 +70,13 @@ bind a concrete class to a Protocol or an Abstract Base Class.
     class InMemoryCache: ...
     ```
 
-    The `as_type` parameter is still useful when you want the function or class to retain its original type for other
-    purposes (e.g., testing, direct usage) while registering it under a different type in the container.
+    The `as_type` parameter is still useful when you want the function to retain its original type for other purposes (e.g.,
+    testing, direct usage) while registering it under a different type in the container.
 
 ## Multiple Implementations
 
-When you have multiple implementations of the same type, use **qualifiers** to distinguish between them.
+When you have multiple implementations of the same type, use **qualifiers** to distinguish between them. This is useful
+for environment-specific behavior (e.g., in-memory cache in development, Redis in production) or feature flags.
 
 ```python
 from typing import Annotated
@@ -103,6 +104,9 @@ def main(
     easier.
 
     ```python
+    from enum import StrEnum
+
+
     class CacheType(StrEnum):
         MEMORY = "memory"
         REDIS = "redis"
@@ -114,10 +118,14 @@ def main(
 
 ## Default Implementation
 
-You can register a default implementation by omitting the qualifier on one of the services. When `Cache` is requested
-without a qualifier, the default will be injected.
+You can register a default implementation by omitting the qualifier on one of the implementations. When `Cache` is
+requested without a qualifier, the default will be injected.
 
 ```python
+from typing import Annotated
+from wireup import Inject, injectable, Injected, inject_from_container
+
+
 @injectable(as_type=Cache)
 class InMemoryCache: ...
 
@@ -126,7 +134,7 @@ class InMemoryCache: ...
 class RedisCache: ...
 
 
-@wireup.inject_from_container(container)
+@inject_from_container(container)
 def main(
     # Default implementation: InMemoryCache
     memory_cache: Injected[Cache],

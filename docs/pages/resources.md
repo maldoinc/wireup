@@ -1,5 +1,5 @@
-Use generator factories when an injectable requires cleanup, such as database connections, file handles, or network
-resources.
+A resource is any dependency that requires cleanup, such as database connections, file handles, or network clients. Use
+generator factories to manage their lifecycle.
 
 ## Generator Factories
 
@@ -12,6 +12,10 @@ Generator factories use Python's `yield` statement to manage resource lifecycle:
 === "Generators"
 
     ```python
+    from typing import Iterator
+    from wireup import injectable
+
+
     @injectable
     def db_session_factory() -> Iterator[Session]:
         db = Session()
@@ -24,6 +28,11 @@ Generator factories use Python's `yield` statement to manage resource lifecycle:
 === "Context Manager"
 
     ```python
+    import contextlib
+    from typing import Iterator
+    from wireup import injectable
+
+
     @injectable
     def db_session_factory() -> Iterator[Session]:
         with contextlib.closing(Session()) as db:
@@ -34,6 +43,8 @@ Generator factories use Python's `yield` statement to manage resource lifecycle:
 
     ```python
     from typing import AsyncIterator
+    from aiohttp import ClientSession
+    from wireup import injectable
 
 
     @injectable
@@ -46,6 +57,8 @@ Generator factories use Python's `yield` statement to manage resource lifecycle:
 
     Generator factories must yield exactly once. Yielding multiple times will result in cleanup not being performed.
 
+When cleanup runs depends on the lifetime. See [Cleanup Timing](lifetimes_and_scopes.md#cleanup-timing) for details.
+
 ## Error Handling
 
 When using generator factories with scoped or transient lifetimes, unhandled errors that occur within the scope are
@@ -53,6 +66,12 @@ automatically propagated to the factories. This enables conditional cleanup, suc
 changes when operations fail.
 
 ```python
+from typing import Iterator
+from sqlalchemy import Engine
+from sqlalchemy.orm import Session
+from wireup import injectable
+
+
 @injectable(lifetime="scoped")
 def db_session_factory(engine: Engine) -> Iterator[Session]:
     session = Session(engine)

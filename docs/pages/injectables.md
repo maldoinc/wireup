@@ -1,31 +1,39 @@
-An injectable is any class or function that Wireup manages. They are the building blocks of your application.
+An injectable is any class or function that you register with the container, making it available to be requested as a
+dependency. Once registered, Wireup can instantiate it, resolve its own dependencies, and inject it wherever needed.
 
 ## The `@injectable` Decorator
 
-To register a class or function as an injectable, decorate it with `@injectable`. For classes, define dependencies in
-the `__init__` method using type hints. For functions, use type hints in the function signature.
+The `@injectable` decorator marks a class or function for registration with the container.
 
-```python
-from wireup import injectable
+=== "Classes"
 
-
-@injectable
-class UserRepository: ...
+    ```python
+    from wireup import injectable
 
 
-@injectable
-def db_connection() -> DatabaseConnection: ...
-```
+    @injectable
+    class UserRepository: ...
+    ```
+
+=== "Functions"
+
+    ```python
+    from wireup import injectable
+
+
+    @injectable
+    def db_connection() -> DatabaseConnection: ...
+    ```
 
 ### Arguments
 
-The decorator accepts arguments to control how the injectable is registered:
+You can customize how an injectable is registered by passing arguments to the decorator:
 
-| Argument    | Description                                                                                                            | Default       |
-| :---------- | :--------------------------------------------------------------------------------------------------------------------- | :------------ |
-| `lifetime`  | Controls the lifespan of the object (e.g. `"singleton"`, `"scoped"`). See [Lifetimes](lifetimes_and_scopes.md).        | `"singleton"` |
-| `qualifier` | A unique identifier to distinguish between multiple implementations of the same type. See [Interfaces](interfaces.md). | `None`        |
-| `as_type`   | Register the injectable as a different type (e.g., a Protocol or ABC). See [Interfaces](interfaces.md).                | `None`        |
+| Argument    | Description                                                                                                           | Default       |
+| :---------- | :-------------------------------------------------------------------------------------------------------------------- | :------------ |
+| `lifetime`  | Controls how long the object lives (e.g., `"singleton"`, `"scoped"`). See [Lifetimes](lifetimes_and_scopes.md).       | `"singleton"` |
+| `qualifier` | A unique identifier, useful when you have multiple implementations of the same type. See [Interfaces](interfaces.md). | `None`        |
+| `as_type`   | Register the object as a different type (like a Protocol or Base Class). See [Interfaces](interfaces.md).             | `None`        |
 
 ```python
 from wireup import injectable
@@ -35,16 +43,19 @@ from wireup import injectable
 class DbSession: ...
 ```
 
-## Defining Injectables
+## Defining Dependencies
 
-Wireup resolves dependencies based on type hints in the `__init__` method for classes, or the function signature for
-factories.
+Wireup resolves dependencies using **Type Hints**. It inspects the types you declare and automatically finds the
+matching injectable.
 
 ### Classes
 
-Use standard Python classes and type hints.
+Standard Python classes with type-hinted `__init__` methods are automatically wired. No extra configuration is needed.
 
 ```python
+from wireup import injectable
+
+
 @injectable
 class UserService:
     # UserRepository will be injected automatically
@@ -54,9 +65,10 @@ class UserService:
 
 ### Factories
 
-Functions can also be registered as injectables. This is useful for creating objects that you don't control (like 3rd
-party libraries), require complex setup or cleanup. See [Factories](factories.md) and
-[Resource Management](resources.md) for more details.
+Functions can be registered as factories. This is standard for creating 3rd-party objects, when complex setup is
+required or for enforcing clean architecture.
+
+See [Factories](factories.md) and [Resource Management](resources.md).
 
 ```python
 import boto3
@@ -71,62 +83,57 @@ def create_s3_client(
     return boto3.client("s3", region_name=region)
 ```
 
-!!! tip "Reduce init boilerplate"
+### Dataclasses
 
-    When building injectables with multiple dependencies, `__init__` methods may become repetitive. Combine the
-    `@injectable` decorator with Python's `@dataclass` to eliminate initialization boilerplate.
+You can combine `@injectable` with `@dataclass` to eliminate `__init__` boilerplate.
 
-    Depending on class definitions some classes may benefit in readability from this more than others. Apply best judgement
-    here.
+=== "Standard Class"
 
-    === "Before"
+    ```python
+    @injectable
+    class OrderProcessor:
+        def __init__(
+            self,
+            payment_gateway: PaymentGateway,
+            inventory_service: InventoryService,
+        ):
+            self.payment_gateway = payment_gateway
+            self.inventory_service = inventory_service
+    ```
 
-        ```python title="services/order_processor.py"
-        @injectable
-        class OrderProcessor:
-            def __init__(
-                self,
-                payment_gateway: PaymentGateway,
-                inventory_service: InventoryService,
-                order_repository: OrderRepository,
-            ):
-                self.payment_gateway = payment_gateway
-                self.inventory_service = inventory_service
-                self.order_repository = order_repository
-        ```
+=== "Dataclass"
 
-    === "After"
-
-        ```python title="services/order_processor.py"
-        from dataclasses import dataclass
+    ```python
+    from dataclasses import dataclass
 
 
-        @injectable
-        @dataclass
-        class OrderProcessor:
-            payment_gateway: PaymentGateway
-            inventory_service: InventoryService
-            order_repository: OrderRepository
-        ```
+    @injectable
+    @dataclass
+    class OrderProcessor:
+        payment_gateway: PaymentGateway
+        inventory_service: InventoryService
+    ```
 
-    === "Counter-example"
+??? warning "Counter-example"
 
-        ```python
-        @injectable
-        @dataclass
-        class Foo:
-            FOO_CONST = 1  # Not added to __init__ by @dataclass.
-            logger = logging.getLogger(__name__)  # Not added to __init__ by @dataclass.
+    Mix with caution if your class has many non-dependency fields.
 
-            # These will be added to __init__ by @dataclass
-            # and marked as dependencies by Wireup.
-            payment_gateway: PaymentGateway
-            inventory_service: InventoryService
-            order_repository: OrderRepository
-        ```
+    ```python
+    @injectable
+    @dataclass
+    class Foo:
+        FOO_CONST = 1  # Not added to __init__ by @dataclass.
+        logger = logging.getLogger(__name__)  # Not added to __init__ by @dataclass.
 
-        In this example, due to how the `@dataclass` decorator works, combining the two leads to code that's more difficult to
-        read, since it's not immediately what are dependencies and what are class fields.
+        # These will be added to __init__ by @dataclass
+        # and marked as dependencies by Wireup.
+        payment_gateway: PaymentGateway
+        inventory_service: InventoryService
+        order_repository: OrderRepository
+    ```
+
+    In this example, due to how the `@dataclass` decorator works, combining the two leads to code that's more difficult to
+    read, since it's not immediately obvious what are dependencies and what are class fields.
 
 ## Dependencies with Default Values
 
@@ -156,6 +163,6 @@ allows the class to be registered without errors.
 
 ## Next Steps
 
-- [Configuration](configuration.md) - Inject configuration values from environment variables or structured objects.
-- [Lifetimes & Scopes](lifetimes_and_scopes.md) - Control singleton, scoped, and transient lifetimes.
-- [Factories](factories.md) - Advanced patterns for creating complex injectables.
+- [Configuration](configuration.md) - Inject configuration values.
+- [Lifetimes & Scopes](lifetimes_and_scopes.md) - Control how long objects live.
+- [Factories](factories.md) - Advanced creation logic.
