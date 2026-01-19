@@ -173,7 +173,7 @@ cache = container.get(Cache | None)
     involves creating a noop implementation that can be used when the real implementation is not available.
 
     ```python title="services/cache.py"
-    from wireup import abstract, injectable
+    from wireup import injectable
     from typing import Any
 
 
