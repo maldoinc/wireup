@@ -177,7 +177,7 @@ class WireupConfig(AppConfig):
 class WireupSettings:
     """Class containing Wireup settings specific to Django."""
 
-    service_modules: List[Union[str, ModuleType]]
+    service_modules: Optional[List[Union[str, ModuleType]]] = None
     """List of modules containing wireup injectable registrations."""
 
     injectables: Optional[List[Union[str, ModuleType]]] = None
