@@ -1,6 +1,6 @@
 [project]
 name = "wireup"
-version = "2.3.0"
+version = "2.4.0"
 description = "Python Dependency Injection Library"
 authors = [{ name = "Aldo Mateli", email = "aldo.mateli@gmail.com" }]
 license = { text = "MIT" }
