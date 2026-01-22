@@ -21,10 +21,6 @@ from test.shared import shared_services
 from test.shared.shared_services.rand import RandomService
 
 
-class PydanticSettingsTest(BaseSettings):
-    version: str = "v1"
-
-
 def create_app(*, expose_container_in_middleware: bool) -> FastAPI:
     app = FastAPI()
     app.include_router(router)
@@ -97,7 +93,7 @@ def test_does_not_affect_unused_endpoints(client: TestClient):
 def test_injects_parameters(client: TestClient):
     response = client.get("/params")
     assert response.status_code == 200
-    assert response.json() == {"version": "v1", "foo": "bar", "foo_foo": "bar-bar"}
+    assert response.json() == {"foo": "bar", "foo_foo": "bar-bar"}
 
 
 def test_request_container_in_decorator(client: TestClient):
