@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import re
 from re import Match
-from typing import Any
+from typing import Any, Mapping
 
 from wireup.errors import UnknownParameterError
 from wireup.ioc.types import ParameterReference, TemplatedString
@@ -47,15 +47,15 @@ class ParameterBag:
         return self.__bag[name]
 
     @classmethod
-    def __get_value_from_name_and_holder(cls, name: str, holder: Any) -> Any:
-        if isinstance(holder, dict):
+    def __get_value_from_name_and_holder(cls, index: int, matched_parts: list[str], name: str, holder: Any) -> Any:
+        if isinstance(holder, Mapping):
             if name not in holder:
-                raise UnknownParameterError(name)
+                raise UnknownParameterError(name, parent_path=".".join(matched_parts[:index]))
 
             return holder[name]
 
         if not hasattr(holder, name):
-            raise UnknownParameterError(name)
+            raise UnknownParameterError(name, parent_path=".".join(matched_parts[:index]))
 
         return getattr(holder, name)
 
@@ -64,7 +64,7 @@ class ParameterBag:
             return self.__cache[val]
 
         def replace_param(match: Match[str]) -> str:
-            # To not break backwards compatbility, we need to check if there exists
+            # To not break backwards compatibility, we need to check if there exists
             # a value in baggage that matches the full name first
             name = match.group(1)
             try:
@@ -75,8 +75,8 @@ class ParameterBag:
             match_parts = name.split(".")
             parent = self.__bag
 
-            for part in match_parts:
-                parent = self.__get_value_from_name_and_holder(part, parent)
+            for i, part in enumerate(match_parts):
+                parent = self.__get_value_from_name_and_holder(i, match_parts, part, parent)
 
             return str(parent)
 

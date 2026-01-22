@@ -58,12 +58,26 @@ def test_get_templated_string_with_dot_notation_with_non_existing_param():
         }
     }
     bag = ParameterBag(values)
+
+    templated_string = TemplatedString("${param2.nested2.nested1_1}")
+    with pytest.raises(
+        UnknownParameterError,
+        match="Unknown parameter requested: param2",
+    ):
+        bag.get(templated_string)
+
     templated_string = TemplatedString("${param1.nested2.nested1_1}")
-    with pytest.raises(UnknownParameterError):
+    with pytest.raises(
+        UnknownParameterError,
+        match="Unknown parameter requested: param1.nested2. 'nested2' not found in 'param1'",
+    ):
         bag.get(templated_string)
 
     templated_string = TemplatedString("${param1.nested1.nested1_2}")
-    with pytest.raises(UnknownParameterError):
+    with pytest.raises(
+        UnknownParameterError,
+        match="Unknown parameter requested: param1.nested1.nested1_2. 'nested1_2' not found in 'param1.nested1'",
+    ):
         bag.get(templated_string)
 
 

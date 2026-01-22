@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import sys
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Optional
 
 from wireup.util import format_name
 
@@ -36,9 +36,16 @@ class DuplicateQualifierForInterfaceError(WireupError):
 class UnknownParameterError(WireupError):
     """Raised when requesting a config by name which does not exist."""
 
-    def __init__(self, parameter_name: str) -> None:
+    def __init__(self, parameter_name: str, parent_path: Optional[str] = None) -> None:
         self.parameter_name = parameter_name
-        super().__init__(f"Unknown config key requested: {parameter_name}")
+        self.parent_path = parent_path
+
+        if parent_path:
+            message = f"Unknown config key requested: {parent_path}.{parameter_name}. '{parameter_name}' not found in '{parent_path}'"
+        else:
+            message = f"Unknown config key requested: {parameter_name}"
+
+        super().__init__(message)
 
 
 class FactoryReturnTypeIsEmptyError(WireupError):
