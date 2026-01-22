@@ -49,6 +49,27 @@ def test_get_templated_string_with_dot_notation():
     assert bag.get(templated_string) == "value1 and None"
 
 
+def test_get_templated_string_with_dot_notation_gives_priority_to_existing_keys_containing_dots():
+    values = {"foo.bar": 1, "foo": {"bar": 2}}
+    bag = ParameterBag(values)
+    templated_string = TemplatedString("${foo.bar}")
+    assert bag.get(templated_string) == "1"
+
+
+def test_get_templated_string_with_dot_notation_without_parameter_expression():
+    values = {
+        "param1": {
+            "nested1": "value1",
+        },
+        "param2": {
+            "nested2": None,
+        },
+    }
+    bag = ParameterBag(values)
+    with pytest.raises(UnknownParameterError, match="Unknown parameter requested: param1.nested1"):
+        bag.get("param1.nested1")
+
+
 def test_get_templated_string_with_dot_notation_with_non_existing_param():
     values = {
         "param1": {
@@ -86,13 +107,41 @@ def test_get_templated_string_with_dot_notation__param_is_object():
         def __init__(self) -> None:
             self.property1 = "value1"
 
+        @property
+        def property2(self) -> str:
+            return "value2"
+
     values = {"param1": TestObject()}
     bag = ParameterBag(values)
     templated_string = TemplatedString("${param1.property1}")
     assert bag.get(templated_string) == "value1"
 
     templated_string = TemplatedString("${param1.property2}")
+    assert bag.get(templated_string) == "value2"
+
+    templated_string = TemplatedString("${param1.property3}")
     with pytest.raises(UnknownParameterError):
+        bag.get(templated_string)
+
+
+def test_get_templated_string_with_broken_paths():
+    values = {"param1": {"property1": "value1"}}
+    bag = ParameterBag(values)
+
+    templated_string = TemplatedString("${param1..property1}")
+    with pytest.raises(UnknownParameterError, match="Unknown parameter requested: param1.. '' not found in 'param1'"):
+        bag.get(templated_string)
+
+    templated_string = TemplatedString("${param1.}")
+    with pytest.raises(UnknownParameterError, match="Unknown parameter requested: param1.. '' not found in 'param1'"):
+        bag.get(templated_string)
+
+    templated_string = TemplatedString("${.param1}")
+    with pytest.raises(UnknownParameterError, match="Unknown parameter requested: "):
+        bag.get(templated_string)
+
+    templated_string = TemplatedString("${.param1.}")
+    with pytest.raises(UnknownParameterError, match="Unknown parameter requested: "):
         bag.get(templated_string)
 
 
