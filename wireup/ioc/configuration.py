@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import re
 from re import Match
-from typing import Any
+from typing import Any, Mapping
 
 from wireup.errors import UnknownParameterError
 from wireup.ioc.types import ConfigurationReference, TemplatedString
@@ -33,12 +33,39 @@ class ConfigStore:
 
         return self.__bag[name]
 
+    @classmethod
+    def __get_value_from_name_and_holder(cls, index: int, matched_parts: list[str], name: str, holder: Any) -> Any:
+        if isinstance(holder, Mapping):
+            if name not in holder:
+                raise UnknownParameterError(name, parent_path=".".join(matched_parts[:index]))
+
+            return holder[name]
+
+        if not hasattr(holder, name):
+            raise UnknownParameterError(name, parent_path=".".join(matched_parts[:index]))
+
+        return getattr(holder, name)
+
     def __interpolate(self, val: str) -> str:
         if val in self.__cache:
             return self.__cache[val]
 
         def replace_param(match: Match[str]) -> str:
-            return str(self.__get_value_from_name(match.group(1)))
+            # To not break backwards compatibility, we need to check if there exists
+            # a value in baggage that matches the full name first
+            name = match.group(1)
+            try:
+                return str(self.__get_value_from_name(name))
+            except UnknownParameterError:
+                pass
+
+            match_parts = name.split(".")
+            parent = self.__bag
+
+            for i, part in enumerate(match_parts):
+                parent = self.__get_value_from_name_and_holder(i, match_parts, part, parent)
+
+            return str(parent)
 
         # Accept anything here as we don't impose any rules on dict keys
         res = re.sub(r"\${(.*?)}", replace_param, val, flags=re.DOTALL)

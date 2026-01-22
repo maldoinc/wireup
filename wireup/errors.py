@@ -42,7 +42,7 @@ class UnknownParameterError(WireupError):
 
         if parent_path:
             message = (
-                f"Unknown parameter requested: {parent_path}.{parameter_name}."
+                f"Unknown config key requested: {parent_path}.{parameter_name}."
                 f" '{parameter_name}' not found in '{parent_path}'"
             )
         else:
