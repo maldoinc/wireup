@@ -25,7 +25,7 @@ def create_app() -> web.Application:
     app.router.add_routes(routes.router)
 
     container = wireup.create_async_container(
-        service_modules=[shared_services, aio_test_services, wireup.integration.aiohttp]
+        injectables=[shared_services, aio_test_services, wireup.integration.aiohttp]
     )
     wireup.integration.aiohttp.setup(container, app, handlers=[handler.WireupTestHandler])
 
@@ -62,7 +62,7 @@ async def test_webview(client: TestClient) -> None:
 
 
 async def test_override(client: TestClient, app: web.Application) -> None:
-    with get_app_container(app).override.service(GreeterService, new=CustomGreeter()):
+    with get_app_container(app).override.injectable(GreeterService, new=CustomGreeter()):
         res = await client.get("/webview")
         body = await res.json()
         assert body == {"greeting": "Hoi, webview"}
@@ -82,7 +82,7 @@ async def test_handler_override(aiohttp_client: Callable[[web.Application], Awai
     app = create_app()
     container = get_app_container(app)
 
-    with container.override.service(GreeterService, new=CustomGreeter()):
+    with container.override.injectable(GreeterService, new=CustomGreeter()):
         client = await aiohttp_client(app())
 
         res = await client.get("/handler/greet?name=Handler")

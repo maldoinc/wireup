@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import warnings
 from contextlib import contextmanager
 from typing import TYPE_CHECKING, Any, Iterator
 
@@ -9,11 +10,11 @@ from wireup.ioc.factory_compiler import CompiledFactory, FactoryCompiler
 if TYPE_CHECKING:
     from collections.abc import Callable
 
-    from wireup.ioc.types import Qualifier, ServiceOverride
+    from wireup.ioc.types import InjectableOverride, Qualifier
 
 
 class OverrideManager:
-    """Enables overriding of services registered with the container."""
+    """Enables overriding of injectables registered with the container."""
 
     def __init__(
         self,
@@ -48,12 +49,12 @@ class OverrideManager:
         compiler.factories[compiler.get_object_id(target, qualifier)] = original
 
     def set(self, target: type, new: Any, qualifier: Qualifier | None = None) -> None:
-        """Override the `target` service with `new`.
+        """Override the `target` injectable with `new`.
 
         Future requests to inject `target` will result in `new` being injected.
 
-        :param target: The target service to override.
-        :param qualifier: The qualifier of the service to override. Set this if service is registered
+        :param target: The target injectable to override.
+        :param qualifier: The qualifier of the injectable to override. Set this if injectable is registered
         with the qualifier parameter set to a value.
         :param new: The new object to be injected instead of `target`.
         """
@@ -105,22 +106,22 @@ class OverrideManager:
         del self._original_factories[target, qualifier]
 
     def delete(self, target: type, qualifier: Qualifier | None = None) -> None:
-        """Clear active override for the `target` service."""
+        """Clear active override for the `target` injectable."""
         self._restore_factory_methods(target, qualifier)
 
     def clear(self) -> None:
-        """Clear active service overrides."""
+        """Clear active injectable overrides."""
         for key in self._original_factories:
             self._restore_factory_methods(key[0], key[1])
 
     @contextmanager
-    def service(self, target: type, new: Any, qualifier: Qualifier | None = None) -> Iterator[None]:
-        """Override the `target` service with `new` for the duration of the context manager.
+    def injectable(self, target: type, new: Any, qualifier: Qualifier | None = None) -> Iterator[None]:
+        """Override the `target` injectable with `new` for the duration of the context manager.
 
         Future requests to inject `target` will result in `new` being injected.
 
-        :param target: The target service to override.
-        :param qualifier: The qualifier of the service to override. Set this if service is registered
+        :param target: The target injectable to override.
+        :param qualifier: The qualifier of the injectable to override. Set this if injectable is registered
         with the qualifier parameter set to a value.
         :param new: The new object to be injected instead of `target`.
         """
@@ -131,8 +132,8 @@ class OverrideManager:
             self.delete(target, qualifier)
 
     @contextmanager
-    def services(self, overrides: list[ServiceOverride]) -> Iterator[None]:
-        """Override a number of services with new for the duration of the context manager."""
+    def injectables(self, overrides: list[InjectableOverride]) -> Iterator[None]:
+        """Override a number of injectables with new for the duration of the context manager."""
         try:
             for override in overrides:
                 self.set(override.target, override.new, override.qualifier)
@@ -140,3 +141,33 @@ class OverrideManager:
         finally:
             for override in overrides:
                 self.delete(override.target, override.qualifier)
+
+    @contextmanager
+    def service(self, target: type, new: Any, qualifier: Qualifier | None = None) -> Iterator[None]:
+        """Override the `target` injectable with `new` for the duration of the context manager.
+
+        Future requests to inject `target` will result in `new` being injected.
+
+        :param target: The target injectable to override.
+        :param qualifier: The qualifier of the injectable to override. Set this if injectable is registered
+        with the qualifier parameter set to a value.
+        :param new: The new object to be injected instead of `target`.
+        """
+        warnings.warn(
+            "Services are now called Injectables. Use container.override.injectable() instead.",
+            FutureWarning,
+            stacklevel=2,
+        )
+        with self.injectable(target, new, qualifier):
+            yield
+
+    @contextmanager
+    def services(self, overrides: list[InjectableOverride]) -> Iterator[None]:
+        """Override a number of injectables with new for the duration of the context manager."""
+        warnings.warn(
+            "Services are now called Injectables. Use container.override.injectables() instead.",
+            FutureWarning,
+            stacklevel=2,
+        )
+        with self.injectables(overrides):
+            yield

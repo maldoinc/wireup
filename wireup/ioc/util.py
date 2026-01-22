@@ -136,7 +136,7 @@ def ensure_is_type(value: type[T] | str, globalns_supplier: Callable[[], dict[st
         return _eval_type_native(forward_ref, globalns=globalns_supplier())  # type:ignore[no-any-return]
     except TypeError as eval_type_error:
         try:
-            import eval_type_backport
+            import eval_type_backport  # noqa: PLC0415
         except ImportError as import_error:
             msg = (
                 f"Error evaluating type annotation '{value}'. "
@@ -155,10 +155,6 @@ def ensure_is_type(value: type[T] | str, globalns_supplier: Callable[[], dict[st
             "See: https://maldoinc.github.io/wireup/latest/future_annotations/"
         )
         raise WireupError(msg) from e
-
-
-def stringify_type(target: type | AnyCallable) -> str:
-    return f"{type(target).__name__.capitalize()} {target.__module__}.{target.__name__}"
 
 
 def hide_annotated_names(func: AnyCallable) -> None:

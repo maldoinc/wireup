@@ -1,102 +1,147 @@
-The container manages application services and automatically resolves their dependencies. Create one at startup, register services, and let it handle the wiring.
+The container is the object responsible for creating and managing your application's dependencies. When you request a
+dependency, whether via type hints, `container.get()`, or a framework integration, the container builds it and any
+dependencies it requires.
 
-## Creating Containers
+In practice, you mainly interact with the container directly during setup. Once configured, dependencies flow
+automatically through type hints and decorators.
 
-Choose the container type based on the application's needs:
+## Creation
 
-### Synchronous
+Wireup provides two ways to create containers, depending on whether your application is synchronous or asynchronous.
 
-For traditional synchronous Python applications:
+### `create_sync_container`
 
-```python
-import wireup
-
-container = wireup.create_sync_container(services=[UserService, Database])
-
-user_service = container.get(UserService)
-```
-
-### Async
-
-For applications using async/await:
+Use this for traditional, blocking Python applications (e.g., Flask, Django, scripts).
 
 ```python
-import wireup
-
-container = wireup.create_async_container(services=[UserService, Database])
-
-user_service = await container.get(UserService)
+container = wireup.create_sync_container(injectables=[...], config={...})
 ```
 
-The async container can handle both sync and async services, but requires `await` for service retrieval.
+### `create_async_container`
 
-## Registering Services
-
-### 1. Service Discovery
-
-Let Wireup automatically find services in modules:
+Use this for `async/await` based applications (e.g., FastAPI, Starlette). It supports `async` factories and has `async`
+methods for retrieval and cleanup.
 
 ```python
-import wireup
-from myapp import services, repositories
-
-container = wireup.create_sync_container(
-    service_modules=[services, repositories],
-    parameters={"api_key": "secret"}
-)
+container = wireup.create_async_container(injectables=[...], config={...})
 ```
 
-**Example project structure:**
+### Arguments
 
-```
-myapp/
-├── services/
-│   ├── __init__.py
-│   └── user_service.py      # Contains @service decorations
-├── repositories/
-│   ├── __init__.py
-│   └── user_repository.py   # Contains @service decorations
-└── main.py
-```
+Both creation functions accept the following arguments:
 
-**How it works:**
+| Argument      | Type                                      | Description                                                                                                                                               |
+| :------------ | :---------------------------------------- | :-------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `injectables` | `list[Union[type, Callable, ModuleType]]` | Classes, functions decorated with `@injectable`, or modules to scan. Modules are scanned recursively, collecting only items decorated with `@injectable`. |
+| `config`      | `dict[str, Any]`                          | Configuration dictionary. Values from this dictionary can be injected using `Inject(config="key")`.                                                       |
 
-- Wireup scans the provided modules recursively
-- Finds classes and functions decorated with `@service` or `@abstract`
-- Automatically registers them and resolves their dependencies
+!!! note "Multiple Containers"
 
-### 2. Manual Registration
+    The `@injectable` decorator only stores metadata, it doesn't register anything globally. Each container you create is
+    fully independent with its own state.
 
-Register specific services individually:
+## Core API
+
+### `get`
+
+Retrieve an instance of a registered injectable.
+
+=== "Synchronous"
+
+    ```python
+    db = container.get(Database)
+    readonly_db = container.get(Database, qualifier="readonly")
+    ```
+
+=== "Async"
+
+    ```python
+    db = await container.get(Database)
+    readonly_db = await container.get(Database, qualifier="readonly")
+    ```
+
+**Qualifiers**: Use the `qualifier` argument to retrieve specific implementations when multiple are registered. See
+[Interfaces](interfaces.md) for more details.
+
+!!! important
+
+    Prefer constructor-based dependency injection over calling `get` directly. Use `get` as an escape hatch for advanced
+    scenarios like dynamic service lookup or when working with framework integration code.
+
+### `close`
+
+Clean up the container and release resources. This triggers the cleanup phase of any generator-based factories.
+
+=== "Synchronous"
+
+    ```python
+    container.close()
+    ```
+
+=== "Async"
+
+    ```python
+    await container.close()
+    ```
+
+### `enter_scope`
+
+Create a scoped container. Scoped containers manage their own scoped and transient dependencies while sharing singletons
+with the root container. See [Lifetimes & Scopes](lifetimes_and_scopes.md) for details on how scopes work.
+
+=== "Synchronous"
+
+    ```python
+    with container.enter_scope() as scoped:
+        db_session = scoped.get(DbSession)  # Fresh instance per scope
+    ```
+
+=== "Async"
+
+    ```python
+    async with container.enter_scope() as scoped:
+        db_session = await scoped.get(DbSession)  # Fresh instance per scope
+    ```
+
+See [Lifetimes & Scopes](lifetimes_and_scopes.md) for details.
+
+### `config`
+
+Access configuration values directly from the container. This provides programmatic access to the configuration
+dictionary passed during container creation.
 
 ```python
-import wireup
-from myapp.services import UserService, EmailService
-
-container = wireup.create_sync_container(
-    services=[UserService, EmailService],
-    parameters={"db_url": "postgresql://localhost/myapp"}
-)
+env = container.config.get("app_env")
+db_url = container.config.get("database_url")
 ```
 
-You can also mix both approaches as needed:
+!!! important
+
+    Prefer `Inject(config="key")` in dependency constructors over accessing `container.config` directly.
+
+### `override`
+
+Substitute dependencies for testing. Access via `container.override`.
 
 ```python
-container = wireup.create_sync_container(
-    service_modules=[services],      # Auto-discover
-    services=[SpecialService],       # Manual addition
-    parameters={"api_key": "secret"}
-)
+with container.override.injectable(target=Database, new=mock_db):
+    ...  # All injections of Database use mock_db
 ```
 
-## Container Cleanup
+See [Testing](testing.md) for details.
 
-Clean up the container when shutting down. This is required to properly close factories that manage resources.
+## Eager Initialization
+
+By default, objects are created lazily when first requested. To avoid latency on first request for expensive services,
+initialize them at startup:
 
 ```python
-# For sync containers
-container.close()
-
-# For async containers
-await container.close()
+for dependency in [HeavyComputeService, MLModelService, Database]:
+    container.get(dependency)  # or `await container.get(dependency)` for async
 ```
+
+## Next Steps
+
+- [Lifetimes & Scopes](lifetimes_and_scopes.md) - Control how long objects live.
+- [Factories](factories.md) - Create complex dependencies and third-party objects.
+- [Testing](testing.md) - Override dependencies and test with the container.

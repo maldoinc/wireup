@@ -15,6 +15,7 @@ class BareSyncContainer(BaseContainer):
     get = BaseContainer._synchronous_get
 
     def close(self) -> None:
+        """Close the container and clean up all resources."""
         clean_exit_stack(self._global_scope_exit_stack)
 
 
@@ -34,6 +35,17 @@ class ScopedSyncContainer(BareSyncContainer):
 
 class SyncContainer(BareSyncContainer):
     def enter_scope(self) -> ScopedSyncContainer:
+        """Enter a new scope.
+
+        The returned scope context manager controls the lifetime of scoped dependencies.
+        It must be used as a context manager: `with container.enter_scope() as scope:`.
+
+        Scoped dependencies are created once per scope and shared within that scope.
+        They are discarded when the context manager exits.
+
+        See the documentation for more details:
+        https://maldoinc.github.io/wireup/latest/lifetimes_and_scopes/#working-with-scopes
+        """
         return ScopedSyncContainer(
             registry=self._registry,
             override_manager=self._override_mgr,

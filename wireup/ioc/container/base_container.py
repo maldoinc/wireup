@@ -1,9 +1,11 @@
 from __future__ import annotations
 
+import warnings
 from typing import (
     TYPE_CHECKING,
     Any,
     AsyncGenerator,
+    Callable,
     Generator,
     List,
     TypeVar,
@@ -17,10 +19,10 @@ from wireup.errors import (
 )
 
 if TYPE_CHECKING:
+    from wireup.ioc.configuration import ConfigStore
     from wireup.ioc.factory_compiler import FactoryCompiler
     from wireup.ioc.override_manager import OverrideManager
-    from wireup.ioc.parameter import ParameterBag
-    from wireup.ioc.service_registry import ServiceRegistry
+    from wireup.ioc.registry import ContainerRegistry
     from wireup.ioc.types import (
         ContainerObjectIdentifier,
         Qualifier,
@@ -45,7 +47,7 @@ class BaseContainer:
 
     def __init__(  # noqa: PLR0913
         self,
-        registry: ServiceRegistry,
+        registry: ContainerRegistry,
         override_manager: OverrideManager,
         factory_compiler: FactoryCompiler,
         scoped_compiler: FactoryCompiler,
@@ -65,27 +67,33 @@ class BaseContainer:
         self._factories = self._compiler.factories
 
     @property
-    def params(self) -> ParameterBag:
-        """Parameter bag associated with this container."""
+    def params(self) -> ConfigStore:
+        """Configuration associated with this container."""
+        msg = "Parameters have been renamed to Config. Use `container.config` instead of `container.params`."
+        warnings.warn(msg, FutureWarning, stacklevel=2)
+        return self._registry.parameters
+
+    @property
+    def config(self) -> ConfigStore:
+        """Configuration associated with this container."""
         return self._registry.parameters
 
     @property
     def override(self) -> OverrideManager:
-        """Override registered container services with new values."""
+        """Override registered container injectables with new values."""
         return self._override_mgr
 
     @overload
     def _synchronous_get(self, klass: type[T], qualifier: Qualifier | None = None) -> T: ...
     @overload
-    def _synchronous_get(self, klass: type[T] | None, qualifier: Qualifier | None = None) -> T | None: ...
+    def _synchronous_get(self, klass: Callable[..., T], qualifier: Qualifier | None = None) -> T: ...
 
     def _synchronous_get(
         self,
-        klass: type[T] | None,
+        klass: Callable[..., T] | None,
         qualifier: Qualifier | None = None,
     ) -> T | None:
         """Get an instance of the requested type.
-
         :param qualifier: Qualifier for the class if it was registered with one.
         :param klass: Class of the dependency already registered in the container.
         :return: An instance of the requested object. Always returns an existing instance when one is available.

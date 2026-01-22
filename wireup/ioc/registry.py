@@ -6,7 +6,7 @@ import warnings
 from collections import defaultdict
 from dataclasses import dataclass
 from enum import Enum, auto
-from typing import TYPE_CHECKING, Any, Callable, Tuple, TypeVar, Union
+from typing import TYPE_CHECKING, Any, Callable, TypeVar, Union
 
 from wireup.errors import (
     DuplicateQualifierForInterfaceError,
@@ -17,20 +17,21 @@ from wireup.errors import (
     UnknownQualifiedServiceRequestedError,
     WireupError,
 )
-from wireup.ioc.parameter import ParameterBag
+from wireup.ioc.configuration import ConfigStore
 from wireup.ioc.type_analysis import analyze_type
 from wireup.ioc.types import (
     AnnotatedParameter,
     AnyCallable,
+    ConfigInjectionRequest,
     ContainerObjectIdentifier,
     EmptyContainerInjectionRequest,
-    ParameterWrapper,
-    ServiceLifetime,
+    InjectableLifetime,
 )
-from wireup.ioc.util import ensure_is_type, get_globals, param_get_annotation, stringify_type
+from wireup.ioc.util import ensure_is_type, get_globals, param_get_annotation
+from wireup.util import format_name, stringify_type
 
 if TYPE_CHECKING:
-    from wireup._annotations import AbstractDeclaration, ServiceDeclaration
+    from wireup._annotations import AbstractDeclaration, InjectableDeclaration
     from wireup.ioc.types import (
         Qualifier,
     )
@@ -53,15 +54,12 @@ ASYNC_FACTORY_TYPES = {FactoryType.ASYNC_GENERATOR, FactoryType.COROUTINE_FN}
 
 
 @dataclass
-class ServiceFactory:
+class InjectableFactory:
     factory: Callable[..., Any]
     factory_type: FactoryType
     is_async: bool
     is_optional_type: bool
     raw_type: type
-
-
-ServiceCreationDetails = Tuple[Callable[..., Any], ContainerObjectIdentifier, FactoryType, ServiceLifetime]
 
 
 def _get_factory_type(fn: Callable[..., T]) -> FactoryType:
@@ -98,31 +96,30 @@ def _function_get_unwrapped_return_type(fn: Callable[..., T]) -> type[T] | None:
     return None
 
 
-class ServiceRegistry:
-    """Container class holding service registration info and dependencies among them."""
+class ContainerRegistry:
+    """Container class holding injectable registration info and dependencies among them."""
 
-    __slots__ = ("ctors", "dependencies", "factories", "impls", "interfaces", "lifetime", "parameters")
+    __slots__ = ("dependencies", "factories", "impls", "interfaces", "lifetime", "parameters")
 
     def __init__(
         self,
-        parameters: ParameterBag | None = None,
+        config: ConfigStore | None = None,
         abstracts: list[AbstractDeclaration] | None = None,
-        impls: list[ServiceDeclaration] | None = None,
+        impls: list[InjectableDeclaration] | None = None,
     ) -> None:
-        self.parameters = parameters or ParameterBag()
+        self.parameters = config or ConfigStore()
         self.interfaces: dict[type, dict[Qualifier, type]] = {}
         self.impls: dict[type, set[Qualifier]] = defaultdict(set)
-        self.factories: dict[ContainerObjectIdentifier, ServiceFactory] = {}
+        self.factories: dict[ContainerObjectIdentifier, InjectableFactory] = {}
         self.dependencies: dict[InjectionTarget, dict[str, AnnotatedParameter]] = defaultdict(defaultdict)
-        self.lifetime: dict[ContainerObjectIdentifier, ServiceLifetime] = {}
-        self.ctors: dict[ContainerObjectIdentifier, ServiceCreationDetails] = {}
+        self.lifetime: dict[ContainerObjectIdentifier, InjectableLifetime] = {}
         self.extend(abstracts=abstracts or [], impls=impls or [])
 
     def extend(
         self,
         *,
         abstracts: list[AbstractDeclaration] | None = None,
-        impls: list[ServiceDeclaration] | None = None,
+        impls: list[InjectableDeclaration] | None = None,
     ) -> None:
         for abstract in abstracts or []:
             self._register_abstract(abstract.obj)
@@ -137,15 +134,25 @@ class ServiceRegistry:
             if klass is None:
                 raise FactoryReturnTypeIsEmptyError(obj)
 
-            self._register(klass=klass, factory_fn=obj, lifetime=impl.lifetime, qualifier=impl.qualifier)
+            target_type = impl.as_type
+
+            if target_type and analyze_type(klass).is_optional:
+                from typing import Optional  # noqa: PLC0415
+
+                target_type = Optional[target_type]
+
+            self._register(
+                klass=target_type or klass,
+                factory_fn=obj,
+                lifetime=impl.lifetime,
+                qualifier=impl.qualifier,
+                auto_discover_interfaces=impl.as_type is None,
+            )
 
         self.assert_dependencies_valid()
-        self._precompute_ctors()
         self._update_factories_async_flag()
 
     def _update_factories_async_flag(self) -> None:
-        """Update the is_async flag for factories"""
-
         def _is_dependency_async(impl: type, qualifier: Qualifier) -> bool:
             if self.is_interface_known(impl):
                 impl = self.interface_resolve_impl(impl, qualifier)
@@ -170,33 +177,14 @@ class ServiceRegistry:
 
                 factory.is_async = _is_dependency_async(impl, qualifier)
 
-    def _precompute_ctors(self) -> None:
-        for interface, impls in self.interfaces.items():
-            for qualifier, impl in impls.items():
-                factory = self.factories[impl, qualifier]
-                self.ctors[interface, qualifier] = (
-                    factory.factory,
-                    (impl, qualifier),
-                    factory.factory_type,
-                    self.lifetime[impl, qualifier],
-                )
-
-        for impl, qualifiers in self.impls.items():
-            for qualifier in qualifiers:
-                factory = self.factories[impl, qualifier]
-                self.ctors[impl, qualifier] = (
-                    factory.factory,
-                    (impl, qualifier),
-                    factory.factory_type,
-                    self.lifetime[impl, qualifier],
-                )
-
     def _register(
         self,
         klass: type[Any],
         factory_fn: Callable[..., Any],
-        lifetime: ServiceLifetime = "singleton",
+        lifetime: InjectableLifetime = "singleton",
         qualifier: Qualifier | None = None,
+        *,
+        auto_discover_interfaces: bool,
     ) -> None:
         type_analysis = analyze_type(klass)
         klass = type_analysis.normalized_type
@@ -213,13 +201,13 @@ class ServiceRegistry:
                     self.interfaces[base][qualifier] = klass
                 discover_interfaces(base.__bases__)
 
-        if hasattr(klass, "__bases__"):
+        if auto_discover_interfaces and hasattr(klass, "__bases__"):
             discover_interfaces(klass.__bases__)
 
         self._target_init_context(factory_fn)
         self.lifetime[klass, qualifier] = lifetime
         factory_type = _get_factory_type(factory_fn)
-        self.factories[klass, qualifier] = ServiceFactory(
+        self.factories[klass, qualifier] = InjectableFactory(
             factory=factory_fn,
             factory_type=factory_type,
             is_async=factory_type in ASYNC_FACTORY_TYPES,
@@ -255,7 +243,13 @@ class ServiceRegistry:
                 ],
             )
 
-            self._register(type_analysis.raw_type, factory_fn=compat_fn, lifetime=lifetime, qualifier=qualifier)
+            self._register(
+                type_analysis.raw_type,
+                factory_fn=compat_fn,
+                lifetime=lifetime,
+                qualifier=qualifier,
+                auto_discover_interfaces=True,
+            )
 
     def _register_abstract(self, klass: type) -> None:
         self.interfaces[klass] = {}
@@ -320,10 +314,10 @@ class ServiceRegistry:
 
     def assert_dependencies_valid(self) -> None:
         """Assert that all required dependencies exist for this registry instance."""
-        for (impl, impl_qualifier), service_factory in self.factories.items():
+        for (impl, impl_qualifier), injectable_factory in self.factories.items():
             unknown_dependencies_with_default: list[str] = []
 
-            for name, dependency in self.dependencies[service_factory.factory].items():
+            for name, dependency in self.dependencies[injectable_factory.factory].items():
                 try:
                     self.assert_dependency_exists(parameter=dependency, target=impl, name=name)
                 except WireupError:
@@ -338,12 +332,12 @@ class ServiceRegistry:
                     impl_qualifier=impl_qualifier,
                     parameter_name=name,
                     dependency=dependency,
-                    factory=service_factory.factory,
+                    factory=injectable_factory.factory,
                 )
                 self._assert_valid_resolution_path(dependency=dependency, path=[])
 
             for name in unknown_dependencies_with_default:
-                del self.dependencies[service_factory.factory][name]
+                del self.dependencies[injectable_factory.factory][name]
 
     def _assert_lifetime_valid(
         self,
@@ -367,34 +361,31 @@ class ServiceRegistry:
         if self.lifetime[impl, impl_qualifier] == "singleton" and dependency_lifetime != "singleton":
             msg = (
                 f"Parameter '{parameter_name}' of {stringify_type(factory)} "
-                f"depends on a service with a '{dependency_lifetime}' lifetime which is not supported. "
+                f"depends on an injectable with a '{dependency_lifetime}' lifetime which is not supported. "
                 "Singletons can only depend on other singletons."
             )
             raise WireupError(msg)
 
     def assert_dependency_exists(self, parameter: AnnotatedParameter, target: Any, name: str) -> None:
         """Assert that a dependency exists in the container for the given annotated parameter."""
-        if isinstance(parameter.annotation, ParameterWrapper):
+        if isinstance(parameter.annotation, ConfigInjectionRequest):
             try:
-                self.parameters.get(parameter.annotation.param)
+                self.parameters.get(parameter.annotation.config_key)
             except UnknownParameterError as e:
                 msg = (
                     f"Parameter '{name}' of {stringify_type(target)} "
-                    f"depends on an unknown Wireup parameter '{e.parameter_name}'"
+                    f"depends on an unknown Wireup config key '{e.parameter_name}'"
                     + (
                         ""
-                        if isinstance(parameter.annotation.param, str)
-                        else f" requested in expression '{parameter.annotation.param.value}'"
+                        if isinstance(parameter.annotation.config_key, str)
+                        else f" requested in expression '{parameter.annotation.config_key.value}'"
                     )
                     + "."
                 )
                 raise WireupError(msg) from e
         elif not self.is_type_with_qualifier_known(parameter.klass, qualifier=parameter.qualifier_value):
-            msg = (
-                f"Parameter '{name}' of {stringify_type(target)} "
-                f"depends on an unknown service {stringify_type(analyze_type(parameter.klass).raw_type)} "
-                f"with qualifier {parameter.qualifier_value}."
-            )
+            type_str = format_name(analyze_type(parameter.klass).raw_type, parameter.qualifier_value)
+            msg = f"Parameter '{name}' of {stringify_type(target)} has an unknown dependency on {type_str}."
             raise WireupError(msg)
 
     def _assert_valid_resolution_path(
@@ -403,23 +394,23 @@ class ServiceRegistry:
         """Assert that the resolution path for a dependency does not create a cycle."""
         if dependency.klass in self.interfaces or dependency.is_parameter:
             return
-        dependency_service_factory = self.factories[dependency.klass, dependency.qualifier_value]
-        new_path: list[tuple[AnnotatedParameter, Any]] = [*path, (dependency, dependency_service_factory)]
+        dependency_injectable_factory = self.factories[dependency.klass, dependency.qualifier_value]
+        new_path: list[tuple[AnnotatedParameter, Any]] = [*path, (dependency, dependency_injectable_factory)]
 
         if any(p.klass == dependency.klass and p.qualifier_value == dependency.qualifier_value for p, _ in path):
 
             def stringify_dependency(p: AnnotatedParameter, factory: Any) -> str:
                 descriptors = [
-                    f'with qualifier "{p.qualifier_value}"' if p.qualifier_value else None,
                     f"created via {factory.factory.__module__}.{factory.factory.__name__}" if factory else None,
                 ]
-                return (
-                    f"{p.klass.__module__}.{p.klass.__name__} ({', '.join([d for d in descriptors if d is not None])})"
-                )
+                qualifier_desc = ", ".join([d for d in descriptors if d is not None])
+                qualifier_desc = f" ({qualifier_desc})" if qualifier_desc else ""
+
+                return f"{format_name(p.klass, p.qualifier_value)}{qualifier_desc}"
 
             cycle_path = "\n -> ".join(f"{stringify_dependency(p, factory)}" for p, factory in new_path)
             msg = f"Circular dependency detected for {cycle_path} ! Cycle here"
             raise WireupError(msg)
 
-        for next_dependency in self.dependencies[dependency_service_factory.factory].values():
+        for next_dependency in self.dependencies[dependency_injectable_factory.factory].values():
             self._assert_valid_resolution_path(next_dependency, path=new_path)

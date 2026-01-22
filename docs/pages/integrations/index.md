@@ -1,6 +1,8 @@
-# Integrations
+Integrations handle the boilerplate of connecting Wireup to your framework: automatic scope management per request,
+injection in route handlers, and container lifecycle tied to the application.
 
-Wireup is framework-agnostic and can be used in any project, but it also provides integrations for the following frameworks:
+Wireup is framework-agnostic and can be used in any project, but it also provides integrations for the following
+frameworks:
 
 - [x] [AIOHTTP](aiohttp/index.md)
 - [x] [Click](click/index.md)

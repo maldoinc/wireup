@@ -1,10 +1,38 @@
+## Upgrading 2.x to 2.x
+
+- Parameters have been renamed to Configuration to better reflect their purpose.
+- When providing configuration use `config=` instead of `parameters=` during contaner creation:
+    `wireup.create_{a}sync_container(..., config={...})`.
+- Instead of `container.params`, use `container.config`.
+- Instead of `Inject(param="name")`, use `Inject(config="key")`.
+- **Deprecated `@abstract`**: The `@abstract` decorator is deprecated and will be removed in a future release. Use
+    protocols or abstract base classes with `@injectable(as_type=...)` instead.
+
+```python
+# Before
+@abstract
+class MyInterface(abc.ABC): ...
+
+
+@injectable
+class MyImplementation(MyInterface): ...
+
+
+# After
+class MyInterface(Protocol): ...
+
+
+@injectable(as_type=MyInterface)
+class MyImplementation: ...
+```
+
 ## Upgrade 1.x to 2.0.0
 
-* Wireup container itself has no breaking changes. The major version bump is due to a breaking change in the FastAPI
-integration.
-* Added new `middleware_mode` parameter to the `wireup.integration.fastapi.setup` call. Default value is `False`,
-Wireup 1.x behavior is the equivalent of `middleware_mode=True`. See FastAPI integration docs for when to enable this
-setting.
+- Wireup container itself has no breaking changes. The major version bump is due to a breaking change in the FastAPI
+    integration.
+- Added new `middleware_mode` parameter to the `wireup.integration.fastapi.setup` call. Default value is `False`, Wireup
+    1.x behavior is the equivalent of `middleware_mode=True`. See FastAPI integration docs for when to enable this
+    setting.
 
 ## Upgrade 0.16.0 to 1.0
 
@@ -18,14 +46,15 @@ Use `wireup.AsyncContainer` if you need to create async dependencies, as it supp
 
 Changes include:
 
-* Removed `@container.register`
-    * Use `@service` on services or factories and specify the container during creation with `wireup.create_sync_container` or `wireup.create_async_container`.
-* Removed `@container.abstract`
-    * Similar to above, use the `@abstract` decorator.
-* Removed `@container.autowire`
-    * This is removed. See the [Apply the container as a decorator](apply_container_as_decorator.md) docs for details.
-* Removed `container.has_type`.
-* `wireup.create_container` is now `wireup.create_sync_container` and `wireup.create_async_container`.
+- Removed `@container.register`
+    - Use `@service` on services or factories and specify the container during creation with
+        `wireup.create_sync_container` or `wireup.create_async_container`.
+- Removed `@container.abstract`
+    - Similar to above, use the `@abstract` decorator.
+- Removed `@container.autowire`
+    - This is removed. See the [Apply the container as a decorator](function_injection.md) docs for details.
+- Removed `container.has_type`.
+- `wireup.create_container` is now `wireup.create_sync_container` and `wireup.create_async_container`.
 
 #### Removed get_all, put methods of `ParameterBag`.
 
@@ -37,7 +66,8 @@ Using `foo: str = Inject(...)` is no longer supported. Use annotated types inste
 
 #### Removed ParameterEnum
 
-`ParameterEnum` is removed. Use type definitions for parameters: `AppNameParameter = Annotated[str, Inject(name="app_name")]`.
+`ParameterEnum` is removed. Use type definitions for parameters:
+`AppNameParameter = Annotated[str, Inject(name="app_name")]`.
 
 #### Removed `Wire`, `wire`
 
@@ -45,11 +75,13 @@ Replace `Wire` or `wire` with `Inject`.
 
 #### Removed `wireup.container` global
 
-The global `wireup.container` is removed. Create a container instance with `wireup.create_sync_container` or `wireup.create_async_container`.
+The global `wireup.container` is removed. Create a container instance with `wireup.create_sync_container` or
+`wireup.create_async_container`.
 
 #### Removed `warmup_container`
 
-This utility function is removed. Create a container instance with `wireup.create_sync_container` or `wireup.create_async_container`.
+This utility function is removed. Create a container instance with `wireup.create_sync_container` or
+`wireup.create_async_container`.
 
 #### Removed old integrations
 
@@ -58,7 +90,8 @@ This utility function is removed. Create a container instance with `wireup.creat
 
 #### Removed `initialize_container`
 
-This utility function is removed. Create a container instance with `wireup.create_sync_container` or `wireup.create_async_container`.
+This utility function is removed. Create a container instance with `wireup.create_sync_container` or
+`wireup.create_async_container`.
 
 #### Removed `register_all_in_module`
 
@@ -66,7 +99,8 @@ This utility function is removed. Register services by passing `service_modules`
 
 #### Removed `load_module`
 
-No direct replacement. Create a container instance with `wireup.create_sync_container` or `wireup.create_async_container`.
+No direct replacement. Create a container instance with `wireup.create_sync_container` or
+`wireup.create_async_container`.
 
 #### Removed `FactoryDuplicateServiceRegistrationError`
 
@@ -82,8 +116,10 @@ The `perform_wramup` setting is removed.
 
 ### Flask Integration
 
-The `import_flask_config` setting is removed. Expose Flask config directly to `create_sync_container`. See Flask integration docs for details.
+The `import_flask_config` setting is removed. Expose Flask config directly to `create_sync_container`. See Flask
+integration docs for details.
 
 ### FastAPI Integration
 
-The integration no longer automatically exposes `fastapi.Request` as a Wireup dependency. Pass `wireup.integration.fastapi` in your service modules when creating a container if needed.
+The integration no longer automatically exposes `fastapi.Request` as a Wireup dependency. Pass
+`wireup.integration.fastapi` in your service modules when creating a container if needed.

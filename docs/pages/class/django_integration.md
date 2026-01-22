@@ -1,2 +1,1 @@
 ::: wireup.integration.django
-

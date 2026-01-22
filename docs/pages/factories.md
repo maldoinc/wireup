@@ -1,265 +1,255 @@
-# Factories and Resource Management
+Use factories to handle complex creation logic, instantiate third-party classes, or manage resources that can't be
+handled by simple class constructors.
 
-Use factories to handle complex service creation logic or resource management that can't be done with simple class constructors.
+## Third-party Classes
 
-## Use cases
+You can't add `@injectable` to code you don't own. Factories solve this by wrapping third-party classes in a function
+you control. The factory creates and configures the object, and Wireup registers it by the return type.
 
-* Object construction needs additional logic or configuration.
-* Create optional dependencies.
-* Depending on the runtime environment or configuration, you may need to create different objects 
-inheriting from the same base class/protocol.
-* Inject a model/dto which represents the result of an action, such as the current authenticated user.
-* Inject a class from another library where it's not possible to add annotations.
-* Inject strings, ints and other built-in types.
-
-In order for the container to inject these dependencies, you must decorate the factory with `@service` and register
-it with the container. Return type annotation of the factory is required as it denotes what will be built.
-
-
-## Generator Factories
-
-Use generator factories when a service requires cleanup (like database connections or network resources).
-
-=== "Generators"
-
-    ```python
-    @service
-    def db_session_factory() -> Iterator[Session]:
-        db = Session()
-        try:
-            yield db
-        finally:
-            db.close()
-    ```
-
-=== "Context Manager"
-
-    ```python
-    @service
-    def db_session_factory() -> Iterator[Session]:
-        with contextlib.closing(Session()) as db:
-            yield db
-    ```
-
-=== "Async Context Manager"
-
-    ```python
-    @service
-    async def client_session_factory() -> ClientSession:
-        async with ClientSession() as sess:
-            yield sess
-    ```
-
-!!! note "Generator Factories"
-    Generator factories must yield exactly once. Yielding multiple times will result in cleanup not being performed.
-
-
-## Implement strategy pattern
-
-Assume a base class `Notifier` with implementations that define how the notification is sent (IMAP, POP, WebHooks, etc.)
-Given a user it is possible to instantiate the correct type of notifier based on user preferences.
+**Example: Redis Client**
 
 ```python
-from wireup import service
+from typing import Annotated
 
-@service(lifetime="scoped")
+import redis
+from wireup import Inject, injectable
+
+
+@injectable
+def redis_factory(
+    url: Annotated[str, Inject(config="redis_url")],
+) -> redis.Redis:
+    return redis.from_url(url)
+
+
+# Usage:
+@injectable
+class AuthService:
+    def __init__(self, cache: redis.Redis):
+        self.cache = cache
+```
+
+## Pure Domain Objects
+
+If you prefer to keep your domain layer free of Wireup imports, don't use `@injectable` on those classes. Instead,
+create factory functions in a separate wiring module that construct and return them.
+
+```python title="domain/services.py"
+# No Wireup imports here
+class UserService:
+    def __init__(self, repository: UserRepository) -> None:
+        self.repository = repository
+```
+
+```python title="wiring/factories.py"
+from wireup import injectable
+from domain.services import UserService
+
+
+@injectable
+def user_service_factory(repository: UserRepository) -> UserService:
+    return UserService(repository)
+```
+
+## Complex Initialization
+
+Some objects need conditional logic, multi-step setup, or configuration that depends on the environment. Factories let
+you encapsulate this logic in one place rather than scattering it across your codebase.
+
+```python
+from wireup import injectable
+
+
+@injectable
+def db_connection_factory(config: AppConfig) -> DatabaseConnection:
+    timeout = config.timeout if config.is_production else 30
+
+    conn = DatabaseConnection(dsn=config.dsn, timeout=timeout)
+    conn.set_encoding("utf-8")
+
+    return conn
+```
+
+## Injecting Primitives
+
+If you register two factories that both return `str`, Wireup can't tell them apart. Use `typing.NewType` to create
+distinct types so each primitive can be requested independently.
+
+```python title="factories.py"
+from typing import NewType
+from wireup import injectable
+
+AuthenticatedUsername = NewType("AuthenticatedUsername", str)
+
+
+@injectable(lifetime="scoped")
+def authenticated_username_factory(auth: AuthService) -> AuthenticatedUsername:
+    user = auth.get_current_user()
+    return AuthenticatedUsername(user.username)
+```
+
+Usage:
+
+```python
+from wireup import injectable
+
+
+@injectable(lifetime="scoped")
+class UserProfileService:
+    def __init__(self, username: AuthenticatedUsername):
+        self.username = username
+```
+
+## Strategy Pattern
+
+When the correct implementation depends on runtime state (user preferences, feature flags, environment), a factory can
+inspect other dependencies and return the appropriate one.
+
+```python
+from typing import Protocol
+from wireup import injectable
+
+
+class Notifier(Protocol):
+    def notify(self, message: str): ...
+
+
+@injectable(lifetime="scoped")
 def get_user_notifier(
-    user: AuthenticatedUser, 
-    slack_notifier: SlackNotifier, 
-    email_mailer: EmailNotifier
+    user: AuthenticatedUser,
+    slack: SlackNotifier,
+    email: EmailNotifier,
 ) -> Notifier:
-    notifier = ...  # get notifier type from preferences.
+    if user.prefers_slack:
+        return slack
 
-    return notifier
+    return email
 ```
 
-When injecting `Notifier` the correct type will be injected based on the authenticated user's preferences.
+## Models and DTOs
 
-## Inject a third-party class
-
-You can use factories to inject a class which you have not declared yourself and as such, cannot annotate. 
-Let's take redis client as an example. 
+Sometimes you want to inject data that comes from another service, like the currently authenticated user. A factory can
+call that service and return the result, making it available as a dependency.
 
 ```python
-from wireup import service
-
-@service
-def redis_factory(redis_url: Annotated[str, Inject(param="redis_url")]) -> Redis:
-    return redis.from_url(redis_url)
-```
+from wireup import injectable
 
 
-## Inject Models
-
-Assume the authenticated user is provided by `AuthService`. You may choose to allow the user to be injected directly
-instead of having to call `auth_service.get_current_user()` everywhere.
-
-
-```python
-from wireup import service
-
-@service(lifetime="scoped")
+@injectable(lifetime="scoped")
 def get_current_user(auth_service: AuthService) -> AuthenticatedUser:
     return auth_service.get_current_user()
 ```
 
-## Inject built-in types
+## Optional Dependencies
 
-If you want to inject resources which are just strings, ints, or other built-in types then you can use a factory in
-combination with `NewType`.
-Note that since Wireup uses types to identify dependencies, new types are strongly recommended for this use case.
+Some dependencies are only available under certain conditions, like a cache that's disabled in development. Factories
+can return `None` to signal the dependency isn't available, and consumers can handle this gracefully.
 
-```python title="factories.py"
-AuthenticatedUsername = NewType("AuthenticatedUsername", str)
+!!! important "Registration Required"
 
-@service
-def authenticated_username_factory(auth: SomeAuthService) -> AuthenticatedUsername:
-    return AuthenticatedUsername(...)
-```
-
-This can now be injected as usual by annotating the dependency with the new type.
-
----
-
-
-## Error Handling
-
-When using generator factories with scoped or transient lifetimes, unhandled errors that occur within the 
-scope are  automatically propagated to the factories. This enables proper error handling, such as rolling back 
-database transactions or cleaning up resources when operations fail.
+    The factory **must still be registered** even if it returns `None`. Wireup needs to know *how* to resolve the specific
+    type, even if the result is nothing.
 
 ```python
-@service(lifetime="scoped")
-def db_session_factory(engine: Engine) -> Iterator[Session]:
-    session = Session(engine)
-    try:
-        yield session
-    except Exception as e:
-        # Error occurred somewhere in the scope - rollback the transaction
-        session.rollback()
-        raise
-    else:
-        # No errors - commit the transaction
-        session.commit()
-    finally:
-        # Always close the session
-        session.close()
+from wireup import injectable
+
+
+@injectable
+def cache_factory(settings: Settings) -> Redis | None:
+    if not settings.use_cache:
+        return None
+
+    return Redis.from_url(settings.redis_url)
 ```
 
-!!! note "Suppressing Errors"
-    Factories may perform cleanup (for example, rolling back a transaction), but they cannot suppress the original error, that exception will still be propagated. Wireup enforces this so cleanup code cannot
-    change the program's control flow by swallowing errors.
-
-    If a factory raises additional exceptions during teardown, Wireup will temporarily catch those exceptions
-    so it can finish cleaning up all generator factories. After cleanup completes, the teardown exceptions are
-    re-raised alongside the primary exception.
-
-
-### Database Transaction Example
+**Requesting Optional Dependencies**
 
 ```python
-from typing import Iterator
-from sqlalchemy.orm import Session
-from wireup import service, Injected
+from wireup import injectable
 
-@service(lifetime="scoped")
+
+@injectable
 class UserService:
-    # Uses Session as defined above.
-    def __init__(self, db: Session) -> None:
-        self.db = db
-    
-    def create_user(self, user_data: UserCreate) -> User:
-        # Database operations here
-        ...
+    # Use T | None (Python 3.10+) or Optional[T]
+    def __init__(self, cache: Redis | None) -> None:
+        self.cache = cache
 
-# Usage in a web framework (FastAPI example)
-@app.post("/users")
-def create_user(
-    user_data: UserCreate, 
-    user_service: Injected[UserService]
-) -> User:
-    # If this raises an exception, the database transaction
-    # will automatically be rolled back
-    return user_service.create_user(user_data)
+    def get(self, user_id: str):
+        if self.cache:
+            return self.cache.get(user_id)
+        # ...
 ```
 
-!!! tip "Framework Integration"
-    When using Wireup with web frameworks, each request automatically gets its own scope. 
-    When using this feature, database transactions and other resources are automatically managed per request,
-    with automatic rollback on any unhandled exception.
+??? tip "Null Object Pattern for Optional Dependencies"
 
----
+    Instead of adding conditional checks throughout your code, use the pattern to handle optional dependencies cleanly. It
+    involves creating a noop implementation that can be used when the real implementation is not available.
 
-## Optional Dependencies and Factories
-
-You can both request Optional dependencies and create factories that return optional values. This is useful when a service might not be available or when you want to make a dependency optional.
+    ```python title="services/cache.py"
+    from typing import Annotated, Any, Protocol
+    from wireup import Inject, injectable
 
 
-!!! important "Service Registration Required"
-    When using optional dependencies, the service providing the optional dependency **must still be registered** in the container. The service cannot be absent - it can only return `None`. This means you must register a factory that can potentially return `None`,
-    rather than simply not registering the service at all.
+    class Cache(Protocol):
+        def get(self, key: str) -> Any | None: ...
+        def set(self, key: str, value: str) -> None: ...
 
-### Factories Returning Optional Values
 
-Sometimes you want a factory to return `None` when certain conditions aren't met. A common example is a service that requires configuration to be available:
+    class RedisCache: ...  # Real Redis implementation
 
-```python
-@service
-def cache_factory(
-    redis_url: Annotated[str | None, Inject(param="redis_url")],
-) -> Redis | None:
-    return Redis.from_url(redis_url) if redis_url else None
-```
 
-### Requesting Optional Dependencies
+    class NullCache:
+        def get(self, key: str) -> Any | None:
+            return None  # Always cache miss
 
-When a service has an optional dependency, simply use `T | None` or `Optional[T]`.
+        def set(self, key: str, value: str) -> None:
+            return None  # Do nothing
 
-=== "Python 3.10+"
 
-    ```python hl_lines="1 3"
-    @service
-    class UserService:
-        def __init__(self, cache: Cache | None) -> None:
-            self.cache = cache
-
-        def get_user(self, id: str) -> User:
-            if self.cache:
-                cached = self.cache.get(id)
-                if cached:
-                    return cached
-            # Fallback to database
-            ...
+    @injectable
+    def cache_factory(
+        redis_url: Annotated[str | None, Inject(config="redis_url")],
+    ) -> Cache:
+        return RedisCache(redis_url) if redis_url else NullCache()
     ```
 
-=== "Python <3.10"
+    **Usage**
 
-    ```python hl_lines="1 3"
-    @service
-    class UserService:
-        def __init__(self, cache: Optional[Cache]) -> None:
-            self.cache = cache
+    === "Before: Optional Dependencies"
 
-        def get_user(self, id: str) -> User:
-            if self.cache:
-                cached = self.cache.get(id)
-                if cached:
-                    return cached
-            # Fallback to database
-            ...
-    ```
+        ```python
+        @injectable
+        class UserService:
+            def __init__(self, cache: Cache | None):
+                self.cache = cache
 
-!!! tip "Null Object Pattern"
-    For cleaner code when dealing with optional dependencies, consider using the [Null Object Pattern](tips_tricks.md#)
-    instead of conditional checks throughout your code.
+            def get_user(self, user_id: str) -> User:
+                # Guard required
+                if self.cache and (cached := self.cache.get(f"user:{user_id}")):
+                    return User.from_json(cached)
 
+                user = self.db.get_user(user_id)
 
-**Direct Access**
+                # Guard required
+                if self.cache:
+                    self.cache.set(f"user:{user_id}", user.to_json())
 
-When accessing optional dependencies directly from the container, you can retrieve them using `container.get()` just like any other service. If the factory was registered with an optional return type you'll need to provide the union type when retrieving it.
+                return user
+        ```
 
-```python
-# ✅ This works - getting the service directly
-cache = container.get(Optional[Cache]) 
-cache = container.get(Cache | None) 
-```
+    === "After: Null Pattern"
+
+        ```python
+        @injectable
+        class UserService:
+            def __init__(self, cache: Cache):
+                self.cache = cache  # Always a Cache instance
+
+            def get_user(self, user_id: str) -> User:
+                if cached := self.cache.get(f"user:{user_id}"):
+                    return User.from_json(cached)
+
+                user = self.db.get_user(user_id)
+                self.cache.set(f"user:{user_id}", user.to_json())
+                return user
+        ```

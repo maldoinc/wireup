@@ -1,37 +1,34 @@
 # :simple-django: Django Integration
 
-Wireup provides seamless integration with Django through the `wireup.integration.django` module, enabling
-dependency injection in Django applications.
-
+Wireup provides seamless integration with Django through the `wireup.integration.django` module, enabling dependency
+injection in Django applications.
 
 <div class="grid cards annotate" markdown>
 
--   :material-cog-refresh:{ .lg .middle } __Automatic Dependency Management__
+- :material-cog-refresh:{ .lg .middle } __Automatic Dependency Management__
 
-    ---
+    ______________________________________________________________________
 
     Inject dependencies in routes and automatically manage container lifecycle.
 
+- :material-web-check:{ .lg .middle } __Request Objects__
 
--   :material-web-check:{ .lg .middle } __Request Objects__
-
-    ---
+    ______________________________________________________________________
 
     Use Django request in Wireup dependencies.
 
+- :material-clock-fast:{ .lg .middle } __Django Settings__
 
--   :material-clock-fast:{ .lg .middle } __Django Settings__
+    ______________________________________________________________________
 
-    ---
+    The integration exposes Django settings to Wireup as config.
 
-    The integration exposes Django settings to Wireup as parameters.
+- :material-share-circle:{ .lg .middle } __Shared business logic__
 
-
--   :material-share-circle:{ .lg .middle } __Shared business logic__
-
-    ---
+    ______________________________________________________________________
 
     Wireup is framework-agnostic. Share the service layer between web applications and other interfaces, such as a CLI.
+
 </div>
 
 ### Initialize the integration
@@ -53,7 +50,7 @@ MIDDLEWARE = [
 ]
 
 WIREUP = WireupSettings(
-    service_modules=["mysite.polls.services"]  # Service modules here
+    injectables=["mysite.polls.services"]  # Injectable modules here
 )
 
 # Additional application settings
@@ -62,18 +59,19 @@ S3_BUCKET_TOKEN = os.environ["S3_BUCKET_ACCESS_TOKEN"]
 
 ### Inject Django settings
 
-Django settings can be injected into services:
+Django settings can be injected into injectables:
 
 ```python title="mysite/polls/services/s3_manager.py"
-from wireup import service, Inject
+from wireup import injectable, Inject
 from typing import Annotated
 
-@service
+
+@injectable
 class S3Manager:
     def __init__(
         self,
         # Reference configuration by name
-        token: Annotated[str, Inject(param="S3_BUCKET_TOKEN")],
+        token: Annotated[str, Inject(config="S3_BUCKET_TOKEN")],
     ) -> None: ...
 
     def upload(self, file: File) -> None: ...
@@ -82,27 +80,30 @@ class S3Manager:
 You can also use Django settings in factories:
 
 ```python title="mysite/polls/services/github_client.py"
-from wireup import service
+from wireup import injectable
 from django.conf import settings
+
 
 class GithubClient:
     def __init__(self, api_key: str) -> None: ...
 
-@service
+
+@injectable
 def github_client_factory() -> GithubClient:
     return GithubClient(api_key=settings.GH_API_KEY)
 ```
 
 ### Inject the current request
 
-The integration exposes the current Django request as a `scoped` lifetime dependency, which can be injected
-into `scoped` or `transient` services:
+The integration exposes the current Django request as a `scoped` lifetime dependency, which can be injected into
+`scoped` or `transient` injectables:
 
 ```python title="mysite/polls/services/auth_service.py"
 from django.http import HttpRequest
-from wireup import service
+from wireup import injectable
 
-@service(lifetime="scoped")
+
+@injectable(lifetime="scoped")
 class AuthService:
     def __init__(self, request: HttpRequest) -> None:
         self.request = request
@@ -110,30 +111,90 @@ class AuthService:
 
 ### Inject dependencies in views
 
-To inject dependencies in views, simply request them by their type:
+To inject dependencies in views, request them by their type:
 
-```python title="app/views.py"
-from django.http import HttpRequest, HttpResponse
-from mysite.polls.services import S3Manager
+=== "Sync Views"
+
+    ```python title="app/views.py"
+    from django.http import HttpRequest, HttpResponse
+    from mysite.polls.services import S3Manager
+    from wireup import Injected
+
+
+    def upload_file_view(
+        request: HttpRequest, s3_manager: Injected[S3Manager]
+    ) -> HttpResponse:
+        return HttpResponse(...)
+    ```
+
+=== "Async Views"
+
+    ```python title="app/views.py"
+    from django.http import HttpRequest, HttpResponse
+    from mysite.polls.services import S3Manager
+    from wireup import Injected
+
+
+    async def upload_file_view(
+        request: HttpRequest, s3_manager: Injected[S3Manager]
+    ) -> HttpResponse:
+        return HttpResponse(...)
+    ```
+
+=== "Class-Based Views"
+
+    ```python title="app/views.py"
+    from django.http import HttpRequest, HttpResponse
+    from django.views import View
+    from mysite.polls.services import S3Manager
+    from wireup import Injected
+
+
+    class UploadFileView(View):
+        def __init__(self, s3_manager: Injected[S3Manager]) -> None:
+            self.s3_manager = s3_manager
+
+        def post(self, request: HttpRequest) -> HttpResponse:
+            return HttpResponse(...)
+    ```
+
+For more examples, see the
+[Wireup Django integration tests](https://github.com/maldoinc/wireup/tree/master/test/integration/django/view.py).
+
+### Forms and Model Methods
+
+Use the `@inject` decorator to inject dependencies into Django Forms, Model methods, or any other function or method
+during a request.
+
+```python title="forms.py"
+from django import forms
 from wireup import Injected
+from wireup.integration.django import inject
 
-def upload_file_view(
-    request: HttpRequest, 
-    s3_manager: Injected[S3Manager]
-) -> HttpResponse:
-    # Use the injected S3Manager instance
-    return HttpResponse(...)
+
+class UserRegistrationForm(forms.Form):
+    username = forms.CharField()
+
+    @inject
+    def __init__(self, *args, user_service: Injected[UserService], **kwargs):
+        super().__init__(*args, **kwargs)
+        self.user_service = user_service
+
+    def clean_username(self):
+        username = self.cleaned_data["username"]
+        if self.user_service.is_taken(username):
+            raise forms.ValidationError("Username taken")
+        return username
 ```
-
-Class-based views are also supported. Specify dependencies in the class `__init__` function.
-
-For more examples, see the [Wireup Django integration tests](https://github.com/maldoinc/wireup/tree/master/test/integration/django/view.py).
 
 ### Third-party Django frameworks
 
-If your project uses third-party packages to create views, such as [Django REST framework](https://www.django-rest-framework.org/) or [Django Ninja](https://django-ninja.dev/), you must use the `@inject` decorator explicitly.
+If your project uses third-party packages to create views, such as
+[Django REST framework](https://www.django-rest-framework.org/) or [Django Ninja](https://django-ninja.dev/), you must
+use the `@inject` decorator explicitly.
 
-This approach should work for any Django-based framework as long as it relies on Django's `AppConfig` and middleware mechanisms.
+This approach should work for any Django-based framework as long as it relies on Django's `AppConfig` and middleware
+mechanisms.
 
 === "Django REST Framework"
 
@@ -153,8 +214,7 @@ This approach should work for any Django-based framework as long as it relies on
     @api_view(("GET",))
     @inject
     def drf_function_based_view(
-        request: Request,
-        s3_manager: Injected[S3Manager]
+        request: Request, s3_manager: Injected[S3Manager]
     ) -> Response:
         # Use the injected S3Manager instance
         return Response(...)
@@ -163,9 +223,7 @@ This approach should work for any Django-based framework as long as it relies on
     class DRFClassBasedView(APIView):
         @inject
         def get(
-            self,
-            request: Request,
-            s3_manager: Injected[S3Manager]
+            self, request: Request, s3_manager: Injected[S3Manager]
         ) -> Response:
             # Use the injected S3Manager instance
             return Response(...)
@@ -174,9 +232,7 @@ This approach should work for any Django-based framework as long as it relies on
     class DRFViewSet(ViewSet):
         @inject
         def list(
-            self,
-            request: Request,
-            s3_manager: Injected[S3Manager]
+            self, request: Request, s3_manager: Injected[S3Manager]
         ) -> Response:
             # Use the injected S3Manager instance
             return Response(...)
@@ -203,33 +259,26 @@ This approach should work for any Django-based framework as long as it relies on
 
     @router.get("/items")
     @inject
-    def list_items(
-        request,
-        s3_manager: Injected[S3Manager]
-    ):
+    def list_items(request, s3_manager: Injected[S3Manager]):
         # Use the injected S3Manager instance
         return {"items": [...]}
 
 
     @router.post("/items")
     @inject
-    def create_item(
-        request,
-        data: ItemSchema,
-        s3_manager: Injected[S3Manager]
-    ):
+    def create_item(request, data: ItemSchema, s3_manager: Injected[S3Manager]):
         # Both request body and injected service work together
         return {"name": data.name, "price": data.price}
     ```
 
 !!! tip "Best practice for mixing core and non-core Django views"
 
-    If your project shares core and non core-django views, consider disabling auto-injection and using `@inject`
-    explicitly across all your views for consistency:
+    If your project shares core and non core-django views, consider disabling auto-injection and using `@inject` explicitly
+    across all your views for consistency:
 
     ```python title="settings.py"
     WIREUP = WireupSettings(
-        service_modules=["mysite.polls.services"],
+        injectables=["mysite.polls.services"],
         auto_inject_views=False,  # Disable auto-injection
     )
     ```
@@ -240,17 +289,14 @@ This approach should work for any Django-based framework as long as it relies on
         # Consistent approach: use @inject everywhere
         @inject
         def core_django_view(
-            request: HttpRequest,
-            service: Injected[MyService]
+            request: HttpRequest, service: Injected[MyService]
         ) -> HttpResponse:
             return HttpResponse(...)
 
+
         @api_view(("GET",))
         @inject
-        def drf_view(
-            request: Request,
-            service: Injected[MyService]
-        ) -> Response:
+        def drf_view(request: Request, service: Injected[MyService]) -> Response:
             return Response(...)
         ```
 
@@ -260,16 +306,14 @@ This approach should work for any Django-based framework as long as it relies on
         # Inconsistent: mixing auto-injection and @inject
         def core_django_view(
             request: HttpRequest,
-            service: Injected[MyService]  # Auto-injected
+            service: Injected[MyService],  # Auto-injected
         ) -> HttpResponse:
             return HttpResponse(...)
 
+
         @api_view(("GET",))
         @inject  # Explicit injection
-        def drf_view(
-            request: Request,
-            service: Injected[MyService]
-        ) -> Response:
+        def drf_view(request: Request, service: Injected[MyService]) -> Response:
             return Response(...)
         ```
 
@@ -289,18 +333,22 @@ request_container = get_request_container()
 
 ### Testing
 
-For general testing tips with Wireup refer to the [test docs](../../testing.md). 
-With Django you can override dependencies in the container as follows:
+For general testing tips with Wireup refer to the [test docs](../../testing.md). With Django you can override
+dependencies in the container as follows:
 
 ```python title="test_thing.py"
 from wireup.integration.django import get_app_container
+
 
 def test_override():
     class DummyGreeter(GreeterService):
         def greet(self, name: str):
             return f"Hi, {name}"
 
-    with get_app_container().override.service(GreeterService, new=DummyGreeter()):
+    with get_app_container().override.injectable(
+        GreeterService,
+        new=DummyGreeter(),
+    ):
         res = self.client.get("/greet?name=Test")
         assert res.status_code == 200
 ```
@@ -313,15 +361,34 @@ def test_override():
     from django.test import AsyncClient
     import pytest
 
+
     @pytest.fixture
     def async_client():
         return AsyncClient()
+
 
     async def test_async_view(async_client):
         response = await async_client.get("/async-endpoint/")
         assert response.status_code == 200
     ```
 
+### Closing the Container
+
+Django doesn't have built-in lifecycle events like FastAPI. If you use [generator factories](../../resources.md) that
+require cleanup, register a shutdown handler using Python's `atexit` module:
+
+```python title="myapp/__init__.py"
+import atexit
+from wireup.integration.django import get_app_container
+
+
+def close_container():
+    get_app_container().close()
+
+
+atexit.register(close_container)
+```
+
 ### API Reference
 
-* [django_integration](../../class/django_integration.md)
+- [django_integration](../../class/django_integration.md)

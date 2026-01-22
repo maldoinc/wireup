@@ -1,10 +1,10 @@
 from dataclasses import dataclass
 
 from aiohttp import web
-from wireup._annotations import service
+from wireup._annotations import injectable
 
 
-@service(lifetime="scoped")
+@injectable(lifetime="scoped")
 @dataclass
 class RequestContext:
     request: web.Request

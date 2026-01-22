@@ -4,12 +4,13 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Callable, Hashable
 
 from wireup.errors import WireupError
-from wireup.ioc.service_registry import GENERATOR_FACTORY_TYPES, FactoryType, ServiceRegistry
-from wireup.ioc.types import ParameterWrapper, TemplatedString
+from wireup.ioc.registry import GENERATOR_FACTORY_TYPES, ContainerRegistry, FactoryType
+from wireup.ioc.types import ConfigInjectionRequest, TemplatedString
+from wireup.util import format_name
 
 if TYPE_CHECKING:
     from wireup.ioc.container.base_container import BaseContainer
-    from wireup.ioc.service_registry import ServiceFactory
+    from wireup.ioc.registry import InjectableFactory
 
 
 @dataclass
@@ -19,16 +20,19 @@ class CompiledFactory:
 
 
 _CONTAINER_SCOPE_ERROR_MSG = (
-    "Cannot create 'transient' or 'scoped' lifetime objects from the base container. "
-    "Please enter a scope using container.enter_scope. "
-    "If you are within a scope, use the scoped container instance to create dependencies."
+    r"Scope mismatch: Cannot resolve {lifetime} injectable {fmt_klass} "
+    r"from the root container. "
+    r"Only Singleton injectables can be resolved without a scope. "
+    r"To resolve {lifetime} injectables, you must create a scope.\n"
+    r"See: https://maldoinc.github.io/wireup/latest/lifetimes_and_scopes/"
 )
+
 _WIREUP_GENERATED_FACTORY_NAME = "_wireup_factory"
 _SENTINEL = object()
 
 
 class FactoryCompiler:
-    def __init__(self, registry: ServiceRegistry, *, is_scoped_container: bool) -> None:
+    def __init__(self, registry: ContainerRegistry, *, is_scoped_container: bool) -> None:
         self._registry = registry
         self._is_scoped_container = is_scoped_container
         self.factories: dict[int, CompiledFactory] = {}
@@ -60,7 +64,7 @@ class FactoryCompiler:
                         qualifier,
                     )
 
-    def _get_factory_code(self, factory: ServiceFactory, impl: type, qualifier: Hashable) -> tuple[str, bool]:  # noqa: C901, PLR0912
+    def _get_factory_code(self, factory: InjectableFactory, impl: type, qualifier: Hashable) -> tuple[str, bool]:  # noqa: C901, PLR0912
         is_interface = self._registry.is_interface_known(impl)
         if is_interface:
             lifetime = self._registry.lifetime[self._registry.interface_resolve_impl(impl, qualifier), qualifier]
@@ -68,8 +72,14 @@ class FactoryCompiler:
             lifetime = self._registry.lifetime[impl, qualifier]
 
         if lifetime != "singleton" and not self._is_scoped_container:
+            fmt_map = {
+                "fmt_klass": format_name(impl, qualifier),
+                "lifetime": lifetime,
+            }
+
             code = f"def {_WIREUP_GENERATED_FACTORY_NAME}(container):\n"
-            code += "    raise WireupError(_CONTAINER_SCOPE_ERROR_MSG)\n"
+            code += f'    msg = "{_CONTAINER_SCOPE_ERROR_MSG.format_map(fmt_map)}"\n'
+            code += "    raise WireupError(msg)\n"
 
             return code, False
 
@@ -88,11 +98,11 @@ class FactoryCompiler:
 
         kwargs = ""
         for name, dep in self._registry.dependencies[factory.factory].items():
-            if isinstance(dep.annotation, ParameterWrapper):
+            if isinstance(dep.annotation, ConfigInjectionRequest):
                 param_value = (
-                    str(dep.annotation.param)
-                    if isinstance(dep.annotation.param, TemplatedString)
-                    else f'"{dep.annotation.param}"'
+                    str(dep.annotation.config_key)
+                    if isinstance(dep.annotation.config_key, TemplatedString)
+                    else f'"{dep.annotation.config_key}"'
                 )
                 code += f"    _obj_dep_{name} = parameters.get({param_value})\n"
             else:
@@ -130,7 +140,9 @@ class FactoryCompiler:
 
         return code, factory.is_async
 
-    def _compile_and_create_function(self, factory: ServiceFactory, impl: type, qualifier: Hashable) -> CompiledFactory:
+    def _compile_and_create_function(
+        self, factory: InjectableFactory, impl: type, qualifier: Hashable
+    ) -> CompiledFactory:
         obj_id = impl, qualifier
         resolved_obj_id = (
             (self._registry.interface_resolve_impl(impl, qualifier), qualifier)
@@ -145,7 +157,7 @@ class FactoryCompiler:
                 "factories": self.factories,
                 "ORIGINAL_OBJ_ID": obj_id,
                 "OBJ_ID": resolved_obj_id,
-                "ORIGINAL_FACTORY": self._registry.ctors[obj_id][0],
+                "ORIGINAL_FACTORY": self._registry.factories[resolved_obj_id].factory,
                 "TemplatedString": TemplatedString,
                 "WireupError": WireupError,
                 "_CONTAINER_SCOPE_ERROR_MSG": _CONTAINER_SCOPE_ERROR_MSG,

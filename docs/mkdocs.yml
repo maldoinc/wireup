@@ -1,27 +1,23 @@
 site_name: Wireup
 nav:
   - 📚 Documentation:
-    - Wireup: index.md
-    - Getting Started: getting_started.md
-    - Basics:
-      - Container: container.md
-      - Services: services.md
-      - Configuration: parameters.md
+    - Introduction:
+      - Overview: index.md
+      - Getting Started: getting_started.md
     - Core Concepts:
-      - Factories: factories.md
-      - Annotations: annotations.md
-      - Interfaces: interfaces.md
+      - Container: container.md
+      - Injectables: injectables.md
+      - Configuration: configuration.md
+    - Advanced Features:
       - Lifetimes & Scopes: lifetimes_and_scopes.md
+      - Factories: factories.md
+      - Resource Management: resources.md
+      - Interfaces: interfaces.md
+      - Function Injection: function_injection.md
     - Guides:
-      - Function Injection: apply_container_as_decorator.md
-      - Clean Domain Code: annotation_free.md
-      - Multiple registrations: multiple_registrations.md
       - Testing: testing.md
-    - Misc:
-      - Use with __future__ annotations: future_annotations.md
-      - Tips & Tricks: tips_tricks.md
-      - Versioning: versioning.md
       - Upgrading: upgrading.md
+      - Versioning: versioning.md
 
   - Integrations:
     - Integrations: integrations/index.md
@@ -45,7 +41,7 @@ nav:
   - API Reference:
       - wireup: class/wireup.md
       - OverrideManager: class/override_manager.md
-      - ParameterBag: class/parameter_bag.md
+      - ConfigStore: class/config_store.md
       - Integrations:
         - Django: class/django_integration.md
         - FastAPI: class/fastapi_integration.md
@@ -66,7 +62,6 @@ theme:
     - content.code.annotate
     - navigation.instant
     - navigation.tabs
-    - navigation.footer
     - navigation.indexes
   font:
     code: JetBrains Mono 

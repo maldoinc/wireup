@@ -4,29 +4,29 @@ from dataclasses import dataclass
 import pytest
 import wireup
 from typing_extensions import Annotated
-from wireup._annotations import Inject, abstract, service
+from wireup._annotations import Inject, abstract, injectable
 from wireup.errors import WireupError
 
 from test.unit.services.no_annotations.random.random_service import RandomService
 
 
 def test_dependencies_parameters_exist() -> None:
-    @wireup.service
-    def foo_service(_param: Annotated[str, wireup.Inject(param="foo")]) -> RandomService:
+    @wireup.injectable
+    def foo_service(_param: Annotated[str, wireup.Inject(config="foo")]) -> RandomService:
         return RandomService()
 
     with pytest.raises(
         WireupError,
-        match=(
+        match=re.escape(
             "Parameter '_param' of Type test.unit.services.no_annotations.random.random_service.RandomService "
-            "depends on an unknown Wireup parameter 'foo'."
+            "depends on an unknown Wireup config key 'foo'."
         ),
     ):
-        wireup.create_sync_container(services=[foo_service])
+        wireup.create_sync_container(injectables=[foo_service])
 
 
 def test_parameters_exist_checks_expression() -> None:
-    @wireup.service
+    @wireup.injectable
     def foo_service(_param: Annotated[str, wireup.Inject(expr="${foo}-${foo}")]) -> RandomService:
         return RandomService()
 
@@ -34,16 +34,16 @@ def test_parameters_exist_checks_expression() -> None:
         WireupError,
         match=re.escape(
             "Parameter '_param' of Type test.unit.services.no_annotations.random.random_service.RandomService "
-            "depends on an unknown Wireup parameter 'foo' requested in expression '${foo}-${foo}'."
+            "depends on an unknown Wireup config key 'foo' requested in expression '${foo}-${foo}'."
         ),
     ):
-        wireup.create_sync_container(services=[foo_service])
+        wireup.create_sync_container(injectables=[foo_service])
 
 
 def test_checks_dependencies_exist() -> None:
     class Foo: ...
 
-    @wireup.service
+    @wireup.injectable
     @dataclass
     class Bar:
         foo: Foo
@@ -52,17 +52,17 @@ def test_checks_dependencies_exist() -> None:
         WireupError,
         match=re.escape(
             "Parameter 'foo' of Type test.unit.test_container_creation.Bar "
-            "depends on an unknown service Type test.unit.test_container_creation.Foo with qualifier None."
+            "has an unknown dependency on Type test.unit.test_container_creation.Foo."
         ),
     ):
-        wireup.create_sync_container(services=[Bar])
+        wireup.create_sync_container(injectables=[Bar])
 
 
 def test_lifetimes_match() -> None:
-    @wireup.service(lifetime="scoped")
+    @wireup.injectable(lifetime="scoped")
     class ScopedService: ...
 
-    @wireup.service
+    @wireup.injectable
     @dataclass
     class SingletonService:
         scoped: ScopedService
@@ -70,48 +70,48 @@ def test_lifetimes_match() -> None:
     with pytest.raises(
         WireupError,
         match=re.escape(
-            "Parameter 'scoped' of Type test.unit.test_container_creation.SingletonService depends on a service "
+            "Parameter 'scoped' of Type test.unit.test_container_creation.SingletonService depends on an injectable "
             "with a 'scoped' lifetime which is not supported. Singletons can only depend on other singletons."
         ),
     ):
-        wireup.create_sync_container(services=[SingletonService, ScopedService])
+        wireup.create_sync_container(injectables=[SingletonService, ScopedService])
 
 
 def test_validates_dependencies_does_not_raise_correct_lifetime_via_interface() -> None:
     @wireup.abstract
     class Foo: ...
 
-    @wireup.service
+    @wireup.injectable
     class FooImpl(Foo): ...
 
     @dataclass
-    @wireup.service
+    @wireup.injectable
     class ServiceB:
         foo: Foo
 
-    wireup.create_sync_container(services=[ServiceB, FooImpl, Foo])
+    wireup.create_sync_container(injectables=[ServiceB, FooImpl, Foo])
 
 
 def test_validates_dependencies_lifetimes_raises_when_using_interfaces() -> None:
     @wireup.abstract
     class Foo: ...
 
-    @wireup.service(lifetime="scoped")
+    @wireup.injectable(lifetime="scoped")
     class FooImpl(Foo): ...
 
     @dataclass
-    @wireup.service
+    @wireup.injectable
     class ServiceB:
         foo: Foo
 
     with pytest.raises(
         WireupError,
         match=re.escape(
-            "Parameter 'foo' of Type test.unit.test_container_creation.ServiceB depends on a service "
+            "Parameter 'foo' of Type test.unit.test_container_creation.ServiceB depends on an injectable "
             "with a 'scoped' lifetime which is not supported. Singletons can only depend on other singletons."
         ),
     ):
-        wireup.create_sync_container(services=[ServiceB, FooImpl, Foo])
+        wireup.create_sync_container(injectables=[ServiceB, FooImpl, Foo])
 
 
 def test_validates_container_raises_when_cyclical_dependencies() -> None:
@@ -121,26 +121,27 @@ def test_validates_container_raises_when_cyclical_dependencies() -> None:
     class Bar:
         def __init__(self, foo: Foo): ...
 
-    @wireup.service
+    @wireup.injectable
     def make_foo(bar: Annotated[Bar, Inject(qualifier="qualifier_name")]) -> Foo:
         return Foo(bar)
 
-    @wireup.service(qualifier="qualifier_name")
+    @wireup.injectable(qualifier="qualifier_name")
     def make_bar(baz: Foo) -> Bar:
         return Bar(baz)
 
     with pytest.raises(
         WireupError,
         match=re.escape(
-            "Circular dependency detected for test.unit.test_container_creation.Bar "
-            '(with qualifier "qualifier_name", created via test.unit.test_container_creation.make_bar)'
-            "\n -> test.unit.test_container_creation.Foo (created via test.unit.test_container_creation.make_foo)"
-            '\n -> test.unit.test_container_creation.Bar (with qualifier "qualifier_name", '
-            "created via test.unit.test_container_creation.make_bar)"
+            "Circular dependency detected for Type test.unit.test_container_creation.Bar "
+            "with qualifier 'qualifier_name' "
+            "(created via test.unit.test_container_creation.make_bar)"
+            "\n -> Type test.unit.test_container_creation.Foo (created via test.unit.test_container_creation.make_foo)"
+            "\n -> Type test.unit.test_container_creation.Bar with qualifier 'qualifier_name' "
+            "(created via test.unit.test_container_creation.make_bar)"
             " ! Cycle here"
         ),
     ):
-        wireup.create_sync_container(services=[make_foo, make_bar])
+        wireup.create_sync_container(injectables=[make_foo, make_bar])
 
 
 def test_validates_container_does_not_raise_when_no_dependency_cycle() -> None:
@@ -150,25 +151,25 @@ def test_validates_container_does_not_raise_when_no_dependency_cycle() -> None:
     class Bar:
         def __init__(self, foo: Foo): ...
 
-    @wireup.service
+    @wireup.injectable
     def make_foo(bar: Bar) -> Foo:
         return Foo(bar)
 
-    @wireup.service
+    @wireup.injectable
     def make_bar(baz: Annotated[Foo, Inject(qualifier="no_dependency")]) -> Bar:
         return Bar(baz)
 
-    @wireup.service(qualifier="no_dependency")
+    @wireup.injectable(qualifier="no_dependency")
     def make_foo_no_dependency() -> Foo:
         return Foo(None)
 
-    wireup.create_sync_container(services=[make_foo, make_bar, make_foo_no_dependency])
+    wireup.create_sync_container(injectables=[make_foo, make_bar, make_foo_no_dependency])
 
 
 def test_lifetimes_match_factories() -> None:
     class ScopedService: ...
 
-    @wireup.service(lifetime="scoped")
+    @wireup.injectable(lifetime="scoped")
     def _scoped_factory() -> ScopedService:
         return ScopedService()
 
@@ -176,18 +177,19 @@ def test_lifetimes_match_factories() -> None:
     class SingletonService:
         scoped: ScopedService
 
-    @wireup.service
+    @wireup.injectable
     def _singleton_factory(scoped: ScopedService) -> SingletonService:
         return SingletonService(scoped)
 
     with pytest.raises(
         WireupError,
         match=re.escape(
-            "Parameter 'scoped' of Function test.unit.test_container_creation._singleton_factory depends on a service "
-            "with a 'scoped' lifetime which is not supported. Singletons can only depend on other singletons."
+            "Parameter 'scoped' of Function test.unit.test_container_creation._singleton_factory depends on an "
+            "injectable with a 'scoped' lifetime which is not supported. Singletons can only depend "
+            "on other singletons."
         ),
     ):
-        wireup.create_sync_container(services=[_scoped_factory, _singleton_factory])
+        wireup.create_sync_container(injectables=[_scoped_factory, _singleton_factory])
 
 
 def test_errors_not_decorated_service() -> None:
@@ -195,17 +197,17 @@ def test_errors_not_decorated_service() -> None:
 
     with pytest.raises(
         WireupError,
-        match=f"Service {NotDecorated} is not decorated with @abstract or @service",
+        match=f"Injectable {NotDecorated} is not decorated with @abstract or @injectable",
     ):
-        wireup.create_sync_container(services=[NotDecorated])
+        wireup.create_sync_container(injectables=[NotDecorated])
 
 
 def test_registers_abstract() -> None:
     @abstract
     class Foo: ...
 
-    @service
+    @injectable
     class FooImpl(Foo): ...
 
-    container = wireup.create_sync_container(services=[Foo, FooImpl])
+    container = wireup.create_sync_container(injectables=[Foo, FooImpl])
     assert isinstance(container.get(Foo), FooImpl)

@@ -41,7 +41,9 @@ async def inject_via_depends(
 
 
 @router.get("/params")
-async def params_route(foo: Annotated[str, Inject(param="foo")], foo_foo: Annotated[str, Inject(expr="${foo}-${foo}")]):
+async def params_route(
+    foo: Annotated[str, Inject(config="foo")], foo_foo: Annotated[str, Inject(expr="${foo}-${foo}")]
+):
     return {"foo": foo, "foo_foo": foo_foo}
 
 
