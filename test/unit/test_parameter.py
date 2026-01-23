@@ -59,17 +59,8 @@ def test_get_templated_string_with_dot_notation_gives_priority_to_existing_keys_
 
 
 def test_get_templated_string_with_dot_notation_without_parameter_expression():
-    values = {
-        "param1": {
-            "nested1": "value1",
-        },
-        "param2": {
-            "nested2": None,
-        },
-    }
-    bag = ConfigStore(values)
-    with pytest.raises(UnknownParameterError, match=re.escape("Unknown config key requested: param1.nested1")):
-        bag.get("param1.nested1")
+    bag = ConfigStore({"foo": {"bar": 5}})
+    assert str(bag.get("foo.bar")) == bag.get(TemplatedString("${foo.bar}"))
 
 
 def test_get_templated_string_with_dot_notation_with_non_existing_param():

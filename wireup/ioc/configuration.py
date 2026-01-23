@@ -28,10 +28,18 @@ class ConfigStore:
         )
 
     def __get_value_from_name(self, name: str) -> Any:
-        if name not in self.__bag:
-            raise UnknownParameterError(name)
+        # To not break backwards compatibility, we need to check if there exists
+        # a value in baggage that matches the full name first
+        if name in self.__bag:
+            return self.__bag[name]
 
-        return self.__bag[name]
+        match_parts = name.split(".")
+        parent = self.__bag
+
+        for i, part in enumerate(match_parts):
+            parent = self.__get_value_from_name_and_holder(i, match_parts, part, parent)
+
+        return parent
 
     @classmethod
     def __get_value_from_name_and_holder(cls, index: int, matched_parts: list[str], name: str, holder: Any) -> Any:
@@ -51,21 +59,7 @@ class ConfigStore:
             return self.__cache[val]
 
         def replace_param(match: Match[str]) -> str:
-            # To not break backwards compatibility, we need to check if there exists
-            # a value in baggage that matches the full name first
-            name = match.group(1)
-            try:
-                return str(self.__get_value_from_name(name))
-            except UnknownParameterError:
-                pass
-
-            match_parts = name.split(".")
-            parent = self.__bag
-
-            for i, part in enumerate(match_parts):
-                parent = self.__get_value_from_name_and_holder(i, match_parts, part, parent)
-
-            return str(parent)
+            return str(self.__get_value_from_name(match.group(1)))
 
         # Accept anything here as we don't impose any rules on dict keys
         res = re.sub(r"\${(.*?)}", replace_param, val, flags=re.DOTALL)
