@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import sys
+from abc import ABC, abstractmethod
+from dataclasses import dataclass
 from typing import Optional, Protocol
 
 import pytest
@@ -171,3 +173,78 @@ def test_as_type_on_optional_factory_new_union_optional():
     instance = container.get(OptionalProto | None)
     assert isinstance(instance, OptionalImpl)
     assert instance.opt() == "opt"
+
+
+class AbstractFoo(ABC):
+    @abstractmethod
+    def bar(self) -> str: ...
+
+
+@injectable(as_type=AbstractFoo)
+class AbstractFooImpl(AbstractFoo):
+    def bar(self) -> str:
+        return "bar"
+
+
+def test_register_with_as_type_abc():
+    container = create_sync_container(injectables=[AbstractFooImpl])
+
+    # Should be resolvable via the abstraction
+    instance = container.get(AbstractFoo)
+    assert isinstance(instance, AbstractFooImpl)
+    assert instance.bar() == "bar"
+
+    # Should NOT be resolvable via the implementation class directly
+    with pytest.raises(UnknownServiceRequestedError):
+        container.get(AbstractFooImpl)
+
+
+class FunctionProto(Protocol):
+    def call(self) -> int: ...
+
+
+class RealService:
+    def call(self) -> int:
+        return 42
+
+
+def test_as_type_on_simple_function():
+    @injectable(as_type=FunctionProto)
+    def factory() -> RealService:
+        return RealService()
+
+    container = create_sync_container(injectables=[factory])
+
+    svc = container.get(FunctionProto)
+    assert svc.call() == 42
+    assert isinstance(svc, RealService)
+
+
+class DependencyProto(Protocol):
+    def do_something(self) -> str: ...
+
+
+class DependencyImpl:
+    def do_something(self) -> str:
+        return "dependency_impl"
+
+
+@injectable
+@dataclass
+class ServiceWithDependency:
+    dependency: DependencyProto
+
+
+def test_as_type_factory_dependency_injection():
+    # Test that a dependency produced by a factory with as_type
+    # is correctly injected into another service.
+
+    @injectable(as_type=DependencyProto)
+    def make_dependency() -> DependencyImpl:
+        return DependencyImpl()
+
+    container = create_sync_container(injectables=[make_dependency, ServiceWithDependency])
+
+    service = container.get(ServiceWithDependency)
+    assert isinstance(service.dependency, DependencyImpl)
+    assert service.dependency.do_something() == "dependency_impl"
