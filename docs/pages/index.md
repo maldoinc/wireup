@@ -337,7 +337,7 @@ them directly with mocks or fakes, no special setup required.
 You can also use `container.override` to swap dependencies during tests:
 
 ```python
-with container.override.injectable(target=Database, new=in_memory_database):
+with container.override({Database: in_memory_database}):
     # The /users endpoint depends on Database.
     # During the lifetime of this context manager, requests to inject `Database`
     # will result in `in_memory_database` being injected instead.

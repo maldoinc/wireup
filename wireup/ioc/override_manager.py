@@ -6,11 +6,10 @@ from typing import TYPE_CHECKING, Any, Iterator
 
 from wireup.errors import UnknownOverrideRequestedError
 from wireup.ioc.factory_compiler import CompiledFactory, FactoryCompiler
+from wireup.ioc.types import InjectableOverride, Qualifier
 
 if TYPE_CHECKING:
     from collections.abc import Callable
-
-    from wireup.ioc.types import InjectableOverride, Qualifier
 
 
 class OverrideManager:
@@ -26,6 +25,36 @@ class OverrideManager:
         self._factory_compiler = factory_compiler
         self._scoped_factory_compiler = scoped_factory_compiler
         self._original_factories: dict[tuple[type, Qualifier], tuple[CompiledFactory, CompiledFactory]] = {}
+
+    @contextmanager
+    def __call__(self, overrides: dict[Any | tuple[Any, Qualifier], Any]) -> Iterator[None]:
+        """Override injectables using a dict syntax.
+
+        Supports both simple type keys and tuple keys for qualified injectables:
+
+        ```python
+        with container.override({
+            UserService: mock_user_service,
+            (Database, "primary"): mock_primary_db,
+            (Database, "replica"): mock_replica_db,
+        }):
+            ...
+        ```
+
+        :param overrides: Dictionary mapping types or (type, qualifier) tuples to override values.
+        """
+
+        override_list: list[InjectableOverride] = []
+        for key, new in overrides.items():
+            if isinstance(key, tuple):
+                target, qualifier = key  # type: ignore[reportUnknownVariableType, unused-ignore]
+            else:
+                target, qualifier = key, None
+
+            override_list.append(InjectableOverride(target=target, new=new, qualifier=qualifier))  # type: ignore[reportUnknownVariableType, unused-ignore]
+
+        with self.injectables(override_list):
+            yield
 
     def _compiler_override_obj_id(
         self,
@@ -118,13 +147,19 @@ class OverrideManager:
     def injectable(self, target: type, new: Any, qualifier: Qualifier | None = None) -> Iterator[None]:
         """Override the `target` injectable with `new` for the duration of the context manager.
 
-        Future requests to inject `target` will result in `new` being injected.
+        Deprecated: Use `container.override` instead.
 
         :param target: The target injectable to override.
         :param qualifier: The qualifier of the injectable to override. Set this if injectable is registered
         with the qualifier parameter set to a value.
         :param new: The new object to be injected instead of `target`.
         """
+        warnings.warn(
+            "container.override.injectable() is deprecated. Use container.override() instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+
         try:
             self.set(target, new, qualifier)
             yield
@@ -133,7 +168,16 @@ class OverrideManager:
 
     @contextmanager
     def injectables(self, overrides: list[InjectableOverride]) -> Iterator[None]:
-        """Override a number of injectables with new for the duration of the context manager."""
+        """Override a number of injectables with new for the duration of the context manager.
+
+        Deprecated: Use `container.override` instead.
+        """
+        warnings.warn(
+            "container.override.injectables() is deprecated. Use container.override() instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+
         try:
             for override in overrides:
                 self.set(override.target, override.new, override.qualifier)
