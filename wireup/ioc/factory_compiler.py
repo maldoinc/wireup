@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import sys
 import threading
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Callable, Hashable
@@ -16,7 +17,7 @@ if TYPE_CHECKING:
     from wireup.ioc.registry import InjectableFactory
 
 
-@dataclass(slots=True)
+@dataclass(**({"slots": True} if sys.version_info >= (3, 10) else {}))
 class CompiledFactory:
     factory: Callable[[BaseContainer], Any]
     is_async: bool

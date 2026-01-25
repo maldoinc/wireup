@@ -2,9 +2,10 @@ from __future__ import annotations
 
 import asyncio
 import threading
+from typing import Dict
 
 
-class LockRegistry(dict[int, "asyncio.Lock | threading.Lock"]):
+class LockRegistry(Dict[int, "asyncio.Lock | threading.Lock"]):
     __slots__ = ("_async_hashes", "_lock")
 
     def __init__(self, async_hashes: set[int]) -> None:
