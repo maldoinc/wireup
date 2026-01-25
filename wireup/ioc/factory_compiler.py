@@ -16,7 +16,7 @@ if TYPE_CHECKING:
     from wireup.ioc.registry import InjectableFactory
 
 
-@dataclass
+@dataclass(slots=True)
 class CompiledFactory:
     factory: Callable[[BaseContainer], Any]
     is_async: bool
