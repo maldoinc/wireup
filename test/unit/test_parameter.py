@@ -76,14 +76,14 @@ def test_get_templated_string_with_dot_notation_with_non_existing_param():
     templated_string = TemplatedString("${param2.nested2.nested1_1}")
     with pytest.raises(
         UnknownParameterError,
-        match=re.escape("Unknown config key requested: param2"),
+        match=re.escape("Unknown config key requested: 'param2'"),
     ):
         bag.get(templated_string)
 
     templated_string = TemplatedString("${param1.nested2.nested1_1}")
     with pytest.raises(
         UnknownParameterError,
-        match=re.escape("Unknown config key requested: param1.nested2. 'nested2' not found in 'param1'"),
+        match=re.escape("Unknown config key requested: 'param1.nested2'. 'nested2' not found in 'param1'"),
     ):
         bag.get(templated_string)
 
@@ -91,7 +91,7 @@ def test_get_templated_string_with_dot_notation_with_non_existing_param():
     with pytest.raises(
         UnknownParameterError,
         match=re.escape(
-            "Unknown config key requested: param1.nested1.nested1_2. 'nested1_2' not found in 'param1.nested1'"
+            "Unknown config key requested: 'param1.nested1.nested1_2'. 'nested1_2' not found in 'param1.nested1'"
         ),
     ):
         bag.get(templated_string)
@@ -125,22 +125,22 @@ def test_get_templated_string_with_broken_paths():
 
     templated_string = TemplatedString("${param1..property1}")
     with pytest.raises(
-        UnknownParameterError, match=re.escape("Unknown config key requested: param1.. '' not found in 'param1'")
+        UnknownParameterError, match=re.escape("Unknown config key requested: 'param1.'. '' not found in 'param1'")
     ):
         bag.get(templated_string)
 
     templated_string = TemplatedString("${param1.}")
     with pytest.raises(
-        UnknownParameterError, match=re.escape("Unknown config key requested: param1.. '' not found in 'param1'")
+        UnknownParameterError, match=re.escape("Unknown config key requested: 'param1.'. '' not found in 'param1'")
     ):
         bag.get(templated_string)
 
     templated_string = TemplatedString("${.param1}")
-    with pytest.raises(UnknownParameterError, match=re.escape("Unknown config key requested: ")):
+    with pytest.raises(UnknownParameterError, match=re.escape("Unknown config key requested: ''")):
         bag.get(templated_string)
 
     templated_string = TemplatedString("${.param1.}")
-    with pytest.raises(UnknownParameterError, match=re.escape("Unknown config key requested: ")):
+    with pytest.raises(UnknownParameterError, match=re.escape("Unknown config key requested: ''")):
         bag.get(templated_string)
 
 
