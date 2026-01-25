@@ -76,10 +76,10 @@ def _get_startup_event(
     container: wireup.AsyncContainer,
     handlers: Optional[Iterable[Type[_WireupHandler]]],
 ) -> Callable[[web.Application], Awaitable[None]]:
-    for handler_type in handlers or []:
-        container._registry.extend(impls=[InjectableDeclaration(handler_type)])
-        container._compiler.compile()
-        container._scoped_compiler.compile()
+    if handlers:
+        for handler_type in handlers:
+            container._registry.extend(impls=[InjectableDeclaration(handler_type)])
+        container._recompile()
 
     async def _inner(app: web.Application) -> None:
         if handlers:

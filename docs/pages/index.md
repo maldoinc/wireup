@@ -5,7 +5,8 @@ Performant, concise and type-safe Dependency Injection for Python.
 [![PyPI - Version](https://img.shields.io/pypi/v/wireup)](https://pypi.org/project/wireup/)
 
 Automate dependency management using Python's type system. Build complex applications with native support for async and
-generators, plus integrations for popular frameworks out of the box.
+generators, plus integrations for popular frameworks out of the box. Wireup is thread-safe and ready for free-threaded
+Python (PEP 703).
 
 !!! tip "Zero Runtime Overhead"
 
