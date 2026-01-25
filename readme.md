@@ -9,7 +9,9 @@
 [![Documentation](https://img.shields.io/badge/%F0%9F%93%9A%20Documentation-3D9970)](https://maldoinc.github.io/wireup)
 </div>
 
-Automate dependency management using Python's type system. Build complex applications with native support for async and generators, plus integrations for popular frameworks out of the box.
+Automate dependency management using Python's type system. Build complex applications with native support for async and
+generators, plus integrations for popular frameworks out of the box. Wireup is thread-safe and ready for no-GIL
+Python (PEP 703).
 
 > [!TIP]
 > **New**: Inject Dependencies in FastAPI with zero runtime overhead using [Class-Based Handlers](https://maldoinc.github.io/wireup/latest/integrations/fastapi/class_based_handlers/).
