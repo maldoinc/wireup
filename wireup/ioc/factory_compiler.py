@@ -23,11 +23,11 @@ class CompiledFactory:
 
 
 _CONTAINER_SCOPE_ERROR_MSG = (
-    r"Scope mismatch: Cannot resolve {lifetime} injectable {fmt_klass} "
-    r"from the root container. "
-    r"Only Singleton injectables can be resolved without a scope. "
-    r"To resolve {lifetime} injectables, you must create a scope.\n"
-    r"See: https://maldoinc.github.io/wireup/latest/lifetimes_and_scopes/"
+    "Scope mismatch: Cannot resolve {lifetime} injectable {fmt_klass} "
+    "from the root container. "
+    "Only Singleton injectables can be resolved without a scope. "
+    "To resolve {lifetime} injectables, you must create a scope.\n"
+    "See: https://maldoinc.github.io/wireup/latest/lifetimes_and_scopes/"
 )
 
 _WIREUP_GENERATED_FACTORY_NAME = "_wireup_factory"
@@ -87,27 +87,14 @@ class FactoryCompiler:
                     qualifier,
                 )
 
-    def _get_factory_code(self, factory: InjectableFactory, impl: type, qualifier: Hashable) -> tuple[str, bool, bool]:  # noqa: C901, PLR0915
-        is_interface = self._registry.is_interface_known(impl)
-        if is_interface:
-            lifetime = self._registry.lifetime[self._registry.interface_resolve_impl(impl, qualifier), qualifier]
-        else:
-            lifetime = self._registry.lifetime[impl, qualifier]
-
+    def _get_factory_code(  # noqa: C901, PLR0915
+        self,
+        factory: InjectableFactory,
+        lifetime: str,
+        *,
+        is_interface: bool,
+    ) -> tuple[str, bool, bool]:
         cg = Codegen()
-
-        if lifetime != "singleton" and not self._is_scoped_container:
-            fmt_map = {
-                "fmt_klass": format_name(impl, qualifier),
-                "lifetime": lifetime,
-            }
-
-            cg += f"def {_WIREUP_GENERATED_FACTORY_NAME}(container):"
-            with cg.indent():
-                cg += f'msg = "{_CONTAINER_SCOPE_ERROR_MSG.format_map(fmt_map)}"'
-                cg += "raise WireupError(msg)"
-
-            return cg.get_source(), False, False
 
         maybe_async = "async " if factory.is_async else ""
         cg += f"{maybe_async}def {_WIREUP_GENERATED_FACTORY_NAME}(container):"
@@ -196,8 +183,27 @@ class FactoryCompiler:
             if self._registry.is_interface_known(impl)
             else obj_id
         )
+
+        is_interface = self._registry.is_interface_known(impl)
+
+        if is_interface:
+            lifetime = self._registry.lifetime[self._registry.interface_resolve_impl(impl, qualifier), qualifier]
+        else:
+            lifetime = self._registry.lifetime[impl, qualifier]
+
+        # Non-singleton types cannot be resolved from the root container. Return a factory that will simply error.
+        if lifetime != "singleton" and not self._is_scoped_container:
+            return CompiledFactory(
+                factory=FactoryCompiler._create_scope_mismatch_error_factory(impl, qualifier, lifetime),
+                is_async=False,
+            )
+
         obj_hash = FactoryCompiler.get_object_id(impl, qualifier)
-        source, is_async, needs_global_lock = self._get_factory_code(factory, impl, qualifier)
+        source, is_async, needs_global_lock = self._get_factory_code(
+            factory,
+            lifetime,
+            is_interface=is_interface,
+        )
 
         try:
             namespace: dict[str, Any] = {
@@ -224,3 +230,15 @@ class FactoryCompiler:
         except Exception as e:
             msg = f"Failed to compile generated factory {obj_id}: {e}"
             raise WireupError(msg) from e
+
+    @staticmethod
+    def _create_scope_mismatch_error_factory(
+        impl: type,
+        qualifier: Hashable,
+        lifetime: str,
+    ) -> Callable[[BaseContainer], Any]:
+        def _factory(_: BaseContainer) -> Any:
+            msg = _CONTAINER_SCOPE_ERROR_MSG.format(fmt_klass=format_name(impl, qualifier), lifetime=lifetime)
+            raise WireupError(msg)
+
+        return _factory
