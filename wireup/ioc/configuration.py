@@ -37,6 +37,11 @@ class ConfigStore:
         parent = self.__bag
 
         for i, part in enumerate(match_parts):
+            if part == "":
+                raise ValueError(
+                    f"Provided config key format is invalid: '{name}'."
+                    " Please provide a non-empty config-key, or a vaild `dot` separated path, with non-empty parts."
+                )
             parent = self.__get_value_from_name_and_holder(i, match_parts, part, parent)
 
         return parent

@@ -124,23 +124,44 @@ def test_get_templated_string_with_broken_paths():
     bag = ConfigStore(values)
 
     templated_string = TemplatedString("${param1..property1}")
+
     with pytest.raises(
-        UnknownParameterError, match=re.escape("Unknown config key requested: 'param1.'. '' not found in 'param1'")
+        ValueError,
+        match=re.escape(
+            "Provided config key format is invalid: 'param1..property1'."
+            " Please provide a non-empty config-key, or a vaild `dot` separated path, with non-empty parts."
+        ),
     ):
         bag.get(templated_string)
 
     templated_string = TemplatedString("${param1.}")
     with pytest.raises(
-        UnknownParameterError, match=re.escape("Unknown config key requested: 'param1.'. '' not found in 'param1'")
+        ValueError,
+        match=re.escape(
+            "Provided config key format is invalid: 'param1.'."
+            " Please provide a non-empty config-key, or a vaild `dot` separated path, with non-empty parts."
+        ),
     ):
         bag.get(templated_string)
 
     templated_string = TemplatedString("${.param1}")
-    with pytest.raises(UnknownParameterError, match=re.escape("Unknown config key requested: ''")):
+    with pytest.raises(
+        ValueError,
+        match=re.escape(
+            "Provided config key format is invalid: '.param1'."
+            " Please provide a non-empty config-key, or a vaild `dot` separated path, with non-empty parts."
+        ),
+    ):
         bag.get(templated_string)
 
     templated_string = TemplatedString("${.param1.}")
-    with pytest.raises(UnknownParameterError, match=re.escape("Unknown config key requested: ''")):
+    with pytest.raises(
+        ValueError,
+        match=re.escape(
+            "Provided config key format is invalid: '.param1.'."
+            " Please provide a non-empty config-key, or a vaild `dot` separated path, with non-empty parts."
+        ),
+    ):
         bag.get(templated_string)
 
 
