@@ -1,7 +1,10 @@
 from __future__ import annotations
 
+import contextlib
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Callable, Hashable
+
+from wireup.codegen import Codegen
 
 from wireup.errors import WireupError
 from wireup.ioc.registry import GENERATOR_FACTORY_TYPES, ContainerRegistry, FactoryType
@@ -11,6 +14,7 @@ from wireup.util import format_name
 if TYPE_CHECKING:
     from wireup.ioc.container.base_container import BaseContainer
     from wireup.ioc.registry import InjectableFactory
+
 
 
 @dataclass
@@ -71,74 +75,79 @@ class FactoryCompiler:
         else:
             lifetime = self._registry.lifetime[impl, qualifier]
 
+        cg = Codegen()
+
         if lifetime != "singleton" and not self._is_scoped_container:
             fmt_map = {
                 "fmt_klass": format_name(impl, qualifier),
                 "lifetime": lifetime,
             }
 
-            code = f"def {_WIREUP_GENERATED_FACTORY_NAME}(container):\n"
-            code += f'    msg = "{_CONTAINER_SCOPE_ERROR_MSG.format_map(fmt_map)}"\n'
-            code += "    raise WireupError(msg)\n"
+            cg += f"def {_WIREUP_GENERATED_FACTORY_NAME}(container):"
+            with cg.indent():
+                cg += f'msg = "{_CONTAINER_SCOPE_ERROR_MSG.format_map(fmt_map)}"'
+                cg += "raise WireupError(msg)"
 
-            return code, False
+            return cg.get_source(), False
 
         maybe_async = "async " if factory.is_async else ""
-        code = f"{maybe_async}def {_WIREUP_GENERATED_FACTORY_NAME}(container):\n"
+        cg += f"{maybe_async}def {_WIREUP_GENERATED_FACTORY_NAME}(container):"
         cache_created_instance = lifetime != "transient"
 
-        if cache_created_instance:
-            if lifetime == "singleton":
-                code += "    storage = container._global_scope_objects\n"
-            else:
-                code += "    storage = container._current_scope_objects\n"
-
-            code += "    if (res := storage.get(OBJ_ID, _SENTINEL)) is not _SENTINEL:\n"
-            code += "        return res\n"
-
-        kwargs = ""
-        for name, dep in self._registry.dependencies[factory.factory].items():
-            if isinstance(dep.annotation, ConfigInjectionRequest):
-                param_value = (
-                    str(dep.annotation.config_key)
-                    if isinstance(dep.annotation.config_key, TemplatedString)
-                    else f'"{dep.annotation.config_key}"'
-                )
-                code += f"    _obj_dep_{name} = parameters.get({param_value})\n"
-            else:
-                if self._registry.is_interface_known(dep.klass):
-                    dep_class = self._registry.interface_resolve_impl(dep.klass, dep.qualifier_value)
+        with cg.indent():
+            if cache_created_instance:
+                if lifetime == "singleton":
+                    cg += "storage = container._global_scope_objects"
                 else:
-                    dep_class = dep.klass
+                    cg += "storage = container._current_scope_objects"
 
-                maybe_await = "await " if self._registry.factories[dep_class, dep.qualifier_value].is_async else ""
-                dep_hash = FactoryCompiler.get_object_id(dep_class, dep.qualifier_value)
-                code += f"    _obj_dep_{name} = {maybe_await}factories[{dep_hash}].factory(container)\n"
-            kwargs += f"{name}=_obj_dep_{name}, "
+                cg += "if (res := storage.get(OBJ_ID, _SENTINEL)) is not _SENTINEL:"
+                with cg.indent():
+                    cg += "return res"
 
-        maybe_await = "await " if factory.factory_type == FactoryType.COROUTINE_FN else ""
+            kwargs = ""
+            for name, dep in self._registry.dependencies[factory.factory].items():
+                if isinstance(dep.annotation, ConfigInjectionRequest):
+                    param_value = (
+                        str(dep.annotation.config_key)
+                        if isinstance(dep.annotation.config_key, TemplatedString)
+                        else f'"{dep.annotation.config_key}"'
+                    )
+                    cg += f"_obj_dep_{name} = parameters.get({param_value})"
+                else:
+                    if self._registry.is_interface_known(dep.klass):
+                        dep_class = self._registry.interface_resolve_impl(dep.klass, dep.qualifier_value)
+                    else:
+                        dep_class = dep.klass
 
-        code += f"    instance = {maybe_await}ORIGINAL_FACTORY({kwargs.strip()})\n"
+                    maybe_await = "await " if self._registry.factories[dep_class, dep.qualifier_value].is_async else ""
+                    dep_hash = FactoryCompiler.get_object_id(dep_class, dep.qualifier_value)
+                    cg += f"_obj_dep_{name} = {maybe_await}factories[{dep_hash}].factory(container)"
+                kwargs += f"{name}=_obj_dep_{name}, "
 
-        if factory.factory_type in GENERATOR_FACTORY_TYPES:
-            if lifetime == "singleton":
-                code += "    container._global_scope_exit_stack.append(instance)\n"
-            else:
-                code += "    container._current_scope_exit_stack.append(instance)\n"
+            maybe_await = "await " if factory.factory_type == FactoryType.COROUTINE_FN else ""
 
-            if factory.factory_type == FactoryType.GENERATOR:
-                code += "    instance = next(instance)\n"
-            else:
-                code += "    instance = await instance.__anext__()\n"
+            cg += f"instance = {maybe_await}ORIGINAL_FACTORY({kwargs.strip()})"
 
-        if cache_created_instance:
-            code += "    storage[OBJ_ID] = instance\n"
-            if is_interface:
-                code += "    storage[ORIGINAL_OBJ_ID] = instance\n"
+            if factory.factory_type in GENERATOR_FACTORY_TYPES:
+                if lifetime == "singleton":
+                    cg += "container._global_scope_exit_stack.append(instance)"
+                else:
+                    cg += "container._current_scope_exit_stack.append(instance)"
 
-        code += "    return instance\n"
+                if factory.factory_type == FactoryType.GENERATOR:
+                    cg += "instance = next(instance)"
+                else:
+                    cg += "instance = await instance.__anext__()"
 
-        return code, factory.is_async
+            if cache_created_instance:
+                cg += "storage[OBJ_ID] = instance"
+                if is_interface:
+                    cg += "storage[ORIGINAL_OBJ_ID] = instance"
+
+            cg += "return instance"
+
+        return cg.get_source(), factory.is_async
 
     def _compile_and_create_function(
         self, factory: InjectableFactory, impl: type, qualifier: Hashable
