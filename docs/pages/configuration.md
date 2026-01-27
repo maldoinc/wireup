@@ -39,6 +39,44 @@ class DatabaseService:
         self.url = url
 ```
 
+### Dot Notation (Nested Configuration)
+
+Access nested configuration values using dot notation. Wireup allows you to inject configuration from any point in the
+tree, not just leaf values.
+
+```python
+import wireup
+from typing import Annotated, Any
+from wireup import injectable, Inject
+
+container = wireup.create_sync_container(
+    config={
+        "db": {
+            "host": "localhost",
+            "port": 5432,
+            "options": {"timeout": 30},
+        },
+    }
+)
+
+
+@injectable
+class DatabaseService:
+    def __init__(
+        self,
+        # Injects "localhost"
+        host: Annotated[str, Inject(config="db.host")],
+        # Injects 5432
+        port: Annotated[int, Inject(config="db.port")],
+        # Injects the entire dictionary: {"timeout": 30}
+        # You can inject any value from the config, not just primitives.
+        options: Annotated[dict[str, Any], Inject(config="db.options")],
+        # Injects the whole 'db' config: {"host": "...", "port": ..., "options": ...}
+        db_config: Annotated[dict[str, Any], Inject(config="db")],
+    ) -> None:
+        self.host = host
+```
+
 ### Structured Objects
 
 You are not limited to primitives. You can inject entire configuration objects, such as Dataclasses or Pydantic models.
