@@ -48,7 +48,6 @@ class UnknownParameterError(WireupError):
             message = f"Unknown config key requested: '{parameter_name}'"
 
         super().__init__(message)
-        super().__init__(f"Unknown config key requested: {parameter_name}")
 
 
 class FactoryReturnTypeIsEmptyError(WireupError):
