@@ -38,7 +38,6 @@ class UnknownParameterError(WireupError):
 
     def __init__(self, parameter_name: str, parent_path: str | None = None) -> None:
         self.parameter_name = parameter_name
-        self.parent_path = parent_path
 
         if parent_path:
             message = (
@@ -49,6 +48,7 @@ class UnknownParameterError(WireupError):
             message = f"Unknown config key requested: '{parameter_name}'"
 
         super().__init__(message)
+        super().__init__(f"Unknown config key requested: {parameter_name}")
 
 
 class FactoryReturnTypeIsEmptyError(WireupError):

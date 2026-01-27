@@ -93,7 +93,7 @@ def _create_container(  # noqa: PLR0913
     singleton_compiler = FactoryCompiler(registry, is_scoped_container=False)
     scoped_compiler = FactoryCompiler(registry, is_scoped_container=True)
     singleton_compiler.compile()
-    scoped_compiler.compile()
+    scoped_compiler.compile(copy_singletons_from=singleton_compiler)
 
     override_manager = OverrideManager(registry.is_type_with_qualifier_known, singleton_compiler, scoped_compiler)
     return klass(

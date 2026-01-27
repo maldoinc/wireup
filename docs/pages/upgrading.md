@@ -1,4 +1,4 @@
-## Upgrading 2.x to 2.x
+## Upgrading 2.x to 2.4
 
 - Parameters have been renamed to Configuration to better reflect their purpose.
 - When providing configuration use `config=` instead of `parameters=` during contaner creation:

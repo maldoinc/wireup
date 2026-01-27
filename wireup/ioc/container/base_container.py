@@ -17,6 +17,7 @@ from wireup.errors import (
     UnknownServiceRequestedError,
     WireupError,
 )
+from wireup.ioc.container.lock_registry import LockRegistry
 
 if TYPE_CHECKING:
     from wireup.ioc.configuration import ConfigStore
@@ -40,6 +41,7 @@ class BaseContainer:
         "_factories",
         "_global_scope_exit_stack",
         "_global_scope_objects",
+        "_locks",
         "_override_mgr",
         "_registry",
         "_scoped_compiler",
@@ -65,6 +67,7 @@ class BaseContainer:
         self._compiler = factory_compiler
         self._scoped_compiler = scoped_compiler
         self._factories = self._compiler.factories
+        self._locks = LockRegistry({obj_id for obj_id, f in self._factories.items() if f.is_async})
 
     @property
     def params(self) -> ConfigStore:
@@ -111,3 +114,9 @@ class BaseContainer:
             return compiled_factory.factory(self)  # type:ignore[no-any-return]
 
         raise UnknownServiceRequestedError(klass, qualifier)
+
+    def _recompile(self) -> None:
+        """Update internal container state after registry changes"""
+        self._compiler.compile()
+        self._scoped_compiler.compile(copy_singletons_from=self._compiler)
+        self._locks._async_hashes.update({obj_id for obj_id, f in self._factories.items() if f.is_async})
