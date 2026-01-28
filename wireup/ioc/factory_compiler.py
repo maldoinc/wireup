@@ -23,6 +23,15 @@ class CompiledFactory:
     is_async: bool
 
 
+@dataclass(**({"slots": True} if sys.version_info >= (3, 10) else {}))
+class FactoryDependencyTarget:
+    name: str
+    is_config: bool
+    config_name: str | TemplatedString | None = None
+    dependency_obj_id: int | None = None
+    is_async: bool = False
+
+
 _CONTAINER_SCOPE_ERROR_MSG = (
     "Scope mismatch: Cannot resolve {lifetime} injectable {fmt_klass} "
     "from the root container. "
@@ -114,11 +123,13 @@ class FactoryCompiler:
                 else:
                     if self._registry.is_interface_known(dep.klass):
                         dep_class = self._registry.interface_resolve_impl(dep.klass, dep.qualifier_value)
+                        dep_key = dep.klass
                     else:
                         dep_class = dep.klass
+                        dep_key = dep.klass
 
                     maybe_await = "await " if self._registry.factories[dep_class, dep.qualifier_value].is_async else ""
-                    dep_hash = FactoryCompiler.get_object_id(dep_class, dep.qualifier_value)
+                    dep_hash = FactoryCompiler.get_object_id(dep_key, dep.qualifier_value)
                     cg += f"_obj_dep_{name} = {maybe_await}factories[{dep_hash}].factory(container)"
                 kwargs += f"{name}=_obj_dep_{name}, "
 
