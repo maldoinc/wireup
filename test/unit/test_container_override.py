@@ -92,3 +92,26 @@ async def test_overrides_async_dependency() -> None:
 
     res = await container.get(FooBar)
     assert res.foo == "bar"
+
+
+async def test_override_async_transitive_dependency_with_sync_instance():
+    class FooDep:
+        pass
+
+    @wireup.injectable
+    async def async_foo_dep() -> FooDep:
+        return FooDep()
+
+    @wireup.injectable
+    class BarDep:
+        def __init__(self, foo: FooDep):
+            self.foo = foo
+
+    class FooOverride:
+        pass
+
+    container = wireup.create_async_container(injectables=[async_foo_dep, BarDep])
+
+    with container.override.injectable(FooDep, FooOverride()):
+        bar = await container.get(BarDep)
+        assert isinstance(bar.foo, FooOverride)

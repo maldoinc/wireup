@@ -33,10 +33,12 @@ class OverrideManager:
         target: type,
         qualifier: Qualifier,
         new: Callable[[Any], Any],
+        *,
+        is_async: bool = False,
     ) -> None:
         compiler.factories[compiler.get_object_id(target, qualifier)] = CompiledFactory(
             factory=new,
-            is_async=False,
+            is_async=is_async,
         )
 
     def _compiler_restore_obj_id(
@@ -68,20 +70,29 @@ class OverrideManager:
             self._scoped_factory_compiler.factories[obj_id],
         )
 
+        is_async = self._factory_compiler.factories[obj_id].is_async
+
+        async def async_override_factory(_container: Any) -> Any:
+            return new
+
         def override_factory(_container: Any) -> Any:
             return new
+
+        factory = async_override_factory if is_async else override_factory
 
         self._compiler_override_obj_id(
             target=target,
             qualifier=qualifier,
             compiler=self._factory_compiler,
-            new=override_factory,
+            new=factory,
+            is_async=is_async,
         )
         self._compiler_override_obj_id(
             target=target,
             qualifier=qualifier,
             compiler=self._scoped_factory_compiler,
-            new=override_factory,
+            new=factory,
+            is_async=is_async,
         )
 
     def _restore_factory_methods(self, target: type, qualifier: Qualifier | None) -> None:
