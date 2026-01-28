@@ -1,9 +1,11 @@
+from typing import Iterator, NewType
 from unittest.mock import MagicMock
 
 import pytest
 import wireup.integration.flask
 from flask import Flask
 from flask.testing import FlaskClient
+from wireup._annotations import Injected, injectable
 from wireup.integration.flask import get_app_container
 
 from test.integration.flask import services as flask_integration_services
@@ -73,3 +75,34 @@ def test_service_override(client: FlaskClient, app: Flask):
         res = client.get("/foo")
         assert res.status_code == 200
         assert res.json == {"test": "mocked"}
+
+
+def test_flask_err_cleanup() -> None:
+    Something = NewType("Something", str)
+    dep = {"created": False, "cleanup": False}
+
+    @injectable(lifetime="scoped")
+    def make_with_cleanup() -> Iterator[Something]:
+        dep["created"] = True
+        try:
+            yield Something("hello")
+        finally:
+            dep["cleanup"] = True
+
+    app = Flask(__name__)
+    app.config["PROPAGATE_EXCEPTIONS"] = True
+
+    @app.get("/err")
+    def _err_endpoint(with_cleanup: Injected[Something]) -> str:
+        assert with_cleanup == "hello"
+        raise Exception("err in endpoint")
+
+    container = wireup.create_sync_container(injectables=[make_with_cleanup])
+    wireup.integration.flask.setup(container, app)
+
+    client = app.test_client()
+    with pytest.raises(Exception):  # noqa: B017
+        client.get("/err")
+
+    assert dep["created"] is True
+    assert dep["cleanup"] is True
