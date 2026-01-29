@@ -3,7 +3,7 @@ from __future__ import annotations
 import sys
 from typing import TYPE_CHECKING, Any
 
-from wireup.util import format_name
+from wireup.util import format_name, stringify_type
 
 if TYPE_CHECKING:
     from wireup.ioc.types import AnyCallable, Qualifier
@@ -101,6 +101,17 @@ class UnknownOverrideRequestedError(WireupError):
 
     def __init__(self, klass: type, qualifier: Qualifier | None) -> None:
         super().__init__(f"Cannot override unknown {format_name(klass, qualifier)}.")
+
+
+class PositionalOnlyParameterError(WireupError):
+    """Raised when Wireup encounters a positional-only parameter that it must inject."""
+
+    def __init__(self, name: str, target: Any) -> None:
+        msg = (
+            f"Cannot inject parameter '{name}' of '{stringify_type(target)}' because it is positional-only. "
+            "Injection is performed by keyword arguments. Remove the '/' separator or move this parameter after it."
+        )
+        super().__init__(msg)
 
 
 if sys.version_info >= (3, 11):

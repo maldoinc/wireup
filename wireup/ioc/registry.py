@@ -13,6 +13,7 @@ from wireup.errors import (
     DuplicateServiceRegistrationError,
     FactoryReturnTypeIsEmptyError,
     InvalidRegistrationTypeError,
+    PositionalOnlyParameterError,
     UnknownParameterError,
     UnknownQualifiedServiceRequestedError,
     WireupError,
@@ -271,6 +272,9 @@ class ContainerRegistry:
 
                 msg = f"Wireup dependencies must have types. Please add a type to the '{name}' parameter in {target}."
                 raise WireupError(msg)
+
+            if parameter.kind == inspect.Parameter.POSITIONAL_ONLY:
+                raise PositionalOnlyParameterError(name, target)
 
             if isinstance(annotated_param.annotation, EmptyContainerInjectionRequest):
                 warnings.warn(

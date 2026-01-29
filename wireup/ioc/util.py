@@ -8,7 +8,7 @@ import typing
 from inspect import Parameter
 from typing import Any, Sequence, TypeVar, cast
 
-from wireup.errors import WireupError
+from wireup.errors import PositionalOnlyParameterError, WireupError
 from wireup.ioc.type_analysis import analyze_type
 from wireup.ioc.types import AnnotatedParameter, AnyCallable, InjectableType
 
@@ -198,12 +198,16 @@ def get_inject_annotated_parameters(target: AnyCallable) -> dict[str, AnnotatedP
     if hasattr(target, "__wireup_names__"):
         return target.__wireup_names__  # type:ignore[no-any-return]
 
-    return {
-        name: param
-        for name, parameter in inspect.signature(target).parameters.items()
-        if (param := param_get_annotation(parameter, globalns_supplier=lambda: get_globals(target)))
-        and isinstance(param.annotation, InjectableType)
-    }
+    res: dict[str, AnnotatedParameter] = {}
+    for name, parameter in inspect.signature(target).parameters.items():
+        if (param := param_get_annotation(parameter, globalns_supplier=lambda: get_globals(target))) and isinstance(
+            param.annotation, InjectableType
+        ):
+            if parameter.kind == inspect.Parameter.POSITIONAL_ONLY:
+                raise PositionalOnlyParameterError(name, target)
+
+            res[name] = param
+    return res
 
 
 def get_valid_injection_annotated_parameters(
