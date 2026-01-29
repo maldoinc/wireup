@@ -43,38 +43,46 @@ overriding dependencies (See [override manager](class/override_manager.md)).
 
 ### Context Manager
 
+The `container.override` context manager allows you to replace one or more dependencies for the duration of a the
+context manager. It supports overriding both standard injectables and those with qualifiers.
+
 ```python
 from unittest.mock import MagicMock
 
 random_mock = MagicMock()
 random_mock.get_random.return_value = 4
 
-with container.override.injectable(target=RandomService, new=random_mock):
-    # Requests to inject RandomService during the lifetime
-    # of this context manager will use random_mock instead.
+user_service_mock = MagicMock()
+
+with container.override(
+    {
+        RandomService: random_mock,
+        UserService: user_service_mock,
+        (Database, "read_replica"): MagicMock(),
+    }
+):
+    # Requests to inject the overriden dependencies during the lifetime
+    # of this context manager will result in the replaced objects instead.
     response = client.get("/random")
 ```
 
-### Overriding Multiple Injectables
+### Permanent Overrides
 
-When you need to override several dependencies at once, use `container.override.injectables` with a list of
-`InjectableOverride` objects:
+You can also set permanent overrides using `container.override.set()`. These will persist until manually cleared. This
+is useful when you want to set global overrides for a suite of tests or when using a test runner that tears down the
+container for you.
 
 ```python
 from unittest.mock import MagicMock
-from wireup import InjectableOverride
 
-user_service_mock = MagicMock()
-order_service_mock = MagicMock()
+# Set a permanent override
+container.override.set(target=UserService, new=MagicMock())
 
-overrides = [
-    InjectableOverride(target=UserService, new=user_service_mock),
-    InjectableOverride(target=OrderService, new=order_service_mock),
-]
+# Clear a specific override
+container.override.delete(target=UserService)
 
-with container.override.injectables(overrides=overrides):
-    # Both UserService and OrderService are now mocked
-    response = client.get("/checkout")
+# Clear all overrides
+container.override.clear()
 ```
 
 ### Pytest
@@ -106,7 +114,7 @@ from wireup.integration.fastapi import get_app_container
 
 
 def test_something_with_mocked_db_service(client: TestClient, app):
-    with get_app_container(app).override.injectable(DBService, new=...):
+    with get_app_container(app).override({DBService: MagicMock()}):
         response = client.get("/some/path")
 
     # Assert response and mock calls.
