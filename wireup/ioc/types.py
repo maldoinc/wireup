@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from collections.abc import Hashable
 from dataclasses import dataclass
+from enum import Enum, auto
 from typing import Any, Callable, Optional, Tuple, Union
 
 from typing_extensions import Literal
@@ -117,3 +118,14 @@ class InjectableOverride:
     target: type[Any]
     new: Any
     qualifier: Qualifier | None = None
+
+
+class CallableType(Enum):
+    REGULAR = auto()
+    COROUTINE_FN = auto()
+    GENERATOR = auto()
+    ASYNC_GENERATOR = auto()
+
+
+GENERATOR_CALLABLE_TYPES = {CallableType.GENERATOR, CallableType.ASYNC_GENERATOR}
+ASYNC_CALLABLE_TYPES = {CallableType.ASYNC_GENERATOR, CallableType.COROUTINE_FN}

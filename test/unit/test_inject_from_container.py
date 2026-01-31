@@ -1,5 +1,6 @@
+import contextlib
 import re
-from typing import Optional
+from typing import Any, AsyncIterator, Iterator, NewType, Optional, Union
 
 import pytest
 import wireup
@@ -7,9 +8,12 @@ from typing_extensions import Annotated
 from wireup import Inject, inject_from_container, service
 from wireup._annotations import Injected
 from wireup.errors import WireupError
+from wireup.ioc.container.async_container import ScopedAsyncContainer
+from wireup.ioc.container.sync_container import ScopedSyncContainer
 
 from test.conftest import Container
 from test.unit import services
+from test.unit.services.async_reg import AsyncDependency, make_async_dependency
 from test.unit.services.no_annotations.random.random_service import RandomService
 from test.unit.services.with_annotations.services import Foo, FooImpl, OtherFooImpl, random_service_factory
 
@@ -265,3 +269,142 @@ def test_inject_from_container_handles_optionals() -> None:
         assert isinstance(thing, Thing)
 
     main()
+
+
+async def test_raises_generator_cleanup() -> None:
+    Something = NewType("Something", str)
+    exception_notified = False
+
+    @wireup.injectable(lifetime="scoped")
+    async def f1() -> AsyncIterator[Something]:
+        try:
+            yield Something("Something")
+        except:  # noqa: E722
+            nonlocal exception_notified
+            exception_notified = True
+
+    c = wireup.create_async_container(injectables=[f1])
+
+    @inject_from_container(c)
+    async def main(_: Injected[Something]):
+        raise ValueError("boom!")
+
+    with contextlib.suppress(Exception):
+        await main()
+
+    assert exception_notified
+
+
+async def test_inject_from_container_middleware() -> None:
+    Something = NewType("Something", str)
+    middleware_called = False
+
+    @wireup.injectable(lifetime="scoped")
+    def f1() -> Something:
+        return Something("Something")
+
+    @contextlib.contextmanager
+    def middleware(
+        scoped_container: Union[ScopedAsyncContainer, ScopedSyncContainer],  # noqa: ARG001
+        *args: Any,  # noqa: ARG001
+        **kwargs: Any,  # noqa: ARG001
+    ) -> Iterator[None]:
+        nonlocal middleware_called
+        middleware_called = True
+        yield
+
+    c = wireup.create_async_container(injectables=[f1])
+
+    @inject_from_container(c, middleware=middleware)
+    async def main(_: Injected[Something]): ...
+
+    await main()
+
+    assert middleware_called
+
+
+def test_inject_from_container_generator(container: Container) -> None:
+    @inject_from_container(container)
+    def generator_target(
+        foo: Injected[Foo],
+        env_name: Annotated[str, Inject(config="env_name")],
+    ) -> Iterator[str]:
+        assert isinstance(foo, Foo)
+        assert env_name == "test"
+        yield env_name
+        yield "after_yield"
+
+    gen = generator_target()
+    assert next(gen) == "test"
+    assert next(gen) == "after_yield"
+    with contextlib.suppress(StopIteration):
+        next(gen)
+
+
+def test_inject_from_container_context_manager(container: Container) -> None:
+    # Test that inject_from_container works with contextlib.contextmanager targets
+
+    @inject_from_container(container)
+    @contextlib.contextmanager
+    def _context_manager_target(
+        foo: Injected[Foo],
+        env_name: Annotated[str, Inject(config="env_name")],
+    ) -> Iterator[str]:
+        assert isinstance(foo, Foo)
+        assert env_name == "test"
+        yield env_name
+
+    with _context_manager_target() as val:
+        assert val == "test"
+
+
+async def test_inject_from_container_async_generator() -> None:
+    container = wireup.create_async_container(injectables=[services], config={"env_name": "test"})
+
+    @inject_from_container(container)
+    async def async_generator_target(
+        foo: Injected[Foo],
+        env_name: Annotated[str, Inject(config="env_name")],
+    ) -> AsyncIterator[str]:
+        assert isinstance(foo, Foo)
+        assert env_name == "test"
+        yield env_name
+        yield "after_yield"
+
+    gen = async_generator_target()
+    assert await gen.__anext__() == "test"
+    assert await gen.__anext__() == "after_yield"
+    with pytest.raises(StopAsyncIteration):
+        await gen.__anext__()
+
+
+async def test_async_injects_sync_reuses_async_dependency_in_sync_context() -> None:
+    container = wireup.create_async_container(injectables=[make_async_dependency])
+
+    # Injection fails here since the current sync scope cannot create the async dependency.
+    @inject_from_container(container)
+    def sync_func_fail(a: Injected[AsyncDependency]) -> None:
+        pass
+
+    with pytest.raises(WireupError, match="is an async dependency and it cannot be created in a synchronous context"):
+        sync_func_fail()
+
+    inst = await container.get(AsyncDependency)
+
+    # Dependency is already created so just reuse the instance.
+    @inject_from_container(container)
+    def sync_func_success(a: Injected[AsyncDependency]) -> AsyncDependency:
+        return a
+
+    assert sync_func_success() is inst
+
+
+def test_async_override_with_sync_value_in_sync_context(container: Container) -> None:
+    fake_b = AsyncDependency()
+    with container.override.injectable(AsyncDependency, fake_b):
+
+        @inject_from_container(container)
+        def sync_func_override(b: Injected[AsyncDependency]) -> AsyncDependency:
+            return b
+
+        assert sync_func_override() is fake_b

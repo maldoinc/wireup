@@ -1,9 +1,7 @@
 from typing import Iterator
 
-import pytest
 import wireup
 from wireup._annotations import injectable
-from wireup.errors import ContainerCloseError
 
 from test.unit.services.with_annotations.services import TransientService
 

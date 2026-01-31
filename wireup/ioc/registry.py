@@ -5,7 +5,6 @@ import typing
 import warnings
 from collections import defaultdict
 from dataclasses import dataclass
-from enum import Enum, auto
 from typing import TYPE_CHECKING, Any, Callable, TypeVar, Union
 
 from wireup.errors import (
@@ -21,14 +20,16 @@ from wireup.errors import (
 from wireup.ioc.configuration import ConfigStore
 from wireup.ioc.type_analysis import analyze_type
 from wireup.ioc.types import (
+    ASYNC_CALLABLE_TYPES,
     AnnotatedParameter,
     AnyCallable,
+    CallableType,
     ConfigInjectionRequest,
     ContainerObjectIdentifier,
     EmptyContainerInjectionRequest,
     InjectableLifetime,
 )
-from wireup.ioc.util import ensure_is_type, get_globals, param_get_annotation
+from wireup.ioc.util import ensure_is_type, get_callable_type, get_globals, param_get_annotation
 from wireup.util import format_name, stringify_type
 
 if TYPE_CHECKING:
@@ -43,38 +44,13 @@ InjectionTarget = Union[AnyCallable, type]
 """Represents valid dependency injection targets: Functions and Classes."""
 
 
-class FactoryType(Enum):
-    REGULAR = auto()
-    COROUTINE_FN = auto()
-    GENERATOR = auto()
-    ASYNC_GENERATOR = auto()
-
-
-GENERATOR_FACTORY_TYPES = {FactoryType.GENERATOR, FactoryType.ASYNC_GENERATOR}
-ASYNC_FACTORY_TYPES = {FactoryType.ASYNC_GENERATOR, FactoryType.COROUTINE_FN}
-
-
 @dataclass
 class InjectableFactory:
     factory: Callable[..., Any]
-    factory_type: FactoryType
+    callable_type: CallableType
     is_async: bool
     is_optional_type: bool
     raw_type: type
-
-
-def _get_factory_type(fn: Callable[..., T]) -> FactoryType:
-    """Determine the type of factory based on the function signature."""
-    if inspect.iscoroutinefunction(fn):
-        return FactoryType.COROUTINE_FN
-
-    if inspect.isgeneratorfunction(fn):
-        return FactoryType.GENERATOR
-
-    if inspect.isasyncgenfunction(fn):
-        return FactoryType.ASYNC_GENERATOR
-
-    return FactoryType.REGULAR
 
 
 def _function_get_unwrapped_return_type(fn: Callable[..., T]) -> type[T] | None:
@@ -207,11 +183,11 @@ class ContainerRegistry:
 
         self._target_init_context(factory_fn)
         self.lifetime[klass, qualifier] = lifetime
-        factory_type = _get_factory_type(factory_fn)
+        callable_type = get_callable_type(factory_fn)
         self.factories[klass, qualifier] = InjectableFactory(
             factory=factory_fn,
-            factory_type=factory_type,
-            is_async=factory_type in ASYNC_FACTORY_TYPES,
+            callable_type=callable_type,
+            is_async=callable_type in ASYNC_CALLABLE_TYPES,
             is_optional_type=type_analysis.is_optional,
             raw_type=type_analysis.raw_type,
         )

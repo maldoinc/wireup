@@ -10,9 +10,24 @@ from typing import Any, Sequence, TypeVar, cast
 
 from wireup.errors import PositionalOnlyParameterError, WireupError
 from wireup.ioc.type_analysis import analyze_type
-from wireup.ioc.types import AnnotatedParameter, AnyCallable, InjectableType
+from wireup.ioc.types import AnnotatedParameter, AnyCallable, CallableType, InjectableType
 
 T = TypeVar("T")
+
+
+def get_callable_type(fn: Callable[..., Any]) -> CallableType:
+    if inspect.iscoroutinefunction(fn):
+        return CallableType.COROUTINE_FN
+
+    if inspect.isgeneratorfunction(fn):
+        return CallableType.GENERATOR
+
+    if inspect.isasyncgenfunction(fn):
+        return CallableType.ASYNC_GENERATOR
+
+    return CallableType.REGULAR
+
+
 _eval_type = cast("Callable[..., Any]", typing._eval_type)  # type: ignore[attr-defined]
 
 if typing.TYPE_CHECKING:

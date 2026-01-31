@@ -8,13 +8,17 @@ from typing import TYPE_CHECKING, Any, Callable, Hashable
 
 from wireup.codegen import Codegen
 from wireup.errors import WireupError
-from wireup.ioc.registry import GENERATOR_FACTORY_TYPES, ContainerRegistry, FactoryType
-from wireup.ioc.types import ConfigInjectionRequest, TemplatedString
+from wireup.ioc.types import (
+    GENERATOR_CALLABLE_TYPES,
+    CallableType,
+    ConfigInjectionRequest,
+    TemplatedString,
+)
 from wireup.util import format_name
 
 if TYPE_CHECKING:
     from wireup.ioc.container.base_container import BaseContainer
-    from wireup.ioc.registry import InjectableFactory
+    from wireup.ioc.registry import ContainerRegistry, InjectableFactory
 
 
 @dataclass(**({"slots": True} if sys.version_info >= (3, 10) else {}))
@@ -133,17 +137,17 @@ class FactoryCompiler:
                     cg += f"_obj_dep_{name} = {maybe_await}factories[{dep_hash}].factory(container)"
                 kwargs += f"{name}=_obj_dep_{name}, "
 
-            maybe_await = "await " if factory.factory_type == FactoryType.COROUTINE_FN else ""
+            maybe_await = "await " if factory.callable_type == CallableType.COROUTINE_FN else ""
 
             cg += f"instance = {maybe_await}ORIGINAL_FACTORY({kwargs.strip()})"
 
-            if factory.factory_type in GENERATOR_FACTORY_TYPES:
+            if factory.callable_type in GENERATOR_CALLABLE_TYPES:
                 if lifetime == "singleton":
                     cg += "container._global_scope_exit_stack.append(instance)"
                 else:
                     cg += "container._current_scope_exit_stack.append(instance)"
 
-                if factory.factory_type == FactoryType.GENERATOR:
+                if factory.callable_type == CallableType.GENERATOR:
                     cg += "instance = next(instance)"
                 else:
                     cg += "instance = await instance.__anext__()"

@@ -8,7 +8,6 @@ from wireup._annotations import injectable
 from wireup.errors import ContainerCloseError, WireupError
 
 from test.conftest import Container
-from test.unit.util import run
 
 
 def test_cleans_up_on_exit(container: Container) -> None:
