@@ -4,7 +4,7 @@ import functools
 from typing import TYPE_CHECKING, Any, Callable
 
 from wireup.codegen import Codegen
-from wireup.ioc.container.async_container import AsyncContainer, async_container_force_sync_scope
+from wireup.ioc.container.async_container import AsyncContainer, BareAsyncContainer, async_container_force_sync_scope
 from wireup.ioc.container.sync_container import SyncContainer
 from wireup.ioc.types import AnnotatedParameter, ConfigInjectionRequest, TemplatedString
 
@@ -44,10 +44,59 @@ def compile_injection_wrapper(
 
     gen = Codegen()
     gen += f"{'async ' if target_is_async else ''}def {func_name}(*args, **kwargs):"
-
     with gen.indent():
-        if scoped_container_supplier:
-            gen += "scope = _wireup_scoped_container_supplier()"
+        generate_injection_body(
+            gen,
+            names_to_inject,
+            container,
+            scoped_container_supplier,
+            middleware,
+            target_type,
+            namespace,
+            is_async=target_is_async,
+        )
+
+    code = gen.get_source()
+    exec(code, namespace)  # noqa: S102
+    wrapper = namespace[func_name]
+    return functools.wraps(target)(wrapper)
+
+
+def generate_injection_body(  # noqa: PLR0913
+    gen: Codegen,
+    names_to_inject: dict[str, AnnotatedParameter],
+    container: BaseContainer | None,
+    scoped_container_supplier: Callable[[], Any] | None,
+    middleware: Callable[..., Any] | None,
+    target_type: CallableType,
+    namespace: dict[str, Any],
+    *,
+    is_async: bool,
+) -> None:
+    if scoped_container_supplier:
+        gen += "scope = _wireup_scoped_container_supplier()"
+        _generate_middleware_and_injection(
+            gen,
+            names_to_inject,
+            target_type,
+            container,
+            middleware,
+            namespace,
+        )
+        return
+
+    if not container:
+        msg = "Container or scoped_container_supplier must be provided for injection."
+        raise ValueError(msg)
+
+    if _injection_requires_scope(names_to_inject, container, middleware):
+        if isinstance(container, BareAsyncContainer) and not is_async:
+            scope_manager = "_wireup_async_container_force_sync_scope(_wireup_container)"
+        else:
+            scope_manager = "_wireup_container.enter_scope()"
+
+        gen += f"{'async ' if is_async else ''}with {scope_manager} as scope:"
+        with gen.indent():
             _generate_middleware_and_injection(
                 gen,
                 names_to_inject,
@@ -56,31 +105,38 @@ def compile_injection_wrapper(
                 middleware,
                 namespace,
             )
-        elif container:
-            if target_is_async:
-                gen += "async with _wireup_container.enter_scope() as scope:"
-            elif isinstance(container, SyncContainer):
-                gen += "with _wireup_container.enter_scope() as scope:"
-            else:
-                gen += "with _wireup_async_container_force_sync_scope(_wireup_container) as scope:"
+        return
 
-            with gen.indent():
-                _generate_middleware_and_injection(
-                    gen,
-                    names_to_inject,
-                    target_type,
-                    container,
-                    middleware,
-                    namespace,
-                )
-        else:
-            msg = "Container or scoped_container_supplier must be provided for injection."
-            raise ValueError(msg)
+    gen += "scope = _wireup_container"
+    _generate_middleware_and_injection(
+        gen,
+        names_to_inject,
+        target_type,
+        container,
+        middleware,
+        namespace,
+    )
 
-    code = gen.get_source()
-    exec(code, namespace)  # noqa: S102
-    wrapper = namespace[func_name]
-    return functools.wraps(target)(wrapper)
+
+def _injection_requires_scope(
+    names_to_inject: dict[str, AnnotatedParameter], container: BaseContainer, middleware: Callable[..., Any] | None
+) -> bool:
+    # Middlewares require a scope as the exposed middleware expects a scoped container.
+    if middleware:
+        return True
+
+    for param in names_to_inject.values():
+        if isinstance(param.annotation, ConfigInjectionRequest):
+            continue
+
+        klass = param.klass
+        if container._registry.is_interface_known(klass):
+            klass = container._registry.interface_resolve_impl(klass, param.qualifier_value)
+
+        if container._registry.lifetime[klass, param.qualifier_value] != "singleton":
+            return True
+
+    return False
 
 
 def _generate_middleware_and_injection(  # noqa: PLR0913

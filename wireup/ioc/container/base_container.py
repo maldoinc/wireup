@@ -93,7 +93,7 @@ class BaseContainer:
 
     def _synchronous_get(
         self,
-        klass: Callable[..., T] | None,
+        klass: Callable[..., T],
         qualifier: Qualifier | None = None,
     ) -> T | None:
         """Get an instance of the requested type.
@@ -105,6 +105,19 @@ class BaseContainer:
 
         if compiled_factory := self._factories.get(obj_id):
             if compiled_factory.is_async:
+                # If the dependency is async, we cannot call the compiled factory in a synchronous context.
+                # However, if it was already instantiated we can return the cached instance.
+                cache_key: tuple[type, Qualifier | None] = (klass, qualifier)  # type:ignore[assignment]
+
+                if cache_key in self._override_mgr.active_overrides:
+                    return self._override_mgr.active_overrides[cache_key]  # type:ignore[no-any-return]
+
+                if cache_key in self._global_scope_objects:
+                    return self._global_scope_objects[cache_key]  # type:ignore[no-any-return]
+
+                if self._current_scope_objects is not None and cache_key in self._current_scope_objects:
+                    return self._current_scope_objects[cache_key]  # type:ignore[no-any-return]
+
                 msg = (
                     f"{klass} is an async dependency and it cannot be created in a synchronous context. "
                     "Create and use an async container via wireup.create_async_container."

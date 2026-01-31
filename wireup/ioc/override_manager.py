@@ -26,6 +26,7 @@ class OverrideManager:
         self._factory_compiler = factory_compiler
         self._scoped_factory_compiler = scoped_factory_compiler
         self._original_factories: dict[tuple[type, Qualifier], tuple[CompiledFactory, CompiledFactory]] = {}
+        self.active_overrides: dict[tuple[type, Qualifier], Any] = {}
 
     def _compiler_override_obj_id(
         self,
@@ -64,6 +65,7 @@ class OverrideManager:
             raise UnknownOverrideRequestedError(klass=target, qualifier=qualifier)
 
         obj_id = FactoryCompiler.get_object_id(target, qualifier)
+        self.active_overrides[target, qualifier] = new
 
         self._original_factories[target, qualifier] = (
             self._factory_compiler.factories[obj_id],
@@ -115,6 +117,8 @@ class OverrideManager:
         )
 
         del self._original_factories[target, qualifier]
+        if (target, qualifier) in self.active_overrides:
+            del self.active_overrides[target, qualifier]
 
     def delete(self, target: type, qualifier: Qualifier | None = None) -> None:
         """Clear active override for the `target` injectable."""
@@ -122,6 +126,7 @@ class OverrideManager:
 
     def clear(self) -> None:
         """Clear active injectable overrides."""
+        self.active_overrides.clear()
         for key in self._original_factories:
             self._restore_factory_methods(key[0], key[1])
 
