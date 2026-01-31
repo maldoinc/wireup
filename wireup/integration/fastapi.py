@@ -1,11 +1,11 @@
 import contextlib
+from types import TracebackType
 from typing import (
     Any,
     AsyncIterator,
     Callable,
     Dict,
     Iterable,
-    Iterator,
     List,
     Optional,
     Tuple,
@@ -58,6 +58,47 @@ class WireupRoute(APIRoute):
         super().__init__(path=path, endpoint=endpoint, **kwargs)
 
 
+class _FastApiIntegrationMiddlewareContext:
+    __slots__ = (
+        "http_connection_param_name",
+        "kwargs",
+        "remove_http_connection_from_arguments",
+        "scoped_container",
+        "token",
+    )
+
+    def __init__(self, http_connection_param_name: str, *, remove_http_connection_from_arguments: bool) -> None:
+        self.http_connection_param_name = http_connection_param_name
+        self.remove_http_connection_from_arguments = remove_http_connection_from_arguments
+
+    def __call__(
+        self,
+        scoped_container: Union[ScopedAsyncContainer, ScopedSyncContainer],
+        _args: Tuple[Any, ...],
+        kwargs: Dict[str, Any],
+    ) -> "_FastApiIntegrationMiddlewareContext":
+        self.scoped_container = scoped_container
+        self.kwargs = kwargs
+
+        return self
+
+    def __enter__(self) -> None:
+        request = self.kwargs[self.http_connection_param_name]
+        request.state.wireup_container = self.scoped_container
+        self.token = current_request.set(request)
+
+        if self.remove_http_connection_from_arguments:
+            del self.kwargs[self.http_connection_param_name]
+
+    def __exit__(
+        self,
+        _exc_type: Optional[Type[BaseException]] = None,
+        exc_val: Optional[BaseException] = None,
+        _exc_tb: Optional[TracebackType] = None,
+    ) -> None:
+        current_request.reset(self.token)  # type: ignore[reportArgumentType]
+
+
 def _inject_fastapi_route(
     *,
     container: AsyncContainer,
@@ -66,23 +107,15 @@ def _inject_fastapi_route(
     remove_http_connection_from_arguments: bool,
     add_custom_middleware: bool,
 ) -> AnyCallable:
-    @contextlib.contextmanager
-    def _request_middleware(
-        scoped_container: Union[ScopedAsyncContainer, ScopedSyncContainer],
-        _args: Tuple[Any, ...],
-        kwargs: Dict[str, Any],
-    ) -> Iterator[None]:
-        request = kwargs[http_connection_param_name]
-        request.state.wireup_container = scoped_container
-        token = current_request.set(request)
-        try:
-            if remove_http_connection_from_arguments:
-                del kwargs[http_connection_param_name]
-            yield
-        finally:
-            current_request.reset(token)
-
-    return inject_from_container(container, middleware=_request_middleware if add_custom_middleware else None)(target)
+    return inject_from_container(
+        container,
+        middleware=_FastApiIntegrationMiddlewareContext(
+            http_connection_param_name=http_connection_param_name,
+            remove_http_connection_from_arguments=remove_http_connection_from_arguments,
+        )
+        if add_custom_middleware
+        else None,
+    )(target)
 
 
 def _inject_routes(container: AsyncContainer, routes: List[BaseRoute], *, is_using_asgi_middleware: bool) -> None:
