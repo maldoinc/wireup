@@ -194,6 +194,27 @@ Dependencies have restrictions on what they can depend on to prevent **Scope Lea
 - **Scoped** can depend on singletons, scoped, and config.
 - **Transient** can depend on any lifetime and config.
 
+## Concurrent Access
+
+Scopes are typically accessed by a single thread or asyncio task (e.g., one web request). By default, Wireup does **not
+use locks** for scoped dependencies, optimizing for this common pattern.
+
+### When to Enable Locking
+
+If you need to share a scope across multiple concurrent tasks, such as, parallelizing work within a request while
+sharing a common context, enable `concurrent_scoped_access` when creating the container:
+
+```python
+container = wireup.create_async_container(
+    injectables=[...],
+    concurrent_scoped_access=True,  # Safe for shared scopes
+)
+```
+
+!!! note
+
+    This is an advanced use case. Most applications don't need this.
+
 ## Next Steps
 
 - [Factories](factories.md) - Create complex dependencies with setup and teardown logic.

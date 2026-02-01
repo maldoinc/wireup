@@ -40,7 +40,7 @@ async def test_singleton_concurrency() -> None:
 
 
 async def test_scoped_concurrency_same_scope() -> None:
-    container = create_async_container(services=[scoped_counter_factory])
+    container = create_async_container(services=[scoped_counter_factory], concurrent_scoped_access=True)
 
     async with container.enter_scope() as scope:
         results = await asyncio.gather(
@@ -53,6 +53,23 @@ async def test_scoped_concurrency_same_scope() -> None:
 
         unique_instances = set(results)
         assert len(unique_instances) == 1, f"Expected 1 scoped instance within same scope, got {len(unique_instances)}"
+
+
+async def test_scoped_concurrency_same_scope_no_lock_race() -> None:
+    container = create_async_container(services=[scoped_counter_factory])
+
+    async with container.enter_scope() as scope:
+        results = await asyncio.gather(
+            scope.get(ScopedCounter),
+            scope.get(ScopedCounter),
+            scope.get(ScopedCounter),
+            scope.get(ScopedCounter),
+            scope.get(ScopedCounter),
+        )
+
+        unique_instances = set(results)
+        # With sleep in factory and no lock, there should be multiple instances due to race conditions.
+        assert len(unique_instances) > 1
 
 
 async def test_scoped_concurrency_different_scopes() -> None:

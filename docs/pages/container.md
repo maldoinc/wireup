@@ -30,10 +30,11 @@ container = wireup.create_async_container(injectables=[...], config={...})
 
 Both creation functions accept the following arguments:
 
-| Argument      | Type                                      | Description                                                                                                                                               |
-| :------------ | :---------------------------------------- | :-------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `injectables` | `list[Union[type, Callable, ModuleType]]` | Classes, functions decorated with `@injectable`, or modules to scan. Modules are scanned recursively, collecting only items decorated with `@injectable`. |
-| `config`      | `dict[str, Any]`                          | Configuration dictionary. Values from this dictionary can be injected using `Inject(config="key")`.                                                       |
+| Argument                   | Type                                      | Description                                                                                                                                                                               |
+| :------------------------- | :---------------------------------------- | :---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `injectables`              | `list[Union[type, Callable, ModuleType]]` | Classes, functions decorated with `@injectable`, or modules to scan. Modules are scanned recursively, collecting only items decorated with `@injectable`.                                 |
+| `config`                   | `dict[str, Any]`                          | Configuration dictionary. Values from this dictionary can be injected using `Inject(config="key")`.                                                                                       |
+| `concurrent_scoped_access` | `bool`                                    | Set to `True` if you share scopes across multiple threads/tasks. Defaults to `False`. See [Lifetimes & Scopes: Concurrent Access](lifetimes_and_scopes.md#concurrent-access) for details. |
 
 !!! note "Multiple Containers"
 

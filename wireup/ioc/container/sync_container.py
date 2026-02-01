@@ -55,4 +55,5 @@ class SyncContainer(BareSyncContainer):
             current_scope_exit_stack=[],
             factory_compiler=self._scoped_compiler,
             scoped_compiler=self._scoped_compiler,
+            concurrent_scoped_access=self._concurrent_scoped_access,
         )

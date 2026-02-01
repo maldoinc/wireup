@@ -26,6 +26,7 @@ def _create_container(  # noqa: PLR0913
     parameters: dict[str, Any] | None = None,
     config: dict[str, Any] | None = None,
     injectables: list[Any] | None = None,
+    concurrent_scoped_access: bool = False,
 ) -> _ContainerT:
     """Create a Wireup container.
 
@@ -40,6 +41,12 @@ def _create_container(  # noqa: PLR0913
         request config via the `Inject(config="name")` annotation.
     :param injectables: A list of classes or functions decorated with `@injectable` or `@abstract` or modules containing
         injectables to register with the container instance.
+    :param concurrent_scoped_access: Indicates whether the scoped container will be accessed concurrently.
+        If True, the container will use locking to ensure concurrency safety when resolving scoped dependencies.
+        This is useful when multiple concurrent tasks need to share the same scope.
+        If False (default), no locking is used for scoped dependencies, which improves performance but assumes
+        the scope is accessed by a single thread or asyncio task (e.g. standard web request).
+        See: https://maldoinc.github.io/wireup/latest/lifetimes_and_scopes/#concurrent-access
     :raises WireupError: Raised if the dependencies cannot be fully resolved.
     """
 
@@ -91,7 +98,9 @@ def _create_container(  # noqa: PLR0913
     # When entering/exiting scopes, the container switches between these compilers.
     # This eliminates the need to check lifetime rules at runtime.
     singleton_compiler = FactoryCompiler(registry, is_scoped_container=False)
-    scoped_compiler = FactoryCompiler(registry, is_scoped_container=True)
+    scoped_compiler = FactoryCompiler(
+        registry, is_scoped_container=True, concurrent_scoped_access=concurrent_scoped_access
+    )
     singleton_compiler.compile()
     scoped_compiler.compile(copy_singletons_from=singleton_compiler)
 
@@ -103,6 +112,7 @@ def _create_container(  # noqa: PLR0913
         global_scope_objects={},
         global_scope_exit_stack=[],
         override_manager=override_manager,
+        concurrent_scoped_access=concurrent_scoped_access,
     )
 
 
@@ -134,13 +144,14 @@ def _merge_definitions(
     return abstracts, impls
 
 
-def create_sync_container(
+def create_sync_container(  # noqa: PLR0913
     service_modules: list[ModuleType] | None = None,
     services: list[Any] | None = None,
     parameters: dict[str, Any] | None = None,
     *,
     config: dict[str, Any] | None = None,
     injectables: list[Any] | None = None,
+    concurrent_scoped_access: bool = False,
 ) -> SyncContainer:
     """Create a synchronous Wireup container.
 
@@ -154,6 +165,12 @@ def create_sync_container(
     :param service_modules: Deprecated: Use injectables instead.
     :param services: Deprecated: Use injectables instead.
     :param parameters: Deprecated. Parameters was renamed to config, use that instead.
+    :param concurrent_scoped_access: Indicates whether the scoped container will be accessed concurrently.
+        If True, the container will use locking to ensure concurrency safety when resolving scoped dependencies.
+        This is useful when multiple concurrent tasks need to share the same scope.
+        If False (default), no locking is used for scoped dependencies, which improves performance but assumes
+        the scope is accessed by a single thread or asyncio task (e.g. standard web request).
+        See: https://maldoinc.github.io/wireup/latest/lifetimes_and_scopes/#concurrent-access
     :raises WireupError: Raised if the dependencies cannot be fully resolved.
     """
     return _create_container(
@@ -163,16 +180,18 @@ def create_sync_container(
         parameters=parameters,
         config=config,
         injectables=injectables,
+        concurrent_scoped_access=concurrent_scoped_access,
     )
 
 
-def create_async_container(
+def create_async_container(  # noqa: PLR0913
     service_modules: list[ModuleType] | None = None,
     services: list[Any] | None = None,
     parameters: dict[str, Any] | None = None,
     *,
     config: dict[str, Any] | None = None,
     injectables: list[Any] | None = None,
+    concurrent_scoped_access: bool = False,
 ) -> AsyncContainer:
     """Create an asynchronous Wireup container.
 
@@ -186,6 +205,12 @@ def create_async_container(
     :param service_modules: Deprecated: Use injectables instead.
     :param services: Deprecated: Use injectables instead.
     :param parameters: Deprecated. Parameters was renamed to config, use that instead.
+    :param concurrent_scoped_access: Indicates whether the scoped container will be accessed concurrently.
+        If True, the container will use locking to ensure concurrency safety when resolving scoped dependencies.
+        This is useful when multiple concurrent tasks need to share the same scope.
+        If False (default), no locking is used for scoped dependencies, which improves performance but assumes
+        the scope is accessed by a single thread or asyncio task (e.g. standard web request).
+        See: https://maldoinc.github.io/wireup/latest/lifetimes_and_scopes/#concurrent-access
     :raises WireupError: Raised if the dependencies cannot be fully resolved.
     """
     return _create_container(
@@ -195,4 +220,5 @@ def create_async_container(
         parameters=parameters,
         config=config,
         injectables=injectables,
+        concurrent_scoped_access=concurrent_scoped_access,
     )

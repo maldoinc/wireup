@@ -49,9 +49,16 @@ _SENTINEL = object()
 
 
 class FactoryCompiler:
-    def __init__(self, registry: ContainerRegistry, *, is_scoped_container: bool) -> None:
+    def __init__(
+        self,
+        registry: ContainerRegistry,
+        *,
+        is_scoped_container: bool,
+        concurrent_scoped_access: bool = False,
+    ) -> None:
         self._registry = registry
         self._is_scoped_container = is_scoped_container
+        self._concurrent_scoped_access = concurrent_scoped_access
         self.factories: dict[int, CompiledFactory] = {}
 
     @classmethod
@@ -170,20 +177,23 @@ class FactoryCompiler:
                 with cg.indent():
                     cg += "return res"
 
-                lock = "_singleton_lock" if lifetime == "singleton" else "container._locks[OBJ_HASH]"
+                if lifetime == "singleton" or self._concurrent_scoped_access:
+                    lock = "_singleton_lock" if lifetime == "singleton" else "container._locks[OBJ_HASH]"
 
-                if factory.is_async:
-                    cg += f"async with {lock}:"
-                else:
-                    cg += f"with {lock}:"
+                    if factory.is_async:
+                        cg += f"async with {lock}:"
+                    else:
+                        cg += f"with {lock}:"
 
-                with cg.indent():
-                    # Use Double-Checked locking for factories
-                    # See: https://en.wikipedia.org/wiki/Double-checked_locking
-                    cg += "if (res := storage.get(OBJ_ID, _SENTINEL)) is not _SENTINEL:"
                     with cg.indent():
-                        cg += "return res"
+                        # Use Double-Checked locking for factories
+                        # See: https://en.wikipedia.org/wiki/Double-checked_locking
+                        cg += "if (res := storage.get(OBJ_ID, _SENTINEL)) is not _SENTINEL:"
+                        with cg.indent():
+                            cg += "return res"
 
+                        _generate_factory_body(cg)
+                else:
                     _generate_factory_body(cg)
             else:
                 _generate_factory_body(cg)

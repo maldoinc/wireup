@@ -36,6 +36,7 @@ ContainerExitStack = List[Union[Generator[Any, Any, Any], AsyncGenerator[Any, An
 class BaseContainer:
     __slots__ = (
         "_compiler",
+        "_concurrent_scoped_access",
         "_current_scope_exit_stack",
         "_current_scope_objects",
         "_factories",
@@ -57,6 +58,8 @@ class BaseContainer:
         global_scope_exit_stack: list[Generator[Any, Any, Any] | AsyncGenerator[Any, Any]],
         current_scope_objects: dict[ContainerObjectIdentifier, Any] | None = None,
         current_scope_exit_stack: list[Generator[Any, Any, Any] | AsyncGenerator[Any, Any]] | None = None,
+        *,
+        concurrent_scoped_access: bool = False,
     ) -> None:
         self._registry = registry
         self._override_mgr = override_manager
@@ -66,8 +69,13 @@ class BaseContainer:
         self._current_scope_exit_stack = current_scope_exit_stack
         self._compiler = factory_compiler
         self._scoped_compiler = scoped_compiler
+        self._concurrent_scoped_access = concurrent_scoped_access
         self._factories = self._compiler.factories
-        self._locks = LockRegistry({obj_id for obj_id, f in self._factories.items() if f.is_async})
+        self._locks: LockRegistry | None = (
+            LockRegistry({obj_id for obj_id, f in self._factories.items() if f.is_async})
+            if concurrent_scoped_access
+            else None
+        )
 
     @property
     def params(self) -> ConfigStore:
@@ -132,4 +140,5 @@ class BaseContainer:
         """Update internal container state after registry changes"""
         self._compiler.compile()
         self._scoped_compiler.compile(copy_singletons_from=self._compiler)
-        self._locks._async_hashes.update({obj_id for obj_id, f in self._factories.items() if f.is_async})
+        if self._locks:
+            self._locks._async_hashes = {obj_id for obj_id, f in self._factories.items() if f.is_async}
