@@ -141,7 +141,7 @@ def _generate_middleware_and_injection(  # noqa: PLR0913
         _generate_injection(gen, names_to_inject, target_type, container, namespace)
 
 
-def _generate_injection(
+def _generate_injection(  # noqa: PLR0912
     gen: Codegen,
     names_to_inject: dict[str, AnnotatedParameter],
     target_type: CallableType,
@@ -154,8 +154,14 @@ def _generate_injection(
             continue
 
         if isinstance(param.annotation, ConfigInjectionRequest):
-            namespace[f"_wireup_config_key_{name}"] = param.annotation.config_key
-            gen += f"kwargs['{name}'] = scope.config.get(_wireup_config_key_{name})"
+            # If we have a container instance, inline the config value at compile time
+            if container:
+                ns_config_val = f"_wireup_config_val_{name}"
+                namespace[ns_config_val] = container.config.get(param.annotation.config_key)
+                gen += f"kwargs['{name}'] = {ns_config_val}"
+            else:
+                namespace[f"_wireup_config_key_{name}"] = param.annotation.config_key
+                gen += f"kwargs['{name}'] = scope.config.get(_wireup_config_key_{name})"
         else:
             ns_klass_var = f"_wireup_obj_{name}_klass"
             namespace[ns_klass_var] = param.klass
