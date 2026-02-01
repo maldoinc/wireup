@@ -4,8 +4,9 @@ import functools
 from typing import TYPE_CHECKING, Any, Callable
 
 from wireup.codegen import Codegen
-from wireup.ioc.container.async_container import AsyncContainer, BareAsyncContainer, async_container_force_sync_scope
+from wireup.ioc.container.async_container import BareAsyncContainer, async_container_force_sync_scope
 from wireup.ioc.container.sync_container import SyncContainer
+from wireup.ioc.factory_compiler import FactoryCompiler
 from wireup.ioc.types import AnnotatedParameter, ConfigInjectionRequest, TemplatedString
 
 if TYPE_CHECKING:
@@ -166,16 +167,30 @@ def _generate_injection(
 
             args_str = f"{ns_klass_var}, {ns_qualifier_var}" if param.qualifier_value else ns_klass_var
 
-            # In an async target by default use the container.get method which is async and needs to be awaited.
-            # However, if there's a container we can consult the registry to actually check if it's async or not.
-            # This will allow us to not need to await on dependencies that don't need async on an async container.
-            is_dependency_async = is_target_async
-            if is_target_async and container and isinstance(container, AsyncContainer):
-                concrete_impl = container._registry.get_implementation(param.klass, param.qualifier_value)
+            # If we have a container instance, we can use that to skip the scope.get call entirely
+            # and just call the underlying factories directly.
+            if container:
+                lifetime = container._registry.get_lifetime(param.klass, param.qualifier_value)
 
-                is_dependency_async = container._registry.factories[concrete_impl, param.qualifier_value].is_async
+                source_attr = "_factories" if lifetime == "singleton" else "_scoped_compiler.factories"
+                source_factories = (
+                    container._factories if lifetime == "singleton" else container._scoped_compiler.factories
+                )
 
-            if is_dependency_async:
+                dependency_obj_id = FactoryCompiler.get_object_id(param.klass, param.qualifier_value)
+
+                # Apply only if:
+                #   Async container injecting into an async function
+                #   Sync container into a sync function.
+                # Avoid async container into sync function
+                # In this case the container.get call does a bunch of extra work on the unhappy path
+                # to inject cached or overridden instances. Let's skip this path
+                if (compiled := source_factories.get(dependency_obj_id)) and compiled.is_async == is_target_async:
+                    maybe_await = "await " if compiled.is_async else ""
+                    gen += f"kwargs['{name}'] = {maybe_await}scope.{source_attr}[{dependency_obj_id}].factory(scope)"
+                    continue
+
+            if is_target_async:
                 gen += f"kwargs['{name}'] = await scope.get({args_str})"
             else:
                 gen += f"kwargs['{name}'] = scope._synchronous_get({args_str})"
