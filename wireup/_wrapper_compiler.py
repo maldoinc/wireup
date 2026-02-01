@@ -23,8 +23,7 @@ from wireup.ioc.util import get_callable_type
 def compile_injection_wrapper(
     target: Callable[..., Any],
     names_to_inject: dict[str, AnnotatedParameter],
-    container: BaseContainer | None,
-    scoped_container_supplier: Callable[[], Any] | None,
+    container: BaseContainer | Callable[[], Any],
     middleware: Callable[..., Any] | None,
 ) -> Callable[..., Any]:
     """Compile a specialized wrapper function for injecting dependencies."""
@@ -35,7 +34,6 @@ def compile_injection_wrapper(
     namespace: dict[str, Any] = {
         "_wireup_target": target,
         "_wireup_container": container,
-        "_wireup_scoped_container_supplier": scoped_container_supplier,
         "_wireup_middleware": middleware,
         "_wireup_async_container_force_sync_scope": async_container_force_sync_scope,
         "_wireup_SyncContainer": SyncContainer,
@@ -49,7 +47,6 @@ def compile_injection_wrapper(
             gen,
             names_to_inject,
             container,
-            scoped_container_supplier,
             middleware,
             target_type,
             namespace,
@@ -65,29 +62,24 @@ def compile_injection_wrapper(
 def generate_injection_body(  # noqa: PLR0913
     gen: Codegen,
     names_to_inject: dict[str, AnnotatedParameter],
-    container: BaseContainer | None,
-    scoped_container_supplier: Callable[[], Any] | None,
+    container: BaseContainer | Callable[[], Any],
     middleware: Callable[..., Any] | None,
     target_type: CallableType,
     namespace: dict[str, Any],
     *,
     is_async: bool,
 ) -> None:
-    if scoped_container_supplier:
-        gen += "scope = _wireup_scoped_container_supplier()"
+    if callable(container):
+        gen += "scope = _wireup_container()"
         _generate_middleware_and_injection(
             gen,
             names_to_inject,
             target_type,
-            container,
+            None,
             middleware,
             namespace,
         )
         return
-
-    if not container:
-        msg = "Container or scoped_container_supplier must be provided for injection."
-        raise ValueError(msg)
 
     if _injection_requires_scope(names_to_inject, container, middleware):
         if isinstance(container, BareAsyncContainer) and not is_async:

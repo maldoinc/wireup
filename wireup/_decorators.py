@@ -32,11 +32,10 @@ def inject_from_container_unchecked(
     instance."""
 
     def _decorator(target: Callable[..., Any]) -> Callable[..., Any]:
-        return inject_from_container_util(
+        return _inject_from_container_util(
             target=target,
             names_to_inject=get_inject_annotated_parameters(target),
-            container=None,
-            scoped_container_supplier=scoped_container_supplier,
+            container=scoped_container_supplier,
             middleware=None,
             hide_annotated_names=hide_annotated_names,
         )
@@ -79,11 +78,10 @@ def inject_from_container(
             )
             raise WireupError(msg)
 
-        return inject_from_container_util(
+        return _inject_from_container_util(
             target=target,
             names_to_inject=get_valid_injection_annotated_parameters(container, target),
-            container=container,
-            scoped_container_supplier=scoped_container_supplier,
+            container=scoped_container_supplier if scoped_container_supplier else container,
             middleware=middleware,
             hide_annotated_names=hide_annotated_names,
         )
@@ -91,11 +89,10 @@ def inject_from_container(
     return _decorator
 
 
-def inject_from_container_util(  # noqa: PLR0913
+def _inject_from_container_util(
     target: Callable[..., Any],
     names_to_inject: dict[str, AnnotatedParameter],
-    container: SyncContainer | AsyncContainer | None,
-    scoped_container_supplier: Callable[[], ScopedSyncContainer | ScopedAsyncContainer] | None = None,
+    container: SyncContainer | AsyncContainer | Callable[[], ScopedSyncContainer | ScopedAsyncContainer],
     middleware: Callable[
         [ScopedSyncContainer | ScopedAsyncContainer, tuple[Any, ...], dict[str, Any]],
         contextlib.AbstractContextManager[None],
@@ -104,10 +101,6 @@ def inject_from_container_util(  # noqa: PLR0913
     *,
     hide_annotated_names: bool = False,
 ) -> Callable[..., Any]:
-    if not (container or scoped_container_supplier):
-        msg = "Container or scoped_container_supplier must be provided for injection."
-        raise WireupError(msg)
-
     if not names_to_inject:
         return target
 
@@ -115,7 +108,6 @@ def inject_from_container_util(  # noqa: PLR0913
         target=target,
         names_to_inject=names_to_inject,
         container=container,
-        scoped_container_supplier=scoped_container_supplier,
         middleware=middleware,
     )
 
