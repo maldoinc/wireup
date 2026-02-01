@@ -5,8 +5,8 @@ Performant, concise and type-safe Dependency Injection for Python.
 [![PyPI - Version](https://img.shields.io/pypi/v/wireup)](https://pypi.org/project/wireup/)
 
 Automate dependency management using Python's type system. Build complex applications with native support for async and
-generators, plus integrations for popular frameworks out of the box. Wireup is thread-safe and ready for no-GIL Python
-(PEP 703).
+generators, plus integrations for popular frameworks out of the box. Wireup is thread-safe for concurrent dependency
+resolution and ready for no-GIL Python (PEP 703).
 
 !!! tip "Zero Runtime Overhead"
 
@@ -221,14 +221,22 @@ class UserService:
 cache = container.get(RedisCache | None)
 ```
 
-### 🛡️ Improved Safety
+### 🛡️ Static Analysis
 
-Wireup is compatible with mypy strict mode. It will also warn at the earliest possible stage about configuration errors
-to avoid surprises at runtime.
+Wireup validates your entire dependency graph at container creation. If the container starts, you can be confident there
+won't be runtime surprises from missing dependencies or misconfigurations.
+
+**Checks performed at startup:**
+
+- Missing dependencies and unknown types
+- Circular dependencies
+- Lifetime mismatches (e.g., singletons depending on scoped/transient)
+- Missing or invalid configuration keys
+- Duplicate registrations
 
 === "Container Creation"
 
-    The container will raise errors at creation time about missing dependencies or other issues.
+    The container validates everything when created.
 
     ```python
     @injectable
@@ -242,7 +250,7 @@ to avoid surprises at runtime.
 
 === "Function Injection"
 
-    Injected functions will raise errors at module import time rather than when called.
+    Decorated functions are validated at import time, not when called.
 
     ```python
     @inject_from_container(container)
@@ -252,25 +260,9 @@ to avoid surprises at runtime.
     # ❌ Parameter 'oops' of 'my_function' depends on an unknown injectable 'NotManagedByWireup'.
     ```
 
-=== "Integrations"
+=== "Configuration"
 
-    Wireup integrations assert that requested injections in the framework are valid.
-
-    ```python
-    app = FastAPI()
-
-
-    @app.get("/")
-    def home(foo: Injected[NotManagedByWireup]): ...
-
-
-    wireup.integration.fastapi.setup(container, app)
-    # ❌ Parameter 'foo' of 'home' depends on an unknown injectable 'NotManagedByWireup'.
-    ```
-
-=== "Configuration Checks"
-
-    Configuration injection is also checked for validity.
+    Configuration injection is also validated at startup.
 
     ```python
     @injectable

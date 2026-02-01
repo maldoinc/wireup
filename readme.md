@@ -10,8 +10,7 @@
 </div>
 
 Automate dependency management using Python's type system. Build complex applications with native support for async and
-generators, plus integrations for popular frameworks out of the box. Wireup is thread-safe and ready for no-GIL
-Python (PEP 703).
+generators, plus integrations for popular frameworks out of the box. Wireup is thread-safe for concurrent dependency resolution and ready for no-GIL Python (PEP 703).
 
 > [!TIP]
 > **New**: Inject Dependencies in FastAPI with zero runtime overhead using [Class-Based Handlers](https://maldoinc.github.io/wireup/latest/integrations/fastapi/class_based_handlers/).
@@ -235,48 +234,18 @@ cache = container.get(RedisCache | None)
 ```
 
 
-### 🛡️ Improved Safety
+### 🛡️ Static Analysis
 
-Wireup is compatible with mypy strict mode. It will also warn you at the earliest possible stage about configuration errors to avoid surprises.
+Wireup validates your entire dependency graph at container creation. If the container starts, you can be confident there won't be runtime surprises from missing dependencies or misconfigurations.
 
-**Container Creation**
+**Checks performed at startup:**
 
-The container will raise errors at creation time about missing dependencies or other issues.
-
-```python
-@injectable
-class Foo:
-    def __init__(self, unknown: NotManagedByWireup) -> None:
-        pass
-
-container = wireup.create_sync_container(injectables=[Foo])
-# ❌ Parameter 'unknown' of 'Foo' depends on an unknown injectable 'NotManagedByWireup'.
-```
-
-**Function Injection**
-
-Injected functions will raise errors at module import time rather than when called.
-
-```python
-@inject_from_container(container)
-def my_function(oops: Injected[NotManagedByWireup]): ...
-
-# ❌ Parameter 'oops' of 'my_function' depends on an unknown injectable 'NotManagedByWireup'.
-```
-
-**Integrations**
-
-Wireup integrations assert that requested injections in the framework are valid.
-
-```python
-app = FastAPI()
-
-@app.get("/")
-def home(foo: Injected[NotManagedByWireup]): ...
-
-wireup.integration.fastapi.setup(container, app)
-# ❌ Parameter 'foo' of 'home' depends on an unknown injectable 'NotManagedByWireup'.
-```
+* Missing dependencies and unknown types
+* Circular dependencies
+* Lifetime mismatches (e.g., singletons depending on scoped/transient)
+* Missing or invalid configuration keys
+* Duplicate registrations
+* Decorated functions validated at import time
 
 ### 📍 Framework Independent
 
