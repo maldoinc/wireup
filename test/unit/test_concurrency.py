@@ -1,6 +1,5 @@
 import asyncio
 
-import pytest
 from wireup import create_async_container, injectable
 
 

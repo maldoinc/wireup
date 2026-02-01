@@ -178,7 +178,12 @@ class FactoryCompiler:
                     cg += "return res"
 
                 if lifetime == "singleton" or self._concurrent_scoped_access:
-                    lock = "_singleton_lock" if lifetime == "singleton" else "container._locks[OBJ_HASH]"
+                    needs_async_lock = "True" if factory.is_async else "False"
+                    lock = (
+                        "_singleton_lock"
+                        if lifetime == "singleton"
+                        else f"container._locks.get_lock(OBJ_HASH, needs_async_lock={needs_async_lock})"
+                    )
 
                     if factory.is_async:
                         cg += f"async with {lock}:"

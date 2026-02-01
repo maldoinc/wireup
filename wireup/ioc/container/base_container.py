@@ -71,11 +71,7 @@ class BaseContainer:
         self._scoped_compiler = scoped_compiler
         self._concurrent_scoped_access = concurrent_scoped_access
         self._factories = self._compiler.factories
-        self._locks: LockRegistry | None = (
-            LockRegistry({obj_id for obj_id, f in self._factories.items() if f.is_async})
-            if concurrent_scoped_access
-            else None
-        )
+        self._locks: LockRegistry | None = LockRegistry() if concurrent_scoped_access else None
 
     @property
     def params(self) -> ConfigStore:
@@ -140,5 +136,3 @@ class BaseContainer:
         """Update internal container state after registry changes"""
         self._compiler.compile()
         self._scoped_compiler.compile(copy_singletons_from=self._compiler)
-        if self._locks:
-            self._locks._async_hashes = {obj_id for obj_id, f in self._factories.items() if f.is_async}

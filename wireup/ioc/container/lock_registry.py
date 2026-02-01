@@ -2,19 +2,18 @@ from __future__ import annotations
 
 import asyncio
 import threading
-from typing import Dict
 
 
-class LockRegistry(Dict[int, "asyncio.Lock | threading.Lock"]):
-    __slots__ = ("_async_hashes", "_lock")
+class LockRegistry:
+    __slots__ = ("_global_lock", "_scoped_locks")
 
-    def __init__(self, async_hashes: set[int]) -> None:
-        super().__init__()
-        self._async_hashes = async_hashes
-        self._lock = threading.Lock()
+    def __init__(self) -> None:
+        self._global_lock = threading.Lock()
+        self._scoped_locks: dict[int, asyncio.Lock | threading.Lock] = {}
 
-    def __missing__(self, key: int) -> asyncio.Lock | threading.Lock:
-        with self._lock:
-            if key not in self:
-                self[key] = asyncio.Lock() if key in self._async_hashes else threading.Lock()
-            return self[key]
+    def get_lock(self, key: int, *, needs_async_lock: bool) -> asyncio.Lock | threading.Lock:
+        with self._global_lock:
+            if key not in self._scoped_locks:
+                self._scoped_locks[key] = asyncio.Lock() if needs_async_lock else threading.Lock()
+
+            return self._scoped_locks[key]
