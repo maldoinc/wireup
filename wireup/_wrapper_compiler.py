@@ -121,11 +121,7 @@ def _injection_requires_scope(
         if isinstance(param.annotation, ConfigInjectionRequest):
             continue
 
-        klass = param.klass
-        if container._registry.is_interface_known(klass):
-            klass = container._registry.interface_resolve_impl(klass, param.qualifier_value)
-
-        if container._registry.lifetime[klass, param.qualifier_value] != "singleton":
+        if container._registry.get_lifetime(param.klass, param.qualifier_value) != "singleton":
             return True
 
     return False
@@ -175,11 +171,7 @@ def _generate_injection(
             # This will allow us to not need to await on dependencies that don't need async on an async container.
             is_dependency_async = is_target_async
             if is_target_async and container and isinstance(container, AsyncContainer):
-                concrete_impl = (
-                    container._registry.interface_resolve_impl(param.klass, param.qualifier_value)
-                    if container._registry.is_interface_known(param.klass)
-                    else param.klass
-                )
+                concrete_impl = container._registry.get_implementation(param.klass, param.qualifier_value)
 
                 is_dependency_async = container._registry.factories[concrete_impl, param.qualifier_value].is_async
 

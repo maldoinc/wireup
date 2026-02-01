@@ -131,10 +131,7 @@ class ContainerRegistry:
 
     def _update_factories_async_flag(self) -> None:
         def _is_dependency_async(impl: type, qualifier: Qualifier) -> bool:
-            if self.is_interface_known(impl):
-                impl = self.interface_resolve_impl(impl, qualifier)
-
-            factory = self.factories[impl, qualifier]
+            factory = self.factories[self.get_implementation(impl, qualifier), qualifier]
 
             if factory.is_async:
                 return True
@@ -292,6 +289,16 @@ class ContainerRegistry:
 
         raise UnknownQualifiedServiceRequestedError(klass, qualifier, set(impls.keys()))
 
+    def get_implementation(self, klass: type, qualifier: Qualifier | None) -> type:
+        """Return the concrete implementation for a given class/interface and qualifier."""
+        if self.is_interface_known(klass):
+            return self.interface_resolve_impl(klass, qualifier)
+
+        return klass
+
+    def get_lifetime(self, klass: type, qualifier: Qualifier | None) -> InjectableLifetime:
+        return self.lifetime[self.get_implementation(klass, qualifier), qualifier]
+
     def assert_dependencies_valid(self) -> None:
         """Assert that all required dependencies exist for this registry instance."""
         for (impl, impl_qualifier), injectable_factory in self.factories.items():
@@ -331,12 +338,7 @@ class ContainerRegistry:
         if dependency.is_parameter:
             return
 
-        dependency_class = (
-            self.interface_resolve_impl(dependency.klass, dependency.qualifier_value)
-            if dependency.klass in self.interfaces
-            else dependency.klass
-        )
-        dependency_lifetime = self.lifetime[dependency_class, dependency.qualifier_value]
+        dependency_lifetime = self.get_lifetime(dependency.klass, dependency.qualifier_value)
 
         if self.lifetime[impl, impl_qualifier] == "singleton" and dependency_lifetime != "singleton":
             msg = (

@@ -132,12 +132,8 @@ class FactoryCompiler:
                     )
                     cg += f"_obj_dep_{name} = parameters.get({param_value})"
                 else:
-                    if self._registry.is_interface_known(dep.klass):
-                        dep_class = self._registry.interface_resolve_impl(dep.klass, dep.qualifier_value)
-                        dep_key = dep.klass
-                    else:
-                        dep_class = dep.klass
-                        dep_key = dep.klass
+                    dep_class = self._registry.get_implementation(dep.klass, dep.qualifier_value)
+                    dep_key = dep.klass
 
                     maybe_await = "await " if self._registry.factories[dep_class, dep.qualifier_value].is_async else ""
                     dep_hash = FactoryCompiler.get_object_id(dep_key, dep.qualifier_value)
@@ -209,18 +205,11 @@ class FactoryCompiler:
         self, factory: InjectableFactory, impl: type, qualifier: Hashable
     ) -> CompiledFactory:
         obj_id = impl, qualifier
-        resolved_obj_id = (
-            (self._registry.interface_resolve_impl(impl, qualifier), qualifier)
-            if self._registry.is_interface_known(impl)
-            else obj_id
-        )
+        implementation = self._registry.get_implementation(impl, qualifier)
+        resolved_obj_id = (implementation, qualifier)
 
         is_interface = self._registry.is_interface_known(impl)
-
-        if is_interface:
-            lifetime = self._registry.lifetime[self._registry.interface_resolve_impl(impl, qualifier), qualifier]
-        else:
-            lifetime = self._registry.lifetime[impl, qualifier]
+        lifetime = self._registry.get_lifetime(impl, qualifier)
 
         # Non-singleton types cannot be resolved from the root container. Return a factory that will simply error.
         if lifetime != "singleton" and not self._is_scoped_container:
