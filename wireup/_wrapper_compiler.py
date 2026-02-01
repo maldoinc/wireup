@@ -5,9 +5,8 @@ from typing import TYPE_CHECKING, Any, Callable
 
 from wireup.codegen import Codegen
 from wireup.ioc.container.async_container import BareAsyncContainer, async_container_force_sync_scope
-from wireup.ioc.container.sync_container import SyncContainer
 from wireup.ioc.factory_compiler import FactoryCompiler
-from wireup.ioc.types import AnnotatedParameter, ConfigInjectionRequest, TemplatedString
+from wireup.ioc.types import AnnotatedParameter, ConfigInjectionRequest
 
 if TYPE_CHECKING:
     from wireup.ioc.container.base_container import BaseContainer
@@ -37,8 +36,6 @@ def compile_injection_wrapper(
         "_wireup_container": container,
         "_wireup_middleware": middleware,
         "_wireup_async_container_force_sync_scope": async_container_force_sync_scope,
-        "_wireup_SyncContainer": SyncContainer,
-        "_wireup_TemplatedString": TemplatedString,
     }
 
     gen = Codegen()
