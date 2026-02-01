@@ -114,30 +114,32 @@ class FactoryCompiler:
         lifetime: str,
         *,
         is_interface: bool,
-    ) -> tuple[str, bool, bool]:
+    ) -> tuple[str, bool, bool, dict[str, Any]]:
         cg = Codegen()
 
         maybe_async = "async " if factory.is_async else ""
         cg += f"{maybe_async}def {_WIREUP_GENERATED_FACTORY_NAME}(container):"
         cache_created_instance = lifetime != "transient"
 
+        # Collect config values at compile time to inline them
+        config_values: dict[str, Any] = {}
+
         def _generate_factory_body(cg: Codegen) -> None:
             kwargs = ""
             for name, dep in self._registry.dependencies[factory.factory].items():
                 if isinstance(dep.annotation, ConfigInjectionRequest):
-                    param_value = (
-                        str(dep.annotation.config_key)
-                        if isinstance(dep.annotation.config_key, TemplatedString)
-                        else f'"{dep.annotation.config_key}"'
-                    )
-                    kwargs += f"{name}=parameters.get({param_value}), "
+                    # Inline config value at compile time
+                    ns_key = f"_config_val_{name}"
+                    config_values[ns_key] = self._registry.parameters.get(dep.annotation.config_key)
+                    cg += f"_obj_dep_{name} = {ns_key}"
                 else:
                     dep_class = self._registry.get_implementation(dep.klass, dep.qualifier_value)
                     dep_key = dep.klass
 
                     maybe_await = "await " if self._registry.factories[dep_class, dep.qualifier_value].is_async else ""
                     dep_hash = FactoryCompiler.get_object_id(dep_key, dep.qualifier_value)
-                    kwargs += f"{name}={maybe_await}factories[{dep_hash}].factory(container), "
+                    cg += f"_obj_dep_{name} = {maybe_await}factories[{dep_hash}].factory(container)"
+                kwargs += f"{name}=_obj_dep_{name}, "
 
             maybe_await = "await " if factory.callable_type == CallableType.COROUTINE_FN else ""
 
@@ -198,7 +200,7 @@ class FactoryCompiler:
             else:
                 _generate_factory_body(cg)
 
-        return cg.get_source(), factory.is_async, lifetime == "singleton"
+        return cg.get_source(), factory.is_async, lifetime == "singleton", config_values
 
     def _compile_and_create_function(
         self, factory: InjectableFactory, impl: type, qualifier: Hashable
@@ -218,7 +220,7 @@ class FactoryCompiler:
             )
 
         obj_hash = FactoryCompiler.get_object_id(impl, qualifier)
-        source, is_async, needs_global_lock = self._get_factory_code(
+        source, is_async, needs_global_lock, config_values = self._get_factory_code(
             factory,
             lifetime,
             is_interface=is_interface,
@@ -232,8 +234,10 @@ class FactoryCompiler:
                 "OBJ_HASH": obj_hash,
                 "ORIGINAL_FACTORY": self._registry.factories[resolved_obj_id].factory,
                 "TemplatedString": TemplatedString,
+                "WireupError": WireupError,
+                "_CONTAINER_SCOPE_ERROR_MSG": _CONTAINER_SCOPE_ERROR_MSG,
                 "_SENTINEL": _SENTINEL,
-                "parameters": self._registry.parameters,
+                **config_values,  # Inlined config values
             }
 
             if needs_global_lock:
