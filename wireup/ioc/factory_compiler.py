@@ -233,8 +233,6 @@ class FactoryCompiler:
                 "OBJ_HASH": obj_hash,
                 "ORIGINAL_FACTORY": self._registry.factories[resolved_obj_id].factory,
                 "TemplatedString": TemplatedString,
-                "WireupError": WireupError,
-                "_CONTAINER_SCOPE_ERROR_MSG": _CONTAINER_SCOPE_ERROR_MSG,
                 "_SENTINEL": _SENTINEL,
                 "parameters": self._registry.parameters,
             }
