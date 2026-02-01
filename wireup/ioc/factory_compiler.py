@@ -130,15 +130,14 @@ class FactoryCompiler:
                         if isinstance(dep.annotation.config_key, TemplatedString)
                         else f'"{dep.annotation.config_key}"'
                     )
-                    cg += f"_obj_dep_{name} = parameters.get({param_value})"
+                    kwargs += f"{name}=parameters.get({param_value}), "
                 else:
                     dep_class = self._registry.get_implementation(dep.klass, dep.qualifier_value)
                     dep_key = dep.klass
 
                     maybe_await = "await " if self._registry.factories[dep_class, dep.qualifier_value].is_async else ""
                     dep_hash = FactoryCompiler.get_object_id(dep_key, dep.qualifier_value)
-                    cg += f"_obj_dep_{name} = {maybe_await}factories[{dep_hash}].factory(container)"
-                kwargs += f"{name}=_obj_dep_{name}, "
+                    kwargs += f"{name}={maybe_await}factories[{dep_hash}].factory(container), "
 
             maybe_await = "await " if factory.callable_type == CallableType.COROUTINE_FN else ""
 
