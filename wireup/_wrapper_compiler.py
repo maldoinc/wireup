@@ -174,7 +174,9 @@ def _generate_injection(  # noqa: PLR0912
             # and just call the underlying factories directly.
             if container:
                 lifetime = container._registry.get_lifetime(param.klass, param.qualifier_value)
-                namespace["_wireup_factories"] = container._factories if lifetime == "singleton" else container._scoped_compiler.factories
+                namespace["_wireup_factories"] = (
+                    container._factories if lifetime == "singleton" else container._scoped_compiler.factories
+                )
                 dependency_obj_id = FactoryCompiler.get_object_id(param.klass, param.qualifier_value)
 
                 # Apply only if:
@@ -183,7 +185,9 @@ def _generate_injection(  # noqa: PLR0912
                 # Avoid async container into sync function
                 # In this case the container.get call does a bunch of extra work on the unhappy path
                 # to inject cached or overridden instances. Let's skip this path
-                if (compiled := namespace["_wireup_factories"].get(dependency_obj_id)) and compiled.is_async == is_target_async:
+                if (
+                    compiled := namespace["_wireup_factories"].get(dependency_obj_id)
+                ) and compiled.is_async == is_target_async:
                     maybe_await = "await " if compiled.is_async else ""
                     gen += f"kwargs['{name}'] = {maybe_await} _wireup_factories[{dependency_obj_id}].factory(scope)"
                     continue

@@ -58,9 +58,9 @@ class GetFactoryResult:
 
 class FactoryCompiler:
     __slots__ = (
-        "_registry",
-        "_is_scoped_container",
         "_concurrent_scoped_access",
+        "_is_scoped_container",
+        "_registry",
         "factories",
     )
 
