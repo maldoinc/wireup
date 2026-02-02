@@ -48,6 +48,14 @@ _WIREUP_GENERATED_FACTORY_NAME = "_wireup_factory"
 _SENTINEL = object()
 
 
+@dataclass
+class GetFactoryResult:
+    source: str
+    is_async: bool
+    needs_global_lock: bool
+    config_dependencies: dict[str, Any]
+
+
 class FactoryCompiler:
     def __init__(
         self,
@@ -114,23 +122,20 @@ class FactoryCompiler:
         lifetime: str,
         *,
         is_interface: bool,
-    ) -> tuple[str, bool, bool, dict[str, Any]]:
+    ) -> GetFactoryResult:
         cg = Codegen()
 
         maybe_async = "async " if factory.is_async else ""
         cg += f"{maybe_async}def {_WIREUP_GENERATED_FACTORY_NAME}(container):"
         cache_created_instance = lifetime != "transient"
-
-        # Collect config values at compile time to inline them
-        config_values: dict[str, Any] = {}
+        config_dependencies: dict[str, Any] = {}
 
         def _generate_factory_body(cg: Codegen) -> None:
             kwargs = ""
             for name, dep in self._registry.dependencies[factory.factory].items():
                 if isinstance(dep.annotation, ConfigInjectionRequest):
-                    # Inline config value at compile time
                     ns_key = f"_config_val_{name}"
-                    config_values[ns_key] = self._registry.parameters.get(dep.annotation.config_key)
+                    config_dependencies[ns_key] = self._registry.parameters.get(dep.annotation.config_key)
                     cg += f"_obj_dep_{name} = {ns_key}"
                 else:
                     dep_class = self._registry.get_implementation(dep.klass, dep.qualifier_value)
@@ -200,7 +205,12 @@ class FactoryCompiler:
             else:
                 _generate_factory_body(cg)
 
-        return cg.get_source(), factory.is_async, lifetime == "singleton", config_values
+        return GetFactoryResult(
+            source=cg.get_source(),
+            is_async=factory.is_async,
+            needs_global_lock=lifetime == "singleton",
+            config_dependencies=config_dependencies,
+        )
 
     def _compile_and_create_function(
         self, factory: InjectableFactory, impl: type, qualifier: Hashable
@@ -220,11 +230,7 @@ class FactoryCompiler:
             )
 
         obj_hash = FactoryCompiler.get_object_id(impl, qualifier)
-        source, is_async, needs_global_lock, config_values = self._get_factory_code(
-            factory,
-            lifetime,
-            is_interface=is_interface,
-        )
+        result = self._get_factory_code(factory, lifetime, is_interface=is_interface)
 
         try:
             namespace: dict[str, Any] = {
@@ -237,16 +243,16 @@ class FactoryCompiler:
                 "WireupError": WireupError,
                 "_CONTAINER_SCOPE_ERROR_MSG": _CONTAINER_SCOPE_ERROR_MSG,
                 "_SENTINEL": _SENTINEL,
-                **config_values,  # Inlined config values
+                **result.config_dependencies,
             }
 
-            if needs_global_lock:
-                namespace["_singleton_lock"] = asyncio.Lock() if is_async else threading.Lock()
+            if result.needs_global_lock:
+                namespace["_singleton_lock"] = asyncio.Lock() if result.is_async else threading.Lock()
 
-            compiled_code = compile(source, f"<{_WIREUP_GENERATED_FACTORY_NAME}_{obj_id}>", "exec")
+            compiled_code = compile(result.source, f"<{_WIREUP_GENERATED_FACTORY_NAME}_{obj_id}>", "exec")
             exec(compiled_code, namespace)  # noqa: S102
 
-            return CompiledFactory(factory=namespace[_WIREUP_GENERATED_FACTORY_NAME], is_async=is_async)
+            return CompiledFactory(factory=namespace[_WIREUP_GENERATED_FACTORY_NAME], is_async=result.is_async)
 
         except Exception as e:
             msg = f"Failed to compile generated factory {obj_id}: {e}"
