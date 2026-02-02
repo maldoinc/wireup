@@ -1,9 +1,12 @@
 import re
 import unittest
+from typing import Protocol
 from unittest.mock import MagicMock
 
 import pytest
 import wireup
+from typing_extensions import Annotated
+from wireup import Inject, abstract, create_async_container, create_sync_container, inject_from_container, injectable
 from wireup._annotations import Injected
 from wireup.errors import UnknownOverrideRequestedError
 from wireup.ioc.types import InjectableOverride
@@ -27,12 +30,18 @@ def test_container_overrides_deps_service_locator(container: Container):
     random_mock = MagicMock()
     random_mock.get_random.return_value = 5
 
+    @wireup.inject_from_container(container)
+    def get_random_via_inject(svc: Annotated[RandomService, Inject(qualifier="foo")]) -> int:
+        return svc.get_random()
+
     with container.override.injectable(target=RandomService, qualifier="foo", new=random_mock):
         svc = container.get(RandomService, qualifier="foo")
         assert svc.get_random() == 5
+        assert get_random_via_inject() == 5
 
-    random_mock.get_random.assert_called_once()
+    random_mock.get_random.assert_called()
     assert container.get(RandomService, qualifier="foo").get_random() == 4
+    assert get_random_via_inject() == 4
 
 
 async def test_container_overrides_deps_service_locator_interface():
@@ -41,12 +50,18 @@ async def test_container_overrides_deps_service_locator_interface():
     foo_mock = MagicMock()
     foo_mock.get_foo.return_value = "mock"
 
+    @wireup.inject_from_container(container)
+    def get_foo_via_inject(svc: Injected[Foo]) -> str:
+        return svc.get_foo()
+
     with container.override.injectable(target=Foo, new=foo_mock):
         svc = await run(container.get(Foo))
         assert svc.get_foo() == "mock"
+        assert get_foo_via_inject() == "mock"
 
     res = await run(container.get(Foo))
     assert res.get_foo() == "foo"
+    assert get_foo_via_inject() == "foo"
 
 
 async def test_container_override_many_with_qualifier(container: Container):
@@ -83,15 +98,21 @@ async def test_overrides_async_dependency() -> None:
 
     container = wireup.create_async_container(injectables=[async_foo_factory])
 
+    @wireup.inject_from_container(container)
+    async def get_foobar_via_inject(svc: Injected[FooBar]) -> str:
+        return svc.foo
+
     foo_mock = MagicMock()
     foo_mock.foo = "mock"
 
     with container.override.injectable(target=FooBar, new=foo_mock):
         svc = await container.get(FooBar)
         assert svc.foo == "mock"
+        assert await get_foobar_via_inject() == "mock"
 
     res = await container.get(FooBar)
     assert res.foo == "bar"
+    assert await get_foobar_via_inject() == "bar"
 
 
 async def test_override_async_transitive_dependency_with_sync_instance():
@@ -112,6 +133,162 @@ async def test_override_async_transitive_dependency_with_sync_instance():
 
     container = wireup.create_async_container(injectables=[async_foo_dep, BarDep])
 
+    @wireup.inject_from_container(container)
+    async def get_bar_via_inject(bar: Injected[BarDep]) -> BarDep:
+        return bar
+
     with container.override.injectable(FooDep, FooOverride()):
         bar = await container.get(BarDep)
         assert isinstance(bar.foo, FooOverride)
+        bar_via_inject = await get_bar_via_inject()
+        assert isinstance(bar_via_inject.foo, FooOverride)
+
+
+@abstract
+class AbstractBase:
+    pass
+
+
+@injectable
+class ConcreteImpl(AbstractBase):
+    pass
+
+
+@injectable(lifetime="transient")
+class ServiceDependsOnAbstract:
+    def __init__(self, dep: AbstractBase):
+        self.dep = dep
+
+
+class Proto(Protocol):
+    def method(self): ...
+
+
+@injectable(as_type=Proto)
+class ProtoImpl:
+    def method(self):
+        return "impl"
+
+
+@injectable(lifetime="transient")
+class ServiceDependsOnProto:
+    def __init__(self, dep: Proto):
+        self.dep = dep
+
+
+def test_override_abstract_direct():
+    container = create_sync_container(injectables=[AbstractBase, ConcreteImpl])
+
+    mock_obj = MagicMock(spec=AbstractBase)
+
+    @inject_from_container(container)
+    def get_abstract_via_inject(svc: Injected[AbstractBase]) -> AbstractBase:
+        return svc
+
+    with container.override.injectable(target=AbstractBase, new=mock_obj):
+        assert container.get(AbstractBase) is mock_obj
+        assert get_abstract_via_inject() is mock_obj
+
+    assert isinstance(container.get(AbstractBase), ConcreteImpl)
+    assert isinstance(get_abstract_via_inject(), ConcreteImpl)
+
+
+def test_override_abstract_indirect():
+    container = create_sync_container(injectables=[AbstractBase, ConcreteImpl, ServiceDependsOnAbstract])
+
+    mock_obj = MagicMock(spec=AbstractBase)
+
+    @inject_from_container(container)
+    def get_svc_via_inject(svc: Injected[ServiceDependsOnAbstract]) -> ServiceDependsOnAbstract:
+        return svc
+
+    with container.override.injectable(target=AbstractBase, new=mock_obj):
+        with container.enter_scope() as scope:
+            svc = scope.get(ServiceDependsOnAbstract)
+            assert svc.dep is mock_obj
+            assert get_svc_via_inject().dep is mock_obj
+
+    with container.enter_scope() as scope:
+        svc = scope.get(ServiceDependsOnAbstract)
+        assert isinstance(svc.dep, ConcreteImpl)
+        assert isinstance(get_svc_via_inject().dep, ConcreteImpl)
+
+
+async def test_override_abstract_indirect_async():
+    container = create_async_container(injectables=[AbstractBase, ConcreteImpl, ServiceDependsOnAbstract])
+
+    mock_obj = MagicMock(spec=AbstractBase)
+
+    @inject_from_container(container)
+    async def get_svc_via_inject(svc: Injected[ServiceDependsOnAbstract]) -> ServiceDependsOnAbstract:
+        return svc
+
+    with container.override.injectable(target=AbstractBase, new=mock_obj):
+        async with container.enter_scope() as scope:
+            svc = await scope.get(ServiceDependsOnAbstract)
+            assert svc.dep is mock_obj
+            assert (await get_svc_via_inject()).dep is mock_obj
+
+    async with container.enter_scope() as scope:
+        svc = await scope.get(ServiceDependsOnAbstract)
+        assert isinstance(svc.dep, ConcreteImpl)
+        assert isinstance((await get_svc_via_inject()).dep, ConcreteImpl)
+
+
+def test_override_as_type_direct():
+    container = create_sync_container(injectables=[ProtoImpl])
+
+    mock_obj = MagicMock(spec=Proto)
+
+    @inject_from_container(container)
+    def get_proto_via_inject(svc: Injected[Proto]) -> Proto:
+        return svc
+
+    with container.override.injectable(target=Proto, new=mock_obj):
+        assert container.get(Proto) is mock_obj
+        assert get_proto_via_inject() is mock_obj
+
+    assert isinstance(container.get(Proto), ProtoImpl)
+    assert isinstance(get_proto_via_inject(), ProtoImpl)
+
+
+def test_override_as_type_indirect():
+    container = create_sync_container(injectables=[ProtoImpl, ServiceDependsOnProto])
+
+    mock_obj = MagicMock(spec=Proto)
+
+    @inject_from_container(container)
+    def get_svc_via_inject(svc: Injected[ServiceDependsOnProto]) -> ServiceDependsOnProto:
+        return svc
+
+    with container.override.injectable(target=Proto, new=mock_obj):
+        with container.enter_scope() as scope:
+            svc = scope.get(ServiceDependsOnProto)
+            assert svc.dep is mock_obj
+            assert get_svc_via_inject().dep is mock_obj
+
+    with container.enter_scope() as scope:
+        svc = scope.get(ServiceDependsOnProto)
+        assert isinstance(svc.dep, ProtoImpl)
+        assert isinstance(get_svc_via_inject().dep, ProtoImpl)
+
+
+async def test_override_as_type_indirect_async():
+    container = create_async_container(injectables=[ProtoImpl, ServiceDependsOnProto])
+
+    mock_obj = MagicMock(spec=Proto)
+
+    @inject_from_container(container)
+    async def get_svc_via_inject(svc: Injected[ServiceDependsOnProto]) -> ServiceDependsOnProto:
+        return svc
+
+    with container.override.injectable(target=Proto, new=mock_obj):
+        async with container.enter_scope() as scope:
+            svc = await scope.get(ServiceDependsOnProto)
+            assert svc.dep is mock_obj
+            assert (await get_svc_via_inject()).dep is mock_obj
+
+    async with container.enter_scope() as scope:
+        svc = await scope.get(ServiceDependsOnProto)
+        assert isinstance(svc.dep, ProtoImpl)
+        assert isinstance((await get_svc_via_inject()).dep, ProtoImpl)
