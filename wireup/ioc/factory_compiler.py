@@ -57,6 +57,13 @@ class GetFactoryResult:
 
 
 class FactoryCompiler:
+    __slots__ = (
+        "_registry",
+        "_is_scoped_container",
+        "_concurrent_scoped_access",
+        "factories",
+    )
+
     def __init__(
         self,
         registry: ContainerRegistry,
