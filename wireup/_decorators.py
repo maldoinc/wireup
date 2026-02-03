@@ -97,9 +97,9 @@ def _inject_from_container_util(
         [ScopedSyncContainer | ScopedAsyncContainer, tuple[Any, ...], dict[str, Any]],
         contextlib.AbstractContextManager[None],
     ]
-    | None = None,
+    | None,
     *,
-    hide_annotated_names: bool = False,
+    hide_annotated_names: bool,
 ) -> Callable[..., Any]:
     if not names_to_inject:
         return target
