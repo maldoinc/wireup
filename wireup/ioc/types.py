@@ -68,7 +68,7 @@ InjectableLifetime = Literal["singleton", "scoped", "transient"]
 class AnnotatedParameter:
     """Represent an annotated dependency parameter."""
 
-    __slots__ = ("annotation", "has_default_value", "is_parameter", "klass", "obj_id", "qualifier_value")
+    __slots__ = ("annotation", "has_default_value", "is_parameter", "klass", "qualifier_value")
 
     def __init__(
         self, klass: type[Any], annotation: InjectableType | None = None, *, has_default_value: bool = False
@@ -85,7 +85,6 @@ class AnnotatedParameter:
         self.qualifier_value = self.annotation.qualifier if isinstance(self.annotation, InjectableQualifier) else None
         self.is_parameter = isinstance(self.annotation, ConfigInjectionRequest)
         self.has_default_value = has_default_value
-        self.obj_id = self.klass, self.qualifier_value
 
     def __eq__(self, other: object) -> bool:
         """Check if two things are equal."""
