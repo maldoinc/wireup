@@ -1,12 +1,11 @@
 import contextlib
 import re
-from typing import Any, AsyncIterator, Iterator, NewType, Optional, Union
+from typing import Any, AsyncIterator, Iterator, NewType, Optional, Tuple, Union
 
 import pytest
 import wireup
 from typing_extensions import Annotated
-from wireup import Inject, inject_from_container, service
-from wireup._annotations import Injected
+from wireup import Inject, Injected, create_sync_container, inject_from_container, injectable, service
 from wireup.errors import WireupError
 from wireup.ioc.container.async_container import ScopedAsyncContainer
 from wireup.ioc.container.sync_container import ScopedSyncContainer
@@ -408,3 +407,45 @@ def test_async_override_with_sync_value_in_sync_context(container: Container) ->
             return b
 
         assert sync_func_override() is fake_b
+
+
+@injectable
+class SingletonService:
+    pass
+
+
+@injectable(lifetime="scoped")
+class ScopedService:
+    pass
+
+
+@injectable(lifetime="scoped")
+class ScopedService2:
+    pass
+
+
+def test_mixed_lifetime_injection_optimizes_correctly_singleton_first() -> None:
+    container = create_sync_container(injectables=[SingletonService, ScopedService, ScopedService2])
+
+    @inject_from_container(container)
+    def target(
+        s: Injected[SingletonService], sc: Injected[ScopedService], ss2: Injected[ScopedService2]
+    ) -> Tuple[SingletonService, ScopedService, ScopedService2]:
+        return s, sc, ss2
+
+    s, sc, ss2 = target()
+    assert s is container.get(SingletonService)
+    assert isinstance(sc, ScopedService)
+    assert isinstance(ss2, ScopedService2)
+
+
+def test_mixed_lifetime_injection_optimizes_correctly_scoped_first() -> None:
+    container = create_sync_container(injectables=[SingletonService, ScopedService])
+
+    @inject_from_container(container)
+    def target(sc: Injected[ScopedService], s: Injected[SingletonService]) -> Tuple[SingletonService, ScopedService]:
+        return s, sc
+
+    s, sc = target()
+    assert s is container.get(SingletonService)
+    assert isinstance(sc, ScopedService)

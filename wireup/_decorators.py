@@ -72,7 +72,9 @@ def inject_from_container(
     """
 
     def _decorator(target: Callable[..., Any]) -> Callable[..., Any]:
-        if inspect.iscoroutinefunction(target) and isinstance(container, SyncContainer):
+        if (inspect.iscoroutinefunction(target) or inspect.isasyncgenfunction(target)) and isinstance(
+            container, SyncContainer
+        ):
             msg = (
                 "Sync container cannot perform injection on async targets. "
                 "Create an async container via wireup.create_async_container."

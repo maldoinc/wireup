@@ -57,6 +57,7 @@ def compile_injection_wrapper(
     code = gen.get_source()
     exec(code, namespace)  # noqa: S102
     wrapper = namespace[func_name]
+    wrapper.__wireup_generated_code__ = code
     return functools.wraps(target)(wrapper)
 
 
@@ -77,7 +78,7 @@ def generate_injection_body(  # noqa: PLR0913
             gen,
             names_to_inject,
             target_type,
-            None,
+            container,
             middleware,
             namespace,
         )
@@ -155,6 +156,10 @@ def _generate_injection(  # noqa: PLR0912
     container: BaseContainer | None,
     namespace: dict[str, Any],
 ) -> None:
+    if container:
+        namespace["_wireup_singleton_factories"] = container._factories
+        namespace["_wireup_scoped_factories"] = container._scoped_compiler.factories
+
     is_target_async = target_type in ASYNC_CALLABLE_TYPES
     for name, param in names_to_inject.items():
         if not param.annotation:
@@ -181,9 +186,7 @@ def _generate_injection(  # noqa: PLR0912
             # and just call the underlying factories directly.
             if container:
                 lifetime = container._registry.get_lifetime(param.klass, param.qualifier_value)
-                namespace["_wireup_factories"] = (
-                    container._factories if lifetime == "singleton" else container._scoped_compiler.factories
-                )
+                factories_var = "_wireup_singleton_factories" if lifetime == "singleton" else "_wireup_scoped_factories"
                 dependency_obj_id = FactoryCompiler.get_object_id(param.klass, param.qualifier_value)
 
                 # Apply only if:
@@ -192,11 +195,12 @@ def _generate_injection(  # noqa: PLR0912
                 # Avoid async container into sync function
                 # In this case the container.get call does a bunch of extra work on the unhappy path
                 # to inject cached or overridden instances. Let's skip this path
-                if (
-                    compiled := namespace["_wireup_factories"].get(dependency_obj_id)
-                ) and compiled.is_async == is_target_async:
+                if (compiled := namespace[factories_var].get(dependency_obj_id)) and (
+                    compiled.is_async == is_target_async or (is_target_async and not compiled.is_async)
+                ):
                     maybe_await = "await " if compiled.is_async else ""
-                    gen += f"kwargs['{name}'] = {maybe_await} _wireup_factories[{dependency_obj_id}].factory(scope)"
+                    gen += f"kwargs['{name}'] = {maybe_await}{factories_var}[{dependency_obj_id}].factory(scope)"
+
                     continue
 
             if is_target_async:
