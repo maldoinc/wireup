@@ -3,11 +3,13 @@ from __future__ import annotations
 from collections.abc import Hashable
 from dataclasses import dataclass
 from enum import Enum, auto
-from typing import Any, Callable, Optional, Tuple, Union
+from typing import Any, AsyncGenerator, Callable, Generator, Optional, Tuple, Union
 
 from typing_extensions import Literal
 
 AnyCallable = Callable[..., Any]
+ExitStackEntry = Tuple[Generator[Any, Any, Any] | AsyncGenerator[Any, Any], bool]
+ExitStack = list[ExitStackEntry]
 
 
 class InjectableType:

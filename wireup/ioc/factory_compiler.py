@@ -157,10 +157,11 @@ class FactoryCompiler:
             cg += f"instance = {maybe_await}ORIGINAL_FACTORY({kwargs.strip()})"
 
             if factory.callable_type in GENERATOR_CALLABLE_TYPES:
+                is_async_value = factory.callable_type == CallableType.ASYNC_GENERATOR
                 if lifetime == "singleton":
-                    cg += "container._global_scope_exit_stack.append(instance)"
+                    cg += f"container._global_scope_exit_stack.append((instance, {is_async_value}))"
                 else:
-                    cg += "container._current_scope_exit_stack.append(instance)"
+                    cg += f"container._current_scope_exit_stack.append((instance, {is_async_value}))"
 
                 if factory.callable_type == CallableType.GENERATOR:
                     cg += "instance = next(instance)"

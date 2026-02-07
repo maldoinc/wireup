@@ -25,7 +25,7 @@ def test_clean_exit_stack_with_sync_generators() -> None:
     g2 = gen_2()
     next(g2)
 
-    clean_exit_stack([g1, g2])
+    clean_exit_stack([(g1, False), (g2, False)])
     assert g1_done
     assert g2_done
 
@@ -45,4 +45,4 @@ async def test_clean_exit_stack_with_async_generators_raises() -> None:
             f"List of async factories encountered: {[g1]}."
         ),
     ):
-        clean_exit_stack([g1])
+        clean_exit_stack([(g1, True)])

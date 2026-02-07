@@ -4,12 +4,8 @@ import warnings
 from typing import (
     TYPE_CHECKING,
     Any,
-    AsyncGenerator,
     Callable,
-    Generator,
-    List,
     TypeVar,
-    Union,
     overload,
 )
 
@@ -18,6 +14,7 @@ from wireup.errors import (
     WireupError,
 )
 from wireup.ioc.container.lock_registry import LockRegistry
+from wireup.ioc.types import ExitStack  # noqa: TC001  # Used at runtime
 
 if TYPE_CHECKING:
     from wireup.ioc.configuration import ConfigStore
@@ -30,7 +27,6 @@ if TYPE_CHECKING:
     )
 
 T = TypeVar("T")
-ContainerExitStack = List[Union[Generator[Any, Any, Any], AsyncGenerator[Any, Any]]]
 
 
 class BaseContainer:
@@ -55,9 +51,9 @@ class BaseContainer:
         factory_compiler: FactoryCompiler,
         scoped_compiler: FactoryCompiler,
         global_scope_objects: dict[ContainerObjectIdentifier, Any],
-        global_scope_exit_stack: list[Generator[Any, Any, Any] | AsyncGenerator[Any, Any]],
+        global_scope_exit_stack: ExitStack,
         current_scope_objects: dict[ContainerObjectIdentifier, Any] | None = None,
-        current_scope_exit_stack: list[Generator[Any, Any, Any] | AsyncGenerator[Any, Any]] | None = None,
+        current_scope_exit_stack: ExitStack | None = None,
         *,
         concurrent_scoped_access: bool = False,
     ) -> None:
