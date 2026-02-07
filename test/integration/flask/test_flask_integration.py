@@ -95,7 +95,8 @@ def test_flask_err_cleanup() -> None:
     @app.get("/err")
     def _err_endpoint(with_cleanup: Injected[Something]) -> str:
         assert with_cleanup == "hello"
-        raise Exception("err in endpoint")
+        msg = "err in endpoint"
+        raise Exception(msg)
 
     container = wireup.create_sync_container(injectables=[make_with_cleanup])
     wireup.integration.flask.setup(container, app)
