@@ -105,7 +105,7 @@ def generate_injection_body(  # noqa: PLR0913
             )
         return
 
-    gen += "scope = _wireup_container"
+    namespace["scope"] = container
     _generate_middleware_and_injection(
         gen,
         names_to_inject,
