@@ -142,9 +142,14 @@ def _generate_middleware_and_injection(  # noqa: PLR0913
     namespace: dict[str, Any],
 ) -> None:
     if middleware:
-        gen += "with _wireup_middleware(scope, args, kwargs):"
+        gen += "gen_middleware = _wireup_middleware(scope, args, kwargs)"
+        gen += "try:"
         with gen.indent():
+            gen += "next(gen_middleware)"
             _generate_injection(gen, names_to_inject, target_type, container, namespace)
+        gen += "finally:"
+        with gen.indent():
+            gen += "gen_middleware.close()"
     else:
         _generate_injection(gen, names_to_inject, target_type, container, namespace)
 

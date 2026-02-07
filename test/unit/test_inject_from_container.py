@@ -302,7 +302,6 @@ async def test_inject_from_container_middleware() -> None:
     def f1() -> Something:
         return Something("Something")
 
-    @contextlib.contextmanager
     def middleware(
         scoped_container: Union[ScopedAsyncContainer, ScopedSyncContainer],  # noqa: ARG001
         *args: Any,  # noqa: ARG001
@@ -310,11 +309,14 @@ async def test_inject_from_container_middleware() -> None:
     ) -> Iterator[None]:
         nonlocal middleware_called
         middleware_called = True
-        yield
+        try:
+            yield
+        finally:
+            pass
 
     c = wireup.create_async_container(injectables=[f1])
 
-    @inject_from_container(c, middleware=middleware)
+    @inject_from_container(c, _middleware=middleware)
     async def main(_: Injected[Something]): ...
 
     await main()

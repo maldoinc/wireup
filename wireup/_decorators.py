@@ -15,7 +15,7 @@ from wireup.ioc.util import (
 )
 
 if TYPE_CHECKING:
-    import contextlib
+    from collections.abc import Iterator
 
     from wireup.ioc.container.async_container import AsyncContainer, ScopedAsyncContainer
     from wireup.ioc.container.sync_container import ScopedSyncContainer
@@ -37,7 +37,7 @@ def inject_from_container_unchecked(
             names_to_inject=get_inject_annotated_parameters(target),
             container=None,
             scoped_container_supplier=scoped_container_supplier,
-            middleware=None,
+            _middleware=None,
             hide_annotated_names=hide_annotated_names,
         )
 
@@ -47,9 +47,9 @@ def inject_from_container_unchecked(
 def inject_from_container(
     container: SyncContainer | AsyncContainer,
     scoped_container_supplier: Callable[[], ScopedSyncContainer | ScopedAsyncContainer] | None = None,
-    middleware: Callable[
+    _middleware: Callable[
         [ScopedSyncContainer | ScopedAsyncContainer, tuple[Any, ...], dict[str, Any]],
-        contextlib.AbstractContextManager[None],
+        Iterator[None],
     ]
     | None = None,
     *,
@@ -66,7 +66,6 @@ def inject_from_container(
     :param scoped_container_supplier: An optional callable that returns the current scoped container instance.
         If provided, it will be used to create scoped dependencies. If not provided, the container will automatically
         enter a scope. Provide a scoped_container_supplier if you need to manage the container's scope manually.
-    :param middleware: A context manager that wraps the execution of the target function.
     :param hide_annotated_names: If True, the parameters annotated with Wireup annotations will be removed from the
         signature of the decorated function.
     """
@@ -86,21 +85,21 @@ def inject_from_container(
             names_to_inject=get_valid_injection_annotated_parameters(container, target),
             container=container,
             scoped_container_supplier=scoped_container_supplier,
-            middleware=middleware,
+            _middleware=_middleware,
             hide_annotated_names=hide_annotated_names,
         )
 
     return _decorator
 
 
-def inject_from_container_util(  # noqa: PLR0913
+def inject_from_container_util(
     target: Callable[..., Any],
     names_to_inject: dict[str, AnnotatedParameter],
     container: SyncContainer | AsyncContainer | None,
     scoped_container_supplier: Callable[[], ScopedSyncContainer | ScopedAsyncContainer] | None = None,
-    middleware: Callable[
+    _middleware: Callable[
         [ScopedSyncContainer | ScopedAsyncContainer, tuple[Any, ...], dict[str, Any]],
-        contextlib.AbstractContextManager[None],
+        Iterator[None],
     ]
     | None = None,
     *,
@@ -118,7 +117,7 @@ def inject_from_container_util(  # noqa: PLR0913
         names_to_inject=names_to_inject,
         container=container,
         scoped_container_supplier=scoped_container_supplier,
-        middleware=middleware,
+        middleware=_middleware,
     )
 
     if hide_annotated_names:

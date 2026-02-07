@@ -1,5 +1,5 @@
 import contextlib
-from types import TracebackType
+from collections.abc import Iterator
 from typing import (
     Any,
     AsyncIterator,
@@ -58,45 +58,32 @@ class WireupRoute(APIRoute):
         super().__init__(path=path, endpoint=endpoint, **kwargs)
 
 
-class _FastApiIntegrationMiddlewareContext:
-    __slots__ = (
-        "http_connection_param_name",
-        "kwargs",
-        "remove_http_connection_from_arguments",
-        "scoped_container",
-        "token",
-    )
-
-    def __init__(self, http_connection_param_name: str, *, remove_http_connection_from_arguments: bool) -> None:
-        self.http_connection_param_name = http_connection_param_name
-        self.remove_http_connection_from_arguments = remove_http_connection_from_arguments
-
-    def __call__(
-        self,
+def _create_fastapi_middleware(
+    http_connection_param_name: str,
+    *,
+    remove_http_connection_from_arguments: bool,
+) -> Callable[
+    [Union[ScopedAsyncContainer, ScopedSyncContainer], Tuple[Any, ...], Dict[str, Any]],
+    Iterator[None],
+]:
+    def middleware(
         scoped_container: Union[ScopedAsyncContainer, ScopedSyncContainer],
         _args: Tuple[Any, ...],
         kwargs: Dict[str, Any],
-    ) -> "_FastApiIntegrationMiddlewareContext":
-        self.scoped_container = scoped_container
-        self.kwargs = kwargs
+    ) -> Iterator[None]:
+        request = kwargs[http_connection_param_name]
+        request.state.wireup_container = scoped_container
+        token = current_request.set(request)
 
-        return self
+        if remove_http_connection_from_arguments:
+            del kwargs[http_connection_param_name]
 
-    def __enter__(self) -> None:
-        request = self.kwargs[self.http_connection_param_name]
-        request.state.wireup_container = self.scoped_container
-        self.token = current_request.set(request)
+        try:
+            yield
+        finally:
+            current_request.reset(token)
 
-        if self.remove_http_connection_from_arguments:
-            del self.kwargs[self.http_connection_param_name]
-
-    def __exit__(
-        self,
-        _exc_type: Optional[Type[BaseException]] = None,
-        exc_val: Optional[BaseException] = None,
-        _exc_tb: Optional[TracebackType] = None,
-    ) -> None:
-        current_request.reset(self.token)  # type: ignore[reportArgumentType]
+    return middleware
 
 
 def _inject_fastapi_route(
@@ -109,7 +96,7 @@ def _inject_fastapi_route(
 ) -> AnyCallable:
     return inject_from_container(
         container,
-        middleware=_FastApiIntegrationMiddlewareContext(
+        _middleware=_create_fastapi_middleware(
             http_connection_param_name=http_connection_param_name,
             remove_http_connection_from_arguments=remove_http_connection_from_arguments,
         )

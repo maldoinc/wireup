@@ -1,4 +1,3 @@
-import contextlib
 from contextvars import ContextVar
 from typing import Any, Awaitable, Callable, Dict, Iterable, Iterator, Optional, Protocol, Tuple, Type, Union
 
@@ -22,7 +21,6 @@ def route(fn: Callable[..., Awaitable[web.StreamResponse]]) -> Callable[[web.Req
     return fn  # type: ignore[reportReturnType]
 
 
-@contextlib.contextmanager
 def _route_middleware(
     scoped_container: Union[ScopedAsyncContainer, ScopedSyncContainer],
     args: Tuple[Any],
@@ -52,7 +50,7 @@ def aiohttp_request_factory() -> web.Request:
 
 
 def _inject_routes(container: wireup.AsyncContainer, app: web.Application) -> None:
-    inject_scoped = wireup.inject_from_container(container, middleware=_route_middleware)
+    inject_scoped = wireup.inject_from_container(container, _middleware=_route_middleware)
 
     for route in app.router.routes():
         route._handler = inject_scoped(route._handler)
