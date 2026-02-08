@@ -53,22 +53,19 @@ async def get_users(user_service: Injected[UserService]):  # And here
 
 #### In Route Decorators
 
-```python hl_lines="4"
-def require_not_bob(fn):
-    @functools.wraps(fn)
-    async def wrapper(*args: Any, **kwargs: Any) -> Any:
-        request = await get_request_container().get(fastapi.Request)
+```python hl_lines="3 12"
+@contextlib.asynccontextmanager
+async def require_permission(permission: str) -> AsyncIterator[None]:
+    auth = await get_request_container().get(AuthService)
 
-        if request.query_params.get("name") == "Bob":
-            raise HTTPException(status_code=401, detail="Bob is not allowed")
+    if not await auth.has_permission(permission):
+        raise HTTPException(status_code=403, detail="Insufficient permissions")
 
-        return await fn(*args, **kwargs)
-
-    return wrapper
+    yield
 
 
 @router.get("/users")
-@require_not_bob
+@require_permission("read_users")
 async def get_users(user_service: Injected[UserService]): ...
 ```
 
