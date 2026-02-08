@@ -2,10 +2,11 @@ from __future__ import annotations
 
 import textwrap
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Annotated, Any, Iterator
+from typing import TYPE_CHECKING, Any, AsyncGenerator, Iterator
 
 import pytest
 import wireup
+from typing_extensions import Annotated
 from wireup import (
     AsyncContainer,
     Injected,
@@ -295,7 +296,7 @@ def test_async_container_async_target_optimized(async_container: AsyncContainer)
     assert code.strip() == expected
 
 
-def test_sync_container_rejects_async_target(sync_container: AsyncContainer):
+def test_sync_container_rejects_async_target(sync_container: SyncContainer):
     """
     Test that SyncContainer explicitly rejects Async Targets.
 
@@ -726,6 +727,149 @@ def test_unchecked_async_container_async_target_async_dep_optimized(async_contai
             scope = _wireup_scoped_container_supplier()
             kwargs['asvc'] = await scope.get(_wireup_obj_asvc_klass)
             return await _wireup_target(*args, **kwargs)
+    """).strip()
+
+    assert code.strip() == expected
+
+
+def test_sync_container_generator_target_with_injection(sync_container: SyncContainer):
+    """
+    Test SyncContainer injecting into a sync generator target.
+
+    **Scenario**:
+    -   Container: `SyncContainer`
+    -   Target: Sync Generator (uses yield)
+    -   Dependencies: Singleton, Config
+
+    **Optimization**:
+    -   Optimized: We know the container, it's always this one.
+
+    **Expectation**:
+    -   Uses `yield from _wireup_target(...)` for generator delegation.
+    -   Optimized factory lookup used for dependencies.
+    """
+
+    def generator_target(
+        s: Injected[SingletonService],
+        conf: Annotated[str, wireup.Inject(config="foo")],
+    ) -> Iterator[None]:
+        _ = s, conf
+        yield None
+
+    decorated = inject_from_container(sync_container)(generator_target)
+    code = _get_generated_code(decorated)
+
+    expected = textwrap.dedent(f"""
+        def _wireup_generated_wrapper(*args, **kwargs):
+            kwargs['s'] = _wireup_singleton_factories[{s_hash}].factory(scope)
+            kwargs['conf'] = _wireup_config_val_conf
+            yield from _wireup_target(*args, **kwargs)
+    """).strip()
+
+    assert code.strip() == expected
+
+
+def test_async_container_async_generator_target_with_injection(async_container: AsyncContainer):
+    """
+    Test AsyncContainer injecting into an async generator target.
+
+    **Scenario**:
+    -   Container: `AsyncContainer`
+    -   Target: Async Generator (uses async for/yield)
+    -   Dependencies: Singleton, Config
+
+    **Optimization**:
+    -   Optimized: We know the container, it's always this one.
+
+    **Expectation**:
+    -   Uses `async for item in _wireup_target(...): yield item` for async generator delegation.
+    -   Optimized factory lookup used for dependencies.
+    """
+
+    async def async_generator_target(
+        s: Injected[SingletonService],
+        conf: Annotated[str, wireup.Inject(config="foo")],
+    ) -> AsyncGenerator[None, None]:
+        _ = s, conf
+        yield None
+
+    decorated = inject_from_container(async_container)(async_generator_target)
+    code = _get_generated_code(decorated)
+
+    expected = textwrap.dedent(f"""
+        async def _wireup_generated_wrapper(*args, **kwargs):
+            kwargs['s'] = _wireup_singleton_factories[{s_hash}].factory(scope)
+            kwargs['conf'] = _wireup_config_val_conf
+            async for item in _wireup_target(*args, **kwargs):
+                yield item
+    """).strip()
+
+    assert code.strip() == expected
+
+
+def test_optimized_sync_container_falsy_qualifier(sync_container: SyncContainer):
+    """
+    Test Optimized Injection: SyncContainer -> Sync Target with falsy qualifier.
+
+    **Scenario**:
+    -   Container: `SyncContainer` (Optimized)
+    -   Target: Sync Function
+    -   Dependencies: QualifiedService with empty-string qualifier
+
+    **Optimization**:
+    -   Optimized: We know the container, it's always this one.
+
+    **Expectation**:
+    -   Qualifier is passed to the optimized factory lookup.
+    -   No scope is entered (only singleton dependency).
+    """
+    q_hash = FactoryCompiler.get_object_id(QualifiedService, "")
+
+    def target(q: Annotated[QualifiedService, wireup.Inject(qualifier="")]) -> None:
+        pass
+
+    decorated = inject_from_container(sync_container)(target)
+    code = _get_generated_code(decorated)
+
+    expected = textwrap.dedent(f"""
+        def _wireup_generated_wrapper(*args, **kwargs):
+            kwargs['q'] = _wireup_singleton_factories[{q_hash}].factory(scope)
+            return _wireup_target(*args, **kwargs)
+    """).strip()
+
+    assert code.strip() == expected
+
+
+def test_config_only_no_injectables(sync_container: SyncContainer):
+    """
+    Test Config-Only Injection: No injectable dependencies, only config.
+
+    **Scenario**:
+    -   Container: `SyncContainer`
+    -   Target: Sync Function
+    -   Dependencies: Config values only
+
+    **Optimization**:
+    -   Optimized: We know the container, it's always this one.
+
+    **Expectation**:
+    -   Minimal codegen: only config value assignments.
+    -   No scope is entered (no scoped dependencies).
+    -   Config values are inlined at compile time.
+    """
+
+    def target(
+        foo: Annotated[str, wireup.Inject(config="foo")],
+    ) -> None:
+        pass
+
+    decorated = inject_from_container(sync_container)(target)
+    code = _get_generated_code(decorated)
+
+    expected = textwrap.dedent("""
+        def _wireup_generated_wrapper(*args, **kwargs):
+            kwargs['foo'] = _wireup_config_val_foo
+            return _wireup_target(*args, **kwargs)
     """).strip()
 
     assert code.strip() == expected
