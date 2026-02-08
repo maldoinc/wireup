@@ -1,4 +1,4 @@
-.PHONY: install lint check-fmt check-ruff check-mypy test profile fix format docs-deploy publish
+.PHONY: install lint check-fmt check-ruff check-mypy test profile fix format docs-deploy publish docs-serve
 
 ifdef GITHUB_ACTIONS
 RUFF_ARGS := --output-format github
@@ -41,6 +41,9 @@ format-docs:
 build-docs:
 	uv run --python 3.14 mkdocs build --strict -f docs/mkdocs.yml
 
+
+docs-serve:
+	uv run mkdocs serve -f docs/mkdocs.yml --livereload
 
 # make docs-deploy version=...
 docs-deploy $(version):
