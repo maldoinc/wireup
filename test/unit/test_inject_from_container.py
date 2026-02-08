@@ -6,6 +6,7 @@ import pytest
 import wireup
 from typing_extensions import Annotated
 from wireup import Inject, Injected, create_sync_container, inject_from_container, injectable, service
+from wireup._decorators import inject_from_container_unchecked
 from wireup.errors import WireupError
 from wireup.ioc.container.async_container import ScopedAsyncContainer
 from wireup.ioc.container.sync_container import ScopedSyncContainer
@@ -90,6 +91,18 @@ async def test_injects_targets_async() -> None:
 
     target(not_managed_by_wireup=NotManagedByWireup())
     await async_target(not_managed_by_wireup=NotManagedByWireup())
+
+
+def test_inject_from_container_unchecked_config() -> None:
+    container = wireup.create_sync_container(config={"env_name": "test"})
+
+    with container.enter_scope() as scoped:
+
+        @inject_from_container_unchecked(lambda: scoped)
+        def target(env_name: Annotated[str, Inject(config="env_name")]) -> str:
+            return env_name
+
+        assert target() == "test"
 
 
 @pytest.mark.parametrize("qualifier", [None, "foo"])

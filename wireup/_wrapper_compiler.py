@@ -164,10 +164,6 @@ def _generate_injection(  # noqa: C901, PLR0912
     if container:
         namespace["_wireup_singleton_factories"] = container._factories
         namespace["_wireup_scoped_factories"] = container._scoped_compiler.factories
-    else:
-        # With a container we can inline the config value directly.
-        # Without one we can assign scope.config.get to the namespace.
-        namespace["_config_get"] = "scope.config.get"
 
     is_target_async = target_type in ASYNC_CALLABLE_TYPES
     for name, param in names_to_inject.items():
@@ -182,7 +178,7 @@ def _generate_injection(  # noqa: C901, PLR0912
                 gen += f"kwargs['{name}'] = {ns_config_val}"
             else:
                 namespace[f"_wireup_config_key_{name}"] = param.annotation.config_key
-                gen += f"kwargs['{name}'] = _config_get(_wireup_config_key_{name})"
+                gen += f"kwargs['{name}'] = scope.config.get(_wireup_config_key_{name})"
         else:
             ns_klass_var = f"_wireup_obj_{name}_klass"
             namespace[ns_klass_var] = param.klass

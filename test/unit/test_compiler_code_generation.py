@@ -458,7 +458,7 @@ def test_unchecked_sync_container_singleton_config_optimized(sync_container: Syn
         def _wireup_generated_wrapper(*args, **kwargs):
             scope = _wireup_scoped_container_supplier()
             kwargs['s'] = scope._synchronous_get(_wireup_obj_s_klass)
-            kwargs['conf'] = _config_get(_wireup_config_key_conf)
+            kwargs['conf'] = scope.config.get(_wireup_config_key_conf)
             return _wireup_target(*args, **kwargs)
     """).strip()
 
@@ -485,7 +485,7 @@ def test_unchecked_sync_container_singleton_scoped_config_optimized(sync_contain
             scope = _wireup_scoped_container_supplier()
             kwargs['s'] = scope._synchronous_get(_wireup_obj_s_klass)
             kwargs['sc'] = scope._synchronous_get(_wireup_obj_sc_klass)
-            kwargs['conf'] = _config_get(_wireup_config_key_conf)
+            kwargs['conf'] = scope.config.get(_wireup_config_key_conf)
             return _wireup_target(*args, **kwargs)
     """).strip()
 
@@ -509,7 +509,7 @@ def test_unchecked_async_container_sync_target_singleton_config_optimized(async_
         def _wireup_generated_wrapper(*args, **kwargs):
             scope = _wireup_scoped_container_supplier()
             kwargs['s'] = scope._synchronous_get(_wireup_obj_s_klass)
-            kwargs['conf'] = _config_get(_wireup_config_key_conf)
+            kwargs['conf'] = scope.config.get(_wireup_config_key_conf)
             return _wireup_target(*args, **kwargs)
     """).strip()
 
@@ -534,7 +534,7 @@ def test_unchecked_async_container_sync_target_singleton_scoped_config_optimized
             scope = _wireup_scoped_container_supplier()
             kwargs['s'] = scope._synchronous_get(_wireup_obj_s_klass)
             kwargs['sc'] = scope._synchronous_get(_wireup_obj_sc_klass)
-            kwargs['conf'] = _config_get(_wireup_config_key_conf)
+            kwargs['conf'] = scope.config.get(_wireup_config_key_conf)
             return _wireup_target(*args, **kwargs)
     """).strip()
 
@@ -558,7 +558,7 @@ def test_unchecked_async_container_async_target_singleton_config_optimized(async
         async def _wireup_generated_wrapper(*args, **kwargs):
             scope = _wireup_scoped_container_supplier()
             kwargs['s'] = await scope.get(_wireup_obj_s_klass)
-            kwargs['conf'] = _config_get(_wireup_config_key_conf)
+            kwargs['conf'] = scope.config.get(_wireup_config_key_conf)
             return await _wireup_target(*args, **kwargs)
     """).strip()
 
@@ -585,7 +585,7 @@ def test_unchecked_async_container_async_target_singleton_scoped_config_optimize
             scope = _wireup_scoped_container_supplier()
             kwargs['s'] = await scope.get(_wireup_obj_s_klass)
             kwargs['sc'] = await scope.get(_wireup_obj_sc_klass)
-            kwargs['conf'] = _config_get(_wireup_config_key_conf)
+            kwargs['conf'] = scope.config.get(_wireup_config_key_conf)
             return await _wireup_target(*args, **kwargs)
     """).strip()
 
