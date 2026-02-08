@@ -185,8 +185,6 @@ def _generate_injection(  # noqa: C901, PLR0912
             ns_qualifier_var = f"_wireup_obj_{name}_qualifier"
             namespace[ns_qualifier_var] = param.qualifier_value
 
-            args_str = f"{ns_klass_var}, {ns_qualifier_var}" if param.qualifier_value else ns_klass_var
-
             # If we have a container instance, we can use that to skip the scope.get call entirely
             # and just call the underlying factories directly.
             if container:
@@ -208,6 +206,7 @@ def _generate_injection(  # noqa: C901, PLR0912
 
                     continue
 
+            args_str = f"{ns_klass_var}, {ns_qualifier_var}" if param.qualifier_value is not None else ns_klass_var
             if is_target_async:
                 gen += f"kwargs['{name}'] = await scope.get({args_str})"
             else:

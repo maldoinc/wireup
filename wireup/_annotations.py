@@ -56,7 +56,7 @@ def Inject(  # noqa: N802
         res = ConfigInjectionRequest(param)
     elif expr:
         res = ConfigInjectionRequest(TemplatedString(expr))
-    elif qualifier:
+    elif qualifier is not None:
         res = InjectableQualifier(qualifier)
     else:
         res = EmptyContainerInjectionRequest()

@@ -1,5 +1,6 @@
 import contextlib
 import re
+from dataclasses import dataclass
 from typing import Any, AsyncIterator, Iterator, NewType, Optional, Tuple, Union
 
 import pytest
@@ -187,6 +188,24 @@ async def test_injects_service_with_provided_async_scoped_container() -> None:
         @inject_from_container(container, lambda: scoped)
         def target(rand_service: Annotated[RandomService, Inject(qualifier="foo")]) -> None:
             assert isinstance(rand_service, RandomService)
+
+        target()
+
+
+def test_inject_from_container_falsy_qualifier_injected() -> None:
+    @injectable(qualifier="")
+    @dataclass
+    class EmptyQualifierService:
+        name: str = "empty"
+
+    container = wireup.create_sync_container(injectables=[EmptyQualifierService])
+
+    @inject_from_container_unchecked(lambda: container.enter_scope())
+    def target(
+        svc: Annotated[EmptyQualifierService, Inject(qualifier="")],
+    ) -> None:
+        assert isinstance(svc, EmptyQualifierService)
+        assert svc.name == "empty"
 
     target()
 

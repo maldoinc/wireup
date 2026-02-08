@@ -46,15 +46,21 @@ async def async_service_factory() -> AsyncService:
     return AsyncService()
 
 
+@injectable(qualifier="")
+@dataclass
+class QualifiedService:
+    pass
+
+
 @pytest.fixture
 def sync_container() -> SyncContainer:
-    return create_sync_container(injectables=[SingletonService, ScopedService], config={"foo": "bar"})
+    return create_sync_container(injectables=[SingletonService, ScopedService, QualifiedService], config={"foo": "bar"})
 
 
 @pytest.fixture
 def async_container() -> AsyncContainer:
     return create_async_container(
-        injectables=[SingletonService, ScopedService, async_service_factory], config={"foo": "bar"}
+        injectables=[SingletonService, ScopedService, async_service_factory, QualifiedService], config={"foo": "bar"}
     )
 
 
@@ -535,6 +541,35 @@ def test_unchecked_async_container_sync_target_singleton_scoped_config_optimized
             kwargs['s'] = scope._synchronous_get(_wireup_obj_s_klass)
             kwargs['sc'] = scope._synchronous_get(_wireup_obj_sc_klass)
             kwargs['conf'] = scope.config.get(_wireup_config_key_conf)
+            return _wireup_target(*args, **kwargs)
+    """).strip()
+
+    assert code.strip() == expected
+
+
+def test_unchecked_sync_container_falsy_qualifier(sync_container: SyncContainer):
+    """
+    Test Unchecked Injection: SyncContainer -> Sync Target with falsy qualifier.
+
+    **Scenario**:
+    -   Container: `SyncContainer` (Unchecked)
+    -   Target: Sync Function
+    -   Dependencies: QualifiedService with empty-string qualifier
+
+    **Expectation**:
+    -   Qualifier is preserved in the generated call.
+    """
+
+    def target(q: Annotated[QualifiedService, wireup.Inject(qualifier="")]) -> None:
+        pass
+
+    decorated = inject_from_container_unchecked(lambda: sync_container.enter_scope())(target)
+    code = _get_generated_code(decorated)
+
+    expected = textwrap.dedent("""
+        def _wireup_generated_wrapper(*args, **kwargs):
+            scope = _wireup_scoped_container_supplier()
+            kwargs['q'] = scope._synchronous_get(_wireup_obj_q_klass, _wireup_obj_q_qualifier)
             return _wireup_target(*args, **kwargs)
     """).strip()
 
