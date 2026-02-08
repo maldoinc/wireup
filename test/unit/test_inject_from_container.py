@@ -324,6 +324,37 @@ async def test_inject_from_container_middleware() -> None:
     assert middleware_called
 
 
+async def test_inject_from_container_middleware_cleanup_on_error() -> None:
+    Something = NewType("Something", str)
+    cleanup_ran = False
+
+    @wireup.injectable(lifetime="scoped")
+    def f1() -> Something:
+        return Something("Something")
+
+    def middleware(
+        scoped_container: Union[ScopedAsyncContainer, ScopedSyncContainer],  # noqa: ARG001
+        *args: Any,  # noqa: ARG001
+        **kwargs: Any,  # noqa: ARG001
+    ) -> Iterator[None]:
+        nonlocal cleanup_ran
+        try:
+            yield
+        finally:
+            cleanup_ran = True
+
+    c = wireup.create_async_container(injectables=[f1])
+
+    @inject_from_container(c, _middleware=middleware)
+    async def main(_: Injected[Something]):
+        raise ValueError("boom!")
+
+    with pytest.raises(ValueError, match="boom!"):
+        await main()
+
+    assert cleanup_ran
+
+
 def test_inject_from_container_generator(container: Container) -> None:
     @inject_from_container(container)
     def generator_target(

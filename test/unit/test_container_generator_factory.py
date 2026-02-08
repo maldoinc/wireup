@@ -6,6 +6,7 @@ import wireup
 from wireup import Injected, inject_from_container
 from wireup._annotations import injectable
 from wireup.errors import ContainerCloseError, WireupError
+from wireup.ioc.types import InjectableLifetime
 
 from test.conftest import Container
 
@@ -223,3 +224,45 @@ async def test_async_container_clears_exit_stack_on_close() -> None:
     await container.close()
     assert len(container._global_scope_exit_stack) == 0
     await container.close()
+
+
+@pytest.mark.parametrize("lifetime", ["scoped", "transient"])
+def test_sync_factory_executes_before_and_after_yield(lifetime: InjectableLifetime) -> None:
+    execution_order: list[str] = []
+    Something = NewType("Something", str)
+
+    @injectable(lifetime=lifetime)
+    def sync_factory() -> Iterator[Something]:
+        execution_order.append("before_yield")
+        yield Something(f"sync_{lifetime}_value")
+        execution_order.append("after_yield")
+
+    container = wireup.create_sync_container(injectables=[sync_factory])
+
+    with container.enter_scope() as scoped:
+        assert scoped.get(Something) == Something(f"sync_{lifetime}_value")
+        assert execution_order == ["before_yield"]
+        execution_order.clear()
+
+    assert execution_order == ["after_yield"]
+
+
+@pytest.mark.parametrize("lifetime", ["scoped", "transient"])
+async def test_async_factory_executes_before_and_after_yield(lifetime: InjectableLifetime) -> None:
+    execution_order: list[str] = []
+    Something = NewType("Something", str)
+
+    @injectable(lifetime=lifetime)
+    async def async_factory() -> AsyncIterator[Something]:
+        execution_order.append("before_yield")
+        yield Something(f"async_{lifetime}_value")
+        execution_order.append("after_yield")
+
+    container = wireup.create_async_container(injectables=[async_factory])
+
+    async with container.enter_scope() as scoped:
+        assert await scoped.get(Something) == Something(f"async_{lifetime}_value")
+        assert execution_order == ["before_yield"]
+        execution_order.clear()
+
+    assert execution_order == ["after_yield"]
