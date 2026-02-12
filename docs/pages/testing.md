@@ -77,6 +77,40 @@ with container.override.injectables(overrides=overrides):
     response = client.get("/checkout")
 ```
 
+### Nested Overrides
+
+The `container.override` also allows you to have nested overrides in cases where you would like to override the injectable inside a context, and go back to the previous override right after exiting the context automatically.
+
+```python
+from unittest.mock import MagicMock
+
+import wireup
+
+
+class Foo:
+    def get_foo(self) -> str:
+        return "foo"
+
+
+container = wireup.create_sync_container(services=[wireup.service(Foo)])
+
+mock1 = MagicMock()
+mock1.get_foo.return_value = "foo mocked 1"
+
+with container.override.service(Foo, new=mock1):
+    assert container.get(Foo).get_foo() == "foo mocked 1"
+
+    mock2 = MagicMock()
+    mock2.get_foo.return_value = "foo mocked 2"
+
+    with container.override.service(Foo, new=mock2):
+        assert container.get(Foo).get_foo() == "foo mocked 2"
+
+    assert container.get(Foo).get_foo() == "foo mocked 1"
+
+assert container.get(Foo).get_foo() == "foo"
+```
+
 ### Pytest
 
 ```python title="app.py"
