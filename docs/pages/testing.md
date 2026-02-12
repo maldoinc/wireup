@@ -79,7 +79,8 @@ with container.override.injectables(overrides=overrides):
 
 ### Nested Overrides
 
-The `container.override` also allows you to have nested overrides in cases where you would like to override the injectable inside a context, and go back to the previous override right after exiting the context automatically.
+The `container.override` also allows you to have nested overrides in cases where you would like to override the
+injectable inside a context, and go back to the previous override right after exiting the context automatically.
 
 ```python
 from unittest.mock import MagicMock
