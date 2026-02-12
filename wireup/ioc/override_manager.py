@@ -25,7 +25,7 @@ class OverrideManager:
         self.__is_valid_override = is_valid_override
         self._factory_compiler = factory_compiler
         self._scoped_factory_compiler = scoped_factory_compiler
-        self._original_factories: dict[tuple[type, Qualifier], tuple[CompiledFactory, CompiledFactory]] = {}
+        self._original_factories: dict[tuple[type, Qualifier], list[tuple[CompiledFactory, CompiledFactory]]] = {}
         self.active_overrides: dict[tuple[type, Qualifier], Any] = {}
 
     def _compiler_override_obj_id(
@@ -67,10 +67,14 @@ class OverrideManager:
         obj_id = FactoryCompiler.get_object_id(target, qualifier)
         self.active_overrides[target, qualifier] = new
 
-        self._original_factories[target, qualifier] = (
-            self._factory_compiler.factories[obj_id],
-            self._scoped_factory_compiler.factories[obj_id],
+        stack = self._original_factories.get((target, qualifier), [])
+        stack.append(
+            (
+                self._factory_compiler.factories[obj_id],
+                self._scoped_factory_compiler.factories[obj_id],
+            )
         )
+        self._original_factories[target, qualifier] = stack
 
         singleton_factory, scoped_factory = self._original_factories[target, qualifier]
         # When determining the is_async flag check both the singleton and scoped compilers.
@@ -106,7 +110,8 @@ class OverrideManager:
         if (target, qualifier) not in self._original_factories:
             return
 
-        factory_func, scoped_factory_func = self._original_factories[target, qualifier]
+        factory_func, scoped_factory_func = self._original_factories[target, qualifier].pop()
+
         self._compiler_restore_obj_id(
             compiler=self._factory_compiler,
             target=target,
@@ -120,7 +125,6 @@ class OverrideManager:
             original=scoped_factory_func,
         )
 
-        del self._original_factories[target, qualifier]
         if (target, qualifier) in self.active_overrides:
             del self.active_overrides[target, qualifier]
 

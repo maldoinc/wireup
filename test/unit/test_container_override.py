@@ -88,6 +88,38 @@ def create_sync_override_consumer_factory(lifetime: InjectableLifetime):
     return _factory
 
 
+def test_nested_service_overrides(container: Container):
+    class Foo:
+        def get_foo(self) -> str:
+            return "foo"
+
+    container = wireup.create_sync_container(services=[wireup.service(Foo)])
+
+    mock1 = MagicMock()
+    mock1.get_foo.return_value = "foo mocked 1"
+
+    with container.override.service(Foo, new=mock1):
+        assert container.get(Foo).get_foo() == "foo mocked 1"
+
+        mock2 = MagicMock()
+        mock2.get_foo.return_value = "foo mocked 2"
+
+        with container.override.service(Foo, new=mock2):
+            assert container.get(Foo).get_foo() == "foo mocked 2"
+
+            mock3 = MagicMock()
+            mock3.get_foo.return_value = "foo mocked 3"
+
+            with container.override.service(Foo, new=mock3):
+                assert container.get(Foo).get_foo() == "foo mocked 3"
+
+            assert container.get(Foo).get_foo() == "foo mocked 2"
+
+        assert container.get(Foo).get_foo() == "foo mocked 1"
+
+    assert container.get(Foo).get_foo() == "foo"  # expected "foo", actual: "foo mocked 1"
+
+
 def test_container_overrides_deps_service_locator(container: Container):
     container = wireup.create_sync_container(injectables=[random_service_factory])
 
