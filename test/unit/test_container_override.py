@@ -110,7 +110,7 @@ def test_clear_active_overrides(container: Container):
         assert container.get(_Foo) is outer
 
 
-def test_clear_doesnt_clear(container: Container):
+def test_clear_actually_clears_overrides(container: Container):
     @wireup.injectable
     class Foo:
         pass
