@@ -79,10 +79,6 @@ with container.override.injectables(overrides=overrides):
 
 ### Nested Overrides
 
-- nested overrides
-- context manager, or set, delete
-- example
-
 The `container.override` also allows you to have nested overrides, where each time you override the same target, the
 previous gets saved in a stack. There are 2 ways to utilise nested overrides:
 
