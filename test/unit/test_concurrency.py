@@ -7,24 +7,13 @@ class Counter:
     pass
 
 
-class ScopedCounter:
-    pass
-
-
-@injectable
 async def counter_factory() -> Counter:
     await asyncio.sleep(0.01)
     return Counter()
 
 
-@injectable(lifetime="scoped")
-async def scoped_counter_factory() -> ScopedCounter:
-    await asyncio.sleep(0.01)
-    return ScopedCounter()
-
-
 async def test_singleton_concurrency() -> None:
-    container = create_async_container(services=[counter_factory])
+    container = create_async_container(services=[injectable(counter_factory)])
 
     results = await asyncio.gather(
         container.get(Counter),
@@ -39,15 +28,17 @@ async def test_singleton_concurrency() -> None:
 
 
 async def test_scoped_concurrency_same_scope() -> None:
-    container = create_async_container(services=[scoped_counter_factory], concurrent_scoped_access=True)
+    container = create_async_container(
+        services=[injectable(counter_factory, lifetime="scoped")], concurrent_scoped_access=True
+    )
 
     async with container.enter_scope() as scope:
         results = await asyncio.gather(
-            scope.get(ScopedCounter),
-            scope.get(ScopedCounter),
-            scope.get(ScopedCounter),
-            scope.get(ScopedCounter),
-            scope.get(ScopedCounter),
+            scope.get(Counter),
+            scope.get(Counter),
+            scope.get(Counter),
+            scope.get(Counter),
+            scope.get(Counter),
         )
 
         unique_instances = set(results)
@@ -55,15 +46,15 @@ async def test_scoped_concurrency_same_scope() -> None:
 
 
 async def test_scoped_concurrency_same_scope_no_lock_race() -> None:
-    container = create_async_container(services=[scoped_counter_factory])
+    container = create_async_container(services=[injectable(counter_factory, lifetime="scoped")])
 
     async with container.enter_scope() as scope:
         results = await asyncio.gather(
-            scope.get(ScopedCounter),
-            scope.get(ScopedCounter),
-            scope.get(ScopedCounter),
-            scope.get(ScopedCounter),
-            scope.get(ScopedCounter),
+            scope.get(Counter),
+            scope.get(Counter),
+            scope.get(Counter),
+            scope.get(Counter),
+            scope.get(Counter),
         )
 
         unique_instances = set(results)
@@ -72,17 +63,17 @@ async def test_scoped_concurrency_same_scope_no_lock_race() -> None:
 
 
 async def test_scoped_concurrency_different_scopes() -> None:
-    container = create_async_container(services=[scoped_counter_factory])
+    container = create_async_container(services=[injectable(counter_factory, lifetime="scoped")])
 
     async with container.enter_scope() as scope1:
         async with container.enter_scope() as scope2:
-            res1, res2 = await asyncio.gather(scope1.get(ScopedCounter), scope2.get(ScopedCounter))
+            res1, res2 = await asyncio.gather(scope1.get(Counter), scope2.get(Counter))
 
             assert res1 is not res2, "Different scopes should produce different instances"
 
 
 async def test_singleton_concurrency_cross_scope() -> None:
-    container = create_async_container(services=[counter_factory])
+    container = create_async_container(services=[injectable(counter_factory)])
 
     async with container.enter_scope() as scope1, container.enter_scope() as scope2:
         # Concurrently request the SINGLETON from two different scopes
