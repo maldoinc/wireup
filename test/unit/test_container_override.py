@@ -88,29 +88,72 @@ def create_sync_override_consumer_factory(lifetime: InjectableLifetime):
     return _factory
 
 
-def test_nested_service_overrides(container: Container):
+def test_clear_active_overrides(container: Container):
+    class _Foo:
+        pass
+
+    @wireup.injectable
+    async def async_foo_factory() -> _Foo:
+        return _Foo()
+
+    container = wireup.create_sync_container(injectables=[async_foo_factory])
+
+    outer = MagicMock(spec=_Foo)
+    inner = MagicMock(spec=_Foo)
+
+    with container.override.injectable(_Foo, new=outer):
+        assert container.get(_Foo) is outer
+
+        with container.override.injectable(_Foo, new=inner):
+            assert container.get(_Foo) is inner
+
+        assert container.get(_Foo) is outer
+
+
+def test_clear_doesnt_clear(container: Container):
+    @wireup.injectable
+    class Foo:
+        pass
+
+    container = wireup.create_sync_container(injectables=[Foo])
+
+    mock1 = MagicMock(spec=Foo)
+    mock2 = MagicMock(spec=Foo)
+
+    container.override.set(Foo, new=mock1)
+    container.override.set(Foo, new=mock2)
+
+    assert container.get(Foo) is mock2
+
+    container.override.clear()
+
+    print(f"injectable_type = {type(container.get(Foo))}")
+    assert type(container.get(Foo)) is Foo
+
+
+def test_nested_injectable_overrides(container: Container):
     class Foo:
         def get_foo(self) -> str:
             return "foo"
 
-    container = wireup.create_sync_container(services=[wireup.service(Foo)])
+    container = wireup.create_sync_container(injectables=[wireup.injectable(Foo)])
 
     mock1 = MagicMock()
     mock1.get_foo.return_value = "foo mocked 1"
 
-    with container.override.service(Foo, new=mock1):
+    with container.override.injectable(Foo, new=mock1):
         assert container.get(Foo).get_foo() == "foo mocked 1"
 
         mock2 = MagicMock()
         mock2.get_foo.return_value = "foo mocked 2"
 
-        with container.override.service(Foo, new=mock2):
+        with container.override.injectable(Foo, new=mock2):
             assert container.get(Foo).get_foo() == "foo mocked 2"
 
             mock3 = MagicMock()
             mock3.get_foo.return_value = "foo mocked 3"
 
-            with container.override.service(Foo, new=mock3):
+            with container.override.injectable(Foo, new=mock3):
                 assert container.get(Foo).get_foo() == "foo mocked 3"
 
             assert container.get(Foo).get_foo() == "foo mocked 2"
