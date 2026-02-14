@@ -9,6 +9,7 @@ from typing_extensions import Annotated
 from wireup import Inject, abstract, create_async_container, create_sync_container, inject_from_container, injectable
 from wireup._annotations import Injected
 from wireup.errors import UnknownOverrideRequestedError
+from wireup.ioc.factory_compiler import FactoryCompiler
 from wireup.ioc.types import InjectableOverride
 
 from test.conftest import Container
@@ -292,3 +293,39 @@ async def test_override_as_type_indirect_async():
         svc = await scope.get(ServiceDependsOnProto)
         assert isinstance(svc.dep, ProtoImpl)
         assert isinstance((await get_svc_via_inject()).dep, ProtoImpl)
+
+
+def test_override_restores_singleton_rebound_factory_sync():
+    container = create_sync_container(injectables=[Foo, FooImpl])
+    obj_id = FactoryCompiler.get_object_id(Foo, None)
+
+    original_instance = container.get(Foo)
+    rebound_factory = container._compiler.factories[obj_id].factory
+
+    mock_obj = MagicMock(spec=Foo)
+    with container.override.injectable(target=Foo, new=mock_obj):
+        assert container.get(Foo) is mock_obj
+        assert container._compiler.factories[obj_id].factory is not rebound_factory
+
+    assert container.get(Foo) is original_instance
+    assert container._compiler.factories[obj_id].factory is rebound_factory
+
+
+async def test_override_restores_singleton_rebound_factory_async():
+    @wireup.injectable
+    async def async_foo_factory() -> FooBar:
+        return FooBar()
+
+    container = create_async_container(injectables=[async_foo_factory])
+    obj_id = FactoryCompiler.get_object_id(FooBar, None)
+
+    original_instance = await container.get(FooBar)
+    rebound_factory = container._compiler.factories[obj_id].factory
+
+    mock_obj = MagicMock()
+    with container.override.injectable(target=FooBar, new=mock_obj):
+        assert await container.get(FooBar) is mock_obj
+        assert container._compiler.factories[obj_id].factory is not rebound_factory
+
+    assert await container.get(FooBar) is original_instance
+    assert container._compiler.factories[obj_id].factory is rebound_factory

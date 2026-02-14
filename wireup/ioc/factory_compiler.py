@@ -48,6 +48,20 @@ _WIREUP_GENERATED_FACTORY_NAME = "_wireup_factory"
 _SENTINEL = object()
 
 
+def _create_sync_singleton_fast_factory(value: Any) -> Callable[[BaseContainer], Any]:
+    def _factory(_: BaseContainer) -> Any:
+        return value
+
+    return _factory
+
+
+def _create_async_singleton_fast_factory(value: Any) -> Callable[[BaseContainer], Any]:
+    async def _factory(_: BaseContainer) -> Any:
+        return value
+
+    return _factory
+
+
 @dataclass
 class GetFactoryResult:
     source: str
@@ -136,6 +150,7 @@ class FactoryCompiler:
         cg += f"{maybe_async}def {_WIREUP_GENERATED_FACTORY_NAME}(container):"
         cache_created_instance = lifetime != "transient"
         config_dependencies: dict[str, Any] = {}
+        is_singleton = lifetime == "singleton"
 
         def _generate_factory_body(cg: Codegen) -> None:
             kwargs = ""
@@ -172,6 +187,8 @@ class FactoryCompiler:
                 cg += "storage[OBJ_ID] = instance"
                 if is_interface:
                     cg += "storage[ORIGINAL_OBJ_ID] = instance"
+                if is_singleton:
+                    cg += "factories[OBJ_HASH].factory = _create_singleton_fast_factory(instance)"
 
             cg += "return instance"
 
@@ -246,6 +263,9 @@ class FactoryCompiler:
                 "OBJ_ID": resolved_obj_id,
                 "OBJ_HASH": obj_hash,
                 "ORIGINAL_FACTORY": self._registry.factories[resolved_obj_id].factory,
+                "_create_singleton_fast_factory": (
+                    _create_async_singleton_fast_factory if result.is_async else _create_sync_singleton_fast_factory
+                ),
                 "TemplatedString": TemplatedString,
                 "WireupError": WireupError,
                 "_CONTAINER_SCOPE_ERROR_MSG": _CONTAINER_SCOPE_ERROR_MSG,
