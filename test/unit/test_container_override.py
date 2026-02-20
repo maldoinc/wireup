@@ -10,7 +10,7 @@ from wireup import Inject, abstract, create_async_container, create_sync_contain
 from wireup._annotations import Injected
 from wireup.errors import UnknownOverrideRequestedError
 from wireup.ioc.factory_compiler import FactoryCompiler
-from wireup.ioc.types import InjectableOverride
+from wireup.ioc.types import InjectableLifetime, InjectableOverride
 
 from test.conftest import Container
 from test.unit.services.abstract_multiple_bases import FooBar
@@ -23,6 +23,69 @@ from test.unit.services.with_annotations.services import (
     random_service_factory,
 )
 from test.unit.util import run
+
+
+@pytest.fixture(params=["singleton", "scoped", "transient"], ids=lambda value: f"lifetime={value}")
+def injectable_lifetime(request: pytest.FixtureRequest) -> str:
+    return request.param
+
+
+class AsyncOverrideDep:
+    pass
+
+
+class AsyncOverrideConsumer:
+    def __init__(self, dep: AsyncOverrideDep):
+        self.dep = dep
+
+
+class AsyncOverride:
+    pass
+
+
+def create_async_override_dep_factory(lifetime: InjectableLifetime):
+    @wireup.injectable(lifetime=lifetime)
+    async def _factory() -> AsyncOverrideDep:
+        return AsyncOverrideDep()
+
+    return _factory
+
+
+def create_async_override_consumer_factory(lifetime: InjectableLifetime):
+    @wireup.injectable(lifetime=lifetime)
+    def _factory(dep: AsyncOverrideDep) -> AsyncOverrideConsumer:
+        return AsyncOverrideConsumer(dep)
+
+    return _factory
+
+
+class SyncOverrideDep:
+    pass
+
+
+class SyncOverrideConsumer:
+    def __init__(self, dep: SyncOverrideDep):
+        self.dep = dep
+
+
+class SyncOverride:
+    pass
+
+
+def create_sync_override_dep_factory(lifetime: InjectableLifetime):
+    @wireup.injectable(lifetime=lifetime)
+    def _factory() -> SyncOverrideDep:
+        return SyncOverrideDep()
+
+    return _factory
+
+
+def create_sync_override_consumer_factory(lifetime: InjectableLifetime):
+    @wireup.injectable(lifetime=lifetime)
+    def _factory(dep: SyncOverrideDep) -> SyncOverrideConsumer:
+        return SyncOverrideConsumer(dep)
+
+    return _factory
 
 
 def test_container_overrides_deps_service_locator(container: Container):
@@ -92,8 +155,8 @@ async def test_raises_on_unknown_override(container: Container):
             pass
 
 
-async def test_overrides_async_dependency() -> None:
-    @wireup.injectable
+async def test_overrides_async_dependency(injectable_lifetime: InjectableLifetime) -> None:
+    @wireup.injectable(lifetime=injectable_lifetime)
     async def async_foo_factory() -> FooBar:
         return FooBar()
 
@@ -103,15 +166,22 @@ async def test_overrides_async_dependency() -> None:
     async def get_foobar_via_inject(svc: Injected[FooBar]) -> str:
         return svc.foo
 
+    async def resolve_foo() -> FooBar:
+        if injectable_lifetime == "singleton":
+            return await container.get(FooBar)
+
+        async with container.enter_scope() as scope:
+            return await scope.get(FooBar)
+
     foo_mock = MagicMock()
     foo_mock.foo = "mock"
 
     with container.override.injectable(target=FooBar, new=foo_mock):
-        svc = await container.get(FooBar)
+        svc = await resolve_foo()
         assert svc.foo == "mock"
         assert await get_foobar_via_inject() == "mock"
 
-    res = await container.get(FooBar)
+    res = await resolve_foo()
     assert res.foo == "bar"
     assert await get_foobar_via_inject() == "bar"
 
@@ -143,6 +213,84 @@ async def test_override_async_transitive_dependency_with_sync_instance():
         assert isinstance(bar.foo, FooOverride)
         bar_via_inject = await get_bar_via_inject()
         assert isinstance(bar_via_inject.foo, FooOverride)
+
+
+async def test_override_async_dependency_with_sync_instance(injectable_lifetime: InjectableLifetime):
+    container = wireup.create_async_container(
+        injectables=[
+            create_async_override_dep_factory(injectable_lifetime),
+            create_async_override_consumer_factory(injectable_lifetime),
+        ]
+    )
+
+    @wireup.inject_from_container(container)
+    async def get_foo_via_inject(foo: Injected[AsyncOverrideDep]) -> AsyncOverrideDep:
+        return foo
+
+    @wireup.inject_from_container(container)
+    async def get_consumer_via_inject(consumer: Injected[AsyncOverrideConsumer]) -> AsyncOverrideConsumer:
+        return consumer
+
+    async def resolve_foo() -> AsyncOverrideDep:
+        if injectable_lifetime == "singleton":
+            return await container.get(AsyncOverrideDep)
+
+        async with container.enter_scope() as scope:
+            return await scope.get(AsyncOverrideDep)
+
+    async def resolve_consumer() -> AsyncOverrideConsumer:
+        if injectable_lifetime == "singleton":
+            return await container.get(AsyncOverrideConsumer)
+
+        async with container.enter_scope() as scope:
+            return await scope.get(AsyncOverrideConsumer)
+
+    with container.override.injectable(AsyncOverrideDep, AsyncOverride()):
+        foo = await resolve_foo()
+        assert isinstance(foo, AsyncOverride)
+        assert isinstance(await get_foo_via_inject(), AsyncOverride)
+        consumer = await resolve_consumer()
+        assert isinstance(consumer.dep, AsyncOverride)
+        assert isinstance((await get_consumer_via_inject()).dep, AsyncOverride)
+
+
+def test_override_sync_dependency_with_sync_instance(injectable_lifetime: InjectableLifetime) -> None:
+    container = wireup.create_sync_container(
+        injectables=[
+            create_sync_override_dep_factory(injectable_lifetime),
+            create_sync_override_consumer_factory(injectable_lifetime),
+        ]
+    )
+
+    @wireup.inject_from_container(container)
+    def get_foo_via_inject(foo: Injected[SyncOverrideDep]) -> SyncOverrideDep:
+        return foo
+
+    @wireup.inject_from_container(container)
+    def get_consumer_via_inject(consumer: Injected[SyncOverrideConsumer]) -> SyncOverrideConsumer:
+        return consumer
+
+    def resolve_foo() -> SyncOverrideDep:
+        if injectable_lifetime == "singleton":
+            return container.get(SyncOverrideDep)
+
+        with container.enter_scope() as scope:
+            return scope.get(SyncOverrideDep)
+
+    def resolve_consumer() -> SyncOverrideConsumer:
+        if injectable_lifetime == "singleton":
+            return container.get(SyncOverrideConsumer)
+
+        with container.enter_scope() as scope:
+            return scope.get(SyncOverrideConsumer)
+
+    with container.override.injectable(SyncOverrideDep, SyncOverride()):
+        foo = resolve_foo()
+        assert isinstance(foo, SyncOverride)
+        assert isinstance(get_foo_via_inject(), SyncOverride)
+        consumer = resolve_consumer()
+        assert isinstance(consumer.dep, SyncOverride)
+        assert isinstance(get_consumer_via_inject().dep, SyncOverride)
 
 
 @abstract

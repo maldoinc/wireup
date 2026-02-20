@@ -72,7 +72,11 @@ class OverrideManager:
             self._scoped_factory_compiler.factories[obj_id],
         )
 
-        is_async = self._factory_compiler.factories[obj_id].is_async
+        singleton_factory, scoped_factory = self._original_factories[target, qualifier]
+        # When determining the is_async flag check both the singleton and scoped compilers.
+        # For scoped lifetimes the singleton compiler has erroring stub factories which are always sync
+        # in which case we need to consult the scoped compiler which has the real factories.
+        is_async = singleton_factory.is_async or scoped_factory.is_async
 
         async def async_override_factory(_container: Any) -> Any:
             return new
