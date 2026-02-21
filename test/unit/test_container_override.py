@@ -89,25 +89,30 @@ def create_sync_override_consumer_factory(lifetime: InjectableLifetime):
 
 
 def test_clear_active_overrides(container: Container):
-    class _Foo:
-        pass
-
     @wireup.injectable
-    async def async_foo_factory() -> _Foo:
-        return _Foo()
+    async def async_foo_factory() -> Foo:
+        return FooImpl()
 
     container = wireup.create_sync_container(injectables=[async_foo_factory])
 
-    outer = MagicMock(spec=_Foo)
-    inner = MagicMock(spec=_Foo)
+    outer = MagicMock(spec=Foo)
+    inner = MagicMock(spec=Foo)
 
-    with container.override.injectable(_Foo, new=outer):
-        assert container.get(_Foo) is outer
+    with container.override.injectable(Foo, new=outer):
+        assert container.get(Foo) is outer
 
-        with container.override.injectable(_Foo, new=inner):
-            assert container.get(_Foo) is inner
+        with container.override.injectable(Foo, new=inner):
+            assert container.get(Foo) is inner
 
-        assert container.get(_Foo) is outer
+        assert container.get(Foo) is outer
+
+
+def test_clear_on_empty_stack_should_not_raise(container: Container):
+    container = wireup.create_sync_container(injectables=[FooImpl])
+    with container.override.injectable(FooImpl, new=MagicMock()):
+        pass
+
+    container.override.clear()
 
 
 def test_clear_actually_clears_overrides(container: Container):
@@ -127,16 +132,11 @@ def test_clear_actually_clears_overrides(container: Container):
 
     container.override.clear()
 
-    print(f"injectable_type = {type(container.get(Foo))}")
     assert type(container.get(Foo)) is Foo
 
 
 def test_nested_injectable_overrides(container: Container):
-    class Foo:
-        def get_foo(self) -> str:
-            return "foo"
-
-    container = wireup.create_sync_container(injectables=[wireup.injectable(Foo)])
+    container = wireup.create_sync_container(injectables=[Foo, FooImpl])
 
     mock1 = MagicMock()
     mock1.get_foo.return_value = "foo mocked 1"

@@ -79,7 +79,7 @@ class OverrideManager:
         )
         self._original_factories[target, qualifier] = original_factories_stack
 
-        singleton_factory, scoped_factory = self._original_factories[target, qualifier]
+        singleton_factory, scoped_factory = self._original_factories[target, qualifier][-1]
         # When determining the is_async flag check both the singleton and scoped compilers.
         # For scoped lifetimes the singleton compiler has erroring stub factories which are always sync
         # in which case we need to consult the scoped compiler which has the real factories.
@@ -142,9 +142,10 @@ class OverrideManager:
         """Clear active injectable overrides."""
         self.active_overrides.clear()
         for key in self._original_factories:
-            # Keep orginal factory only, pop all remaining overrides
-            self._original_factories[key] = self._original_factories[key][:1]
-            self._restore_factory_methods(key[0], key[1])
+            if self._original_factories[key]:
+                # Keep original factory only, pop all remaining overrides
+                self._original_factories[key] = self._original_factories[key][:1]
+                self._restore_factory_methods(key[0], key[1])
         self._original_factories.clear()
 
     @contextmanager
