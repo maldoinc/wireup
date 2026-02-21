@@ -247,7 +247,7 @@ cache = container.get(RedisCache | None)
 
 ### 🛡️ Static Analysis
 
-Wireup validates your entire dependency graph at container creation. If the container starts, you can be confident there
+Wireup validates the entire dependency graph at container creation. If the container starts, you can be confident there
 won't be runtime surprises from missing dependencies or misconfigurations.
 
 **Checks performed at startup:**
