@@ -935,6 +935,17 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#reusable-factory-bundles" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Reusable Factory Bundles
+      
+    </span>
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -2428,6 +2439,17 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#reusable-factory-bundles" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Reusable Factory Bundles
+      
+    </span>
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -2665,6 +2687,64 @@ involves creating a noop implementation that can be used when the real implement
 </div>
 </div>
 </details>
+<h2 id="reusable-factory-bundles">Reusable Factory Bundles<a class="headerlink" href="#reusable-factory-bundles" title="Permanent link">&para;</a></h2>
+<p>When you need to register the same dependency graph multiple times with different runtime settings, use a parameterized
+function that returns injectable factories.</p>
+<p>This is useful for cases like:</p>
+<ul>
+<li>Multiple database clients with different connection settings.</li>
+<li>Tenant-specific integrations.</li>
+<li>Reusing the same wiring pattern across environments.</li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Annotated</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">wireup</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">wireup</span><span class="w"> </span><span class="kn">import</span> <span class="n">Inject</span><span class="p">,</span> <span class="n">injectable</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">DbClient</span><span class="p">:</span> <span class="o">...</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">DbRepository</span><span class="p">:</span> <span class="o">...</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">make_db_bundle</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">dsn</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">qualifier</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">object</span><span class="p">]:</span>
+    <span class="nd">@injectable</span><span class="p">(</span><span class="n">qualifier</span><span class="o">=</span><span class="n">qualifier</span><span class="p">)</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">db_client_factory</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">DbClient</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">DbClient</span><span class="p">(</span><span class="n">dsn</span><span class="o">=</span><span class="n">dsn</span><span class="p">)</span>
+
+    <span class="nd">@injectable</span><span class="p">(</span><span class="n">qualifier</span><span class="o">=</span><span class="n">qualifier</span><span class="p">)</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">db_repo_factory</span><span class="p">(</span>
+        <span class="n">client</span><span class="p">:</span> <span class="n">Annotated</span><span class="p">[</span><span class="n">DbClient</span><span class="p">,</span> <span class="n">Inject</span><span class="p">(</span><span class="n">qualifier</span><span class="o">=</span><span class="n">qualifier</span><span class="p">)],</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">DbRepository</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">DbRepository</span><span class="p">(</span><span class="n">client</span><span class="o">=</span><span class="n">client</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="p">[</span><span class="n">db_client_factory</span><span class="p">,</span> <span class="n">db_repo_factory</span><span class="p">]</span>
+
+
+<span class="n">primary</span> <span class="o">=</span> <span class="n">make_db_bundle</span><span class="p">(</span><span class="n">dsn</span><span class="o">=</span><span class="s2">&quot;postgresql://primary-db&quot;</span><span class="p">)</span>
+<span class="n">analytics</span> <span class="o">=</span> <span class="n">make_db_bundle</span><span class="p">(</span>
+    <span class="n">dsn</span><span class="o">=</span><span class="s2">&quot;postgresql://analytics-db&quot;</span><span class="p">,</span> <span class="n">qualifier</span><span class="o">=</span><span class="s2">&quot;analytics&quot;</span>
+<span class="p">)</span>
+
+<span class="n">container</span> <span class="o">=</span> <span class="n">wireup</span><span class="o">.</span><span class="n">create_sync_container</span><span class="p">(</span>
+    <span class="n">injectables</span><span class="o">=</span><span class="p">[</span><span class="o">*</span><span class="n">primary</span><span class="p">,</span> <span class="o">*</span><span class="n">analytics</span><span class="p">,</span> <span class="n">app</span><span class="o">.</span><span class="n">services</span><span class="p">],</span>
+<span class="p">)</span>
+</code></pre></div>
+<p>Use an unqualified default (<code>None</code>) for your primary bundle, then add qualifiers only where needed:</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Annotated</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">wireup</span><span class="w"> </span><span class="kn">import</span> <span class="n">Inject</span><span class="p">,</span> <span class="n">Injected</span><span class="p">,</span> <span class="n">injectable</span>
+
+
+<span class="nd">@injectable</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">ReportService</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">primary_repo</span><span class="p">:</span> <span class="n">Injected</span><span class="p">[</span><span class="n">DbRepository</span><span class="p">],</span>
+        <span class="n">analytics_repo</span><span class="p">:</span> <span class="n">Annotated</span><span class="p">[</span><span class="n">DbRepository</span><span class="p">,</span> <span class="n">Inject</span><span class="p">(</span><span class="n">qualifier</span><span class="o">=</span><span class="s2">&quot;analytics&quot;</span><span class="p">)],</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">primary_repo</span> <span class="o">=</span> <span class="n">primary_repo</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">analytics_repo</span> <span class="o">=</span> <span class="n">analytics_repo</span>
+</code></pre></div>
 
 
 
