@@ -79,8 +79,8 @@ with container.override.injectables(overrides=overrides):
 
 ### Nested Overrides
 
-The `container.override` also allows you to have nested overrides, where each time you override the same target, the
-previous gets saved in a stack. There are 2 ways to utilise nested overrides:
+`container.override` supports nested overrides for the same target. The innermost override is active, and exiting
+restores the previous value. There are 2 ways to utilise nested overrides:
 
 #### Context Managers
 
@@ -134,7 +134,7 @@ assert type(container.get(Foo)) is Foo
 
 A real-world example where this could be useful is if your application depends on a full-fledged database. However, in
 tests you want to override that dependency to use an in-memory database, and in one of the tests you want to override
-the dependency again to test an error case where the database throws a foriegn key exception.
+the dependency again to test an error case where the database throws a foreign key exception.
 
 ```python title="app.py"
 import wireup

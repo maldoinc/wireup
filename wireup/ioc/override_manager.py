@@ -129,10 +129,10 @@ class OverrideManager:
         )
 
         if (target, qualifier) in self.active_overrides:
+            if self.active_overrides[target, qualifier]:
+                self.active_overrides[target, qualifier].pop()
             if len(self.active_overrides[target, qualifier]) == 0:
                 del self.active_overrides[target, qualifier]
-            else:
-                self.active_overrides[target, qualifier].pop()
 
     def delete(self, target: type, qualifier: Qualifier | None = None) -> None:
         """Clear active override for the `target` injectable."""
