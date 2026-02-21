@@ -155,11 +155,14 @@ def create_app():
 def in_memory_db():
     return InMemoryDBService()
 
+
 # This is a function scoped fixture which means
 # you'll get a fresh copy of the application and container every time.
 @pytest.fixture
 def app(in_memory_db):
-    with get_app_container(app).override.injectable(DBService, new=in_memory_db):
+    with get_app_container(app).override.injectable(
+        DBService, new=in_memory_db
+    ):
         return create_app()
 ```
 
