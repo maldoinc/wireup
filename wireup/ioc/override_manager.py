@@ -25,8 +25,8 @@ class OverrideManager:
         self.__is_valid_override = is_valid_override
         self._factory_compiler = factory_compiler
         self._scoped_factory_compiler = scoped_factory_compiler
-        self._original_factories: dict[tuple[type, Qualifier], tuple[CompiledFactory, CompiledFactory]] = {}
-        self.active_overrides: dict[tuple[type, Qualifier], Any] = {}
+        self._original_factories: dict[tuple[type, Qualifier], list[tuple[CompiledFactory, CompiledFactory]]] = {}
+        self.active_overrides: dict[tuple[type, Qualifier], list[Any]] = {}
 
     def _compiler_override_obj_id(
         self,
@@ -65,14 +65,21 @@ class OverrideManager:
             raise UnknownOverrideRequestedError(klass=target, qualifier=qualifier)
 
         obj_id = FactoryCompiler.get_object_id(target, qualifier)
-        self.active_overrides[target, qualifier] = new
 
-        self._original_factories[target, qualifier] = (
-            self._factory_compiler.factories[obj_id],
-            self._scoped_factory_compiler.factories[obj_id],
+        active_overrides_stack = self.active_overrides.get((target, qualifier), [])
+        active_overrides_stack.append(new)
+        self.active_overrides[target, qualifier] = active_overrides_stack
+
+        original_factories_stack = self._original_factories.get((target, qualifier), [])
+        original_factories_stack.append(
+            (
+                self._factory_compiler.factories[obj_id],
+                self._scoped_factory_compiler.factories[obj_id],
+            )
         )
+        self._original_factories[target, qualifier] = original_factories_stack
 
-        singleton_factory, scoped_factory = self._original_factories[target, qualifier]
+        singleton_factory, scoped_factory = self._original_factories[target, qualifier][-1]
         # When determining the is_async flag check both the singleton and scoped compilers.
         # For scoped lifetimes the singleton compiler has erroring stub factories which are always sync
         # in which case we need to consult the scoped compiler which has the real factories.
@@ -106,7 +113,8 @@ class OverrideManager:
         if (target, qualifier) not in self._original_factories:
             return
 
-        factory_func, scoped_factory_func = self._original_factories[target, qualifier]
+        factory_func, scoped_factory_func = self._original_factories[target, qualifier].pop()
+
         self._compiler_restore_obj_id(
             compiler=self._factory_compiler,
             target=target,
@@ -120,9 +128,11 @@ class OverrideManager:
             original=scoped_factory_func,
         )
 
-        del self._original_factories[target, qualifier]
         if (target, qualifier) in self.active_overrides:
-            del self.active_overrides[target, qualifier]
+            if self.active_overrides[target, qualifier]:
+                self.active_overrides[target, qualifier].pop()
+            if len(self.active_overrides[target, qualifier]) == 0:
+                del self.active_overrides[target, qualifier]
 
     def delete(self, target: type, qualifier: Qualifier | None = None) -> None:
         """Clear active override for the `target` injectable."""
@@ -132,7 +142,11 @@ class OverrideManager:
         """Clear active injectable overrides."""
         self.active_overrides.clear()
         for key in self._original_factories:
-            self._restore_factory_methods(key[0], key[1])
+            if self._original_factories[key]:
+                # Keep original factory only, pop all remaining overrides
+                self._original_factories[key] = self._original_factories[key][:1]
+                self._restore_factory_methods(key[0], key[1])
+        self._original_factories.clear()
 
     @contextmanager
     def injectable(self, target: type, new: Any, qualifier: Qualifier | None = None) -> Iterator[None]:

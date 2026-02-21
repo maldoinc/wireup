@@ -8,7 +8,7 @@ import wireup
 from typing_extensions import Annotated
 from wireup import Inject, abstract, create_async_container, create_sync_container, inject_from_container, injectable
 from wireup._annotations import Injected
-from wireup.errors import UnknownOverrideRequestedError
+from wireup.errors import UnknownOverrideRequestedError, WireupError
 from wireup.ioc.factory_compiler import FactoryCompiler
 from wireup.ioc.types import InjectableLifetime, InjectableOverride
 
@@ -86,6 +86,101 @@ def create_sync_override_consumer_factory(lifetime: InjectableLifetime):
         return SyncOverrideConsumer(dep)
 
     return _factory
+
+
+def test_getting_async_injectable_from_sync_container_should_raise(container: Container):
+    @wireup.injectable
+    async def async_foo_factory() -> Foo:
+        return FooImpl()
+
+    container = wireup.create_sync_container(injectables=[async_foo_factory])
+
+    with container.override.injectable(Foo, MagicMock(spec=Foo)):
+        pass
+
+    with pytest.raises(
+        WireupError,
+        match=re.escape(
+            f"{Foo} is an async dependency and it cannot be created in a synchronous context."
+            " Create and use an async container via wireup.create_async_container."
+        ),
+    ):
+        container.get(Foo)
+
+
+def test_clear_active_overrides(container: Container):
+    @wireup.injectable
+    async def async_foo_factory() -> Foo:
+        return FooImpl()
+
+    container = wireup.create_sync_container(injectables=[async_foo_factory])
+
+    outer = MagicMock(spec=Foo)
+    inner = MagicMock(spec=Foo)
+
+    with container.override.injectable(Foo, new=outer):
+        assert container.get(Foo) is outer
+
+        with container.override.injectable(Foo, new=inner):
+            assert container.get(Foo) is inner
+
+        assert container.get(Foo) is outer
+
+
+def test_clear_on_empty_stack_should_not_raise(container: Container):
+    container = wireup.create_sync_container(injectables=[FooImpl])
+    with container.override.injectable(FooImpl, new=MagicMock()):
+        pass
+
+    container.override.clear()
+
+
+def test_clear_actually_clears_overrides(container: Container):
+    @wireup.injectable
+    class Foo:
+        pass
+
+    container = wireup.create_sync_container(injectables=[Foo])
+
+    mock1 = MagicMock(spec=Foo)
+    mock2 = MagicMock(spec=Foo)
+
+    container.override.set(Foo, new=mock1)
+    container.override.set(Foo, new=mock2)
+
+    assert container.get(Foo) is mock2
+
+    container.override.clear()
+
+    assert type(container.get(Foo)) is Foo
+
+
+def test_nested_injectable_overrides(container: Container):
+    container = wireup.create_sync_container(injectables=[Foo, FooImpl])
+
+    mock1 = MagicMock()
+    mock1.get_foo.return_value = "foo mocked 1"
+
+    with container.override.injectable(Foo, new=mock1):
+        assert container.get(Foo).get_foo() == "foo mocked 1"
+
+        mock2 = MagicMock()
+        mock2.get_foo.return_value = "foo mocked 2"
+
+        with container.override.injectable(Foo, new=mock2):
+            assert container.get(Foo).get_foo() == "foo mocked 2"
+
+            mock3 = MagicMock()
+            mock3.get_foo.return_value = "foo mocked 3"
+
+            with container.override.injectable(Foo, new=mock3):
+                assert container.get(Foo).get_foo() == "foo mocked 3"
+
+            assert container.get(Foo).get_foo() == "foo mocked 2"
+
+        assert container.get(Foo).get_foo() == "foo mocked 1"
+
+    assert container.get(Foo).get_foo() == "foo"  # expected "foo", actual: "foo mocked 1"
 
 
 def test_container_overrides_deps_service_locator(container: Container):
