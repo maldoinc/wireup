@@ -105,6 +105,12 @@ class WeatherService:
 
 The next step is to create a container and register the dependencies we just defined.
 
+!!! tip "Default Registration Style"
+
+    In production apps, prefer module/package scanning (`injectables=[my_app.services]`) as the default registration style.
+    Use explicit class/function lists mainly for small examples, tests, or when you need very tight control over what gets
+    registered.
+
 ```python title="container.py"
 import wireup
 from my_app import services

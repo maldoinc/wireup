@@ -261,9 +261,9 @@ function that returns injectable factories.
 
 This is useful for cases like:
 
-* Multiple database clients with different connection settings.
-* Tenant-specific integrations.
-* Reusing the same wiring pattern across environments.
+- Multiple database clients with different connection settings.
+- Tenant-specific integrations.
+- Reusing the same wiring pattern across environments.
 
 ```python
 from typing import Annotated

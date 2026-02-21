@@ -100,6 +100,27 @@ decoupled.
     database = container.get(Database)  # ✅ Dependencies resolved.
     ```
 
+=== "4. Auto-Discover"
+
+    No need to list every injectable manually. Scan entire modules or packages to register all at once. This is the
+    recommended default registration style for larger applications.
+
+    ```python
+    import wireup
+    import app
+
+
+    container = wireup.create_sync_container(
+        injectables=[
+            app.services,
+            app.repositories,
+            app.factories,
+        ]
+    )
+
+    user_service = container.get(UserService)  # ✅ Dependencies resolved.
+    ```
+
 ### 🎯 Function Injection
 
 Inject dependencies directly into any function. This is useful for CLI commands, background tasks, event handlers, or

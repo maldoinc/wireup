@@ -109,6 +109,7 @@ database = container.get(Database)  # ✅ Dependencies resolved.
 **4. Auto-Discover**
 
 No need to list every injectable manually. Scan entire modules or packages to register all at once.
+This is the recommended default registration style for larger applications.
 
 <details>
 <summary>View Code</summary>
