@@ -200,6 +200,9 @@ and generators. Wireup handles cleanup at the correct time depending on the inje
             yield WeatherClient(client=session)
     ```
 
+Need reusable provider-style wiring with different runtime settings? See
+[Reusable Factory Bundles](factories.md#reusable-factory-bundles).
+
 ### ❓ Optional Dependencies
 
 Wireup has first-class support for `Optional[T]` and `T | None`. Expose optional dependencies and let Wireup handle the
@@ -348,3 +351,4 @@ pip install wireup
 - [Getting Started](getting_started.md) - Follow the Getting Started guide for a more in-depth tutorial.
 - [Injectables](injectables.md)
 - [Configuration](configuration.md)
+- [Factories](factories.md) - Includes advanced patterns like Reusable Factory Bundles.

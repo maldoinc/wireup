@@ -253,3 +253,68 @@ class UserService:
                 self.cache.set(f"user:{user_id}", user.to_json())
                 return user
         ```
+
+## Reusable Factory Bundles
+
+When you need to register the same dependency graph multiple times with different runtime settings, use a parameterized
+function that returns injectable factories.
+
+This is useful for cases like:
+
+* Multiple database clients with different connection settings.
+* Tenant-specific integrations.
+* Reusing the same wiring pattern across environments.
+
+```python
+from typing import Annotated
+import wireup
+from wireup import Inject, injectable
+
+
+class DbClient: ...
+
+
+class DbRepository: ...
+
+
+def make_db_bundle(*, dsn: str, qualifier: str | None = None) -> list[object]:
+    @injectable(qualifier=qualifier)
+    def db_client_factory() -> DbClient:
+        return DbClient(dsn=dsn)
+
+    @injectable(qualifier=qualifier)
+    def db_repo_factory(
+        client: Annotated[DbClient, Inject(qualifier=qualifier)],
+    ) -> DbRepository:
+        return DbRepository(client=client)
+
+    return [db_client_factory, db_repo_factory]
+
+
+primary = make_db_bundle(dsn="postgresql://primary-db")
+analytics = make_db_bundle(
+    dsn="postgresql://analytics-db", qualifier="analytics"
+)
+
+container = wireup.create_sync_container(
+    injectables=[*primary, *analytics, app.services],
+)
+```
+
+Use an unqualified default (`None`) for your primary bundle, then add qualifiers only where needed:
+
+```python
+from typing import Annotated
+from wireup import Inject, Injected, injectable
+
+
+@injectable
+class ReportService:
+    def __init__(
+        self,
+        primary_repo: Injected[DbRepository],
+        analytics_repo: Annotated[DbRepository, Inject(qualifier="analytics")],
+    ) -> None:
+        self.primary_repo = primary_repo
+        self.analytics_repo = analytics_repo
+```

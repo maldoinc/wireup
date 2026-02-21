@@ -215,6 +215,10 @@ async def weather_client_factory() -> AsyncIterator[WeatherClient]:
 
 </details>
 
+
+Need reusable provider-style wiring with different runtime settings? See [Reusable Factory Bundles](https://maldoinc.github.io/wireup/latest/factories/#reusable-factory-bundles).
+
+
 ### ❓ Optional Dependencies
 
 Wireup has first-class support for `Optional[T]` and `T | None`. Expose optional dependencies and let Wireup handle the rest.
