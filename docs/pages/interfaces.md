@@ -116,6 +116,24 @@ def main(
     class RedisCache: ...
     ```
 
+!!! tip "Use Type Aliases for Repeated Qualified Injections"
+
+    If you repeatedly inject the same qualified dependency, consider creating a type alias once and reusing it:
+
+    ```python
+    from typing import Annotated
+    from wireup import Inject, Injected, inject_from_container
+
+    RedisCacheDep = Annotated[Cache, Inject(qualifier="redis")]
+
+
+    @inject_from_container(container)
+    def main(
+        default_cache: Injected[Cache],
+        redis_cache: RedisCacheDep,
+    ): ...
+    ```
+
 ## Default Implementation
 
 You can register a default implementation by omitting the qualifier on one of the implementations. When `Cache` is
