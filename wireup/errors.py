@@ -96,6 +96,25 @@ class InvalidRegistrationTypeError(WireupError):
         super().__init__(f"Cannot register {attempted} with the container. Allowed types are callables and types.")
 
 
+class AsTypeMismatchError(WireupError):
+    """Raised when as_type registration does not match the implementation type."""
+
+    def __init__(self, *, implementation: type[Any], as_type: type[Any]) -> None:
+        super().__init__(
+            f"Cannot register implementation {stringify_type(implementation)} as {stringify_type(as_type)}. "
+            f"{stringify_type(implementation)} is not a subclass of {stringify_type(as_type)}."
+        )
+
+
+class InvalidAsTypeError(WireupError):
+    """Raised when as_type is not a valid registration key."""
+
+    def __init__(self, as_type: Any) -> None:
+        super().__init__(
+            f"Invalid as_type value {as_type!r}. as_type must be a runtime type usable as a registration key."
+        )
+
+
 class UnknownOverrideRequestedError(WireupError):
     """Raised when attempting to override a injectable which does not exist."""
 

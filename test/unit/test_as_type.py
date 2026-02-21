@@ -3,11 +3,11 @@ from __future__ import annotations
 import sys
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import Optional, Protocol
+from typing import Optional, Protocol, runtime_checkable
 
 import pytest
 from wireup import create_sync_container, injectable
-from wireup.errors import UnknownServiceRequestedError
+from wireup.errors import AsTypeMismatchError, InvalidAsTypeError, UnknownServiceRequestedError
 
 
 class FooProtocol(Protocol):
@@ -229,6 +229,29 @@ class DependencyImpl:
         return "dependency_impl"
 
 
+@runtime_checkable
+class RuntimeCacheProto(Protocol):
+    def get(self, key: str) -> str | None: ...
+
+
+@injectable(as_type=RuntimeCacheProto)
+class RuntimeCacheImpl:
+    def get(self, key: str) -> str | None:
+        return key
+
+
+class NonProtocolBaseForFactory:
+    pass
+
+
+class WrongImplForFactory:
+    pass
+
+
+class SomethingForInvalidAsTypeFactory:
+    pass
+
+
 @injectable
 @dataclass
 class ServiceWithDependency:
@@ -248,3 +271,77 @@ def test_as_type_factory_dependency_injection():
     service = container.get(ServiceWithDependency)
     assert isinstance(service.dependency, DependencyImpl)
     assert service.dependency.do_something() == "dependency_impl"
+
+
+def test_runtime_checkable_protocol_validation_passes():
+    container = create_sync_container(injectables=[RuntimeCacheImpl])
+    cache = container.get(RuntimeCacheProto)
+    assert isinstance(cache, RuntimeCacheImpl)
+    assert cache.get("x") == "x"
+
+
+def test_as_type_rejects_incompatible_class_registration():
+    class NonProtocolBase:
+        pass
+
+    @injectable(as_type=NonProtocolBase)
+    class WrongImpl:
+        pass
+
+    with pytest.raises(
+        AsTypeMismatchError,
+        match="Cannot register implementation",
+    ):
+        create_sync_container(injectables=[WrongImpl])
+
+
+def test_as_type_rejects_incompatible_factory_registration():
+    @injectable(as_type=NonProtocolBaseForFactory)
+    def make_wrong() -> WrongImplForFactory:
+        return WrongImplForFactory()
+
+    with pytest.raises(
+        AsTypeMismatchError,
+        match="Cannot register implementation",
+    ):
+        create_sync_container(injectables=[make_wrong])
+
+
+def test_as_type_rejects_invalid_registration_key_for_class():
+    @injectable(as_type=1)  # type: ignore[arg-type]
+    class Something:
+        pass
+
+    with pytest.raises(
+        InvalidAsTypeError,
+        match="Invalid as_type value",
+    ):
+        create_sync_container(injectables=[Something])
+
+
+def test_runtime_checkable_protocol_validation_fails():
+    @runtime_checkable
+    class RuntimeRequiredProto(Protocol):
+        def required(self) -> int: ...
+
+    @injectable(as_type=RuntimeRequiredProto)
+    class WrongRuntimeImpl:
+        pass
+
+    with pytest.raises(
+        AsTypeMismatchError,
+        match="Cannot register implementation",
+    ):
+        create_sync_container(injectables=[WrongRuntimeImpl])
+
+
+def test_as_type_rejects_invalid_registration_key_for_factory():
+    @injectable(as_type=1)  # type: ignore[arg-type]
+    def make_something() -> SomethingForInvalidAsTypeFactory:
+        return SomethingForInvalidAsTypeFactory()
+
+    with pytest.raises(
+        InvalidAsTypeError,
+        match="Invalid as_type value",
+    ):
+        create_sync_container(injectables=[make_something])

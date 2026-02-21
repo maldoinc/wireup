@@ -8,9 +8,11 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Callable, TypeVar, Union
 
 from wireup.errors import (
+    AsTypeMismatchError,
     DuplicateQualifierForInterfaceError,
     DuplicateServiceRegistrationError,
     FactoryReturnTypeIsEmptyError,
+    InvalidAsTypeError,
     InvalidRegistrationTypeError,
     PositionalOnlyParameterError,
     UnknownParameterError,
@@ -111,9 +113,14 @@ class ContainerRegistry:
             if klass is None:
                 raise FactoryReturnTypeIsEmptyError(obj)
 
+            type_analysis = analyze_type(klass)
+
+            if impl.as_type:
+                self._assert_as_type_compatible(implementation_type=type_analysis.raw_type, as_type=impl.as_type)
+
             target_type = impl.as_type
 
-            if target_type and analyze_type(klass).is_optional:
+            if target_type and type_analysis.is_optional:
                 from typing import Optional  # noqa: PLC0415
 
                 target_type = Optional[target_type]
@@ -128,6 +135,38 @@ class ContainerRegistry:
 
         self.assert_dependencies_valid()
         self._update_factories_async_flag()
+
+    @staticmethod
+    def _assert_as_type_compatible(implementation_type: Any, as_type: Any) -> None:
+        """Try and validate the as_type matches the decorated item on a best-effort basis."""
+        if not isinstance(implementation_type, type):
+            return
+
+        as_type_analysis = analyze_type(as_type)
+        target_type = as_type_analysis.raw_type
+
+        # Raise for anything in as_type=xxx that's not a type.
+        if not isinstance(target_type, type):  # type: ignore[reportUnnecessaryIsInstance, unused-ignore]
+            raise InvalidAsTypeError(as_type)
+
+        is_protocol = getattr(target_type, "_is_protocol", False)
+        is_runtime_protocol = getattr(target_type, "_is_runtime_protocol", False)
+
+        # Protocols are structural. Validate only when runtime-checkable.
+        if is_protocol and not is_runtime_protocol:
+            return
+
+        try:
+            is_compatible = issubclass(implementation_type, target_type)
+        except TypeError:
+            # Some runtime-checkable protocols are not compatible with issubclass().
+            # Skip these failures on a best-effort basis.
+            if is_protocol:
+                return
+            raise
+
+        if not is_compatible:
+            raise AsTypeMismatchError(implementation=implementation_type, as_type=target_type)
 
     def _update_factories_async_flag(self) -> None:
         def _is_dependency_async(impl: type, qualifier: Qualifier) -> bool:

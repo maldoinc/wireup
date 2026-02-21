@@ -49,10 +49,23 @@ to bind a concrete class to a Protocol or an Abstract Base Class.
     Type checkers cannot verify that the decorated class implements the protocol or ABC specified in `as_type`. This is a
     Python type system limitation.
 
-!!! tip "Factories Control Registration Type"
+!!! note "Runtime Validation"
 
-    With factories, you control the type the dependency is registered as by specifying the return type annotation. This
-    makes `as_type` largely unnecessary for factories and allows type checkers to verify the return type.
+    Wireup performs runtime validation for `as_type` with the following behavior:
+
+    * Non-protocol targets (`ABC`/regular classes): strict `issubclass` validation.
+    * `@runtime_checkable` protocols: best-effort runtime validation.
+    * Non-runtime-checkable protocols: no runtime structural validation.
+
+    To get the most reliable guarantees:
+
+    * Prefer factory return types over `as_type` when possible, since return annotations are statically checkable.
+    * Prefer `ABC`s when you need strict runtime enforcement.
+    * Mark protocols as `@runtime_checkable` if you want Wireup to attempt runtime checks.
+  
+    ---
+
+    With factories, you control the registration type via the return annotation, which gives stronger static checks:
 
     ```python
     from wireup import injectable
@@ -70,8 +83,8 @@ to bind a concrete class to a Protocol or an Abstract Base Class.
     class InMemoryCache: ...
     ```
 
-    The `as_type` parameter is still useful when you want the function to retain its original type for other purposes (e.g.,
-    testing, direct usage) while registering it under a different type in the container.
+    Use `as_type` when you want to register under a different type while keeping the original implementation type for other
+    direct uses.
 
 ## Multiple Implementations
 
