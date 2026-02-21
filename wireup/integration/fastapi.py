@@ -186,7 +186,6 @@ def _update_lifespan(
         if class_based_routes:
             for cbr in class_based_routes:
                 container._registry.extend(impls=[InjectableDeclaration(cbr)])
-            container._recompile()
 
             for cbr in class_based_routes:
                 await _instantiate_class_based_route(app, container, cbr)

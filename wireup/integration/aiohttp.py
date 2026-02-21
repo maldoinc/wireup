@@ -77,7 +77,6 @@ def _get_startup_event(
     if handlers:
         for handler_type in handlers:
             container._registry.extend(impls=[InjectableDeclaration(handler_type)])
-        container._recompile()
 
     async def _inner(app: web.Application) -> None:
         if handlers:

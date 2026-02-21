@@ -78,7 +78,7 @@ def _function_get_unwrapped_return_type(fn: Callable[..., T]) -> type[T] | None:
 class ContainerRegistry:
     """Container class holding injectable registration info and dependencies among them."""
 
-    __slots__ = ("dependencies", "factories", "impls", "interfaces", "lifetime", "parameters")
+    __slots__ = ("dependencies", "factories", "impls", "interfaces", "lifetime", "on_change", "parameters")
 
     def __init__(
         self,
@@ -92,6 +92,7 @@ class ContainerRegistry:
         self.factories: dict[ContainerObjectIdentifier, InjectableFactory] = {}
         self.dependencies: dict[InjectionTarget, dict[str, AnnotatedParameter]] = defaultdict(defaultdict)
         self.lifetime: dict[ContainerObjectIdentifier, InjectableLifetime] = {}
+        self.on_change: Callable[[], None] | None = None
         self.extend(abstracts=abstracts or [], impls=impls or [])
 
     def extend(
@@ -135,6 +136,8 @@ class ContainerRegistry:
 
         self.assert_dependencies_valid()
         self._update_factories_async_flag()
+        if self.on_change:
+            self.on_change()
 
     @staticmethod
     def _assert_as_type_compatible(implementation_type: Any, as_type: Any) -> None:

@@ -105,7 +105,7 @@ def _create_container(  # noqa: PLR0913
     scoped_compiler.compile(copy_singletons_from=singleton_compiler)
 
     override_manager = OverrideManager(registry.is_type_with_qualifier_known, singleton_compiler, scoped_compiler)
-    return klass(
+    container = klass(
         registry=registry,
         factory_compiler=singleton_compiler,
         scoped_compiler=scoped_compiler,
@@ -114,6 +114,9 @@ def _create_container(  # noqa: PLR0913
         override_manager=override_manager,
         concurrent_scoped_access=concurrent_scoped_access,
     )
+    registry.on_change = container._recompile
+
+    return container
 
 
 def _merge_definitions(
