@@ -2614,7 +2614,7 @@ methods for retrieval and cleanup.</p>
 <tr>
 <td style="text-align: left;"><code>injectables</code></td>
 <td style="text-align: left;"><code>list[Union[type, Callable, ModuleType]]</code></td>
-<td style="text-align: left;">Classes, functions decorated with <code>@injectable</code>, or modules to scan. Modules are scanned recursively, collecting only items decorated with <code>@injectable</code>. For reusable provider-style wiring (same graph, different runtime settings), see <a href="../factories/#reusable-factory-bundles">Factories: Reusable Factory Bundles</a>.</td>
+<td style="text-align: left;">Classes, functions decorated with <code>@injectable</code>, or modules to scan. Modules are scanned recursively, collecting only items decorated with <code>@injectable</code>. Recommended default for production apps: module/package scanning. For reusable provider-style wiring (same graph, different runtime settings), see <a href="../factories/#reusable-factory-bundles">Factories: Reusable Factory Bundles</a>.</td>
 </tr>
 <tr>
 <td style="text-align: left;"><code>config</code></td>

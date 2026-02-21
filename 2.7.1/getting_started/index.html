@@ -2627,6 +2627,12 @@ generator. This is transparently handled by the container.</p>
 </ol>
 <h3 id="2-create-the-container">2. Create the container<a class="headerlink" href="#2-create-the-container" title="Permanent link">&para;</a></h3>
 <p>The next step is to create a container and register the dependencies we just defined.</p>
+<div class="admonition tip">
+<p class="admonition-title">Default Registration Style</p>
+<p>In production apps, prefer module/package scanning (<code>injectables=[my_app.services]</code>) as the default registration style.
+Use explicit class/function lists mainly for small examples, tests, or when you need very tight control over what gets
+registered.</p>
+</div>
 <div class="highlight"><span class="filename">container.py</span><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">wireup</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">my_app</span><span class="w"> </span><span class="kn">import</span> <span class="n">services</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">os</span>

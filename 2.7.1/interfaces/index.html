@@ -2487,6 +2487,22 @@ easier.</p>
 <span class="k">class</span><span class="w"> </span><span class="nc">RedisCache</span><span class="p">:</span> <span class="o">...</span>
 </code></pre></div>
 </div>
+<div class="admonition tip">
+<p class="admonition-title">Use Type Aliases for Repeated Qualified Injections</p>
+<p>If you repeatedly inject the same qualified dependency, consider creating a type alias once and reusing it:</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Annotated</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">wireup</span><span class="w"> </span><span class="kn">import</span> <span class="n">Inject</span><span class="p">,</span> <span class="n">Injected</span><span class="p">,</span> <span class="n">inject_from_container</span>
+
+<span class="n">RedisCacheDep</span> <span class="o">=</span> <span class="n">Annotated</span><span class="p">[</span><span class="n">Cache</span><span class="p">,</span> <span class="n">Inject</span><span class="p">(</span><span class="n">qualifier</span><span class="o">=</span><span class="s2">&quot;redis&quot;</span><span class="p">)]</span>
+
+
+<span class="nd">@inject_from_container</span><span class="p">(</span><span class="n">container</span><span class="p">)</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">main</span><span class="p">(</span>
+    <span class="n">default_cache</span><span class="p">:</span> <span class="n">Injected</span><span class="p">[</span><span class="n">Cache</span><span class="p">],</span>
+    <span class="n">redis_cache</span><span class="p">:</span> <span class="n">RedisCacheDep</span><span class="p">,</span>
+<span class="p">):</span> <span class="o">...</span>
+</code></pre></div>
+</div>
 <h2 id="default-implementation">Default Implementation<a class="headerlink" href="#default-implementation" title="Permanent link">&para;</a></h2>
 <p>You can register a default implementation by omitting the qualifier on one of the implementations. When <code>Cache</code> is
 requested without a qualifier, the default will be injected.</p>
