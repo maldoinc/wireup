@@ -41,8 +41,7 @@ class DatabaseService:
 
 ### Dot Notation (Nested Configuration)
 
-Access nested configuration values using dot notation. Wireup allows you to inject configuration from any point in the
-tree, not just leaf values.
+Access nested configuration values using dot notation. Wireup allows you to inject configuration from any point in the tree, not just leaf values. Traversal is supported for objects and dict-like structures.
 
 ```python
 import wireup
