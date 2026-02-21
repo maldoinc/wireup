@@ -106,6 +106,41 @@ def test_inject_from_container_unchecked_config() -> None:
         assert target() == "test"
 
 
+async def test_inject_from_container_unchecked_with_async_scope_and_override() -> None:
+    class Dep:
+        pass
+
+    @injectable(lifetime="scoped")
+    async def make_dep() -> Dep:
+        return Dep()
+
+    @injectable(lifetime="transient")
+    class Consumer:
+        def __init__(self, dep: Dep):
+            self.dep = dep
+
+    container = wireup.create_async_container(injectables=[make_dep, Consumer])
+
+    async with container.enter_scope() as scoped:
+
+        @inject_from_container_unchecked(lambda: scoped)
+        async def target(dep: Injected[Dep], consumer: Injected[Consumer]) -> Tuple[Dep, Consumer]:
+            return dep, consumer
+
+        class OverrideDep:
+            pass
+
+        override = OverrideDep()
+        with container.override.injectable(Dep, override):
+            dep, consumer = await target()
+            assert dep is override
+            assert consumer.dep is override
+
+        dep, consumer = await target()
+        assert isinstance(dep, Dep)
+        assert isinstance(consumer.dep, Dep)
+
+
 @pytest.mark.parametrize("qualifier", [None, "foo"])
 async def test_raises_on_unknown_service(container: Container, qualifier: str) -> None:
     class NotManagedByWireup: ...
