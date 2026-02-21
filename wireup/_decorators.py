@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import inspect
-from typing import TYPE_CHECKING, Any, Callable
+from typing import TYPE_CHECKING, Any, Callable, TypeVar
 
 import wireup
 import wireup.ioc
@@ -21,17 +21,19 @@ if TYPE_CHECKING:
     from wireup.ioc.container.sync_container import ScopedSyncContainer
     from wireup.ioc.types import AnnotatedParameter
 
+R = TypeVar("R")
+
 
 def inject_from_container_unchecked(
     scoped_container_supplier: Callable[[], ScopedSyncContainer | ScopedAsyncContainer],
     *,
     hide_annotated_names: bool = False,
-) -> Callable[..., Any]:
+) -> Callable[[Callable[..., R]], Callable[..., R]]:
     """Inject dependencies into the decorated function. The "unchecked" part of the name refers to the fact that
     this cannot perform validation on the parameters to inject on module import time due to the absence of a container
     instance."""
 
-    def _decorator(target: Callable[..., Any]) -> Callable[..., Any]:
+    def _decorator(target: Callable[..., R]) -> Callable[..., R]:
         return inject_from_container_util(
             target=target,
             names_to_inject=get_inject_annotated_parameters(target),
@@ -54,7 +56,7 @@ def inject_from_container(
     | None = None,
     *,
     hide_annotated_names: bool = False,
-) -> Callable[..., Any]:
+) -> Callable[[Callable[..., R]], Callable[..., R]]:
     """Inject dependencies into the decorated function based on annotations. Wireup containers will
     attempt to provide only parameters annotated with `Inject`.
 
@@ -70,7 +72,7 @@ def inject_from_container(
         signature of the decorated function.
     """
 
-    def _decorator(target: Callable[..., Any]) -> Callable[..., Any]:
+    def _decorator(target: Callable[..., R]) -> Callable[..., R]:
         if (inspect.iscoroutinefunction(target) or inspect.isasyncgenfunction(target)) and isinstance(
             container, SyncContainer
         ):
@@ -93,7 +95,7 @@ def inject_from_container(
 
 
 def inject_from_container_util(
-    target: Callable[..., Any],
+    target: Callable[..., R],
     names_to_inject: dict[str, AnnotatedParameter],
     container: SyncContainer | AsyncContainer | None,
     scoped_container_supplier: Callable[[], ScopedSyncContainer | ScopedAsyncContainer] | None = None,
@@ -104,7 +106,7 @@ def inject_from_container_util(
     | None = None,
     *,
     hide_annotated_names: bool,
-) -> Callable[..., Any]:
+) -> Callable[..., R]:
     if not (container or scoped_container_supplier):
         msg = "Container or scoped_container_supplier must be provided for injection."
         raise WireupError(msg)
@@ -119,8 +121,9 @@ def inject_from_container_util(
         scoped_container_supplier=scoped_container_supplier,
         middleware=_middleware,
     )
+    wrapped = res
 
     if hide_annotated_names:
-        wireup.ioc.util.hide_annotated_names(res)
+        wireup.ioc.util.hide_annotated_names(wrapped)
 
-    return res
+    return wrapped
