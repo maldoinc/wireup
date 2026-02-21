@@ -110,7 +110,7 @@ class BaseContainer:
                 cache_key: tuple[type, Qualifier | None] = (klass, qualifier)  # type:ignore[assignment]
 
                 if cache_key in self._override_mgr.active_overrides:
-                    return self._override_mgr.active_overrides[cache_key]  # type:ignore[no-any-return]
+                    return self._override_mgr.active_overrides[cache_key][-1]  # type:ignore[no-any-return]
 
                 if cache_key in self._global_scope_objects:
                     return self._global_scope_objects[cache_key]  # type:ignore[no-any-return]

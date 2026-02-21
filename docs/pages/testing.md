@@ -77,6 +77,105 @@ with container.override.injectables(overrides=overrides):
     response = client.get("/checkout")
 ```
 
+### Nested Overrides
+
+`container.override` supports nested overrides for the same target. The innermost override is active, and exiting
+restores the previous value. There are 2 ways to utilise nested overrides:
+
+#### Context Managers
+
+```python
+@injectable
+class Foo:
+    pass
+
+
+container = wireup.create_sync_container(injectables=[Foo])
+
+outer = MagicMock(spec=Foo)
+inner = MagicMock(spec=Foo)
+
+with container.override.injectable(Foo, new=outer):
+    assert container.get(Foo) is outer
+
+    with container.override.injectable(Foo, new=inner):
+        assert container.get(Foo) is inner
+
+    assert container.get(Foo) is outer
+assert type(container.get(Foo)) is Foo
+```
+
+#### Manual `set` and `delete`
+
+```python
+@injectable
+class Foo:
+    pass
+
+
+container = wireup.create_sync_container(injectables=[Foo])
+
+mock1 = MagicMock(spec=Foo)
+mock2 = MagicMock(spec=Foo)
+
+container.override.set(Foo, new=mock1)
+container.override.set(Foo, new=mock2)
+
+assert container.get(Foo) is mock2
+
+container.override.delete(Foo)
+
+assert container.get(Foo) is mock1
+
+container.override.delete(Foo)
+
+assert type(container.get(Foo)) is Foo
+```
+
+A real-world example where this could be useful is if your application depends on a full-fledged database. However, in
+tests you want to override that dependency to use an in-memory database, and in one of the tests you want to override
+the dependency again to test an error case where the database throws a foreign key exception.
+
+```python title="app.py"
+import wireup
+
+
+def create_app():
+    app = ...
+
+    container = wireup.create_async_container(...)
+    # Example shows FastAPI but any integration works the same.
+    wireup.integration.fastapi.setup(container, app)
+
+    return app
+```
+
+```python title="conftest.py"
+@pytest.fixture
+def in_memory_db():
+    return InMemoryDBService()
+
+# This is a function scoped fixture which means
+# you'll get a fresh copy of the application and container every time.
+@pytest.fixture
+def app(in_memory_db):
+    with get_app_container(app).override.injectable(DBService, new=in_memory_db):
+        return create_app()
+```
+
+```python title="some_test_file.py"
+from wireup.integration.fastapi import get_app_container
+
+
+def test_db_foreign_key_exception(client: TestClient, app):
+    mock_db = MagicMock()
+    # mock db to throw exception
+    with get_app_container(app).override.injectable(DBService, new=mock_db):
+        response = client.get("/some/path")
+
+        # Assert response and mock calls.
+```
+
 ### Pytest
 
 ```python title="app.py"
