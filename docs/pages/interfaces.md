@@ -53,17 +53,17 @@ to bind a concrete class to a Protocol or an Abstract Base Class.
 
     Wireup performs runtime validation for `as_type` with the following behavior:
 
-    * Non-protocol targets (`ABC`/regular classes): strict `issubclass` validation.
-    * `@runtime_checkable` protocols: best-effort runtime validation.
-    * Non-runtime-checkable protocols: no runtime structural validation.
+    - Non-protocol targets (`ABC`/regular classes): strict `issubclass` validation.
+    - `@runtime_checkable` protocols: best-effort runtime validation.
+    - Non-runtime-checkable protocols: no runtime structural validation.
 
     To get the most reliable guarantees:
 
-    * Prefer factory return types over `as_type` when possible, since return annotations are statically checkable.
-    * Prefer `ABC`s when you need strict runtime enforcement.
-    * Mark protocols as `@runtime_checkable` if you want Wireup to attempt runtime checks.
-  
-    ---
+    - Prefer factory return types over `as_type` when possible, since return annotations are statically checkable.
+    - Prefer `ABC`s when you need strict runtime enforcement.
+    - Mark protocols as `@runtime_checkable` if you want Wireup to attempt runtime checks.
+
+    ______________________________________________________________________
 
     With factories, you control the registration type via the return annotation, which gives stronger static checks:
 

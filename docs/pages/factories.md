@@ -293,7 +293,8 @@ def make_db_bundle(*, dsn: str, qualifier: str | None = None) -> list[object]:
 
 primary = make_db_bundle(dsn="postgresql://primary-db")
 analytics = make_db_bundle(
-    dsn="postgresql://analytics-db", qualifier="analytics"
+    dsn="postgresql://analytics-db",
+    qualifier="analytics",
 )
 
 container = wireup.create_sync_container(
