@@ -132,6 +132,13 @@ class OverrideManager:
             original=override_frame.original_scoped_factory,
         )
 
+    def _get_active_override(self, container_object_identifer: ContainerObjectIdentifier) -> Any:
+        """Get current active override or None if not found."""
+        if container_object_identifer not in self._original_factories:
+            return None
+
+        return self._original_factories[container_object_identifer][-1].new_value
+
     def delete(self, target: type, qualifier: Qualifier | None = None) -> None:
         """Clear active override for the `target` injectable."""
         self._restore_factory_methods(target, qualifier)
