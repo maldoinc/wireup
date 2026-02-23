@@ -27,6 +27,7 @@ from wireup.integration.starlette import (
     current_request,
     get_app_container,
     get_request_container,
+    inject,
     request_factory,
     websocket_factory,
 )
@@ -42,6 +43,7 @@ __all__ = [
     "WireupRoute",
     "get_app_container",
     "get_request_container",
+    "inject",
     "request_factory",
     "setup",
     "websocket_factory",

@@ -9,4 +9,5 @@ frameworks:
 - [x] [Django](django/index.md)
 - [x] [FastAPI](fastapi/index.md)
 - [x] [Flask](flask/index.md)
+- [x] [Strawberry](strawberry/index.md)
 - [x] [Starlette](starlette/index.md)

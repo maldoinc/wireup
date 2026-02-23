@@ -35,6 +35,8 @@ nav:
         - Class-Based Handlers: integrations/aiohttp/class_based_handlers.md
       - Starlette: 
         - Starlette Integration: integrations/starlette/index.md
+      - Strawberry:
+        - Strawberry Integration: integrations/strawberry/index.md
     - Command Line Interfaces:
       - Click:
         - Click Integration: integrations/click/index.md
