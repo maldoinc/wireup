@@ -40,6 +40,8 @@ nav:
     - Command Line Interfaces:
       - Click:
         - Click Integration: integrations/click/index.md
+      - Typer:
+        - Typer Integration: integrations/typer/index.md
   - API Reference:
       - wireup: class/wireup.md
       - OverrideManager: class/override_manager.md
@@ -51,6 +53,7 @@ nav:
         - AIOHTTP: class/aiohttp_integration.md
         - Starlette: class/starlette_integration.md
         - Click: class/click_integration.md
+        - Typer: class/typer_integration.md
 repo_url: https://github.com/maldoinc/wireup
 repo_name: maldoinc/wireup
 theme:

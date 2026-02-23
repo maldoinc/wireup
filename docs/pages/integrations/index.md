@@ -11,3 +11,4 @@ frameworks:
 - [x] [Flask](flask/index.md)
 - [x] [Strawberry](strawberry/index.md)
 - [x] [Starlette](starlette/index.md)
+- [x] [Typer](typer/index.md)
