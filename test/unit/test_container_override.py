@@ -108,6 +108,21 @@ def test_getting_async_injectable_from_sync_container_should_raise(container: Co
         container.get(Foo)
 
 
+@pytest.mark.parametrize("falsy_override", [False, 0, "", None])
+def test_getting_async_injectable_from_sync_container_returns_falsy_override(
+    container: Container,
+    falsy_override: object,
+):
+    @wireup.injectable
+    async def async_foo_factory() -> Foo:
+        return FooImpl()
+
+    container = wireup.create_sync_container(injectables=[async_foo_factory])
+
+    with container.override.injectable(Foo, falsy_override):
+        assert container.get(Foo) is falsy_override
+
+
 def test_clear_active_overrides(container: Container):
     @wireup.injectable
     async def async_foo_factory() -> Foo:
