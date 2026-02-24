@@ -109,8 +109,9 @@ class BaseContainer:
                 # However, if it was already instantiated we can return the cached instance.
                 cache_key: tuple[type, Qualifier | None] = (klass, qualifier)  # type:ignore[assignment]
 
-                if cache_key in self._override_mgr.active_overrides:
-                    return self._override_mgr.active_overrides[cache_key][-1]  # type:ignore[no-any-return]
+                active_override = self._override_mgr._get_active_override(cache_key)
+                if active_override.found:
+                    return active_override.value  # type:ignore[no-any-return]
 
                 if cache_key in self._global_scope_objects:
                     return self._global_scope_objects[cache_key]  # type:ignore[no-any-return]

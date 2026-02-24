@@ -1,7 +1,10 @@
 from __future__ import annotations
 
+import sys
 import warnings
+from collections import defaultdict
 from contextlib import contextmanager
+from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Iterator
 
 from wireup.errors import UnknownOverrideRequestedError
@@ -10,7 +13,20 @@ from wireup.ioc.factory_compiler import CompiledFactory, FactoryCompiler
 if TYPE_CHECKING:
     from collections.abc import Callable
 
-    from wireup.ioc.types import InjectableOverride, Qualifier
+    from wireup.ioc.types import ContainerObjectIdentifier, InjectableOverride, Qualifier
+
+
+@dataclass(**({"slots": True} if sys.version_info >= (3, 10) else {}))
+class _OverrideFrame:
+    new_value: Any
+    original_factory: CompiledFactory
+    original_scoped_factory: CompiledFactory
+
+
+@dataclass(**({"slots": True} if sys.version_info >= (3, 10) else {}))
+class _GetActiveOverrideReslut:
+    found: bool
+    value: Any
 
 
 class OverrideManager:
@@ -25,8 +41,7 @@ class OverrideManager:
         self.__is_valid_override = is_valid_override
         self._factory_compiler = factory_compiler
         self._scoped_factory_compiler = scoped_factory_compiler
-        self._original_factories: dict[tuple[type, Qualifier], list[tuple[CompiledFactory, CompiledFactory]]] = {}
-        self.active_overrides: dict[tuple[type, Qualifier], list[Any]] = {}
+        self._original_factories: dict[ContainerObjectIdentifier, list[_OverrideFrame]] = defaultdict(list)
 
     def _compiler_override_obj_id(
         self,
@@ -66,24 +81,19 @@ class OverrideManager:
 
         obj_id = FactoryCompiler.get_object_id(target, qualifier)
 
-        active_overrides_stack = self.active_overrides.get((target, qualifier), [])
-        active_overrides_stack.append(new)
-        self.active_overrides[target, qualifier] = active_overrides_stack
-
-        original_factories_stack = self._original_factories.get((target, qualifier), [])
-        original_factories_stack.append(
-            (
-                self._factory_compiler.factories[obj_id],
-                self._scoped_factory_compiler.factories[obj_id],
+        self._original_factories[target, qualifier].append(
+            _OverrideFrame(
+                new_value=new,
+                original_factory=self._factory_compiler.factories[obj_id],
+                original_scoped_factory=self._scoped_factory_compiler.factories[obj_id],
             )
         )
-        self._original_factories[target, qualifier] = original_factories_stack
 
-        singleton_factory, scoped_factory = self._original_factories[target, qualifier][-1]
+        override_frame = self._original_factories[target, qualifier][-1]
         # When determining the is_async flag check both the singleton and scoped compilers.
         # For scoped lifetimes the singleton compiler has erroring stub factories which are always sync
         # in which case we need to consult the scoped compiler which has the real factories.
-        is_async = singleton_factory.is_async or scoped_factory.is_async
+        is_async = override_frame.original_factory.is_async or override_frame.original_scoped_factory.is_async
 
         async def async_override_factory(_container: Any) -> Any:
             return new
@@ -113,34 +123,37 @@ class OverrideManager:
         if (target, qualifier) not in self._original_factories:
             return
 
-        factory_func, scoped_factory_func = self._original_factories[target, qualifier].pop()
+        override_frame = self._original_factories[target, qualifier].pop()
 
         self._compiler_restore_obj_id(
             compiler=self._factory_compiler,
             target=target,
             qualifier=qualifier,
-            original=factory_func,
+            original=override_frame.original_factory,
         )
         self._compiler_restore_obj_id(
             compiler=self._scoped_factory_compiler,
             target=target,
             qualifier=qualifier,
-            original=scoped_factory_func,
+            original=override_frame.original_scoped_factory,
         )
 
-        if (target, qualifier) in self.active_overrides:
-            if self.active_overrides[target, qualifier]:
-                self.active_overrides[target, qualifier].pop()
-            if len(self.active_overrides[target, qualifier]) == 0:
-                del self.active_overrides[target, qualifier]
+    def _get_active_override(self, container_object_identifer: ContainerObjectIdentifier) -> _GetActiveOverrideReslut:
+        """Get current active override or None if not found."""
+        if container_object_identifer not in self._original_factories:
+            return _GetActiveOverrideReslut(found=False, value=None)
+
+        value = self._original_factories[container_object_identifer][-1].new_value
+        return _GetActiveOverrideReslut(found=True, value=value)
 
     def delete(self, target: type, qualifier: Qualifier | None = None) -> None:
         """Clear active override for the `target` injectable."""
         self._restore_factory_methods(target, qualifier)
+        if not self._original_factories[target, qualifier]:
+            del self._original_factories[target, qualifier]
 
     def clear(self) -> None:
         """Clear active injectable overrides."""
-        self.active_overrides.clear()
         for key in self._original_factories:
             if self._original_factories[key]:
                 # Keep original factory only, pop all remaining overrides
