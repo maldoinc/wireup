@@ -15,9 +15,10 @@ framework Strawberry is running on.
     from starlette.routing import Mount
     from strawberry.asgi import GraphQL
 
+
     @strawberry.type
-    class Query:
-        ...
+    class Query: ...
+
 
     container = wireup.create_async_container(
         injectables=[services, wireup.integration.starlette],
@@ -36,9 +37,10 @@ framework Strawberry is running on.
     from fastapi import FastAPI
     from strawberry.fastapi import GraphQLRouter
 
+
     @strawberry.type
-    class Query:
-        ...
+    class Query: ...
+
 
     container = wireup.create_async_container(
         injectables=[services, wireup.integration.fastapi],
@@ -60,9 +62,10 @@ framework Strawberry is running on.
     from django.urls import path
     from strawberry.django.views import GraphQLView
 
+
     @strawberry.type
-    class Query:
-        ...
+    class Query: ...
+
 
     schema = strawberry.Schema(query=Query)
     urlpatterns = [
