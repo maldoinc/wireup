@@ -24,7 +24,7 @@ class _OverrideFrame:
 
 
 @dataclass(**({"slots": True} if sys.version_info >= (3, 10) else {}))
-class _GetActiveOverrideReslut:
+class _GetActiveOverrideResult:
     found: bool
     value: Any
 
@@ -138,13 +138,13 @@ class OverrideManager:
             original=override_frame.original_scoped_factory,
         )
 
-    def _get_active_override(self, container_object_identifer: ContainerObjectIdentifier) -> _GetActiveOverrideReslut:
+    def _get_active_override(self, container_object_identifer: ContainerObjectIdentifier) -> _GetActiveOverrideResult:
         """Get current active override or None if not found."""
         if container_object_identifer not in self._original_factories:
-            return _GetActiveOverrideReslut(found=False, value=None)
+            return _GetActiveOverrideResult(found=False, value=None)
 
         value = self._original_factories[container_object_identifer][-1].new_value
-        return _GetActiveOverrideReslut(found=True, value=value)
+        return _GetActiveOverrideResult(found=True, value=value)
 
     def delete(self, target: type, qualifier: Qualifier | None = None) -> None:
         """Clear active override for the `target` injectable."""
