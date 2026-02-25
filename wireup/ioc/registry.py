@@ -30,6 +30,7 @@ from wireup.ioc.types import (
     ContainerObjectIdentifier,
     EmptyContainerInjectionRequest,
     InjectableLifetime,
+    get_container_object_id,
 )
 from wireup.ioc.util import ensure_is_type, get_callable_type, get_globals, param_get_annotation
 from wireup.util import format_name, stringify_type
@@ -172,8 +173,8 @@ class ContainerRegistry:
             raise AsTypeMismatchError(implementation=implementation_type, as_type=target_type)
 
     def _update_factories_async_flag(self) -> None:
-        def _is_dependency_async(impl: type, qualifier: Qualifier) -> bool:
-            factory = self.factories[self.get_implementation(impl, qualifier), qualifier]
+        def _is_dependency_async(impl: type, qualifier: Qualifier | None) -> bool:
+            factory = self.factories[get_container_object_id(self.get_implementation(impl, qualifier), qualifier)]
 
             if factory.is_async:
                 return True
@@ -189,7 +190,7 @@ class ContainerRegistry:
 
         for impl, qualifiers in self.impls.items():
             for qualifier in qualifiers:
-                factory = self.factories[impl, qualifier]
+                factory = self.factories[get_container_object_id(impl, qualifier)]
 
                 factory.is_async = _is_dependency_async(impl, qualifier)
 
@@ -221,9 +222,9 @@ class ContainerRegistry:
             discover_interfaces(klass.__bases__)
 
         self._target_init_context(factory_fn)
-        self.lifetime[klass, qualifier] = lifetime
+        self.lifetime[get_container_object_id(klass, qualifier)] = lifetime
         callable_type = get_callable_type(factory_fn)
-        self.factories[klass, qualifier] = InjectableFactory(
+        self.factories[get_container_object_id(klass, qualifier)] = InjectableFactory(
             factory=factory_fn,
             callable_type=callable_type,
             is_async=callable_type in ASYNC_CALLABLE_TYPES,
@@ -339,11 +340,15 @@ class ContainerRegistry:
         return klass
 
     def get_lifetime(self, klass: type, qualifier: Qualifier | None) -> InjectableLifetime:
-        return self.lifetime[self.get_implementation(klass, qualifier), qualifier]
+        return self.lifetime[get_container_object_id(self.get_implementation(klass, qualifier), qualifier)]
 
     def assert_dependencies_valid(self) -> None:
         """Assert that all required dependencies exist for this registry instance."""
-        for (impl, impl_qualifier), injectable_factory in self.factories.items():
+        for obj_id, injectable_factory in self.factories.items():
+            if isinstance(obj_id, tuple):
+                impl, impl_qualifier = obj_id
+            else:
+                impl, impl_qualifier = obj_id, None
             unknown_dependencies_with_default: list[str] = []
 
             for name, dependency in self.dependencies[injectable_factory.factory].items():
@@ -382,7 +387,10 @@ class ContainerRegistry:
 
         dependency_lifetime = self.get_lifetime(dependency.klass, dependency.qualifier_value)
 
-        if self.lifetime[impl, impl_qualifier] == "singleton" and dependency_lifetime != "singleton":
+        if (
+            self.lifetime[get_container_object_id(impl, impl_qualifier)] == "singleton"
+            and dependency_lifetime != "singleton"
+        ):
             msg = (
                 f"Parameter '{parameter_name}' of {stringify_type(factory)} "
                 f"depends on an injectable with a '{dependency_lifetime}' lifetime which is not supported. "
@@ -418,7 +426,9 @@ class ContainerRegistry:
         """Assert that the resolution path for a dependency does not create a cycle."""
         if dependency.klass in self.interfaces or dependency.is_parameter:
             return
-        dependency_injectable_factory = self.factories[dependency.klass, dependency.qualifier_value]
+        dependency_injectable_factory = self.factories[
+            get_container_object_id(dependency.klass, dependency.qualifier_value)
+        ]
         new_path: list[tuple[AnnotatedParameter, Any]] = [*path, (dependency, dependency_injectable_factory)]
 
         if any(p.klass == dependency.klass and p.qualifier_value == dependency.qualifier_value for p, _ in path):

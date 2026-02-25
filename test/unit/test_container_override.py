@@ -9,8 +9,7 @@ from typing_extensions import Annotated
 from wireup import Inject, abstract, create_async_container, create_sync_container, inject_from_container, injectable
 from wireup._annotations import Injected
 from wireup.errors import UnknownOverrideRequestedError, WireupError
-from wireup.ioc.factory_compiler import FactoryCompiler
-from wireup.ioc.types import InjectableLifetime, InjectableOverride
+from wireup.ioc.types import InjectableLifetime, InjectableOverride, get_container_object_id
 
 from test.conftest import Container
 from test.unit.services.abstract_multiple_bases import FooBar
@@ -555,7 +554,7 @@ async def test_override_as_type_indirect_async():
 
 def test_override_restores_singleton_rebound_factory_sync():
     container = create_sync_container(injectables=[Foo, FooImpl])
-    obj_id = FactoryCompiler.get_object_id(Foo, None)
+    obj_id = get_container_object_id(Foo, None)
 
     original_instance = container.get(Foo)
     rebound_factory = container._compiler.factories[obj_id].factory
@@ -575,7 +574,7 @@ async def test_override_restores_singleton_rebound_factory_async():
         return FooBar()
 
     container = create_async_container(injectables=[async_foo_factory])
-    obj_id = FactoryCompiler.get_object_id(FooBar, None)
+    obj_id = get_container_object_id(FooBar, None)
 
     original_instance = await container.get(FooBar)
     rebound_factory = container._compiler.factories[obj_id].factory
@@ -586,4 +585,28 @@ async def test_override_restores_singleton_rebound_factory_async():
         assert container._compiler.factories[obj_id].factory is not rebound_factory
 
     assert await container.get(FooBar) is original_instance
+    assert container._compiler.factories[obj_id].factory is rebound_factory
+
+
+def test_override_restores_singleton_rebound_factory_sync_with_qualifier():
+    @wireup.injectable(qualifier=0)
+    class QualifiedSingleton:
+        pass
+
+    container = create_sync_container(injectables=[QualifiedSingleton])
+    obj_id = get_container_object_id(QualifiedSingleton, 0)
+
+    original_instance = container.get(QualifiedSingleton, qualifier=0)
+    rebound_factory = container._compiler.factories[obj_id].factory
+
+    outer = MagicMock(spec=QualifiedSingleton)
+    inner = MagicMock(spec=QualifiedSingleton)
+    with container.override.injectable(target=QualifiedSingleton, qualifier=0, new=outer):
+        assert container.get(QualifiedSingleton, qualifier=0) is outer
+        with container.override.injectable(target=QualifiedSingleton, qualifier=0, new=inner):
+            assert container.get(QualifiedSingleton, qualifier=0) is inner
+        assert container.get(QualifiedSingleton, qualifier=0) is outer
+        assert container._compiler.factories[obj_id].factory is not rebound_factory
+
+    assert container.get(QualifiedSingleton, qualifier=0) is original_instance
     assert container._compiler.factories[obj_id].factory is rebound_factory

@@ -4,7 +4,7 @@ import asyncio
 import sys
 import threading
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, Callable, Hashable
+from typing import TYPE_CHECKING, Any, Callable
 
 from wireup.codegen import Codegen
 from wireup.errors import WireupError
@@ -13,12 +13,14 @@ from wireup.ioc.types import (
     CallableType,
     ConfigInjectionRequest,
     TemplatedString,
+    get_container_object_id,
 )
 from wireup.util import format_name
 
 if TYPE_CHECKING:
     from wireup.ioc.container.base_container import BaseContainer
     from wireup.ioc.registry import ContainerRegistry, InjectableFactory
+    from wireup.ioc.types import ContainerObjectIdentifier, Qualifier
 
 
 @dataclass(**({"slots": True} if sys.version_info >= (3, 10) else {}))
@@ -79,16 +81,12 @@ class FactoryCompiler:
         self._registry = registry
         self._is_scoped_container = is_scoped_container
         self._concurrent_scoped_access = concurrent_scoped_access
-        self.factories: dict[int, CompiledFactory] = {}
-
-    @classmethod
-    def get_object_id(cls, impl: type, qualifier: Hashable) -> int:
-        return hash(impl if qualifier is None else (impl, qualifier))
+        self.factories: dict[ContainerObjectIdentifier, CompiledFactory] = {}
 
     def compile(self, copy_singletons_from: FactoryCompiler | None = None) -> None:
         for impl, qualifiers in self._registry.impls.items():
             for qualifier in qualifiers:
-                obj_id = FactoryCompiler.get_object_id(impl, qualifier)
+                obj_id = get_container_object_id(impl, qualifier)
 
                 if obj_id in self.factories:
                     continue
@@ -96,20 +94,20 @@ class FactoryCompiler:
                 if (
                     copy_singletons_from
                     and (compiled := copy_singletons_from.factories.get(obj_id))
-                    and self._registry.lifetime[impl, qualifier] == "singleton"
+                    and self._registry.lifetime[get_container_object_id(impl, qualifier)] == "singleton"
                 ):
                     self.factories[obj_id] = compiled
                     continue
 
                 self.factories[obj_id] = self._compile_and_create_function(
-                    self._registry.factories[impl, qualifier],
+                    self._registry.factories[get_container_object_id(impl, qualifier)],
                     impl,
                     qualifier,
                 )
 
         for interface, impls in self._registry.interfaces.items():
             for qualifier, impl in impls.items():
-                obj_id = FactoryCompiler.get_object_id(interface, qualifier)
+                obj_id = get_container_object_id(interface, qualifier)
 
                 if obj_id in self.factories:
                     continue
@@ -117,13 +115,13 @@ class FactoryCompiler:
                 if (
                     copy_singletons_from
                     and (compiled := copy_singletons_from.factories.get(obj_id))
-                    and self._registry.lifetime[impl, qualifier] == "singleton"
+                    and self._registry.lifetime[get_container_object_id(impl, qualifier)] == "singleton"
                 ):
                     self.factories[obj_id] = compiled
                     continue
 
                 self.factories[obj_id] = self._compile_and_create_function(
-                    self._registry.factories[impl, qualifier],
+                    self._registry.factories[get_container_object_id(impl, qualifier)],
                     interface,
                     qualifier,
                 )
@@ -152,11 +150,14 @@ class FactoryCompiler:
                     kwargs += f"{name} = {ns_key}, "
                 else:
                     dep_class = self._registry.get_implementation(dep.klass, dep.qualifier_value)
-                    dep_key = dep.klass
+                    dep_qualifier = dep.qualifier_value
+                    dep_impl_obj_id = get_container_object_id(dep_class, dep_qualifier)
+                    dep_obj_id = get_container_object_id(dep.klass, dep_qualifier)
 
-                    maybe_await = "await " if self._registry.factories[dep_class, dep.qualifier_value].is_async else ""
-                    dep_hash = FactoryCompiler.get_object_id(dep_key, dep.qualifier_value)
-                    kwargs += f"{name} = {maybe_await}factories[{dep_hash}].factory(container), "
+                    maybe_await = "await " if self._registry.factories[dep_impl_obj_id].is_async else ""
+                    dep_obj_id_var = f"_dep_obj_id_{name}"
+                    config_dependencies[dep_obj_id_var] = dep_obj_id
+                    kwargs += f"{name} = {maybe_await}factories[{dep_obj_id_var}].factory(container), "
 
             maybe_await = "await " if factory.callable_type == CallableType.COROUTINE_FN else ""
 
@@ -179,7 +180,7 @@ class FactoryCompiler:
                 if is_interface:
                     cg += "storage[ORIGINAL_OBJ_ID] = instance"
                 if is_singleton:
-                    cg += "factories[OBJ_HASH].factory = _create_singleton_fast_factory(instance)"
+                    cg += "factories[OBJ_FACTORY_KEY].factory = _create_singleton_fast_factory(instance)"
 
             cg += "return instance"
 
@@ -199,7 +200,7 @@ class FactoryCompiler:
                     lock = (
                         "_singleton_lock"
                         if lifetime == "singleton"
-                        else f"container._locks.get_lock(OBJ_HASH, needs_async_lock={needs_async_lock})"
+                        else f"container._locks.get_lock(OBJ_FACTORY_KEY, needs_async_lock={needs_async_lock})"
                     )
 
                     if factory.is_async:
@@ -228,11 +229,11 @@ class FactoryCompiler:
         )
 
     def _compile_and_create_function(
-        self, factory: InjectableFactory, impl: type, qualifier: Hashable
+        self, factory: InjectableFactory, impl: type, qualifier: Qualifier | None
     ) -> CompiledFactory:
-        obj_id = impl, qualifier
+        obj_id = get_container_object_id(impl, qualifier)
         implementation = self._registry.get_implementation(impl, qualifier)
-        resolved_obj_id = (implementation, qualifier)
+        resolved_obj_id = get_container_object_id(implementation, qualifier)
 
         is_interface = self._registry.is_interface_known(impl)
         lifetime = self._registry.get_lifetime(impl, qualifier)
@@ -244,7 +245,7 @@ class FactoryCompiler:
                 is_async=False,
             )
 
-        obj_hash = FactoryCompiler.get_object_id(impl, qualifier)
+        obj_factory_key = get_container_object_id(impl, qualifier)
         result = self._get_factory_code(factory, lifetime, is_interface=is_interface)
 
         try:
@@ -252,7 +253,7 @@ class FactoryCompiler:
                 "factories": self.factories,
                 "ORIGINAL_OBJ_ID": obj_id,
                 "OBJ_ID": resolved_obj_id,
-                "OBJ_HASH": obj_hash,
+                "OBJ_FACTORY_KEY": obj_factory_key,
                 "ORIGINAL_FACTORY": self._registry.factories[resolved_obj_id].factory,
                 "_create_singleton_fast_factory": (
                     _create_async_singleton_fast_factory if result.is_async else _create_sync_singleton_fast_factory
@@ -279,7 +280,7 @@ class FactoryCompiler:
     @staticmethod
     def _create_scope_mismatch_error_factory(
         impl: type,
-        qualifier: Hashable,
+        qualifier: Qualifier | None,
         lifetime: str,
     ) -> Callable[[BaseContainer], Any]:
         def _factory(_: BaseContainer) -> Any:

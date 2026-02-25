@@ -12,7 +12,7 @@ from wireup.ioc.container.sync_container import ScopedSyncContainer
 if TYPE_CHECKING:
     from types import TracebackType
 
-    from wireup.ioc.types import Qualifier
+    from wireup.ioc.types import ContainerObjectIdentifier, Qualifier
 
 T = TypeVar("T")
 
@@ -34,7 +34,7 @@ class BareAsyncContainer(BaseContainer):
         :param klass: Class of the dependency already registered in the container.
         :return: An instance of the requested object. Always returns an existing instance when one is available.
         """
-        obj_id = hash(klass if qualifier is None else (klass, qualifier))
+        obj_id: ContainerObjectIdentifier = klass if qualifier is None else (klass, qualifier)  # type: ignore[assignment]
 
         if compiled_factory := self._factories.get(obj_id):
             res = compiled_factory.factory(self)

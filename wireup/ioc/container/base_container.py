@@ -14,7 +14,6 @@ from wireup.errors import (
     WireupError,
 )
 from wireup.ioc.container.lock_registry import LockRegistry
-from wireup.ioc.types import ExitStack  # noqa: TC001  # Used at runtime
 
 if TYPE_CHECKING:
     from wireup.ioc.configuration import ConfigStore
@@ -23,6 +22,7 @@ if TYPE_CHECKING:
     from wireup.ioc.registry import ContainerRegistry
     from wireup.ioc.types import (
         ContainerObjectIdentifier,
+        ExitStack,
         Qualifier,
     )
 
@@ -101,23 +101,21 @@ class BaseContainer:
         :param klass: Class of the dependency already registered in the container.
         :return: An instance of the requested object. Always returns an existing instance when one is available.
         """
-        obj_id = hash(klass if qualifier is None else (klass, qualifier))
+        obj_id: ContainerObjectIdentifier = klass if qualifier is None else (klass, qualifier)  # type: ignore[assignment]
 
         if compiled_factory := self._factories.get(obj_id):
             if compiled_factory.is_async:
                 # If the dependency is async, we cannot call the compiled factory in a synchronous context.
                 # However, if it was already instantiated we can return the cached instance.
-                cache_key: tuple[type, Qualifier | None] = (klass, qualifier)  # type:ignore[assignment]
-
-                active_override = self._override_mgr._get_active_override(cache_key)
+                active_override = self._override_mgr._get_active_override(obj_id)
                 if active_override.found:
                     return active_override.value  # type:ignore[no-any-return]
 
-                if cache_key in self._global_scope_objects:
-                    return self._global_scope_objects[cache_key]  # type:ignore[no-any-return]
+                if obj_id in self._global_scope_objects:
+                    return self._global_scope_objects[obj_id]  # type:ignore[no-any-return]
 
-                if self._current_scope_objects is not None and cache_key in self._current_scope_objects:
-                    return self._current_scope_objects[cache_key]  # type:ignore[no-any-return]
+                if self._current_scope_objects is not None and obj_id in self._current_scope_objects:
+                    return self._current_scope_objects[obj_id]  # type:ignore[no-any-return]
 
                 msg = (
                     f"{klass} is an async dependency and it cannot be created in a synchronous context. "

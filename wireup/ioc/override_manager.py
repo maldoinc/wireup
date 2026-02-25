@@ -9,6 +9,7 @@ from typing import TYPE_CHECKING, Any, Iterator
 
 from wireup.errors import UnknownOverrideRequestedError
 from wireup.ioc.factory_compiler import CompiledFactory, FactoryCompiler
+from wireup.ioc.types import get_container_object_id
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -46,13 +47,12 @@ class OverrideManager:
     def _compiler_override_obj_id(
         self,
         compiler: FactoryCompiler,
-        target: type,
-        qualifier: Qualifier,
+        obj_id: ContainerObjectIdentifier,
         new: Callable[[Any], Any],
         *,
         is_async: bool = False,
     ) -> None:
-        compiler.factories[compiler.get_object_id(target, qualifier)] = CompiledFactory(
+        compiler.factories[obj_id] = CompiledFactory(
             factory=new,
             is_async=is_async,
         )
@@ -60,11 +60,10 @@ class OverrideManager:
     def _compiler_restore_obj_id(
         self,
         compiler: FactoryCompiler,
-        target: type,
-        qualifier: Qualifier,
+        obj_id: ContainerObjectIdentifier,
         original: CompiledFactory,
     ) -> None:
-        compiler.factories[compiler.get_object_id(target, qualifier)] = original
+        compiler.factories[obj_id] = original
 
     def set(self, target: type, new: Any, qualifier: Qualifier | None = None) -> None:
         """Override the `target` injectable with `new`.
@@ -79,9 +78,9 @@ class OverrideManager:
         if not self.__is_valid_override(target, qualifier):
             raise UnknownOverrideRequestedError(klass=target, qualifier=qualifier)
 
-        obj_id = FactoryCompiler.get_object_id(target, qualifier)
+        obj_id = get_container_object_id(target, qualifier)
 
-        self._original_factories[target, qualifier].append(
+        self._original_factories[obj_id].append(
             _OverrideFrame(
                 new_value=new,
                 original_factory=self._factory_compiler.factories[obj_id],
@@ -89,7 +88,7 @@ class OverrideManager:
             )
         )
 
-        override_frame = self._original_factories[target, qualifier][-1]
+        override_frame = self._original_factories[obj_id][-1]
         # When determining the is_async flag check both the singleton and scoped compilers.
         # For scoped lifetimes the singleton compiler has erroring stub factories which are always sync
         # in which case we need to consult the scoped compiler which has the real factories.
@@ -104,15 +103,13 @@ class OverrideManager:
         factory = async_override_factory if is_async else override_factory
 
         self._compiler_override_obj_id(
-            target=target,
-            qualifier=qualifier,
+            obj_id=obj_id,
             compiler=self._factory_compiler,
             new=factory,
             is_async=is_async,
         )
         self._compiler_override_obj_id(
-            target=target,
-            qualifier=qualifier,
+            obj_id=obj_id,
             compiler=self._scoped_factory_compiler,
             new=factory,
             is_async=is_async,
@@ -120,21 +117,21 @@ class OverrideManager:
 
     def _restore_factory_methods(self, target: type, qualifier: Qualifier | None) -> None:
         """Restore original factory methods after override is removed."""
-        if (target, qualifier) not in self._original_factories:
+        obj_id = get_container_object_id(target, qualifier)
+
+        if obj_id not in self._original_factories:
             return
 
-        override_frame = self._original_factories[target, qualifier].pop()
+        override_frame = self._original_factories[obj_id].pop()
 
         self._compiler_restore_obj_id(
             compiler=self._factory_compiler,
-            target=target,
-            qualifier=qualifier,
+            obj_id=obj_id,
             original=override_frame.original_factory,
         )
         self._compiler_restore_obj_id(
             compiler=self._scoped_factory_compiler,
-            target=target,
-            qualifier=qualifier,
+            obj_id=obj_id,
             original=override_frame.original_scoped_factory,
         )
 
@@ -148,9 +145,10 @@ class OverrideManager:
 
     def delete(self, target: type, qualifier: Qualifier | None = None) -> None:
         """Clear active override for the `target` injectable."""
+        obj_id = get_container_object_id(target, qualifier)
         self._restore_factory_methods(target, qualifier)
-        if not self._original_factories[target, qualifier]:
-            del self._original_factories[target, qualifier]
+        if not self._original_factories[obj_id]:
+            del self._original_factories[obj_id]
 
     def clear(self) -> None:
         """Clear active injectable overrides."""
@@ -158,7 +156,8 @@ class OverrideManager:
             if self._original_factories[key]:
                 # Keep original factory only, pop all remaining overrides
                 self._original_factories[key] = self._original_factories[key][:1]
-                self._restore_factory_methods(key[0], key[1])
+                self._factory_compiler.factories[key] = self._original_factories[key][-1].original_factory
+                self._scoped_factory_compiler.factories[key] = self._original_factories[key][-1].original_scoped_factory
         self._original_factories.clear()
 
     @contextmanager

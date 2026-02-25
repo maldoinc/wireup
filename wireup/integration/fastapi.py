@@ -21,6 +21,7 @@ from typing_extensions import Protocol
 
 from wireup import inject_from_container
 from wireup._annotations import InjectableDeclaration
+from wireup._decorators import inject_from_container_unchecked
 from wireup.errors import WireupError
 from wireup.integration.starlette import (
     WireupAsgiMiddleware,
@@ -42,6 +43,7 @@ from wireup.ioc.util import (
 __all__ = [
     "WireupRoute",
     "get_app_container",
+    "inject",
     "get_request_container",
     "inject",
     "request_factory",
@@ -238,3 +240,11 @@ def setup(
     # If no class-based handlers are used, we inject them immediately.
     if not class_based_handlers:
         _inject_routes(container, app.routes, is_using_asgi_middleware=middleware_mode)
+
+
+inject = inject_from_container_unchecked(get_request_container, hide_annotated_names=True)
+"""Inject dependencies into request-time FastAPI helpers.
+
+Use this for non-route functions that still run during a request lifecycle, such as
+custom decorators, dependency helper functions, and middleware helpers.
+"""

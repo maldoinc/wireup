@@ -44,7 +44,7 @@ def test_register_abstract() -> None:
 def test_register_factory() -> None:
     registry = ContainerRegistry(impls=[InjectableDeclaration(obj=random_service_factory, lifetime="singleton")])
 
-    assert (RandomService, None) in registry.factories
+    assert RandomService in registry.factories
     assert registry.impls[RandomService] == {None}
 
     def invalid_factory() -> None:
@@ -122,7 +122,7 @@ def test_registry_newtypes_class() -> None:
 
     registry = ContainerRegistry(impls=[InjectableDeclaration(obj=y_factory, lifetime="singleton")])
 
-    assert registry.lifetime[Y, None] == "singleton"
+    assert registry.lifetime[Y] == "singleton"
 
 
 def test_registry_newtypes_anything() -> None:
@@ -133,7 +133,7 @@ def test_registry_newtypes_anything() -> None:
 
     registry = ContainerRegistry(impls=[InjectableDeclaration(obj=y_factory, lifetime="singleton")])
 
-    assert registry.lifetime[Y, None] == "singleton"
+    assert registry.lifetime[Y] == "singleton"
 
 
 def test_register_invalid_target() -> None:

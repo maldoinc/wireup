@@ -1,5 +1,6 @@
 from typing import Iterator
 
+import pytest
 import wireup
 from wireup._annotations import injectable
 
@@ -98,3 +99,53 @@ def test_scoped_container_cleansup_container_get() -> None:
         assert scoped.get(SomeService)
 
     assert done
+
+
+def test_scoped_qualifiers_do_not_collide_on_hash() -> None:
+    @injectable(lifetime="scoped", qualifier=-2)
+    def make_b1() -> int:
+        return 666
+
+    @injectable(lifetime="scoped", qualifier=-1)
+    def make_b2() -> int:
+        return 42
+
+    c = wireup.create_sync_container(injectables=[make_b1, make_b2])
+
+    with c.enter_scope() as scoped:
+        assert scoped.get(int, qualifier=-1) == 42
+        assert scoped.get(int, qualifier=-2) == 666
+
+
+@pytest.mark.parametrize("qualifier", [0, False], ids=["zero", "false"])
+def test_scoped_falsy_qualifier_is_distinct_from_none(qualifier: int) -> None:
+    @injectable(lifetime="scoped")
+    def make_default() -> int:
+        return 11
+
+    @injectable(lifetime="scoped", qualifier=qualifier)
+    def make_qualified() -> int:
+        return 22
+
+    c = wireup.create_sync_container(injectables=[make_default, make_qualified])
+
+    with c.enter_scope() as scoped:
+        assert scoped.get(int) == 11
+        assert scoped.get(int, qualifier=qualifier) == 22
+
+
+@pytest.mark.parametrize("qualifier", [0, False], ids=["zero", "false"])
+async def test_scoped_falsy_qualifier_is_distinct_from_none_async(qualifier: int) -> None:
+    @injectable(lifetime="scoped")
+    def make_default() -> int:
+        return 11
+
+    @injectable(lifetime="scoped", qualifier=qualifier)
+    def make_qualified() -> int:
+        return 22
+
+    c = wireup.create_async_container(injectables=[make_default, make_qualified])
+
+    async with c.enter_scope() as scoped:
+        assert await scoped.get(int) == 11
+        assert await scoped.get(int, qualifier=qualifier) == 22

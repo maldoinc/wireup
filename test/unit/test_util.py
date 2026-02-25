@@ -12,6 +12,7 @@ from wireup.ioc.types import (
     ConfigInjectionRequest,
     InjectableQualifier,
     InjectableType,
+    get_container_object_id,
 )
 from wireup.ioc.util import (
     get_globals,
@@ -112,3 +113,12 @@ def test_unwraps_functools_partial(partial_func: Callable):
 
     # THEN
     assert result is _sample_function.__globals__
+
+
+def test_get_container_object_id_unqualified() -> None:
+    assert get_container_object_id(MyCustomClass, None) is MyCustomClass
+
+
+def test_get_container_object_id_qualified() -> None:
+    obj_id = get_container_object_id(MyCustomClass, 0)
+    assert obj_id == (MyCustomClass, 0)

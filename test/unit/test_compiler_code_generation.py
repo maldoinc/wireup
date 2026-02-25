@@ -18,7 +18,6 @@ from wireup import (
 )
 from wireup._decorators import inject_from_container_unchecked
 from wireup.errors import WireupError
-from wireup.ioc.factory_compiler import FactoryCompiler
 
 if TYPE_CHECKING:
     from wireup.ioc.container.async_container import ScopedAsyncContainer
@@ -53,15 +52,24 @@ class QualifiedService:
     pass
 
 
+@injectable(qualifier=0)
+@dataclass
+class QualifiedZeroService:
+    pass
+
+
 @pytest.fixture
 def sync_container() -> SyncContainer:
-    return create_sync_container(injectables=[SingletonService, ScopedService, QualifiedService], config={"foo": "bar"})
+    return create_sync_container(
+        injectables=[SingletonService, ScopedService, QualifiedService, QualifiedZeroService], config={"foo": "bar"}
+    )
 
 
 @pytest.fixture
 def async_container() -> AsyncContainer:
     return create_async_container(
-        injectables=[SingletonService, ScopedService, async_service_factory, QualifiedService], config={"foo": "bar"}
+        injectables=[SingletonService, ScopedService, async_service_factory, QualifiedService, QualifiedZeroService],
+        config={"foo": "bar"},
     )
 
 
@@ -117,10 +125,6 @@ def middleware(_container: ScopedSyncContainer | ScopedAsyncContainer, _args: An
     yield None
 
 
-s_hash = FactoryCompiler.get_object_id(SingletonService, None)
-sc_hash = FactoryCompiler.get_object_id(ScopedService, None)
-
-
 def test_sync_container_singleton_scoped_config_optimized(sync_container: SyncContainer):
     """
     Test SyncContainer injecting into a Sync Target with Singleton, Scoped, and Config dependencies.
@@ -140,11 +144,11 @@ def test_sync_container_singleton_scoped_config_optimized(sync_container: SyncCo
     decorated = inject_from_container(sync_container)(singleton_scoped_config_target)
     code = _get_generated_code(decorated)
 
-    expected = textwrap.dedent(f"""
+    expected = textwrap.dedent("""
         def _wireup_generated_wrapper(*args, **kwargs):
             with _wireup_container.enter_scope() as scope:
-                kwargs['s'] = _wireup_singleton_factories[{s_hash}].factory(scope)
-                kwargs['sc'] = _wireup_scoped_factories[{sc_hash}].factory(scope)
+                kwargs['s'] = _wireup_singleton_factories[_wireup_obj_s_obj_id].factory(scope)
+                kwargs['sc'] = _wireup_scoped_factories[_wireup_obj_sc_obj_id].factory(scope)
                 kwargs['conf'] = _wireup_config_val_conf
                 return _wireup_target(*args, **kwargs)
     """).strip()
@@ -171,9 +175,9 @@ def test_sync_container_singleton_config_optimized(sync_container: SyncContainer
     decorated = inject_from_container(sync_container)(singleton_config_target)
     code = _get_generated_code(decorated)
 
-    expected = textwrap.dedent(f"""
+    expected = textwrap.dedent("""
         def _wireup_generated_wrapper(*args, **kwargs):
-            kwargs['s'] = _wireup_singleton_factories[{s_hash}].factory(scope)
+            kwargs['s'] = _wireup_singleton_factories[_wireup_obj_s_obj_id].factory(scope)
             kwargs['conf'] = _wireup_config_val_conf
             return _wireup_target(*args, **kwargs)
     """).strip()
@@ -202,13 +206,13 @@ def test_sync_container_singleton_config_with_middleware(sync_container: SyncCon
     decorated = inject_from_container(sync_container, _middleware=middleware)(singleton_config_target)
     code = _get_generated_code(decorated)
 
-    expected = textwrap.dedent(f"""
+    expected = textwrap.dedent("""
         def _wireup_generated_wrapper(*args, **kwargs):
             with _wireup_container.enter_scope() as scope:
                 gen_middleware = _wireup_middleware(scope, args, kwargs)
                 try:
                     next(gen_middleware)
-                    kwargs['s'] = _wireup_singleton_factories[{s_hash}].factory(scope)
+                    kwargs['s'] = _wireup_singleton_factories[_wireup_obj_s_obj_id].factory(scope)
                     kwargs['conf'] = _wireup_config_val_conf
                     return _wireup_target(*args, **kwargs)
                 finally:
@@ -245,11 +249,9 @@ def test_async_container_sync_target_optimization_behavior(async_container: Asyn
     decorated = inject_from_container(async_container)(target)
     code = _get_generated_code(decorated)
 
-    s_hash = FactoryCompiler.get_object_id(SingletonService, None)
-
-    expected = textwrap.dedent(f"""
+    expected = textwrap.dedent("""
         def _wireup_generated_wrapper(*args, **kwargs):
-            kwargs['s'] = _wireup_singleton_factories[{s_hash}].factory(scope)
+            kwargs['s'] = _wireup_singleton_factories[_wireup_obj_s_obj_id].factory(scope)
             kwargs['asvc'] = scope._synchronous_get(_wireup_obj_asvc_klass)
             return _wireup_target(*args, **kwargs)
     """).strip()
@@ -283,13 +285,10 @@ def test_async_container_async_target_optimized(async_container: AsyncContainer)
     decorated = inject_from_container(async_container)(target)
     code = _get_generated_code(decorated)
 
-    s_hash = FactoryCompiler.get_object_id(SingletonService, None)
-    asvc_hash = FactoryCompiler.get_object_id(AsyncService, None)
-
-    expected = textwrap.dedent(f"""
+    expected = textwrap.dedent("""
         async def _wireup_generated_wrapper(*args, **kwargs):
-            kwargs['s'] = _wireup_singleton_factories[{s_hash}].factory(scope)
-            kwargs['asvc'] = await _wireup_singleton_factories[{asvc_hash}].factory(scope)
+            kwargs['s'] = _wireup_singleton_factories[_wireup_obj_s_obj_id].factory(scope)
+            kwargs['asvc'] = await _wireup_singleton_factories[_wireup_obj_asvc_obj_id].factory(scope)
             return await _wireup_target(*args, **kwargs)
     """).strip()
 
@@ -331,9 +330,9 @@ def test_async_container_sync_target_singleton_config_optimized(async_container:
     decorated = inject_from_container(async_container)(singleton_config_target)
     code = _get_generated_code(decorated)
 
-    expected = textwrap.dedent(f"""
+    expected = textwrap.dedent("""
         def _wireup_generated_wrapper(*args, **kwargs):
-            kwargs['s'] = _wireup_singleton_factories[{s_hash}].factory(scope)
+            kwargs['s'] = _wireup_singleton_factories[_wireup_obj_s_obj_id].factory(scope)
             kwargs['conf'] = _wireup_config_val_conf
             return _wireup_target(*args, **kwargs)
     """).strip()
@@ -360,11 +359,11 @@ def test_async_container_sync_target_singleton_scoped_config_optimized(async_con
     decorated = inject_from_container(async_container)(singleton_scoped_config_target)
     code = _get_generated_code(decorated)
 
-    expected = textwrap.dedent(f"""
+    expected = textwrap.dedent("""
         def _wireup_generated_wrapper(*args, **kwargs):
             with _wireup_async_container_force_sync_scope(_wireup_container) as scope:
-                kwargs['s'] = _wireup_singleton_factories[{s_hash}].factory(scope)
-                kwargs['sc'] = _wireup_scoped_factories[{sc_hash}].factory(scope)
+                kwargs['s'] = _wireup_singleton_factories[_wireup_obj_s_obj_id].factory(scope)
+                kwargs['sc'] = _wireup_scoped_factories[_wireup_obj_sc_obj_id].factory(scope)
                 kwargs['conf'] = _wireup_config_val_conf
                 return _wireup_target(*args, **kwargs)
     """).strip()
@@ -392,9 +391,9 @@ def test_async_container_async_target_singleton_config_optimized(async_container
     decorated = inject_from_container(async_container)(async_singleton_config_target)
     code = _get_generated_code(decorated)
 
-    expected = textwrap.dedent(f"""
+    expected = textwrap.dedent("""
         async def _wireup_generated_wrapper(*args, **kwargs):
-            kwargs['s'] = _wireup_singleton_factories[{s_hash}].factory(scope)
+            kwargs['s'] = _wireup_singleton_factories[_wireup_obj_s_obj_id].factory(scope)
             kwargs['conf'] = _wireup_config_val_conf
             return await _wireup_target(*args, **kwargs)
     """).strip()
@@ -421,11 +420,11 @@ def test_async_container_async_target_singleton_scoped_config_optimized(async_co
     decorated = inject_from_container(async_container)(async_singleton_scoped_config_target)
     code = _get_generated_code(decorated)
 
-    expected = textwrap.dedent(f"""
+    expected = textwrap.dedent("""
         async def _wireup_generated_wrapper(*args, **kwargs):
             async with _wireup_container.enter_scope() as scope:
-                kwargs['s'] = _wireup_singleton_factories[{s_hash}].factory(scope)
-                kwargs['sc'] = _wireup_scoped_factories[{sc_hash}].factory(scope)
+                kwargs['s'] = _wireup_singleton_factories[_wireup_obj_s_obj_id].factory(scope)
+                kwargs['sc'] = _wireup_scoped_factories[_wireup_obj_sc_obj_id].factory(scope)
                 kwargs['conf'] = _wireup_config_val_conf
                 return await _wireup_target(*args, **kwargs)
     """).strip()
@@ -674,10 +673,9 @@ def test_async_container_async_target_async_dep_optimized(async_container: Async
     decorated = inject_from_container(async_container)(async_target_with_async_dep)
     code = _get_generated_code(decorated)
 
-    asvc_hash = FactoryCompiler.get_object_id(AsyncService, None)
-    expected = textwrap.dedent(f"""
+    expected = textwrap.dedent("""
         async def _wireup_generated_wrapper(*args, **kwargs):
-            kwargs['asvc'] = await _wireup_singleton_factories[{asvc_hash}].factory(scope)
+            kwargs['asvc'] = await _wireup_singleton_factories[_wireup_obj_asvc_obj_id].factory(scope)
             return await _wireup_target(*args, **kwargs)
     """).strip()
 
@@ -759,9 +757,9 @@ def test_sync_container_generator_target_with_injection(sync_container: SyncCont
     decorated = inject_from_container(sync_container)(generator_target)
     code = _get_generated_code(decorated)
 
-    expected = textwrap.dedent(f"""
+    expected = textwrap.dedent("""
         def _wireup_generated_wrapper(*args, **kwargs):
-            kwargs['s'] = _wireup_singleton_factories[{s_hash}].factory(scope)
+            kwargs['s'] = _wireup_singleton_factories[_wireup_obj_s_obj_id].factory(scope)
             kwargs['conf'] = _wireup_config_val_conf
             yield from _wireup_target(*args, **kwargs)
     """).strip()
@@ -796,9 +794,9 @@ def test_async_container_async_generator_target_with_injection(async_container: 
     decorated = inject_from_container(async_container)(async_generator_target)
     code = _get_generated_code(decorated)
 
-    expected = textwrap.dedent(f"""
+    expected = textwrap.dedent("""
         async def _wireup_generated_wrapper(*args, **kwargs):
-            kwargs['s'] = _wireup_singleton_factories[{s_hash}].factory(scope)
+            kwargs['s'] = _wireup_singleton_factories[_wireup_obj_s_obj_id].factory(scope)
             kwargs['conf'] = _wireup_config_val_conf
             async for item in _wireup_target(*args, **kwargs):
                 yield item
@@ -823,7 +821,6 @@ def test_optimized_sync_container_falsy_qualifier(sync_container: SyncContainer)
     -   Qualifier is passed to the optimized factory lookup.
     -   No scope is entered (only singleton dependency).
     """
-    q_hash = FactoryCompiler.get_object_id(QualifiedService, "")
 
     def target(q: Annotated[QualifiedService, wireup.Inject(qualifier="")]) -> None:
         pass
@@ -831,9 +828,25 @@ def test_optimized_sync_container_falsy_qualifier(sync_container: SyncContainer)
     decorated = inject_from_container(sync_container)(target)
     code = _get_generated_code(decorated)
 
-    expected = textwrap.dedent(f"""
+    expected = textwrap.dedent("""
         def _wireup_generated_wrapper(*args, **kwargs):
-            kwargs['q'] = _wireup_singleton_factories[{q_hash}].factory(scope)
+            kwargs['q'] = _wireup_singleton_factories[_wireup_obj_q_obj_id].factory(scope)
+            return _wireup_target(*args, **kwargs)
+    """).strip()
+
+    assert code.strip() == expected
+
+
+def test_optimized_sync_container_zero_qualifier(sync_container: SyncContainer):
+    def target(q: Annotated[QualifiedZeroService, wireup.Inject(qualifier=0)]) -> None:
+        pass
+
+    decorated = inject_from_container(sync_container)(target)
+    code = _get_generated_code(decorated)
+
+    expected = textwrap.dedent("""
+        def _wireup_generated_wrapper(*args, **kwargs):
+            kwargs['q'] = _wireup_singleton_factories[_wireup_obj_q_obj_id].factory(scope)
             return _wireup_target(*args, **kwargs)
     """).strip()
 

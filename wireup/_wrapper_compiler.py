@@ -5,7 +5,6 @@ from typing import TYPE_CHECKING, Any, Callable
 
 from wireup.codegen import Codegen
 from wireup.ioc.container.async_container import BareAsyncContainer, async_container_force_sync_scope
-from wireup.ioc.factory_compiler import FactoryCompiler
 from wireup.ioc.types import AnnotatedParameter, ConfigInjectionRequest
 
 if TYPE_CHECKING:
@@ -16,6 +15,7 @@ from wireup.ioc.types import (
     ASYNC_CALLABLE_TYPES,
     GENERATOR_CALLABLE_TYPES,
     CallableType,
+    get_container_object_id,
 )
 from wireup.ioc.util import get_callable_type
 
@@ -190,7 +190,9 @@ def _generate_injection(  # noqa: C901, PLR0912
             if container:
                 lifetime = container._registry.get_lifetime(param.klass, param.qualifier_value)
                 factories_var = "_wireup_singleton_factories" if lifetime == "singleton" else "_wireup_scoped_factories"
-                dependency_obj_id = FactoryCompiler.get_object_id(param.klass, param.qualifier_value)
+                dependency_obj_id = get_container_object_id(param.klass, param.qualifier_value)
+                ns_dependency_obj_id_var = f"_wireup_obj_{name}_obj_id"
+                namespace[ns_dependency_obj_id_var] = dependency_obj_id
 
                 # Apply only if:
                 #   Async container injecting into an async function
@@ -202,7 +204,7 @@ def _generate_injection(  # noqa: C901, PLR0912
                     compiled.is_async == is_target_async or (is_target_async and not compiled.is_async)
                 ):
                     maybe_await = "await " if compiled.is_async else ""
-                    gen += f"kwargs['{name}'] = {maybe_await}{factories_var}[{dependency_obj_id}].factory(scope)"
+                    gen += f"kwargs['{name}'] = {maybe_await}{factories_var}[{ns_dependency_obj_id_var}].factory(scope)"
 
                     continue
 
