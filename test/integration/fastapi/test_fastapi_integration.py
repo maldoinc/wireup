@@ -2,17 +2,18 @@ import asyncio
 import contextlib
 import uuid
 from typing import Any, AsyncIterator, Dict, Iterator
+from uuid import uuid4
 
 import anyio.to_thread
 import pytest
 import wireup
 import wireup.integration
 import wireup.integration.fastapi
-from fastapi import FastAPI, Request, WebSocket
+from fastapi import BackgroundTasks, FastAPI, Request, WebSocket
 from fastapi.testclient import TestClient
 from wireup._annotations import Injected, injectable
 from wireup.errors import WireupError
-from wireup.integration.fastapi import get_app_container
+from wireup.integration.fastapi import WireupTask, get_app_container
 
 from test.integration.fastapi import cbr, wireup_route
 from test.integration.fastapi import services as fastapi_test_services
@@ -219,3 +220,57 @@ async def test_overrides_in_class_based_handlers() -> None:
         assert res.json() == {"counter": 1, "random": 100}
 
         assert await get_app_container(app).get(RandomService) is new_instance
+
+
+def test_injects_background_tasks() -> None:
+    task_result: list[str] = []
+
+    def write_logs(name: str, random_service: Injected[RandomService]) -> None:
+        task_result.append(f"{name}:{random_service.get_random()}")
+
+    app = FastAPI()
+    container = wireup.create_async_container(injectables=[shared_services, wireup.integration.fastapi])
+
+    @app.get("/")
+    async def hello(tasks: BackgroundTasks, wireup_task: Injected[WireupTask]) -> Dict[str, Any]:
+        tasks.add_task(wireup_task(write_logs), "fastapi")
+        return {}
+
+    wireup.integration.fastapi.setup(container, app)
+
+    with TestClient(app) as client:
+        response = client.get("/")
+
+    assert response.status_code == 200
+    assert task_result == ["fastapi:4"]
+
+
+def test_background_task_uses_different_scope_than_request() -> None:
+    ids: dict[str, str] = {}
+
+    @injectable(lifetime="scoped")
+    class ScopedContext:
+        def __init__(self) -> None:
+            self.id = uuid4().hex
+
+    def write_logs(scoped_context: Injected[ScopedContext]) -> None:
+        ids["task"] = scoped_context.id
+
+    app = FastAPI()
+    container = wireup.create_async_container(
+        injectables=[ScopedContext, shared_services, wireup.integration.fastapi],
+    )
+
+    @app.get("/")
+    async def hello(tasks: BackgroundTasks, scoped_context: Injected[ScopedContext], wireup_task: Injected[WireupTask]):
+        ids["request"] = scoped_context.id
+        tasks.add_task(wireup_task(write_logs))
+        return {}
+
+    wireup.integration.fastapi.setup(container, app)
+
+    with TestClient(app) as client:
+        response = client.get("/")
+
+    assert response.status_code == 200
+    assert ids["request"] != ids["task"]

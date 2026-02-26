@@ -28,6 +28,7 @@ nav:
         - FastAPI Integration: integrations/fastapi/index.md
         - Class Based Handlers: integrations/fastapi/class_based_handlers.md
         - Request Lifecycle Patterns: integrations/fastapi/request_lifecycle_patterns.md
+        - Background Tasks: integrations/fastapi/background_tasks.md
       - Flask: 
         - Flask Integration: integrations/flask/index.md
       - AIOHTTP: 
@@ -35,6 +36,7 @@ nav:
         - Class-Based Handlers: integrations/aiohttp/class_based_handlers.md
       - Starlette: 
         - Starlette Integration: integrations/starlette/index.md
+        - Background Tasks: integrations/starlette/background_tasks.md
       - Strawberry:
         - Strawberry Integration: integrations/strawberry/index.md
     - Command Line Interfaces:

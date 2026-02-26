@@ -7,10 +7,11 @@ from starlette.requests import Request
 from starlette.types import ASGIApp, Receive, Scope, Send
 from starlette.websockets import WebSocket
 
-from wireup._annotations import injectable
-from wireup._decorators import inject_from_container_unchecked
+from wireup._annotations import InjectableDeclaration, injectable
+from wireup._decorators import inject_from_container, inject_from_container_unchecked
 from wireup.errors import WireupError
 from wireup.ioc.container.async_container import AsyncContainer, ScopedAsyncContainer
+from wireup.ioc.types import AnyCallable
 
 current_request: ContextVar[Union[Request, WebSocket]] = ContextVar("wireup_starlette_request")
 
@@ -89,6 +90,7 @@ def setup(container: AsyncContainer, app: Starlette) -> None:
     _update_lifespan(app)
     app.state.wireup_container = container
     app.add_middleware(WireupAsgiMiddleware)
+    _expose_wireup_task(container)
 
 
 def get_app_container(app: Starlette) -> AsyncContainer:
@@ -109,7 +111,24 @@ def get_request_container() -> ScopedAsyncContainer:
     return current_request.get().state.wireup_container
 
 
+class WireupTask:
+    __slots__ = ("container",)
+
+    def __init__(self, container: AsyncContainer) -> None:
+        self.container = container
+
+    def __call__(self, fn: AnyCallable) -> Any:
+        return inject_from_container(self.container)(fn)
+
+
 inject = inject_from_container_unchecked(get_request_container, hide_annotated_names=True)
 """Inject dependencies into Starlette endpoints. Decorate your endpoint functions with this to use Wireup's
 dependency injection and use `Injected[T]` or `Annotated[T, Inject()]` to specify dependencies.
 """
+
+
+def _expose_wireup_task(container: AsyncContainer) -> None:
+    def wireup_task_factory() -> WireupTask:
+        return WireupTask(container)
+
+    container._registry.extend(impls=[InjectableDeclaration(wireup_task_factory, as_type=WireupTask)])

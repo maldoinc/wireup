@@ -101,6 +101,10 @@ class RequestContext:
         return self.request.query_params.get("name", "World")
 ```
 
+### Background Tasks
+
+[:octicons-arrow-right-24: Background Tasks](background_tasks.md)
+
 ### Accessing the Container Directly
 
 You can directly access the Wireup container using the following functions:

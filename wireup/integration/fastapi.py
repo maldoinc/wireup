@@ -24,6 +24,8 @@ from wireup._annotations import InjectableDeclaration
 from wireup._decorators import inject_from_container_unchecked
 from wireup.errors import WireupError
 from wireup.integration.starlette import (
+    _expose_wireup_task,
+    WireupTask,
     WireupAsgiMiddleware,
     current_request,
     get_app_container,
@@ -42,6 +44,7 @@ from wireup.ioc.util import (
 
 __all__ = [
     "WireupRoute",
+    "WireupTask",
     "get_app_container",
     "inject",
     "get_request_container",
@@ -228,6 +231,7 @@ def setup(
     For more details, visit: https://maldoinc.github.io/wireup/latest/integrations/fastapi/
     """
     app.state.wireup_container = container
+    _expose_wireup_task(container)
     if middleware_mode:
         app.add_middleware(WireupAsgiMiddleware)
     _update_lifespan(

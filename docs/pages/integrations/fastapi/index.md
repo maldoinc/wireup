@@ -2,11 +2,14 @@
 
 <div class="grid cards annotate" markdown>
 
-- :material-needle:{ .lg .middle } __Clean Injection__
+- :material-transit-connection-variant:{ .lg .middle } __Deep Integration__
 
     ______________________________________________________________________
 
-    Declare dependencies by using type annotations. No `Depends()` chains required.
+    Inject in endpoint handlers, middleware, decorators, and other request-path hooks.
+
+    [:octicons-arrow-right-24: Learn more](request_lifecycle_patterns.md)
+
 
 - :material-speedometer:{ .lg .middle } __Zero Runtime Overhead__
 
@@ -16,13 +19,13 @@
 
     [:octicons-arrow-right-24: Learn more](class_based_handlers.md)
 
-- :octicons-package-dependents-24:{ .lg .middle } __Access Anywhere__
+- :material-timer-cog-outline:{ .lg .middle } __Background Tasks__
 
     ______________________________________________________________________
 
-    Retrieve the container in middleware, decorators, and other places where FastAPI's DI can't reach.
+    Inject dependencies into scheduled background callbacks via `WireupTask`.
 
-    [:octicons-arrow-right-24: Learn more](request_lifecycle_patterns.md)
+    [:octicons-arrow-right-24: Learn more](background_tasks.md)
 
 - :material-share-circle:{ .lg .middle } __Framework-Agnostic__
 
@@ -234,6 +237,10 @@ import fastapi
 class HttpAuthenticationService:
     def __init__(self, request: fastapi.Request) -> None: ...
 ```
+
+### Background Tasks
+
+[:octicons-arrow-right-24: Background Tasks](background_tasks.md)
 
 ## Testing
 
