@@ -22,7 +22,7 @@
 
     Retrieve the container in middleware, decorators, and other places where FastAPI's DI can't reach.
 
-    [:octicons-arrow-right-24: Learn more](direct_container_access.md)
+    [:octicons-arrow-right-24: Learn more](request_lifecycle_patterns.md)
 
 - :material-share-circle:{ .lg .middle } __Framework-Agnostic__
 

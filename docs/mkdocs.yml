@@ -27,7 +27,7 @@ nav:
       - FastAPI: 
         - FastAPI Integration: integrations/fastapi/index.md
         - Class Based Handlers: integrations/fastapi/class_based_handlers.md
-        - Direct container access: integrations/fastapi/direct_container_access.md
+        - Request Lifecycle Patterns: integrations/fastapi/request_lifecycle_patterns.md
       - Flask: 
         - Flask Integration: integrations/flask/index.md
       - AIOHTTP: 
