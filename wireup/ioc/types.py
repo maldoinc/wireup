@@ -3,7 +3,7 @@ from __future__ import annotations
 from collections.abc import Hashable
 from dataclasses import dataclass
 from enum import Enum, auto
-from typing import Any, AsyncGenerator, Callable, Generator, List, Tuple, Union
+from typing import Any, AsyncGenerator, Callable, Generator, List, Tuple, Type, Union
 
 from typing_extensions import Literal
 
@@ -41,7 +41,7 @@ class ConfigInjectionRequest(InjectableType):
 
 
 Qualifier = Hashable
-ContainerObjectIdentifier = Union[type[Any], Tuple[type[Any], Qualifier]]
+ContainerObjectIdentifier = Union[Type[Any], Tuple[Type[Any], Qualifier]]
 
 
 def get_container_object_id(klass: type[Any], qualifier: Qualifier | None) -> ContainerObjectIdentifier:

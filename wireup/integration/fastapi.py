@@ -24,13 +24,12 @@ from wireup._annotations import InjectableDeclaration
 from wireup._decorators import inject_from_container_unchecked
 from wireup.errors import WireupError
 from wireup.integration.starlette import (
-    _expose_wireup_task,
-    WireupTask,
     WireupAsgiMiddleware,
+    WireupTask,
+    _expose_wireup_task,
     current_request,
     get_app_container,
     get_request_container,
-    inject,
     request_factory,
     websocket_factory,
 )
@@ -46,8 +45,8 @@ __all__ = [
     "WireupRoute",
     "WireupTask",
     "get_app_container",
-    "inject",
     "get_request_container",
+    "inject",
     "inject",
     "request_factory",
     "setup",
