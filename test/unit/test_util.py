@@ -4,6 +4,7 @@ import unittest
 from typing import Callable
 
 import pytest
+import wireup
 from typing_extensions import Annotated
 from wireup import Inject
 from wireup.errors import WireupError
@@ -16,6 +17,8 @@ from wireup.ioc.types import (
 )
 from wireup.ioc.util import (
     get_globals,
+    get_valid_injection_annotated_parameters,
+    injection_requires_scope,
     param_get_annotation,
 )
 
@@ -122,3 +125,45 @@ def test_get_container_object_id_unqualified() -> None:
 def test_get_container_object_id_qualified() -> None:
     obj_id = get_container_object_id(MyCustomClass, 0)
     assert obj_id == (MyCustomClass, 0)
+
+
+def test_injection_requires_scope_singleton() -> None:
+    @wireup.injectable
+    class SingletonDep:
+        pass
+
+    container = wireup.create_sync_container(injectables=[SingletonDep], config={"foo": "bar"})
+
+    def target(dep: Annotated[SingletonDep, Inject()], value: Annotated[str, Inject(config="foo")]) -> None:
+        _ = dep, value
+
+    names_to_inject = get_valid_injection_annotated_parameters(container, target)
+    assert not injection_requires_scope(names_to_inject, container)
+
+
+def test_injection_requires_scope_scoped() -> None:
+    @wireup.injectable(lifetime="scoped")
+    class ScopedDep:
+        pass
+
+    container = wireup.create_sync_container(injectables=[ScopedDep])
+
+    def target(dep: Annotated[ScopedDep, Inject()]) -> None:
+        _ = dep
+
+    names_to_inject = get_valid_injection_annotated_parameters(container, target)
+    assert injection_requires_scope(names_to_inject, container)
+
+
+def test_injection_requires_scope_transient() -> None:
+    @wireup.injectable(lifetime="transient")
+    class TransientDep:
+        pass
+
+    container = wireup.create_sync_container(injectables=[TransientDep])
+
+    def target(dep: Annotated[TransientDep, Inject()]) -> None:
+        _ = dep
+
+    names_to_inject = get_valid_injection_annotated_parameters(container, target)
+    assert injection_requires_scope(names_to_inject, container)

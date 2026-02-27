@@ -68,7 +68,7 @@ def test_injects_service(client: TestClient):
     assert get_lucky_number._called == 1  # type: ignore[reportFunctionMemberAccess]
 
 
-@pytest.mark.parametrize("endpoint", ["/scoped", "/scoped/wireup_injected"])
+@pytest.mark.parametrize("endpoint", ["/scoped", "/scoped-sync", "/scoped/wireup_injected"])
 def test_scoped(client: TestClient, endpoint: str):
     response = client.get(endpoint)
     assert response.status_code == 200
@@ -97,12 +97,16 @@ def test_injects_parameters(client: TestClient):
     assert response.json() == {"foo": "bar", "foo_foo": "bar-bar"}
 
 
-def test_request_container_in_decorator(client: TestClient):
-    response = client.get("/401_for_bob?name=Bob")
-    assert response.status_code == 401
+def test_request_container_in_decorator(client: TestClient, *, expose_container_in_middleware: bool):
+    if expose_container_in_middleware:
+        response = client.get("/requires-request-id")
+        assert response.status_code == 401
 
-    response = client.get("/401_for_bob?name=NotBob")
-    assert response.json() == {"number": 4}
+        response = client.get("/requires-request-id", headers={"X-Request-Id": "req-1"})
+        assert response.json() == {"number": 4}
+    else:
+        with pytest.raises(LookupError):
+            client.get("/requires-request-id")
 
 
 @pytest.mark.parametrize("endpoint", ["/ws", "/ws/wireup_injected", "/ws_in_service", "/ws/no-websocket-in-signature"])

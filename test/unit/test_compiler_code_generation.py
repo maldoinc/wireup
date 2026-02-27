@@ -1,8 +1,9 @@
 from __future__ import annotations
 
+import re
 import textwrap
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, AsyncGenerator, Iterator
+from typing import Any, AsyncGenerator, Iterator
 
 import pytest
 import wireup
@@ -18,10 +19,6 @@ from wireup import (
 )
 from wireup._decorators import inject_from_container_unchecked
 from wireup.errors import WireupError
-
-if TYPE_CHECKING:
-    from wireup.ioc.container.async_container import ScopedAsyncContainer
-    from wireup.ioc.container.sync_container import ScopedSyncContainer
 
 
 @injectable
@@ -121,10 +118,6 @@ async def async_target_with_async_dep(
     pass
 
 
-def middleware(_container: ScopedSyncContainer | ScopedAsyncContainer, _args: Any, _kwargs: Any) -> Iterator[None]:
-    yield None
-
-
 def test_sync_container_singleton_scoped_config_optimized(sync_container: SyncContainer):
     """
     Test SyncContainer injecting into a Sync Target with Singleton, Scoped, and Config dependencies.
@@ -180,43 +173,6 @@ def test_sync_container_singleton_config_optimized(sync_container: SyncContainer
             kwargs['s'] = _wireup_singleton_factories[_wireup_obj_s_obj_id].factory(scope)
             kwargs['conf'] = _wireup_config_val_conf
             return _wireup_target(*args, **kwargs)
-    """).strip()
-
-    assert code.strip() == expected
-
-
-def test_sync_container_singleton_config_with_middleware(sync_container: SyncContainer):
-    """
-    Test SyncContainer injecting into a Sync Target with Middleware.
-
-    **Scenario**:
-    -   Container: `SyncContainer`
-    -   Target: Sync Function
-    -   Dependencies: Singleton, Config
-    -   Middleware: Present
-
-    **Optimization**:
-    -   Optimized: We know the container, it's always this one.
-
-    **Expectation**:
-    -   A scope is explicitly entered to support middleware execution.
-    -   Middleware is invoked and cleaned up.
-    -   Optimized factory lookup is used.
-    """
-    decorated = inject_from_container(sync_container, _middleware=middleware)(singleton_config_target)
-    code = _get_generated_code(decorated)
-
-    expected = textwrap.dedent("""
-        def _wireup_generated_wrapper(*args, **kwargs):
-            with _wireup_container.enter_scope() as scope:
-                gen_middleware = _wireup_middleware(scope, args, kwargs)
-                try:
-                    next(gen_middleware)
-                    kwargs['s'] = _wireup_singleton_factories[_wireup_obj_s_obj_id].factory(scope)
-                    kwargs['conf'] = _wireup_config_val_conf
-                    return _wireup_target(*args, **kwargs)
-                finally:
-                    gen_middleware.close()
     """).strip()
 
     assert code.strip() == expected
@@ -369,6 +325,21 @@ def test_async_container_sync_target_singleton_scoped_config_optimized(async_con
     """).strip()
 
     assert code.strip() == expected
+
+
+def test_async_container_sync_target_scoped_config_with_context_creator(async_container: AsyncContainer):
+    decorated = inject_from_container(
+        async_container,
+        _context_creator={str: "kwargs['foo']", int: "kwargs.pop('bar')"},
+    )(singleton_scoped_config_target)
+    code = _get_generated_code(decorated)
+
+    assert re.search(
+        r"with _wireup_async_container_force_sync_scope\(_wireup_container, _context=\{"
+        r"_context_type_[0-9a-f]{32}: kwargs\['foo'\], "
+        r"_context_type_[0-9a-f]{32}: kwargs\.pop\('bar'\)\}\) as scope:",
+        code,
+    )
 
 
 def test_async_container_async_target_singleton_config_optimized(async_container: AsyncContainer):

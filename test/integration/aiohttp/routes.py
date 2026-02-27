@@ -20,7 +20,6 @@ async def hello_world(_request: web.Request, greeter: Injected[GreeterService]) 
 @route
 async def inject_request(_request: web.Request, req_context: Injected[RequestContext]) -> web.Response:
     assert _request is req_context.request
-    assert req_context is await get_request_container().get(RequestContext)
 
     return web.json_response()
 
@@ -33,3 +32,10 @@ class WebViewRoute(web.View):
 
     async def get(self) -> web.Response:
         return web.json_response({"greeting": self.greeter.greet("webview")})
+
+
+@router.get("/request_container")
+@route
+async def request_container(_request: web.Request) -> web.Response:
+    request = await get_request_container().get(web.Request)
+    return web.json_response({"is_same_request": request is _request})

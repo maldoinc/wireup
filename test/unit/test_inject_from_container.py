@@ -1,7 +1,7 @@
 import contextlib
 import re
 from dataclasses import dataclass
-from typing import Any, AsyncIterator, Iterator, NewType, Optional, Tuple, Union
+from typing import AsyncIterator, Iterator, NewType, Optional, Tuple
 
 import pytest
 import wireup
@@ -9,8 +9,6 @@ from typing_extensions import Annotated
 from wireup import Inject, Injected, create_sync_container, inject_from_container, injectable, service
 from wireup._decorators import inject_from_container_unchecked
 from wireup.errors import WireupError
-from wireup.ioc.container.async_container import ScopedAsyncContainer
-from wireup.ioc.container.sync_container import ScopedSyncContainer
 
 from test.conftest import Container
 from test.unit import services
@@ -359,67 +357,6 @@ async def test_raises_generator_cleanup() -> None:
         await main()
 
     assert exception_notified
-
-
-async def test_inject_from_container_middleware() -> None:
-    Something = NewType("Something", str)
-    middleware_called = False
-
-    @wireup.injectable(lifetime="scoped")
-    def f1() -> Something:
-        return Something("Something")
-
-    def middleware(
-        scoped_container: Union[ScopedAsyncContainer, ScopedSyncContainer],  # noqa: ARG001
-        *args: Any,  # noqa: ARG001
-        **kwargs: Any,  # noqa: ARG001
-    ) -> Iterator[None]:
-        nonlocal middleware_called
-        middleware_called = True
-        try:
-            yield
-        finally:
-            pass
-
-    c = wireup.create_async_container(injectables=[f1])
-
-    @inject_from_container(c, _middleware=middleware)
-    async def main(_: Injected[Something]): ...
-
-    await main()
-
-    assert middleware_called
-
-
-async def test_inject_from_container_middleware_cleanup_on_error() -> None:
-    Something = NewType("Something", str)
-    cleanup_ran = False
-
-    @wireup.injectable(lifetime="scoped")
-    def f1() -> Something:
-        return Something("Something")
-
-    def middleware(
-        scoped_container: Union[ScopedAsyncContainer, ScopedSyncContainer],  # noqa: ARG001
-        *args: Any,  # noqa: ARG001
-        **kwargs: Any,  # noqa: ARG001
-    ) -> Iterator[None]:
-        nonlocal cleanup_ran
-        try:
-            yield
-        finally:
-            cleanup_ran = True
-
-    c = wireup.create_async_container(injectables=[f1])
-
-    @inject_from_container(c, _middleware=middleware)
-    async def main(_: Injected[Something]):
-        raise ValueError("boom!")
-
-    with pytest.raises(ValueError, match="boom!"):
-        await main()
-
-    assert cleanup_ran
 
 
 def test_inject_from_container_generator(container: Container) -> None:

@@ -15,8 +15,6 @@ from wireup.ioc.util import (
 )
 
 if TYPE_CHECKING:
-    from collections.abc import Iterator
-
     from wireup.ioc.container.async_container import AsyncContainer, ScopedAsyncContainer
     from wireup.ioc.container.sync_container import ScopedSyncContainer
     from wireup.ioc.types import AnnotatedParameter
@@ -39,7 +37,7 @@ def inject_from_container_unchecked(
             names_to_inject=get_inject_annotated_parameters(target),
             container=None,
             scoped_container_supplier=scoped_container_supplier,
-            _middleware=None,
+            context_creator=None,
             hide_annotated_names=hide_annotated_names,
         )
 
@@ -49,11 +47,7 @@ def inject_from_container_unchecked(
 def inject_from_container(
     container: SyncContainer | AsyncContainer,
     scoped_container_supplier: Callable[[], ScopedSyncContainer | ScopedAsyncContainer] | None = None,
-    _middleware: Callable[
-        [ScopedSyncContainer | ScopedAsyncContainer, tuple[Any, ...], dict[str, Any]],
-        Iterator[None],
-    ]
-    | None = None,
+    _context_creator: dict[Any, str] | None = None,
     *,
     hide_annotated_names: bool = False,
 ) -> Callable[[Callable[..., R]], Callable[..., R]]:
@@ -87,23 +81,19 @@ def inject_from_container(
             names_to_inject=get_valid_injection_annotated_parameters(container, target),
             container=container,
             scoped_container_supplier=scoped_container_supplier,
-            _middleware=_middleware,
+            context_creator=_context_creator,
             hide_annotated_names=hide_annotated_names,
         )
 
     return _decorator
 
 
-def inject_from_container_util(
+def inject_from_container_util(  # noqa: PLR0913
     target: Callable[..., R],
     names_to_inject: dict[str, AnnotatedParameter],
     container: SyncContainer | AsyncContainer | None,
     scoped_container_supplier: Callable[[], ScopedSyncContainer | ScopedAsyncContainer] | None = None,
-    _middleware: Callable[
-        [ScopedSyncContainer | ScopedAsyncContainer, tuple[Any, ...], dict[str, Any]],
-        Iterator[None],
-    ]
-    | None = None,
+    context_creator: dict[Any, str] | None = None,
     *,
     hide_annotated_names: bool,
 ) -> Callable[..., R]:
@@ -119,7 +109,7 @@ def inject_from_container_util(
         names_to_inject=names_to_inject,
         container=container,
         scoped_container_supplier=scoped_container_supplier,
-        middleware=_middleware,
+        context_creator=context_creator,
     )
     wrapped = res
 

@@ -106,6 +106,35 @@ app_container: AsyncContainer = get_app_container(app)
 request_container: ScopedAsyncContainer = get_request_container()
 ```
 
+### Container Availability and `middleware_mode`
+
+`get_app_container(app)` is always available.
+
+`get_request_container()` is available only when `middleware_mode=True`. In AIOHTTP integration this is the default
+behavior:
+
+```python
+wireup.integration.aiohttp.setup(
+    container, app, middleware_mode=True
+)  # default
+```
+
+This mode adds AIOHTTP middleware so the request-scoped container is available everywhere in request lifecycle code (for
+example decorators and custom middleware), not just in Wireup-injected handlers. All normal Wireup handler injection
+keeps working either way.
+
+If you do not need `get_request_container()`, disable it for lower request-path overhead:
+
+```python
+wireup.integration.aiohttp.setup(container, app, middleware_mode=False)
+```
+
+With `middleware_mode=False`, Wireup still injects dependencies in handlers, including `web.Request` when
+`wireup.integration.aiohttp` is included in `injectables`, but `get_request_container()` is not available.
+
+Use `middleware_mode=True` when you need to access the request-scoped Wireup container from places where Wireup is not
+injecting directly (for example AIOHTTP middleware or custom decorator paths).
+
 ### Testing
 
 For general testing tips with Wireup refer to the [test docs](../../testing.md). With the AIOHTTP integration, you can

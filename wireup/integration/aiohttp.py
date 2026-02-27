@@ -1,5 +1,5 @@
 from contextvars import ContextVar
-from typing import Any, Awaitable, Callable, Dict, Iterable, Iterator, Optional, Protocol, Tuple, Type, Union
+from typing import Awaitable, Callable, Iterable, Optional, Protocol, Type
 
 from aiohttp import web
 
@@ -7,7 +7,6 @@ import wireup
 from wireup._annotations import InjectableDeclaration, injectable
 from wireup.errors import WireupError
 from wireup.ioc.container.async_container import ScopedAsyncContainer
-from wireup.ioc.container.sync_container import ScopedSyncContainer
 
 current_request: ContextVar[web.Request] = ContextVar("wireup_aiohttp_request")
 _container_key = "wireup_container"
@@ -19,21 +18,6 @@ class _WireupHandler(Protocol):
 
 def route(fn: Callable[..., Awaitable[web.StreamResponse]]) -> Callable[[web.Request], Awaitable[web.StreamResponse]]:
     return fn  # type: ignore[reportReturnType]
-
-
-def _route_middleware(
-    scoped_container: Union[ScopedAsyncContainer, ScopedSyncContainer],
-    args: Tuple[Any],
-    _kwargs: Dict[str, Any],
-) -> Iterator[None]:
-    request: web.Request = args[0]
-    request[_container_key] = scoped_container
-
-    token = current_request.set(request)
-    try:
-        yield
-    finally:
-        current_request.reset(token)
 
 
 @injectable(lifetime="scoped")
@@ -49,8 +33,14 @@ def aiohttp_request_factory() -> web.Request:
         raise WireupError(msg) from e
 
 
-def _inject_routes(container: wireup.AsyncContainer, app: web.Application) -> None:
-    inject_scoped = wireup.inject_from_container(container, _middleware=_route_middleware)
+def _inject_routes(container: wireup.AsyncContainer, app: web.Application, *, middleware_mode: bool) -> None:
+    if middleware_mode:
+        inject_scoped = wireup.inject_from_container(container, get_request_container)
+    else:
+        inject_scoped = wireup.inject_from_container(
+            container,
+            _context_creator={web.Request: "args[0]"},
+        )
 
     for route in app.router.routes():
         route._handler = inject_scoped(route._handler)
@@ -73,6 +63,8 @@ async def _instantiate_class_based_handlers(
 def _get_startup_event(
     container: wireup.AsyncContainer,
     handlers: Optional[Iterable[Type[_WireupHandler]]],
+    *,
+    middleware_mode: bool,
 ) -> Callable[[web.Application], Awaitable[None]]:
     if handlers:
         for handler_type in handlers:
@@ -82,7 +74,7 @@ def _get_startup_event(
         if handlers:
             await _instantiate_class_based_handlers(container, app, handlers)
 
-        _inject_routes(container, app)
+        _inject_routes(container, app, middleware_mode=middleware_mode)
 
     return _inner
 
@@ -91,6 +83,8 @@ def setup(
     container: wireup.AsyncContainer,
     app: web.Application,
     handlers: Optional[Iterable[Type[_WireupHandler]]] = None,
+    *,
+    middleware_mode: bool = True,
 ) -> None:
     """Integrate Wireup with AIOHTTP.
 
@@ -100,16 +94,35 @@ def setup(
     :param app: An AIOHTTP server application.
     :param handlers: A list of Wireup class-based handlers.
     See: https://maldoinc.github.io/wireup/latest/integrations/aiohttp/class_based_handlers/
+    :param middleware_mode: If True, adds AIOHTTP middleware that exposes the scoped request container
+        via `get_request_container`. Set to False to skip middleware and use context-seeded injection
+        in route wrappers for better request-path performance.
     """
 
     async def _on_cleanup(_app: web.Application) -> None:
         await container.close()
 
+    @web.middleware
+    async def _wireup_middleware(
+        request: web.Request,
+        handler: Callable[[web.Request], Awaitable[web.StreamResponse]],
+    ) -> web.StreamResponse:
+        token = current_request.set(request)
+        try:
+            async with container.enter_scope(_context={web.Request: request}) as scoped_container:
+                request[_container_key] = scoped_container
+                return await handler(request)
+        finally:
+            current_request.reset(token)
+
     if handlers:
         for handler_type in handlers:
             app.router.add_routes(handler_type.router)
 
-    app.on_startup.append(_get_startup_event(container, handlers))
+    if middleware_mode:
+        app.middlewares.append(_wireup_middleware)
+
+    app.on_startup.append(_get_startup_event(container, handlers, middleware_mode=middleware_mode))
     app.on_cleanup.append(_on_cleanup)
     app[_container_key] = container
 
@@ -120,5 +133,8 @@ def get_app_container(app: web.Application) -> wireup.AsyncContainer:
 
 
 def get_request_container() -> ScopedAsyncContainer:
-    """When inside a request, returns the scoped container instance handling the current request."""
+    """When inside a request, returns the scoped container instance handling the current request.
+
+    This requires setup(..., middleware_mode=True).
+    """
     return current_request.get()[_container_key]

@@ -10,7 +10,7 @@ from typing import Any, Sequence, TypeVar, cast
 
 from wireup.errors import PositionalOnlyParameterError, WireupError
 from wireup.ioc.type_analysis import analyze_type
-from wireup.ioc.types import AnnotatedParameter, AnyCallable, CallableType, InjectableType
+from wireup.ioc.types import AnnotatedParameter, AnyCallable, CallableType, ConfigInjectionRequest, InjectableType
 
 T = TypeVar("T")
 
@@ -234,3 +234,15 @@ def get_valid_injection_annotated_parameters(
         container._registry.assert_dependency_exists(parameter=parameter, target=target, name=name)
 
     return names_to_inject
+
+
+def injection_requires_scope(names_to_inject: dict[str, AnnotatedParameter], container: BaseContainer) -> bool:
+    """Return True when any injected dependency requires entering a scope."""
+    for param in names_to_inject.values():
+        if isinstance(param.annotation, ConfigInjectionRequest):
+            continue
+
+        if container._registry.get_lifetime(param.klass, param.qualifier_value) != "singleton":
+            return True
+
+    return False

@@ -1,20 +1,16 @@
 import contextlib
-from collections.abc import Iterator
 from typing import (
     Any,
     AsyncIterator,
     Callable,
-    Dict,
     Iterable,
     List,
     Optional,
-    Tuple,
     Type,
-    Union,
 )
 
 import fastapi
-from fastapi import FastAPI
+from fastapi import FastAPI, Request, WebSocket
 from fastapi.routing import APIRoute, APIWebSocketRoute
 from starlette.routing import BaseRoute
 from typing_extensions import Protocol
@@ -27,18 +23,17 @@ from wireup.integration.starlette import (
     WireupAsgiMiddleware,
     WireupTask,
     _expose_wireup_task,
-    current_request,
     get_app_container,
     get_request_container,
     request_factory,
     websocket_factory,
 )
-from wireup.ioc.container.async_container import AsyncContainer, ScopedAsyncContainer
-from wireup.ioc.container.sync_container import ScopedSyncContainer
+from wireup.ioc.container.async_container import AsyncContainer
 from wireup.ioc.types import AnyCallable
 from wireup.ioc.util import (
     get_inject_annotated_parameters,
     hide_annotated_names,
+    injection_requires_scope,
 )
 
 __all__ = [
@@ -64,60 +59,36 @@ class WireupRoute(APIRoute):
         super().__init__(path=path, endpoint=endpoint, **kwargs)
 
 
-def _create_fastapi_middleware(
-    http_connection_param_name: str,
-    *,
-    remove_http_connection_from_arguments: bool,
-) -> Callable[
-    [Union[ScopedAsyncContainer, ScopedSyncContainer], Tuple[Any, ...], Dict[str, Any]],
-    Iterator[None],
-]:
-    def middleware(
-        scoped_container: Union[ScopedAsyncContainer, ScopedSyncContainer],
-        _args: Tuple[Any, ...],
-        kwargs: Dict[str, Any],
-    ) -> Iterator[None]:
-        request = kwargs[http_connection_param_name]
-        request.state.wireup_container = scoped_container
-        token = current_request.set(request)
-
-        if remove_http_connection_from_arguments:
-            del kwargs[http_connection_param_name]
-
-        try:
-            yield
-        finally:
-            current_request.reset(token)
-
-    return middleware
-
-
 def _inject_fastapi_route(
     *,
     container: AsyncContainer,
     target: AnyCallable,
     http_connection_param_name: str,
     remove_http_connection_from_arguments: bool,
-    add_custom_middleware: bool,
+    is_websocket_route: bool,
 ) -> AnyCallable:
     return inject_from_container(
         container,
-        _middleware=_create_fastapi_middleware(
-            http_connection_param_name=http_connection_param_name,
-            remove_http_connection_from_arguments=remove_http_connection_from_arguments,
-        )
-        if add_custom_middleware
-        else None,
+        _context_creator={
+            (WebSocket if is_websocket_route else Request): f"kwargs.pop('{http_connection_param_name}')"
+            if remove_http_connection_from_arguments
+            else f"kwargs['{http_connection_param_name}']"
+        },
     )(target)
 
 
-def _inject_routes(container: AsyncContainer, routes: List[BaseRoute], *, is_using_asgi_middleware: bool) -> None:
+def _inject_routes(
+    container: AsyncContainer,
+    routes: List[BaseRoute],
+    *,
+    is_using_asgi_middleware: bool,
+) -> None:
     for route in routes:
-        if not (
-            isinstance(route, (APIRoute, APIWebSocketRoute))
-            and route.dependant.call
-            and get_inject_annotated_parameters(route.dependant.call)
-        ):
+        if not (isinstance(route, (APIRoute, APIWebSocketRoute)) and route.dependant.call):
+            continue
+
+        names_to_inject = get_inject_annotated_parameters(route.dependant.call)
+        if not names_to_inject:
             continue
 
         # When using the asgi middleware, the request context variable is set there.
@@ -126,14 +97,19 @@ def _inject_routes(container: AsyncContainer, routes: List[BaseRoute], *, is_usi
             route.dependant.call = inject_from_container(container, get_request_container)(route.dependant.call)
             continue
 
+        # If all injected dependencies are singleton/config, no request/websocket context is required.
+        if not injection_requires_scope(names_to_inject, container):
+            route.dependant.call = inject_from_container(container)(route.dependant.call)
+            continue
+
         # This is now either a websocket route or an APIRoute but the asgi middleware is not used.
-        # In this case we need to use the custom route middleware to extract the current request/websocket.
-        add_custom_middleware = isinstance(route, APIWebSocketRoute) or not is_using_asgi_middleware
+        # In this case we seed request/websocket scope context from FastAPI's injected HTTPConnection argument.
+        is_websocket_route = isinstance(route, APIWebSocketRoute)
         is_http_connection_in_signature = route.dependant.http_connection_param_name is not None
 
         # Setting http_connection_param_name forces FastAPI to pass the current HTTPConnection
         # to the route handler regardless of whether it was in the signature.
-        # It is then extracted in the inject_from_container middleware to set the relevant context variable.
+        # The generated wrapper reads this argument and passes it as scope context for request-time injection.
         if not route.dependant.http_connection_param_name:
             route.dependant.http_connection_param_name = "_fastapi_http_connection"
 
@@ -144,7 +120,7 @@ def _inject_routes(container: AsyncContainer, routes: List[BaseRoute], *, is_usi
             # If the HTTPConnection was not in the signature, it needs to be removed from the arguments
             # when calling the route handler.
             remove_http_connection_from_arguments=not is_http_connection_in_signature,
-            add_custom_middleware=add_custom_middleware,
+            is_websocket_route=is_websocket_route,
         )
 
 
@@ -196,7 +172,11 @@ def _update_lifespan(
             for cbr in class_based_routes:
                 await _instantiate_class_based_route(app, container, cbr)
 
-            _inject_routes(container, app.routes, is_using_asgi_middleware=is_using_asgi_middleware)
+            _inject_routes(
+                container,
+                app.routes,
+                is_using_asgi_middleware=is_using_asgi_middleware,
+            )
 
         async with old_lifespan(app) as state:
             yield state

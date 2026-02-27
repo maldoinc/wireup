@@ -4,6 +4,10 @@ Class-based handlers in Wireup provide a new mechanism for efficient dependency 
 optimize performance by managing dependencies at startup rather than per request. Dependencies injected in the init
 method are zero-cost.
 
+For the lowest-overhead request path, configure AIOHTTP integration with `middleware_mode=False`. Class-based handlers
+still work with `middleware_mode=True`, but that mode adds AIOHTTP middleware so `get_request_container()` can be
+accessed globally during request handling.
+
 ### Key Benefits
 
 - **Request Performance**: Zero overhead from dependency resolution during request handling.
@@ -44,7 +48,12 @@ class GreeterHandler:
 1. Other scoped/transient dependencies can be requested in the routes. Here the `Injected[T]` annotation is required.
 
 ```python title="app.py"
-wireup.integration.aiohttp.setup(container, app, handlers=[GreeterHandler])
+wireup.integration.aiohttp.setup(
+    container,
+    app,
+    handlers=[GreeterHandler],
+    middleware_mode=False,  # Recommended for the zero-overhead path
+)
 ```
 
 **Overriding**: Handlers are created once on startup, their dependencies cannot be overridden once the application

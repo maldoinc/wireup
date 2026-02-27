@@ -61,7 +61,6 @@ async def websocket_endpoint(
     scoped_service_dependency: Injected[ScopedServiceDependency],
     ws_service: Injected[WSService],
 ):
-    assert isinstance(await get_request_container().get(WebSocket), WebSocket)
     assert scoped_service is scoped_service2
     assert scoped_service.other is scoped_service_dependency
 
@@ -81,7 +80,6 @@ async def websocket_endpoint_wireup(
     scoped_service_dependency: Injected[ScopedServiceDependency],
     ws_service: Injected[WSService],
 ):
-    assert isinstance(await get_request_container().get(WebSocket), WebSocket)
     assert scoped_service is scoped_service2
     assert scoped_service.other is scoped_service_dependency
 
@@ -107,19 +105,30 @@ async def scoped_route(
     assert scoped_service.other is scoped_service_dependency
 
 
-def require_not_bob(fn: AnyCallable) -> AnyCallable:
+@router.get("/scoped-sync")
+def scoped_sync_route(
+    scoped_service: Injected[ScopedService],
+    scoped_service2: Injected[ScopedService],
+    scoped_service_dependency: Injected[ScopedServiceDependency],
+) -> Dict[str, str]:
+    assert scoped_service is scoped_service2
+    assert scoped_service.other is scoped_service_dependency
+    return {"status": "ok"}
+
+
+def require_request_id(fn: AnyCallable) -> AnyCallable:
     @functools.wraps(fn)
     async def wrapper(*args: Any, **kwargs: Any) -> Any:
         request = await get_request_container().get(Request)
 
-        if request.query_params.get("name") == "Bob":
-            raise fastapi.exceptions.HTTPException(status_code=401, detail="Bob is not allowed")
+        if "X-Request-Id" not in request.headers:
+            raise fastapi.exceptions.HTTPException(status_code=401, detail="Missing X-Request-Id")
         return await fn(*args, **kwargs)
 
     return wrapper
 
 
-@router.get("/401_for_bob")
-@require_not_bob
+@router.get("/requires-request-id")
+@require_request_id
 async def decorated_fn_route(random_service: Injected[RandomService]):
     return {"number": random_service.get_random()}
