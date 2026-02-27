@@ -47,7 +47,8 @@ to bind a concrete class to a Protocol or an Abstract Base Class.
 !!! warning "Type Checking Limitation"
 
     Type checkers cannot verify that the decorated class implements the protocol or ABC specified in `as_type`. This is a
-    Python type system limitation. If you want static guarantees, consider using factory functions with return type annotations instead of class decorators.
+    Python type system limitation. If you want static guarantees, consider using factory functions with return type
+    annotations instead of class decorators.
 
 !!! note "Runtime Validation"
 

@@ -1,11 +1,11 @@
 # Advanced Patterns
 
-While Wireup primarily handles dependency injection in FastAPI routes, you can also use dependencies in other functions during the request lifecycle to create composable and reusable patterns:
+While Wireup primarily handles dependency injection in FastAPI routes, you can also use dependencies in other functions
+during the request lifecycle to create composable and reusable patterns:
 
 - **Reusable Route Decorators**: `@require_admin`, `@require_permission`, `@rate_limit`
 - **Middleware Integration**: request context setup and cross-cutting request logic
 - **Migration Support**: composing Wireup services with external FastAPI dependencies
-
 
 !!! info "Advanced Feature - Requires Middleware Mode"
 
@@ -15,12 +15,13 @@ While Wireup primarily handles dependency injection in FastAPI routes, you can a
     wireup.integration.fastapi.setup(container, app, middleware_mode=True)
     ```
 
-    Normally, the request-scoped container is created just before the route handler is called. With middleware mode enabled, it's created at the start of the request lifecycle, making it available in middleware and other request handlers.
-
+    Normally, the request-scoped container is created just before the route handler is called. With middleware mode enabled,
+    it's created at the start of the request lifecycle, making it available in middleware and other request handlers.
 
 ## Composable Route Decorators
 
-Route decorators let you extract cross-cutting concerns into reusable components that can be applied to multiple endpoints. Examples below:
+Route decorators let you extract cross-cutting concerns into reusable components that can be applied to multiple
+endpoints. Examples below:
 
 ### Authentication & Authorization
 
@@ -100,8 +101,8 @@ async def request_middleware(
 
 ## Integrating with FastAPI Dependencies
 
-When migrating to Wireup or composing with external libraries that provide FastAPI dependencies,
-you can access Wireup services within `Depends()` functions.
+When migrating to Wireup or composing with external libraries that provide FastAPI dependencies, you can access Wireup
+services within `Depends()` functions.
 
 ```python
 from wireup import Injected
@@ -135,7 +136,6 @@ async def get_users(
 
     Remember: Wireup services cannot depend on `Depends()` providers.
 
-
 ## Testing Patterns
 
 When testing code that runs request-time helpers (`@inject` or `get_request_container()`), ensure the request-scoped
@@ -151,7 +151,9 @@ import wireup.integration.fastapi
 
 # Set up app with middleware_mode enabled
 app = FastAPI()
-container = wireup.create_async_container(injectables=[AuthService, UserService])
+container = wireup.create_async_container(
+    injectables=[AuthService, UserService]
+)
 wireup.integration.fastapi.setup(container, app, middleware_mode=True)
 
 
@@ -188,8 +190,8 @@ def test_request_middleware_runs():
 
 !!! tip
 
-    Use `get_app_container(app).override.injectable()` to inject mocks and fakes during tests.
-    This works for both route decorators and middleware patterns.
+    Use `get_app_container(app).override.injectable()` to inject mocks and fakes during tests. This works for both route
+    decorators and middleware patterns.
 
 ## Direct Container Access
 
@@ -206,14 +208,13 @@ request_container = get_request_container()
 app_container = get_app_container(app)
 ```
 
-The app container is always retrievable given an instance of the application. The request-scoped container
-is only available when `middleware_mode=True` is enabled.
-
+The app container is always retrievable given an instance of the application. The request-scoped container is only
+available when `middleware_mode=True` is enabled.
 
 !!! tip "Prefer `@inject` for request-time helpers"
 
-    `@inject` keeps signatures type-driven and avoids manual container lookups.
-    If you prefer explicit container access, `get_request_container()` works anywhere during a request:
+    `@inject` keeps signatures type-driven and avoids manual container lookups. If you prefer explicit container access,
+    `get_request_container()` works anywhere during a request:
 
     ```python
     from wireup.integration.fastapi import get_request_container

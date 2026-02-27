@@ -28,7 +28,8 @@ self-contained definitions without having to create factories for every dependen
 
 !!! note "`Injected[T]` vs `Inject(...)`"
 
-    `Injected[T]` marks parameters for injection in external call sites. `Inject(...)` describes how to find them (for example config keys or qualifiers).
+    `Injected[T]` marks parameters for injection in external call sites. `Inject(...)` describes how to find them (for
+    example config keys or qualifiers).
 
 #### 🐍 `KeyValueStore`
 

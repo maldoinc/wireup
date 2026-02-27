@@ -1,6 +1,7 @@
 # Wireup
 
-Type-driven dependency injection for Python. Wireup is battle-tested in production, thread-safe, no-GIL (PEP 703) ready, and designed to fail fast: **if the container starts, it works**.
+Type-driven dependency injection for Python. Wireup is battle-tested in production, thread-safe, no-GIL (PEP 703) ready,
+and designed to fail fast: **if the container starts, it works**.
 
 <div class="grid cards annotate index-cards" markdown>
 
@@ -8,7 +9,8 @@ Type-driven dependency injection for Python. Wireup is battle-tested in producti
 
     ______________________________________________________________________
 
-    Wireup catches missing dependencies, circular references, lifetime mismatches, duplicate registrations, and missing config keys at startup. Shared dependencies are created in a thread-safe way.
+    Wireup catches missing dependencies, circular references, lifetime mismatches, duplicate registrations, and missing
+    config keys at startup. Shared dependencies are created in a thread-safe way.
 
     [:octicons-arrow-right-24: Validation checks](#validation-checks)
 
@@ -32,10 +34,10 @@ Type-driven dependency injection for Python. Wireup is battle-tested in producti
 
     ______________________________________________________________________
 
-    Resolve constructor dependencies at startup in [FastAPI](integrations/fastapi/class_based_handlers.md) and [AIOHTTP](integrations/aiohttp/class_based_handlers.md) class-based handlers, not per request.
+    Resolve constructor dependencies at startup in [FastAPI](integrations/fastapi/class_based_handlers.md) and
+    [AIOHTTP](integrations/aiohttp/class_based_handlers.md) class-based handlers, not per request.
 
     [:octicons-arrow-right-24: FastAPI class-based handlers](integrations/fastapi/class_based_handlers.md)
-
 
 </div>
 
@@ -129,19 +131,19 @@ pip install wireup
         injectables=[Database],
         config={"db_url": "postgresql://localhost/app"},
     )
-
     ```
 
 === "Clean Architecture"
 
-    Need strict boundaries? Use factories to wire pure domain objects and integrate external libraries like Pydantic.
-    See [Factories](factories.md) for the full pattern.
+    Need strict boundaries? Use factories to wire pure domain objects and integrate external libraries like Pydantic. See
+    [Factories](factories.md) for the full pattern.
 
     ```python title="wiring.py"
     import wireup
     from wireup import injectable
     from domain import Database
     from settings import Settings
+
 
     @injectable
     def make_settings() -> Settings:
@@ -258,18 +260,21 @@ Wireup validates dependencies and configuration at startup.
     ```python
     @injectable
     class Database:
-        def __init__(self, url: Annotated[str, Inject(config="db_url")]) -> None: ...
+        def __init__(
+            self, url: Annotated[str, Inject(config="db_url")]
+        ) -> None: ...
 
 
     container = wireup.create_sync_container(injectables=[Database], config={})
     # ❌ Parameter 'url' of Type 'Database' depends on an unknown Wireup config key 'db_url'.
     ```
 
-Additional checks include circular dependencies, lifetime mismatches, and duplicate registrations.
-See [Container](container.md), [Configuration](configuration.md), and [Function Injection](function_injection.md) for details.
+Additional checks include circular dependencies, lifetime mismatches, and duplicate registrations. See
+[Container](container.md), [Configuration](configuration.md), and [Function Injection](function_injection.md) for
+details.
 
 ## Next Steps
 
 1. Read [Getting Started](getting_started.md) for an end-to-end setup.
-2. Pick your framework from [Integrations](integrations/index.md).
-3. Review [Testing](testing.md) before writing integration tests.
+1. Pick your framework from [Integrations](integrations/index.md).
+1. Review [Testing](testing.md) before writing integration tests.

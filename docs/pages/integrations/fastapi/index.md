@@ -10,7 +10,6 @@
 
     [:octicons-arrow-right-24: Learn more](request_lifecycle_patterns.md)
 
-
 - :material-speedometer:{ .lg .middle } __Zero Runtime Overhead__
 
     ______________________________________________________________________

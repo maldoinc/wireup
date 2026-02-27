@@ -5,18 +5,17 @@ Use `WireupTask` when you want Wireup to resolve dependencies inside a Starlette
 ## Usage
 
 1. Define your task function with `Injected[...]` parameters for any Wireup dependencies
-2. Inject `WireupTask` in your route handler: `wireup_task: Injected[WireupTask]`
-3. Wrap the task function before scheduling: `wireup_task(write_greeting)`
-4. Schedule the task as usual with the wrapped callable and any non-Wireup task arguments
+1. Inject `WireupTask` in your route handler: `wireup_task: Injected[WireupTask]`
+1. Wrap the task function before scheduling: `wireup_task(write_greeting)`
+1. Schedule the task as usual with the wrapped callable and any non-Wireup task arguments
 
 This keeps Starlette's normal background-task API while enabling Wireup injection in the scheduled callback.
 
 ## Scope Behavior
 
-Each background task runs in its own Wireup scope. 
-Singletons are shared with the rest of the application as usual, but scoped and transient dependencies, 
-like DB sessions or transactions, are created fresh for the task and torn down when it completes. 
-
+Each background task runs in its own Wireup scope. Singletons are shared with the rest of the application as usual, but
+scoped and transient dependencies, like DB sessions or transactions, are created fresh for the task and torn down when
+it completes.
 
 ## Example
 
@@ -35,7 +34,7 @@ def write_greeting(name: str, greeter: Injected[GreeterService]) -> None:
 
 @inject
 async def hello(
-    request: Request, 
+    request: Request,
     wireup_task: Injected[WireupTask],
 ) -> PlainTextResponse:
     name = request.query_params.get("name", "World")
