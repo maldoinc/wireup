@@ -44,10 +44,30 @@ body[data-md-color-scheme="slate"] .grid.cards>ul>li {
     vertical-align: middle !important;
 }
 
+
 .color-fastapi {
     color: rgb(0, 148, 133) !important
 }
 
 .color-django {
     color: #0C4B33 !important;
+}
+
+.announce-star-link,
+.announce-star-link:visited,
+.announce-star-link:hover,
+.announce-star-link:focus {
+    color: #fff !important;
+}
+
+.announce-right {
+    width: 100%;
+    text-align: right;
+    padding-right: 0;
+}
+
+@media screen and (min-width: 60em) {
+    .announce-right {
+        padding-right: 60px;
+    }
 }

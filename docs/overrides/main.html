@@ -1,5 +1,13 @@
 {% extends "base.html" %}
 
+{% block announce %}
+  <div class="announce-right">
+    <a class="announce-star-link" href="https://github.com/maldoinc/wireup" target="_blank" rel="noopener">
+      ⭐ Enjoying Wireup? Star on GitHub
+    </a>
+  </div>
+{% endblock %}
+
 {% block outdated %}
   You're not viewing the latest version.
   <a href="{{ '../' ~ base_url }}">

@@ -26,6 +26,10 @@ graph LR
 The container uses types and annotations to define dependencies and discover relationships between them. This results in
 self-contained definitions without having to create factories for every dependency.
 
+!!! note "`Injected[T]` vs `Inject(...)`"
+
+    `Injected[T]` marks parameters for injection in external call sites. `Inject(...)` describes how to find them (for example config keys or qualifiers).
+
 #### 🐍 `KeyValueStore`
 
 To create the `KeyValueStore`, we need a value for `redis_url`. The `@injectable` decorator registers the class, and the
