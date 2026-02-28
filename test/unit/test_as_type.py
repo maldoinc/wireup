@@ -319,6 +319,19 @@ def test_as_type_rejects_invalid_registration_key_for_class():
         create_sync_container(injectables=[Something])
 
 
+@pytest.mark.parametrize("invalid_as_type", [0, False], ids=["zero", "false"])
+def test_as_type_rejects_falsy_invalid_registration_key_for_class(invalid_as_type: object):
+    @injectable(as_type=invalid_as_type)  # type: ignore[arg-type]
+    class Something:
+        pass
+
+    with pytest.raises(
+        InvalidAsTypeError,
+        match="Invalid as_type value",
+    ):
+        create_sync_container(injectables=[Something])
+
+
 def test_runtime_checkable_protocol_validation_fails():
     @runtime_checkable
     class RuntimeRequiredProto(Protocol):
@@ -337,6 +350,19 @@ def test_runtime_checkable_protocol_validation_fails():
 
 def test_as_type_rejects_invalid_registration_key_for_factory():
     @injectable(as_type=1)  # type: ignore[arg-type]
+    def make_something() -> SomethingForInvalidAsTypeFactory:
+        return SomethingForInvalidAsTypeFactory()
+
+    with pytest.raises(
+        InvalidAsTypeError,
+        match="Invalid as_type value",
+    ):
+        create_sync_container(injectables=[make_something])
+
+
+@pytest.mark.parametrize("invalid_as_type", [0, False], ids=["zero", "false"])
+def test_as_type_rejects_falsy_invalid_registration_key_for_factory(invalid_as_type: object):
+    @injectable(as_type=invalid_as_type)  # type: ignore[arg-type]
     def make_something() -> SomethingForInvalidAsTypeFactory:
         return SomethingForInvalidAsTypeFactory()
 

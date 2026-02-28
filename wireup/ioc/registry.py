@@ -117,18 +117,18 @@ class ContainerRegistry:
 
             type_analysis = analyze_type(klass)
 
-            if impl.as_type:
+            if impl.as_type is not None:
                 self._assert_as_type_compatible(implementation_type=type_analysis.raw_type, as_type=impl.as_type)
 
             target_type = impl.as_type
 
-            if target_type and type_analysis.is_optional:
+            if target_type is not None and type_analysis.is_optional:
                 from typing import Optional  # noqa: PLC0415
 
                 target_type = Optional[target_type]
 
             self._register(
-                klass=target_type or klass,
+                klass=target_type if target_type is not None else klass,
                 factory_fn=obj,
                 lifetime=impl.lifetime,
                 qualifier=impl.qualifier,
