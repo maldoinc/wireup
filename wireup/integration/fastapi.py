@@ -42,7 +42,6 @@ __all__ = [
     "get_app_container",
     "get_request_container",
     "inject",
-    "inject",
     "request_factory",
     "setup",
     "websocket_factory",
