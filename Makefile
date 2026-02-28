@@ -20,7 +20,7 @@ check-mypy:
 	uv run mypy wireup --strict
 
 check-docs:
-	find docs -name "*.md" -not -path "docs/pages/class/*" | xargs uv run --python 3.14 mdformat --wrap 120 --check
+	find docs -name "*.md" -not -path "docs/pages/class/*" | xargs uv run --python 3.14 blacken-docs -l 80 --check
 
 test:
 	uv run pytest test/unit
@@ -35,7 +35,6 @@ fix:
 	uv run ruff wireup --fix
 
 format-docs:
-	find docs -name "*.md" -not -path "docs/pages/class/*" | xargs uv run --python 3.14 mdformat --wrap 120
 	find docs -name "*.md" -not -path "docs/pages/class/*" | xargs uv run --python 3.14 blacken-docs -l 80 || true
 
 build-docs:
