@@ -266,15 +266,21 @@ This is useful for cases like:
 - Reusing the same wiring pattern across environments.
 
 ```python
+from dataclasses import dataclass
 from typing import Annotated
+
 import wireup
 from wireup import Inject, injectable
 
 
-class DbClient: ...
+@dataclass
+class DbClient:
+    dsn: str
 
 
-class DbRepository: ...
+@dataclass
+class DbRepository:
+    client: DbClient
 
 
 def make_db_bundle(*, dsn: str, qualifier: str | None = None) -> list[object]:
@@ -297,9 +303,7 @@ analytics = make_db_bundle(
     qualifier="analytics",
 )
 
-container = wireup.create_sync_container(
-    injectables=[*primary, *analytics, app.services],
-)
+container = wireup.create_sync_container(injectables=[*primary, *analytics])
 ```
 
 Use an unqualified default (`None`) for your primary bundle, then add qualifiers only where needed:
