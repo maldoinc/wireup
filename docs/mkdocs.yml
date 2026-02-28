@@ -31,6 +31,8 @@ nav:
         - Background Tasks: integrations/fastapi/background_tasks.md
       - Flask: 
         - Flask Integration: integrations/flask/index.md
+      - FastMCP:
+        - FastMCP Usage: integrations/fastmcp/index.md
       - AIOHTTP: 
         - AIOHTTP Integration: integrations/aiohttp/index.md
         - Class-Based Handlers: integrations/aiohttp/class_based_handlers.md
