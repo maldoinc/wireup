@@ -44,6 +44,10 @@ nav:
         - Click Integration: integrations/click/index.md
       - Typer:
         - Typer Integration: integrations/typer/index.md
+  - Migrate to Wireup:
+    - Overview: migrate_to_wireup/index.md
+    - FastAPI (from Depends): migrate_to_wireup/fastapi_depends.md
+    - Dependency Injector: migrate_to_wireup/dependency_injector.md
   - API Reference:
       - wireup: class/wireup.md
       - OverrideManager: class/override_manager.md
@@ -92,6 +96,7 @@ theme:
           icon: material/toggle-switch-off
           name: Switch to system preference
 markdown_extensions:
+  - meta
   - attr_list
   - md_in_html
   - admonition

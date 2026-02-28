@@ -34,6 +34,11 @@
 
 </div>
 
+!!! info
+
+    If you want the rationale on why Wireup might be for you, and a step-by-step migration path, including low-risk migration to try out,
+    read [Migrate from FastAPI Depends to Wireup](../../migrate_to_wireup/fastapi_depends.md).
+
 ## Quick Start
 
 Here is a complete, copy-pasteable example to get you running in under 2 minutes.
