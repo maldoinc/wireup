@@ -44,6 +44,9 @@ nav:
         - Click Integration: integrations/click/index.md
       - Typer:
         - Typer Integration: integrations/typer/index.md
+    - Task Queues:
+      - Celery:
+        - Celery Integration: integrations/celery/index.md
   - Migrate to Wireup:
     - Overview: migrate_to_wireup/index.md
     - FastAPI (from Depends): migrate_to_wireup/fastapi_depends.md
@@ -58,6 +61,7 @@ nav:
         - Flask: class/flask_integration.md
         - AIOHTTP: class/aiohttp_integration.md
         - Starlette: class/starlette_integration.md
+        - Celery: class/celery_integration.md
         - Click: class/click_integration.md
         - Typer: class/typer_integration.md
 repo_url: https://github.com/maldoinc/wireup
