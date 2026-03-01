@@ -26,7 +26,7 @@ and designed to fail fast: **if the container starts, it works**.
 
     ______________________________________________________________________
 
-    Native integrations for FastAPI, Flask, Django, Starlette, AIOHTTP, Click, Typer, and Strawberry.
+    Native integrations for FastAPI, Flask, Django, Starlette, AIOHTTP, FastMCP, Celery, Click, Typer, and Strawberry.
 
     [:octicons-arrow-right-24: View integrations](integrations/index.md)
 
@@ -202,7 +202,7 @@ pip install wireup
 
 - :material-web:{ .lg .middle } __Framework Integrations__
 
-    FastAPI, Flask, Django, AIOHTTP, Starlette, Strawberry, Click, and Typer.
+    FastAPI, Flask, Django, AIOHTTP, Starlette, FastMCP, Celery, Strawberry, Click, and Typer.
 
     [Integrations](integrations/index.md)
 

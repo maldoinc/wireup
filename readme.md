@@ -19,7 +19,7 @@ Type-driven dependency injection for Python. Wireup is battle-tested in producti
 
 - **Correct by default**: Wireup catches missing dependencies, circular references, lifetime mismatches, duplicate registrations, and missing config keys at startup. Shared dependencies are created in a thread-safe way.
 - **Define once, inject anywhere**: reuse the same service layer in APIs, CLIs, workers, and scripts.
-- **Framework-ready**: native integrations for **FastAPI**, **Flask**, **Django**, **Starlette**, **AIOHTTP**, **Celery**, **Click**, **Typer**, and **Strawberry**. [See Integrations](https://maldoinc.github.io/wireup/latest/integrations).
+- **Framework-ready**: native integrations for **FastAPI**, **Flask**, **Django**, **Starlette**, **AIOHTTP**, **FastMCP**, **Celery**, **Click**, **Typer**, and **Strawberry**. [See Integrations](https://maldoinc.github.io/wireup/latest/integrations).
 - **Startup-resolved constructor injection for [FastAPI](https://maldoinc.github.io/wireup/latest/integrations/fastapi/class_based_handlers/) and [AIOHTTP](https://maldoinc.github.io/wireup/latest/integrations/aiohttp/class_based_handlers/) handlers**: constructor dependencies are resolved once at startup, not per request. [FastAPI class-based handlers](https://maldoinc.github.io/wireup/latest/integrations/fastapi/class_based_handlers/).
 - **Test overrides with context managers**: replace any injectable for a test scope and restore automatically. [See testing docs](https://maldoinc.github.io/wireup/latest/testing/).
 - **Reusable sub-graphs**: run multiple configured instances of the same dependency graph without spinning up separate containers. [See reusable factory bundles](https://maldoinc.github.io/wireup/latest/factories/#reusable-factory-bundles).
@@ -342,7 +342,7 @@ Have a useful integration to recommend? Create an issue or PR!
 
 Native integrations manage request scopes, endpoint injection, and dependency lifetimes.
 
-Supported: **FastAPI**, **Flask**, **Django**, **AIOHTTP**, **Starlette**, **Click**, **Typer**, **Strawberry**
+Supported: **FastAPI**, **Flask**, **Django**, **AIOHTTP**, **Starlette**, **FastMCP**, **Celery**, **Click**, **Typer**, **Strawberry**
 
 [View all integrations →](https://maldoinc.github.io/wireup/latest/integrations/)
 

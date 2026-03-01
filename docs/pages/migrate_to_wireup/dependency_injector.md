@@ -20,8 +20,8 @@ architecture.
 !!! info "Framework examples are illustrative"
 
     This page uses FastAPI examples frequently because they make DI wiring differences easy to see in small snippets.
-    The migration patterns apply beyond FastAPI. Wireup also supports Flask, Django, Starlette, AIOHTTP, Click, Typer,
-    and Strawberry integrations.
+    The migration patterns apply beyond FastAPI. Wireup supports a wide
+    range of frameworks. See the [Integrations](../integrations/index.md) page for more details.
 
 In the service layer, the biggest shift is structure. Wireup does not rely on one central container class where all
 providers are declared. Instead, you annotate services and factories in place with `@injectable` and `Inject(...)`, and
