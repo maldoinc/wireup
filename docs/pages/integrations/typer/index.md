@@ -1,4 +1,4 @@
-# Typer Integration
+# :simple-typer: Typer Integration
 
 Dependency injection for Typer is available in the `wireup.integration.typer` module.
 

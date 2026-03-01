@@ -1,4 +1,4 @@
-# Celery Integration
+# :simple-celery: Celery Integration
 
 Dependency injection for Celery is available in the `wireup.integration.celery` module.
 

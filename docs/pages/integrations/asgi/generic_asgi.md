@@ -40,8 +40,7 @@ from wireup.integration.asgi import inject
 
 
 @inject
-async def handler(service: Injected[MyService]) -> None:
-    ...
+async def handler(service: Injected[MyService]) -> None: ...
 ```
 
 ### Accessing the Request Container
@@ -81,7 +80,9 @@ def create_app():
 
 def test_override():
     app = create_app()
-    with app.state.container.override.injectable(MyService, new=MyFakeService()):
+    with app.state.container.override.injectable(
+        MyService, new=MyFakeService()
+    ):
         ...
 ```
 
