@@ -7,6 +7,8 @@ from typing import Any, AsyncGenerator, Callable, Generator, List, Tuple, Type, 
 
 from typing_extensions import Literal
 
+from wireup.errors import WireupError
+
 AnyCallable = Callable[..., Any]
 ExitStackEntry = Tuple[Union[Generator[Any, Any, Any], AsyncGenerator[Any, Any]], bool]
 ExitStack = List[ExitStackEntry]
@@ -14,6 +16,16 @@ ExitStack = List[ExitStackEntry]
 
 class InjectableType:
     """Base type for anything that should be injected using annotation hints."""
+
+    def __getattr__(self, name: str) -> Any:
+        msg = (
+            f"You're trying to access the attribute '{name}' of an unresolved Wireup injectable.\n"
+            "Injection is not set up correctly.\n"
+            "How to fix it:\n"
+            "1) Ensure your Wireup integration setup function is called for your framework.\n"
+            "2) Call setup after routes/handlers are added to the app."
+        )
+        raise WireupError(msg)
 
 
 @dataclass(frozen=True)

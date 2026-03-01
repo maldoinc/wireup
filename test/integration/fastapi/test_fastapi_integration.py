@@ -515,3 +515,29 @@ def test_background_task_uses_different_scope_than_request() -> None:
 
     assert response.status_code == 200
     assert ids["request"] != ids["task"]
+
+
+def test_missing_setup_raises_actionable_error_for_injected_route_parameter() -> None:
+    app = FastAPI()
+
+    @app.get("/")
+    async def endpoint(random_service: Injected[RandomService]) -> Dict[str, int]:
+        return {"number": random_service.get_random()}
+
+    with pytest.raises(WireupError, match="Injection is not set up correctly"):
+        with TestClient(app) as client:
+            client.get("/")
+
+
+def test_setup_called_before_adding_routes_raises_actionable_error() -> None:
+    app = FastAPI()
+    container = wireup.create_async_container(injectables=[shared_services, wireup.integration.fastapi])
+    wireup.integration.fastapi.setup(container, app)
+
+    @app.get("/")
+    async def endpoint(random_service: Injected[RandomService]) -> Dict[str, int]:
+        return {"number": random_service.get_random()}
+
+    with pytest.raises(WireupError, match="Injection is not set up correctly"):
+        with TestClient(app) as client:
+            client.get("/")
