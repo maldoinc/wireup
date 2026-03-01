@@ -187,6 +187,29 @@ class UserRegistrationForm(forms.Form):
         return username
 ```
 
+### Non-request Django entry points
+
+Use `@inject_app` for Django entry points that run outside the request/response lifecycle, such as management
+commands, signal handlers, and custom checks.
+
+```python title="myapp/management/commands/greet.py"
+from django.core.management.base import BaseCommand
+from wireup import Injected
+from wireup.integration.django import inject_app
+
+
+class Command(BaseCommand):
+    def add_arguments(self, parser):
+        parser.add_argument("--name", default="World")
+
+    @inject_app
+    def handle(self, *args, name: str, greeter: Injected[GreeterService], **options):
+        self.stdout.write(greeter.greet(name))
+```
+
+Use `@inject` for request-scoped callables (views, forms invoked during a request), and `@inject_app` for app-level
+callables.
+
 ### Third-party Django frameworks
 
 If your project uses third-party packages to create views, such as

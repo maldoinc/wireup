@@ -1,16 +1,18 @@
 import os
 import sys
+from io import StringIO
 from pathlib import Path
 from unittest.mock import patch
 
 import django
 import pytest
 from django.apps import apps
+from django.core.management import call_command
 from django.test import AsyncClient, Client
 from django.urls import include, path
 from django.views.generic import TemplateView
 from wireup.errors import WireupError
-from wireup.integration.django import WireupSettings, inject
+from wireup.integration.django import WireupSettings, inject, inject_app
 from wireup.integration.django.apps import get_app_container
 
 from test.integration.django import view
@@ -248,6 +250,32 @@ def test_inject_decorator_applied_multiple_times():
 
         @inject
         @inject
+        def _(*__, **___): ...
+
+
+def test_inject_app_django_management_command():
+    stdout = StringIO()
+    call_command("wireup_greet", "--name=World", stdout=stdout)
+    assert stdout.getvalue().strip() == "Hello World"
+
+
+def test_inject_app_django_management_command_override():
+    class GermanGreeter(GreeterService):
+        def greet(self, name: str) -> str:
+            return f"Guten Tag, {name}!"
+
+    stdout = StringIO()
+    with get_app_container().override.injectable(GreeterService, new=GermanGreeter()):
+        call_command("wireup_greet", "--name=Django", stdout=stdout)
+
+    assert stdout.getvalue().strip() == "Guten Tag, Django!"
+
+
+def test_inject_app_decorator_applied_multiple_times():
+    with pytest.raises(WireupError, match="@inject_app decorator applied multiple times to"):
+
+        @inject_app
+        @inject_app
         def _(*__, **___): ...
 
 
