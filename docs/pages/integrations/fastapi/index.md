@@ -84,68 +84,6 @@ Run the server with:
 fastapi dev main.py
 ```
 
-??? example "See how Wireup compares to `Depends()`"
-
-    This comparison shows the boilerplate reduction when using Wireup's type-based injection versus `Depends()` chains.
-
-    === "Before (Standard FastAPI)"
-
-        ```python
-        # Define your services
-        class UserRepository:
-            def __init__(self, db: Database) -> None:
-                self.db = db
-
-
-        class UserService:
-            def __init__(self, repo: UserRepository) -> None:
-                self.repo = repo
-
-
-        # Create factory functions for each dependency
-        def get_db() -> Database: ...
-
-
-        def get_user_repo(db: Annotated[Database, Depends(get_db)]) -> UserRepository:
-            return UserRepository(db)
-
-
-        def get_user_service(
-            repo: Annotated[UserRepository, Depends(get_user_repo)],
-        ) -> UserService:
-            return UserService(repo)
-
-
-        # Wire up the dependency chain in the route
-        @app.get("/users")
-        async def list_users(
-            service: Annotated[UserService, Depends(get_user_service)],
-        ):
-            return service.find_all()
-        ```
-
-    === "After (Wireup)"
-
-        ```python
-        # Add @injectable
-        @injectable
-        class UserRepository:
-            def __init__(self, db: Database) -> None:
-                self.db = db
-
-
-        @injectable
-        class UserService:
-            def __init__(self, repo: UserRepository) -> None:
-                self.repo = repo
-
-
-        # Inject directly by type
-        @app.get("/users")
-        async def list_users(service: Injected[UserService]):
-            return service.find_all()
-        ```
-
 ## Features
 
 ### HTTP and WebSocket Injection
@@ -156,7 +94,7 @@ Inject dependencies in HTTP routes and WebSockets.
 
     ```python
     from typing import Annotated
-    from fastapi import Depends
+    from fastapi import Header
     from wireup import Injected, Inject
 
 
@@ -268,33 +206,6 @@ def test_override(client):
     ):
         res = client.get("/greet?name=Test")
 ```
-
-??? example "Pitfall: Why `lru_cache` leaks state in tests"
-
-    In standard FastAPI applications, singletons are often implemented using `@lru_cache`. This can cause state to leak
-    between tests because the cache persists globally in memory.
-
-    ```python
-    # Standard FastAPI
-    @lru_cache
-    def get_settings():
-        return Settings()
-
-
-    def test_one():
-        # Modifies the cached settings instance
-        get_settings().debug = True
-
-
-    def test_two():
-        # FAILS: This test inherits the modified state from test_one!
-        assert get_settings().debug is False
-    ```
-
-    **Wireup avoids this automatically.**
-
-    When you create a fresh container/app for each test (via a pytest fixture), Wireup creates fresh instances of all your
-    services. There is no global cache to clear.
 
 See
 [FastAPI integration tests](https://github.com/maldoinc/wireup/blob/master/test/integration/fastapi/test_fastapi_integration.py)
