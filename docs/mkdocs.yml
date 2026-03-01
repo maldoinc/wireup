@@ -16,6 +16,7 @@ nav:
       - Function Injection: function_injection.md
     - Guides:
       - Testing: testing.md
+      - Conditional Registration: conditional_registration.md
       - Upgrading: upgrading.md
       - Versioning: versioning.md
 
