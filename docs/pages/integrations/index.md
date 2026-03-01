@@ -5,6 +5,7 @@ Wireup is framework-agnostic and can be used in any project, but it also provide
 frameworks:
 
 - [x] [AIOHTTP](aiohttp/index.md)
+- [x] [Generic ASGI](asgi/generic_asgi.md)
 - [x] [Celery](celery/index.md)
 - [x] [Click](click/index.md)
 - [x] [Django](django/index.md)

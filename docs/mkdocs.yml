@@ -41,6 +41,8 @@ nav:
         - Background Tasks: integrations/starlette/background_tasks.md
       - Strawberry:
         - Strawberry Integration: integrations/strawberry/index.md
+    - Generic ASGI:
+      - ASGI Integration: integrations/asgi/generic_asgi.md
     - Command Line Interfaces:
       - Click:
         - Click Integration: integrations/click/index.md
@@ -63,6 +65,7 @@ nav:
         - Flask: class/flask_integration.md
         - FastMCP: class/fastmcp_integration.md
         - AIOHTTP: class/aiohttp_integration.md
+        - ASGI: class/asgi_integration.md
         - Starlette: class/starlette_integration.md
         - Celery: class/celery_integration.md
         - Click: class/click_integration.md
