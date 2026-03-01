@@ -25,6 +25,12 @@ nav:
     - Web Frameworks:
       - Django: 
         - Django Integration: integrations/django/index.md
+        - Setup and Installation: integrations/django/setup.md
+        - Inject in Views: integrations/django/view_injection.md
+        - Request Lifecycle Patterns: integrations/django/request_lifecycle_patterns.md
+        - App-Level Injection: integrations/django/app_injection.md
+        - Django Testing: integrations/django/testing.md
+        - Troubleshooting: integrations/django/troubleshooting.md
       - FastAPI: 
         - FastAPI Integration: integrations/fastapi/index.md
         - Class Based Handlers: integrations/fastapi/class_based_handlers.md
