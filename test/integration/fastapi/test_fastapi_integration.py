@@ -1,6 +1,7 @@
 import asyncio
 import contextlib
 import uuid
+from threading import Barrier, Thread
 from typing import Any, AsyncIterator, Dict, Iterator
 from uuid import uuid4
 
@@ -11,9 +12,10 @@ import wireup.integration
 import wireup.integration.fastapi
 from fastapi import BackgroundTasks, FastAPI, Request, WebSocket
 from fastapi.testclient import TestClient
+from starlette.middleware.base import BaseHTTPMiddleware
 from wireup._annotations import Injected, injectable
 from wireup.errors import WireupError
-from wireup.integration.fastapi import WireupTask, get_app_container
+from wireup.integration.fastapi import WireupTask, get_app_container, get_request_container
 
 from test.integration.fastapi import cbr, wireup_route
 from test.integration.fastapi import services as fastapi_test_services
@@ -105,7 +107,7 @@ def test_request_container_in_decorator(client: TestClient, *, expose_container_
         response = client.get("/requires-request-id", headers={"X-Request-Id": "req-1"})
         assert response.json() == {"number": 4}
     else:
-        with pytest.raises(LookupError):
+        with pytest.raises(WireupError, match="middleware_mode=True"):
             client.get("/requires-request-id")
 
 
@@ -115,6 +117,241 @@ def test_websocket(client: TestClient, endpoint: str):
         websocket.send_text("World")
         data = websocket.receive_text()
         assert data == "Hello World"
+
+
+def test_websocket_identity_matches_wireup_context(client: TestClient) -> None:
+    with client.websocket_connect("/ws/identity") as websocket:
+        assert websocket.receive_text() == "true"
+
+
+def test_websocket_get_request_container_is_unavailable_in_fastapi_middleware_mode() -> None:
+    app = FastAPI()
+    container = wireup.create_async_container(injectables=[shared_services, wireup.integration.fastapi])
+
+    @app.websocket("/ws")
+    async def websocket_route(websocket: WebSocket) -> None:
+        await websocket.accept()
+        try:
+            get_request_container()
+        except WireupError:
+            await websocket.send_text("wireup-error")
+        await websocket.close()
+
+    wireup.integration.fastapi.setup(container, app, middleware_mode=True)
+
+    with TestClient(app) as client:
+        with client.websocket_connect("/ws") as websocket:
+            assert websocket.receive_text() == "wireup-error"
+
+
+@pytest.mark.parametrize("middleware_mode", [True, False], ids=["middleware_mode=True", "middleware_mode=False"])
+def test_websocket_singleton_only_route_get_request_container_unavailable(*, middleware_mode: bool) -> None:
+    app = FastAPI()
+    container = wireup.create_async_container(injectables=[shared_services, wireup.integration.fastapi])
+
+    @app.websocket("/ws")
+    async def websocket_route(websocket: WebSocket, _random: Injected[RandomService]) -> None:
+        await websocket.accept()
+        try:
+            get_request_container()
+        except WireupError:
+            await websocket.send_text("wireup-error")
+        await websocket.close()
+
+    wireup.integration.fastapi.setup(container, app, middleware_mode=middleware_mode)
+
+    with TestClient(app) as client:
+        with client.websocket_connect("/ws") as websocket:
+            assert websocket.receive_text() == "wireup-error"
+
+
+@pytest.mark.parametrize("middleware_mode", [True, False], ids=["middleware_mode=True", "middleware_mode=False"])
+def test_websocket_scoped_route_get_request_container_unavailable(*, middleware_mode: bool) -> None:
+    @injectable(lifetime="scoped")
+    class ScopedWsContext:
+        def __init__(self) -> None:
+            self.id = uuid4().hex
+
+    app = FastAPI()
+    container = wireup.create_async_container(injectables=[ScopedWsContext, wireup.integration.fastapi])
+
+    @app.websocket("/ws")
+    async def websocket_route(websocket: WebSocket, _ctx: Injected[ScopedWsContext]) -> None:
+        await websocket.accept()
+        try:
+            get_request_container()
+        except WireupError:
+            await websocket.send_text("wireup-error")
+        await websocket.close()
+
+    wireup.integration.fastapi.setup(container, app, middleware_mode=middleware_mode)
+
+    with TestClient(app) as client:
+        with client.websocket_connect("/ws") as websocket:
+            assert websocket.receive_text() == "wireup-error"
+
+
+def test_get_request_container_error_message_has_actionable_hints() -> None:
+    with pytest.raises(WireupError) as exc_info:
+        get_request_container()
+
+    msg = str(exc_info.value)
+    assert "middleware ordering issue" in msg
+    assert "middleware_mode=True" in msg
+    assert "HTTP-only" in msg
+
+
+def test_http_middleware_before_setup_can_access_get_request_container() -> None:
+    class ProbeMiddleware(BaseHTTPMiddleware):
+        async def dispatch(self, request: Request, call_next):  # type: ignore[override]
+            req_from_wireup = await get_request_container().get(Request)
+            request.state.probe = req_from_wireup.url.path == request.url.path
+            return await call_next(request)
+
+    app = FastAPI()
+    app.add_middleware(ProbeMiddleware)
+    container = wireup.create_async_container(injectables=[wireup.integration.fastapi])
+
+    @app.get("/")
+    async def endpoint(request: Request) -> Dict[str, bool]:
+        return {"probe_ok": request.state.probe}
+
+    wireup.integration.fastapi.setup(container, app, middleware_mode=True)
+
+    with TestClient(app) as client:
+        res = client.get("/")
+
+    assert res.status_code == 200
+    assert res.json() == {"probe_ok": True}
+
+
+def test_http_middleware_after_setup_hits_ordering_error() -> None:
+    class ProbeMiddleware(BaseHTTPMiddleware):
+        async def dispatch(self, request: Request, call_next):  # type: ignore[override]
+            try:
+                get_request_container()
+            except WireupError as e:
+                request.state.err = str(e)
+            return await call_next(request)
+
+    app = FastAPI()
+    container = wireup.create_async_container(injectables=[wireup.integration.fastapi])
+    wireup.integration.fastapi.setup(container, app, middleware_mode=True)
+    app.add_middleware(ProbeMiddleware)
+
+    @app.get("/")
+    async def endpoint(request: Request) -> Dict[str, str]:
+        return {"error": request.state.err}
+
+    with TestClient(app) as client:
+        res = client.get("/")
+
+    assert res.status_code == 200
+    assert "middleware ordering issue" in res.json()["error"]
+
+
+def test_websocket_scoped_context_does_not_leak_between_overlapping_connections() -> None:
+    @injectable(lifetime="scoped")
+    class ScopedWsContext:
+        def __init__(self) -> None:
+            self.id = uuid4().hex
+
+    app = FastAPI()
+    container = wireup.create_async_container(injectables=[ScopedWsContext, wireup.integration.fastapi])
+
+    @app.websocket("/ws")
+    async def websocket_route(websocket: WebSocket, scoped: Injected[ScopedWsContext]) -> None:
+        await websocket.accept()
+        _ = await websocket.receive_text()
+        await websocket.send_text(scoped.id)
+        await websocket.close()
+
+    wireup.integration.fastapi.setup(container, app, middleware_mode=False)
+
+    with TestClient(app) as client:
+        with client.websocket_connect("/ws") as ws_1, client.websocket_connect("/ws") as ws_2:
+            ws_1.send_text("one")
+            ws_2.send_text("two")
+            id_1 = ws_1.receive_text()
+            id_2 = ws_2.receive_text()
+
+    assert id_1 != id_2
+
+
+def test_websocket_scoped_context_concurrent_connections_do_not_leak() -> None:
+    @injectable(lifetime="scoped")
+    class ScopedWsContext:
+        def __init__(self) -> None:
+            self.id = uuid4().hex
+
+    app = FastAPI()
+    container = wireup.create_async_container(injectables=[ScopedWsContext, wireup.integration.fastapi])
+
+    @app.websocket("/ws")
+    async def websocket_route(websocket: WebSocket, scoped: Injected[ScopedWsContext]) -> None:
+        await websocket.accept()
+        _ = await websocket.receive_text()
+        await websocket.send_text(scoped.id)
+        await websocket.close()
+
+    wireup.integration.fastapi.setup(container, app, middleware_mode=False)
+
+    barrier = Barrier(2)
+    ids: list[str] = []
+
+    def _client_task() -> None:
+        with TestClient(app) as client:
+            with client.websocket_connect("/ws") as websocket:
+                barrier.wait()
+                websocket.send_text("go")
+                ids.append(websocket.receive_text())
+
+    t1 = Thread(target=_client_task)
+    t2 = Thread(target=_client_task)
+    t1.start()
+    t2.start()
+    t1.join()
+    t2.join()
+
+    assert len(ids) == 2
+    assert ids[0] != ids[1]
+
+
+def test_websocket_exception_path_does_not_poison_next_scope() -> None:
+    @injectable(lifetime="scoped")
+    class ScopedWsContext:
+        def __init__(self) -> None:
+            self.id = uuid4().hex
+
+    app = FastAPI()
+    container = wireup.create_async_container(injectables=[ScopedWsContext, wireup.integration.fastapi])
+
+    @app.websocket("/ws")
+    async def websocket_route(websocket: WebSocket, scoped: Injected[ScopedWsContext]) -> None:
+        await websocket.accept()
+        msg = await websocket.receive_text()
+        if msg == "boom":
+            raise RuntimeError("boom")
+        await websocket.send_text(scoped.id)
+        await websocket.close()
+
+    wireup.integration.fastapi.setup(container, app, middleware_mode=False)
+
+    with TestClient(app) as client:
+        with pytest.raises(RuntimeError, match="boom"):
+            with client.websocket_connect("/ws") as websocket:
+                websocket.send_text("boom")
+                websocket.receive_text()
+
+        with client.websocket_connect("/ws") as websocket_1:
+            websocket_1.send_text("ok")
+            ok_id_1 = websocket_1.receive_text()
+
+        with client.websocket_connect("/ws") as websocket_2:
+            websocket_2.send_text("ok")
+            ok_id_2 = websocket_2.receive_text()
+
+    assert ok_id_1 != ok_id_2
 
 
 async def test_current_request_service(client: TestClient):

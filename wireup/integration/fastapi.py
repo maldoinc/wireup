@@ -6,7 +6,9 @@ from typing import (
     Iterable,
     List,
     Optional,
+    Tuple,
     Type,
+    Union,
 )
 
 import fastapi
@@ -58,11 +60,11 @@ class WireupRoute(APIRoute):
         super().__init__(path=path, endpoint=endpoint, **kwargs)
 
 
-def _inject_fastapi_route(
+def _inject_route_with_connection_context(
     *,
     container: AsyncContainer,
     target: AnyCallable,
-    http_connection_param_name: str,
+    http_connection_param_name: Optional[str],
     remove_http_connection_from_arguments: bool,
     is_websocket_route: bool,
 ) -> AnyCallable:
@@ -72,8 +74,19 @@ def _inject_fastapi_route(
             (WebSocket if is_websocket_route else Request): f"kwargs.pop('{http_connection_param_name}')"
             if remove_http_connection_from_arguments
             else f"kwargs['{http_connection_param_name}']"
-        },
+        }
+        if http_connection_param_name
+        else None,
     )(target)
+
+
+def _ensure_http_connection_param(route: Union[APIRoute, APIWebSocketRoute]) -> Tuple[str, bool]:
+    """Ensure FastAPI will pass the active connection and return param name + remove flag."""
+    has_connection_param_in_signature = route.dependant.http_connection_param_name is not None
+    if not route.dependant.http_connection_param_name:
+        route.dependant.http_connection_param_name = "_fastapi_http_connection"
+
+    return route.dependant.http_connection_param_name, not has_connection_param_in_signature
 
 
 def _inject_routes(
@@ -96,30 +109,20 @@ def _inject_routes(
             route.dependant.call = inject_from_container(container, get_request_container)(route.dependant.call)
             continue
 
-        # If all injected dependencies are singleton/config, no request/websocket context is required.
-        if not injection_requires_scope(names_to_inject, container):
-            route.dependant.call = inject_from_container(container)(route.dependant.call)
-            continue
+        # We now are either in a websocket endpoint or HTTP without middleware_mode.
+        # If the endpoint requires a scope, extract request/websocket from it, otherwise just leave it be
+        # and inject whatever singletons.
+        if injection_requires_scope(names_to_inject, container):
+            http_connection_param_name, remove_http_connection_from_arguments = _ensure_http_connection_param(route)
+        else:
+            http_connection_param_name, remove_http_connection_from_arguments = None, False
 
-        # This is now either a websocket route or an APIRoute but the asgi middleware is not used.
-        # In this case we seed request/websocket scope context from FastAPI's injected HTTPConnection argument.
-        is_websocket_route = isinstance(route, APIWebSocketRoute)
-        is_http_connection_in_signature = route.dependant.http_connection_param_name is not None
-
-        # Setting http_connection_param_name forces FastAPI to pass the current HTTPConnection
-        # to the route handler regardless of whether it was in the signature.
-        # The generated wrapper reads this argument and passes it as scope context for request-time injection.
-        if not route.dependant.http_connection_param_name:
-            route.dependant.http_connection_param_name = "_fastapi_http_connection"
-
-        route.dependant.call = _inject_fastapi_route(
+        route.dependant.call = _inject_route_with_connection_context(
             container=container,
             target=route.dependant.call,
-            http_connection_param_name=route.dependant.http_connection_param_name,
-            # If the HTTPConnection was not in the signature, it needs to be removed from the arguments
-            # when calling the route handler.
-            remove_http_connection_from_arguments=not is_http_connection_in_signature,
-            is_websocket_route=is_websocket_route,
+            http_connection_param_name=http_connection_param_name,
+            remove_http_connection_from_arguments=remove_http_connection_from_arguments,
+            is_websocket_route=isinstance(route, APIWebSocketRoute),
         )
 
 
@@ -211,7 +214,7 @@ def setup(
     app.state.wireup_container = container
     _expose_wireup_task(container)
     if middleware_mode:
-        app.add_middleware(WireupAsgiMiddleware)
+        app.add_middleware(WireupAsgiMiddleware, include_websocket=False)
     _update_lifespan(
         app,
         class_based_routes=class_based_handlers,

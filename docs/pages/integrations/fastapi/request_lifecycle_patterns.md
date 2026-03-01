@@ -16,7 +16,8 @@ during the request lifecycle to create composable and reusable patterns:
     ```
 
     Normally, the request-scoped container is created just before the route handler is called. With middleware mode enabled,
-    it's created at the start of the request lifecycle, making it available in middleware and other request handlers.
+    it's created at the start of the HTTP request lifecycle, making it available in middleware and other request handlers.
+    These patterns apply to HTTP requests only, not WebSocket handlers.
 
 ## Composable Route Decorators
 

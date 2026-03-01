@@ -16,6 +16,12 @@ class WSService:
     ws: WebSocket
 
 
+@injectable(lifetime="scoped")
+@dataclass
+class WebSocketContext:
+    websocket: WebSocket
+
+
 @dataclass
 @injectable(lifetime="scoped")
 class WebsocketInjectedGreeterService:

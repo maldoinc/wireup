@@ -8,7 +8,7 @@ from typing import Any
 import pytest
 import wireup
 import wireup.integration.fastapi
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, WebSocket
 from fastapi.routing import APIRoute, APIWebSocketRoute
 from wireup._annotations import Injected, injectable
 
@@ -152,6 +152,27 @@ def test_codegen_websocket_without_param_skips_connection_context_when_scope_not
     assert code == expected
 
 
+def test_codegen_websocket_middleware_mode_skips_connection_context_when_scope_not_required() -> None:
+    app = FastAPI()
+    container = wireup.create_async_container(injectables=[_SnapshotSingletonService, wireup.integration.fastapi])
+
+    @app.websocket("/snap/ws-middleware")
+    async def endpoint(s: Injected[_SnapshotSingletonService]) -> None:
+        _ = s
+
+    wireup.integration.fastapi.setup(container, app, middleware_mode=True)
+    route = _get_route(app, "/snap/ws-middleware", APIWebSocketRoute)
+    code = _get_generated_code(route.dependant.call)
+
+    expected = textwrap.dedent("""
+        async def _wireup_generated_wrapper(*args, **kwargs):
+            kwargs['s'] = _wireup_singleton_factories[_wireup_obj_s_obj_id].factory(scope)
+            return await _wireup_target(*args, **kwargs)
+    """).strip()
+
+    assert code == expected
+
+
 def test_codegen_websocket_scoped_dependency_enters_scope_with_context() -> None:
     app = FastAPI()
     container = wireup.create_async_container(injectables=[_SnapshotScopedService])
@@ -162,6 +183,50 @@ def test_codegen_websocket_scoped_dependency_enters_scope_with_context() -> None
 
     wireup.integration.fastapi.setup(container, app, middleware_mode=False)
     route = _get_route(app, "/snap/ws-scoped", APIWebSocketRoute)
+    code = _get_generated_code(route.dependant.call)
+
+    expected = textwrap.dedent("""
+        async def _wireup_generated_wrapper(*args, **kwargs):
+            async with _wireup_container.enter_scope(_context={_context_type_ID: kwargs.pop('_fastapi_http_connection')}) as scope:
+                kwargs['sc'] = _wireup_scoped_factories[_wireup_obj_sc_obj_id].factory(scope)
+                return await _wireup_target(*args, **kwargs)
+    """).strip()  # noqa: E501
+
+    assert code == expected
+
+
+def test_codegen_websocket_scoped_dependency_in_middleware_mode_enters_scope_with_context() -> None:
+    app = FastAPI()
+    container = wireup.create_async_container(injectables=[_SnapshotScopedService, wireup.integration.fastapi])
+
+    @app.websocket("/snap/ws-scoped-middleware")
+    async def endpoint(sc: Injected[_SnapshotScopedService]) -> None:
+        _ = sc
+
+    wireup.integration.fastapi.setup(container, app, middleware_mode=True)
+    route = _get_route(app, "/snap/ws-scoped-middleware", APIWebSocketRoute)
+    code = _get_generated_code(route.dependant.call)
+
+    expected = textwrap.dedent("""
+        async def _wireup_generated_wrapper(*args, **kwargs):
+            async with _wireup_container.enter_scope(_context={_context_type_ID: kwargs.pop('_fastapi_http_connection')}) as scope:
+                kwargs['sc'] = _wireup_scoped_factories[_wireup_obj_sc_obj_id].factory(scope)
+                return await _wireup_target(*args, **kwargs)
+    """).strip()  # noqa: E501
+
+    assert code == expected
+
+
+def test_codegen_websocket_with_explicit_param_and_scoped_dependency_uses_synthetic_connection_param() -> None:
+    app = FastAPI()
+    container = wireup.create_async_container(injectables=[_SnapshotScopedService])
+
+    @app.websocket("/snap/ws-scoped-explicit")
+    async def endpoint(websocket: WebSocket, sc: Injected[_SnapshotScopedService]) -> None:
+        _ = websocket, sc
+
+    wireup.integration.fastapi.setup(container, app, middleware_mode=False)
+    route = _get_route(app, "/snap/ws-scoped-explicit", APIWebSocketRoute)
     code = _get_generated_code(route.dependant.call)
 
     expected = textwrap.dedent("""

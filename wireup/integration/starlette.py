@@ -45,11 +45,13 @@ def websocket_factory() -> WebSocket:
 
 
 class WireupAsgiMiddleware:
-    def __init__(self, app: ASGIApp) -> None:
+    def __init__(self, app: ASGIApp, *, include_websocket: bool = True) -> None:
         self.app = app
+        self.include_websocket = include_websocket
 
     async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
-        if scope["type"] not in {"http", "websocket"}:
+        accepted_scope_types = {"http", "websocket"} if self.include_websocket else {"http"}
+        if scope["type"] not in accepted_scope_types:
             return await self.app(scope, receive, send)
 
         if scope["type"] == "http":
@@ -108,7 +110,21 @@ def get_request_container() -> ScopedAsyncContainer:
     This is what you almost always want.It has all the information the app container has in addition
     to data specific to the current request.
     """
-    return current_request.get().state.wireup_container
+    try:
+        return current_request.get().state.wireup_container
+    except (LookupError, AttributeError) as e:
+        msg = (
+            "Wireup request container is unavailable in the current execution context.\n"
+            "Common causes:\n"
+            "1) The code is running outside an active HTTP/WebSocket request lifecycle.\n"
+            "2) The call ran before Wireup middleware created the scoped container "
+            "(middleware ordering issue). Ensure Wireup middleware runs outermost.\n"
+            "3) FastAPI requires `setup(..., middleware_mode=True)` for `get_request_container()`.\n"
+            "4) In FastAPI, middleware-backed request containers are HTTP-only; WebSocket handlers do not have one.\n"
+            "Prefer `Injected[...]` for handler/service dependencies. Use `get_app_container(app)` outside request "
+            "scope."
+        )
+        raise WireupError(msg) from e
 
 
 class WireupTask:

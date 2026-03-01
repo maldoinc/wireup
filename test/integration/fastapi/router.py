@@ -8,7 +8,12 @@ from wireup import Inject, Injected
 from wireup.integration.fastapi import get_request_container
 from wireup.ioc.types import AnyCallable
 
-from test.integration.fastapi.services import ServiceUsingFastapiRequest, WebsocketInjectedGreeterService, WSService
+from test.integration.fastapi.services import (
+    ServiceUsingFastapiRequest,
+    WebSocketContext,
+    WebsocketInjectedGreeterService,
+    WSService,
+)
 from test.shared.shared_services.greeter import GreeterService
 from test.shared.shared_services.rand import RandomService
 from test.shared.shared_services.scoped import ScopedService, ScopedServiceDependency
@@ -87,6 +92,16 @@ async def websocket_endpoint_wireup(
     await websocket.accept()
     data = await websocket.receive_text()
     await websocket.send_text(greeter.greet(data))
+    await websocket.close()
+
+
+@router.websocket("/ws/identity")
+async def websocket_identity_endpoint(
+    websocket: WebSocket,
+    websocket_context: Injected[WebSocketContext],
+):
+    await websocket.accept()
+    await websocket.send_text(str(websocket is websocket_context.websocket).lower())
     await websocket.close()
 
 
