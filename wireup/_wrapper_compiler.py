@@ -114,7 +114,7 @@ def _build_context_argument(
         namespace[ctx_type_key] = context_type
         created_context_items.append(f"{ctx_type_key}: {context_value_expr}")
 
-    return "_context={" + ", ".join(created_context_items) + "}"
+    return "{" + ", ".join(created_context_items) + "}"
 
 
 def _generate_injection(  # noqa: C901, PLR0912

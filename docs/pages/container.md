@@ -30,11 +30,11 @@ container = wireup.create_async_container(injectables=[...], config={...})
 
 Both creation functions accept the following arguments:
 
-| Argument                   | Type                                      | Description                                                                                                                                                                                                                                                                                                                                                                                |
-| :------------------------- | :---------------------------------------- | :----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Argument                   | Type                                      | Description                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| :------------------------- | :---------------------------------------- | :---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `injectables`              | `list[Union[type, Callable, ModuleType]]` | Classes, functions decorated with `@injectable`, or modules to scan. Modules are scanned recursively, collecting only items decorated with `@injectable`. Recommended default for production apps: module/package scanning. For environment/flag-based assembly of injectables, see [Conditional Registration](conditional_registration.md). For reusable provider-style wiring (same graph, different runtime settings), see [Factories: Reusable Factory Bundles](factories.md#reusable-factory-bundles). |
-| `config`                   | `dict[str, Any]`                          | Configuration dictionary. Values from this dictionary can be injected using `Inject(config="key")`.                                                                                                                                                                                                                                                                                        |
-| `concurrent_scoped_access` | `bool`                                    | Set to `True` if you share scopes across multiple threads/tasks. Defaults to `False`. See [Lifetimes & Scopes: Concurrent Access](lifetimes_and_scopes.md#concurrent-access) for details.                                                                                                                                                                                                  |
+| `config`                   | `dict[str, Any]`                          | Configuration dictionary. Values from this dictionary can be injected using `Inject(config="key")`.                                                                                                                                                                                                                                                                                                                                                                                                         |
+| `concurrent_scoped_access` | `bool`                                    | Set to `True` if you share scopes across multiple threads/tasks. Defaults to `False`. See [Lifetimes & Scopes: Concurrent Access](lifetimes_and_scopes.md#concurrent-access) for details.                                                                                                                                                                                                                                                                                                                   |
 
 !!! note "Multiple Containers"
 
@@ -89,6 +89,15 @@ Clean up the container and release resources. This triggers the cleanup phase of
 
 Create a scoped container. Scoped containers manage their own scoped and transient dependencies while sharing singletons
 with the root container. See [Lifetimes & Scopes](lifetimes_and_scopes.md) for details on how scopes work.
+
+You can optionally pass a positional mapping of pre-created instances to provide at scope entry:
+
+```python
+with container.enter_scope({DbSession: existing_session}) as scoped:
+    db_session = scoped.get(DbSession)  # Uses provided instance
+```
+
+See [Advanced: Provided Instances](lifetimes_and_scopes.md#provided-instances) for caveats and ownership rules.
 
 === "Synchronous"
 

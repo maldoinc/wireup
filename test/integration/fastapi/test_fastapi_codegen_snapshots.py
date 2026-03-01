@@ -101,7 +101,7 @@ def test_codegen_http_scoped_dependency_enters_scope_with_context() -> None:
 
     expected = textwrap.dedent("""
         async def _wireup_generated_wrapper(*args, **kwargs):
-            async with _wireup_container.enter_scope(_context={_context_type_ID: kwargs.pop('_fastapi_http_connection')}) as scope:
+            async with _wireup_container.enter_scope({_context_type_ID: kwargs.pop('_fastapi_http_connection')}) as scope:
                 kwargs['sc'] = _wireup_scoped_factories[_wireup_obj_sc_obj_id].factory(scope)
                 return await _wireup_target(*args, **kwargs)
     """).strip()  # noqa: E501
@@ -187,7 +187,7 @@ def test_codegen_websocket_scoped_dependency_enters_scope_with_context() -> None
 
     expected = textwrap.dedent("""
         async def _wireup_generated_wrapper(*args, **kwargs):
-            async with _wireup_container.enter_scope(_context={_context_type_ID: kwargs.pop('_fastapi_http_connection')}) as scope:
+            async with _wireup_container.enter_scope({_context_type_ID: kwargs.pop('_fastapi_http_connection')}) as scope:
                 kwargs['sc'] = _wireup_scoped_factories[_wireup_obj_sc_obj_id].factory(scope)
                 return await _wireup_target(*args, **kwargs)
     """).strip()  # noqa: E501
@@ -209,7 +209,7 @@ def test_codegen_websocket_scoped_dependency_in_middleware_mode_enters_scope_wit
 
     expected = textwrap.dedent("""
         async def _wireup_generated_wrapper(*args, **kwargs):
-            async with _wireup_container.enter_scope(_context={_context_type_ID: kwargs.pop('_fastapi_http_connection')}) as scope:
+            async with _wireup_container.enter_scope({_context_type_ID: kwargs.pop('_fastapi_http_connection')}) as scope:
                 kwargs['sc'] = _wireup_scoped_factories[_wireup_obj_sc_obj_id].factory(scope)
                 return await _wireup_target(*args, **kwargs)
     """).strip()  # noqa: E501
@@ -231,7 +231,7 @@ def test_codegen_websocket_with_explicit_param_and_scoped_dependency_uses_synthe
 
     expected = textwrap.dedent("""
         async def _wireup_generated_wrapper(*args, **kwargs):
-            async with _wireup_container.enter_scope(_context={_context_type_ID: kwargs.pop('_fastapi_http_connection')}) as scope:
+            async with _wireup_container.enter_scope({_context_type_ID: kwargs.pop('_fastapi_http_connection')}) as scope:
                 kwargs['sc'] = _wireup_scoped_factories[_wireup_obj_sc_obj_id].factory(scope)
                 return await _wireup_target(*args, **kwargs)
     """).strip()  # noqa: E501

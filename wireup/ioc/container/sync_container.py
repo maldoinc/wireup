@@ -36,7 +36,7 @@ class ScopedSyncContainer(BareSyncContainer):
 
 
 class SyncContainer(BareSyncContainer):
-    def enter_scope(self, *, _context: dict[ContainerObjectIdentifier, Any] | None = None) -> ScopedSyncContainer:
+    def enter_scope(self, provided: dict[ContainerObjectIdentifier, Any] | None = None, /) -> ScopedSyncContainer:
         """Enter a new scope.
 
         The returned scope context manager controls the lifetime of scoped dependencies.
@@ -53,7 +53,7 @@ class SyncContainer(BareSyncContainer):
             override_manager=self._override_mgr,
             global_scope_objects=self._global_scope_objects,
             global_scope_exit_stack=self._global_scope_exit_stack,
-            current_scope_objects=_context or {},
+            current_scope_objects=provided or {},
             current_scope_exit_stack=[],
             factory_compiler=self._scoped_compiler,
             scoped_compiler=self._scoped_compiler,

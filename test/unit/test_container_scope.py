@@ -149,3 +149,31 @@ async def test_scoped_falsy_qualifier_is_distinct_from_none_async(qualifier: int
     async with c.enter_scope() as scoped:
         assert await scoped.get(int) == 11
         assert await scoped.get(int, qualifier=qualifier) == 22
+
+
+def test_enter_scope_uses_provided_instances() -> None:
+    c = wireup.create_sync_container(injectables=[ScopedService])
+    seeded = ScopedService()
+
+    with c.enter_scope({ScopedService: seeded}) as scoped:
+        assert scoped.get(ScopedService) is seeded
+
+
+async def test_enter_scope_uses_provided_instances_async() -> None:
+    c = wireup.create_async_container(injectables=[ScopedService])
+    seeded = ScopedService()
+
+    async with c.enter_scope({ScopedService: seeded}) as scoped:
+        assert await scoped.get(ScopedService) is seeded
+
+
+def test_enter_scope_uses_provided_instances_with_qualified_helper() -> None:
+    @injectable(lifetime="scoped", qualifier="readonly")
+    def make_scoped_value() -> int:
+        return 42
+
+    c = wireup.create_sync_container(injectables=[make_scoped_value])
+    seeded = 999
+
+    with c.enter_scope({wireup.qualified(int, "readonly"): seeded}) as scoped:
+        assert scoped.get(int, qualifier="readonly") == seeded

@@ -63,7 +63,7 @@ class ScopedAsyncContainer(BareAsyncContainer):
 
 
 class AsyncContainer(BareAsyncContainer):
-    def enter_scope(self, *, _context: dict[ContainerObjectIdentifier, Any] | None = None) -> ScopedAsyncContainer:
+    def enter_scope(self, provided: dict[ContainerObjectIdentifier, Any] | None = None, /) -> ScopedAsyncContainer:
         """Enter a new scope.
 
         The returned scope context manager controls the lifetime of scoped dependencies.
@@ -80,7 +80,7 @@ class AsyncContainer(BareAsyncContainer):
             override_manager=self._override_mgr,
             global_scope_objects=self._global_scope_objects,
             global_scope_exit_stack=self._global_scope_exit_stack,
-            current_scope_objects=_context or {},
+            current_scope_objects=provided or {},
             current_scope_exit_stack=[],
             factory_compiler=self._scoped_compiler,
             scoped_compiler=self._scoped_compiler,
@@ -90,7 +90,8 @@ class AsyncContainer(BareAsyncContainer):
 
 def async_container_force_sync_scope(
     container: AsyncContainer,
-    _context: dict[ContainerObjectIdentifier, Any] | None = None,
+    provided: dict[ContainerObjectIdentifier, Any] | None = None,
+    /,
 ) -> ScopedSyncContainer:
     """Force an async container to enter a synchronous scope.
 
@@ -102,7 +103,7 @@ def async_container_force_sync_scope(
         override_manager=container._override_mgr,
         global_scope_objects=container._global_scope_objects,
         global_scope_exit_stack=container._global_scope_exit_stack,
-        current_scope_objects=_context or {},
+        current_scope_objects=provided or {},
         current_scope_exit_stack=[],
         factory_compiler=container._scoped_compiler,
         scoped_compiler=container._scoped_compiler,

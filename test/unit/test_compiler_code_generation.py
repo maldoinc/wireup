@@ -335,7 +335,7 @@ def test_async_container_sync_target_scoped_config_with_context_creator(async_co
     code = _get_generated_code(decorated)
 
     assert re.search(
-        r"with _wireup_async_container_force_sync_scope\(_wireup_container, _context=\{"
+        r"with _wireup_async_container_force_sync_scope\(_wireup_container, \{"
         r"_context_type_[0-9a-f]{32}: kwargs\['foo'\], "
         r"_context_type_[0-9a-f]{32}: kwargs\.pop\('bar'\)\}\) as scope:",
         code,

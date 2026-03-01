@@ -109,7 +109,7 @@ def setup(
     ) -> web.StreamResponse:
         token = current_request.set(request)
         try:
-            async with container.enter_scope(_context={web.Request: request}) as scoped_container:
+            async with container.enter_scope({web.Request: request}) as scoped_container:
                 request[_container_key] = scoped_container
                 return await handler(request)
         finally:
