@@ -1,4 +1,5 @@
 import sys
+import warnings
 from typing import Any, NewType, Optional
 
 import pytest
@@ -101,6 +102,30 @@ def test_register_with_redundant_annotation() -> None:
                 InjectableDeclaration(obj=FooImplWithInjected, lifetime="singleton"),
             ],
         )
+
+
+def test_register_with_explicit_none_qualifier_does_not_warn_redundant_annotation() -> None:
+    class MyDep: ...
+
+    class MyService:
+        def __init__(self, dep: Annotated[MyDep, Inject(qualifier=None)]) -> None:
+            self.dep = dep
+
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("always")
+        ContainerRegistry(
+            impls=[
+                InjectableDeclaration(obj=MyDep),
+                InjectableDeclaration(obj=MyService),
+            ],
+        )
+
+    redundant_warnings = [
+        warning
+        for warning in caught
+        if "Redundant Injected[T] or Annotated[T, Inject()] in parameter" in str(warning.message)
+    ]
+    assert not redundant_warnings
 
 
 def test_is_interface_known() -> None:
