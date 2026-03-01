@@ -94,9 +94,18 @@ def _inject_routes(
     routes: List[BaseRoute],
     *,
     is_using_asgi_middleware: bool,
-) -> None:
+    skip_calls: Optional[List[AnyCallable]] = None,
+) -> List[AnyCallable]:
+    injected_calls: List[AnyCallable] = []
+    # setup() can inject once and lifespan injects again at startup.
+    # Track already-injected route callables so routes are wrapped at most once.
+    skip_calls_set = set(skip_calls or [])
+
     for route in routes:
         if not (isinstance(route, (APIRoute, APIWebSocketRoute)) and route.dependant.call):
+            continue
+
+        if route.dependant.call in skip_calls_set:
             continue
 
         names_to_inject = get_inject_annotated_parameters(route.dependant.call)
@@ -107,6 +116,7 @@ def _inject_routes(
         # and we can get the scoped container from the request.
         if isinstance(route, APIRoute) and is_using_asgi_middleware:
             route.dependant.call = inject_from_container(container, get_request_container)(route.dependant.call)
+            injected_calls.append(route.dependant.call)
             continue
 
         # We now are either in a websocket endpoint or HTTP without middleware_mode.
@@ -124,6 +134,9 @@ def _inject_routes(
             remove_http_connection_from_arguments=remove_http_connection_from_arguments,
             is_websocket_route=isinstance(route, APIWebSocketRoute),
         )
+        injected_calls.append(route.dependant.call)
+
+    return injected_calls
 
 
 async def _instantiate_class_based_route(
@@ -159,6 +172,7 @@ async def _instantiate_class_based_route(
 def _update_lifespan(
     app: FastAPI,
     class_based_routes: Optional[Iterable[Type[_ClassBasedHandlersProtocol]]] = None,
+    injected_route_calls: Optional[List[AnyCallable]] = None,
     *,
     is_using_asgi_middleware: bool,
 ) -> None:
@@ -174,11 +188,24 @@ def _update_lifespan(
             for cbr in class_based_routes:
                 await _instantiate_class_based_route(app, container, cbr)
 
-            _inject_routes(
+            new_calls = _inject_routes(
                 container,
                 app.routes,
                 is_using_asgi_middleware=is_using_asgi_middleware,
+                skip_calls=injected_route_calls,
             )
+            if injected_route_calls is not None:
+                injected_route_calls.extend(new_calls)
+
+        # Inject any new routes added after setup() but before app startup.
+        new_calls = _inject_routes(
+            container,
+            app.routes,
+            is_using_asgi_middleware=is_using_asgi_middleware,
+            skip_calls=injected_route_calls,
+        )
+        if injected_route_calls is not None:
+            injected_route_calls.extend(new_calls)
 
         async with old_lifespan(app) as state:
             yield state
@@ -202,7 +229,9 @@ def setup(
     * Closes the Wireup container upon app shutdown using the lifespan context.
 
     :param container: An async container created via `wireup.create_async_container`.
-    :param app: The FastAPI application to integrate with. All routes must have been added to the app before this call.
+    :param app: The FastAPI application to integrate with. Best practice is to call setup after routes are added.
+    If setup is called earlier, ensure FastAPI lifespan runs before handling requests (for example, use TestClient as a
+    context manager in tests).
     :param class_based_handlers: A list of class-based handlers to register.
     These classes must have a `router` attribute of type `fastapi.APIRouter`.
     Warning: Do not include these with fastapi directly.
@@ -213,18 +242,26 @@ def setup(
     """
     app.state.wireup_container = container
     _expose_wireup_task(container)
+    injected_route_calls: List[AnyCallable] = []
     if middleware_mode:
         app.add_middleware(WireupAsgiMiddleware, include_websocket=False)
     _update_lifespan(
         app,
         class_based_routes=class_based_handlers,
+        injected_route_calls=injected_route_calls,
         is_using_asgi_middleware=middleware_mode,
     )
-    # With class-based handlers, injection happens in the lifespan context
-    # and the routes are injected there since some of the dependencies of the class-based handlers may be async.
-    # If no class-based handlers are used, we inject them immediately.
+    # Lifespan always runs an injection pass (including routes added after setup).
+    # For non-class-based setups we also inject immediately so existing routes are ready without waiting for startup.
     if not class_based_handlers:
-        _inject_routes(container, app.routes, is_using_asgi_middleware=middleware_mode)
+        injected_route_calls.extend(
+            _inject_routes(
+                container,
+                app.routes,
+                is_using_asgi_middleware=middleware_mode,
+                skip_calls=injected_route_calls,
+            )
+        )
 
 
 inject = inject_from_container_unchecked(get_request_container, hide_annotated_names=True)

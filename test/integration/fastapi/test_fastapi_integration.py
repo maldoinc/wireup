@@ -59,6 +59,27 @@ def client(app: FastAPI) -> Iterator[TestClient]:
         yield client
 
 
+def _get_http_route_call(app: FastAPI, path: str) -> Any:
+    for route in app.routes:
+        if getattr(route, "path", None) == path and hasattr(route, "dependant") and route.dependant.call:
+            return route.dependant.call
+
+    msg = f"No HTTP route found for path {path!r}"
+    raise AssertionError(msg)
+
+
+def _wireup_wrapper_count(fn: Any) -> int:
+    count = 0
+    while hasattr(fn, "__wrapped__"):
+        if hasattr(fn, "__wireup_generated_code__"):
+            count += 1
+        fn = fn.__wrapped__
+    if hasattr(fn, "__wireup_generated_code__"):
+        count += 1
+
+    return count
+
+
 def test_injects_service(client: TestClient):
     get_lucky_number._called = 0  # type: ignore[reportFunctionMemberAccess]
     response = client.get("/lucky-number")
@@ -529,7 +550,7 @@ def test_missing_setup_raises_actionable_error_for_injected_route_parameter() ->
             client.get("/")
 
 
-def test_setup_called_before_adding_routes_raises_actionable_error() -> None:
+def test_setup_called_before_adding_routes_injects_at_startup() -> None:
     app = FastAPI()
     container = wireup.create_async_container(injectables=[shared_services, wireup.integration.fastapi])
     wireup.integration.fastapi.setup(container, app)
@@ -538,6 +559,48 @@ def test_setup_called_before_adding_routes_raises_actionable_error() -> None:
     async def endpoint(random_service: Injected[RandomService]) -> Dict[str, int]:
         return {"number": random_service.get_random()}
 
-    with pytest.raises(WireupError, match="Injection is not set up correctly"):
-        with TestClient(app) as client:
-            client.get("/")
+    with TestClient(app) as client:
+        res = client.get("/")
+
+    assert res.status_code == 200
+    assert res.json() == {"number": 4}
+
+
+def test_lifespan_injection_pass_does_not_rewrap_routes_already_injected_at_setup() -> None:
+    app = FastAPI()
+    container = wireup.create_async_container(injectables=[shared_services, wireup.integration.fastapi])
+
+    @app.get("/")
+    async def endpoint(random_service: Injected[RandomService]) -> Dict[str, int]:
+        return {"number": random_service.get_random()}
+
+    wireup.integration.fastapi.setup(container, app)
+    call_after_setup = _get_http_route_call(app, "/")
+
+    with TestClient(app) as client:
+        res = client.get("/")
+
+    call_after_startup = _get_http_route_call(app, "/")
+    assert res.status_code == 200
+    assert call_after_startup is call_after_setup
+    assert _wireup_wrapper_count(call_after_startup) == 1
+
+
+def test_class_based_lifespan_dual_pass_does_not_double_wrap_routes() -> None:
+    app = FastAPI()
+    container = wireup.create_async_container(
+        injectables=[fastapi_test_services, shared_services, wireup.integration.fastapi],
+    )
+
+    @app.get("/")
+    async def endpoint(random_service: Injected[RandomService]) -> Dict[str, int]:
+        return {"number": random_service.get_random()}
+
+    wireup.integration.fastapi.setup(container, app, class_based_handlers=[cbr.MyClassBasedRoute])
+
+    with TestClient(app) as client:
+        res = client.get("/")
+
+    call_after_startup = _get_http_route_call(app, "/")
+    assert res.status_code == 200
+    assert _wireup_wrapper_count(call_after_startup) == 1

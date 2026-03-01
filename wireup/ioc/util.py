@@ -37,14 +37,19 @@ if typing.TYPE_CHECKING:
 
 
 def _get_injectable_type(metadata: Any) -> InjectableType | None:
+    if isinstance(metadata, InjectableType):
+        return metadata
+
     # When using fastapi, the injectable type will be wrapped with Depends.
     # As such, it needs to be unwrapped in order to get the actual metadata
     # Need to be careful here not to unwrap FastAPI dependencies
     # not owned by wireup as they might cause side effects.
     if hasattr(metadata, "dependency") and hasattr(metadata.dependency, "__is_wireup_depends__"):
         metadata = metadata.dependency()
+        if isinstance(metadata, InjectableType):
+            return metadata
 
-    return metadata if isinstance(metadata, InjectableType) else None
+    return None
 
 
 def _get_wireup_annotation(metadata: Sequence[Any]) -> InjectableType | None:

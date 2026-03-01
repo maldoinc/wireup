@@ -44,7 +44,7 @@
 Here is a complete, copy-pasteable example to get you running in under 2 minutes.
 
 Create an [async container](../../container.md), define your services, then initialize the integration by calling
-`wireup.integration.fastapi.setup` **after adding all routers**:
+`wireup.integration.fastapi.setup`.
 
 ```python title="main.py"
 import wireup
@@ -72,9 +72,11 @@ async def greet(greeter: Injected[GreeterService]):
     return {"message": greeter.greet("World")}
 
 
-# 4. Initialize Wireup (after all routes are added)
+# 4. Initialize Wireup
 wireup.integration.fastapi.setup(container, app)
 ```
+
+Best practice is to call `setup(...)` after routes are added. However, if your tests use `TestClient` as a context manager (fixture with `yield`), you can call `setup(...)` whenever.
 
 Run the server with:
 
@@ -300,8 +302,10 @@ for more examples.
 
 !!! warning
 
-    FastAPI's lifespan events are required to close the Wireup container properly. Use a context manager when instantiating
-    the test client if using class-based handlers or generator factories in the application.
+    FastAPI's lifespan events are required for Wireup startup/shutdown integration.
+    In tests, always use `TestClient` as a context manager (fixture with `yield`) so lifespan runs.
+    If you call `setup(...)` before adding routes, this is required for injection to be ready in tests.
+    It is also required for class-based handlers or generator factories.
 
     ```python
     @pytest.fixture()
