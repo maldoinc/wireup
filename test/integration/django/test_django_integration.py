@@ -8,9 +8,11 @@ import django
 import pytest
 from django.apps import apps
 from django.core.management import call_command
+from django.http import HttpRequest
 from django.test import AsyncClient, Client
 from django.urls import include, path
 from django.views.generic import TemplateView
+from wireup._annotations import Injected
 from wireup.errors import WireupError
 from wireup.integration.django import WireupSettings, inject, inject_app
 from wireup.integration.django.apps import get_app_container
@@ -251,6 +253,20 @@ def test_inject_decorator_applied_multiple_times():
         @inject
         @inject
         def _(*__, **___): ...
+
+
+def test_inject_outside_request_raises_actionable_error():
+    @inject
+    def _(request: Injected[HttpRequest]) -> HttpRequest:
+        return request
+
+    with pytest.raises(WireupError) as exc_info:
+        _()
+
+    msg = str(exc_info.value)
+    assert "Wireup request container is unavailable in the current execution context" in msg
+    assert "wireup.integration.django.wireup_middleware" in msg
+    assert "@inject_app" in msg
 
 
 def test_inject_app_django_management_command():

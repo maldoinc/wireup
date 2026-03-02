@@ -83,7 +83,19 @@ def get_request_container() -> Union[ScopedSyncContainer, ScopedAsyncContainer]:
     try:
         return async_view_request_container.get()
     except LookupError:
+        pass
+
+    try:
         return sync_view_request_container.get()
+    except LookupError as e:
+        msg = (
+            "Wireup request container is unavailable in the current execution context.\n"
+            "Common causes:\n"
+            "1) The code is running outside an active Django request lifecycle.\n"
+            "2) wireup.integration.django.wireup_middleware is missing or misordered.\n"
+            "For non-request code (commands, signals, checks, scripts), use @inject_app. "
+        )
+        raise WireupError(msg) from e
 
 
 def get_app_container() -> AsyncContainer:
