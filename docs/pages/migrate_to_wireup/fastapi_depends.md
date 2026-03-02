@@ -725,9 +725,46 @@ wireup.integration.fastapi.setup(
         return await service.list_all()
     ```
 
+## Testing
+
+=== "Before (`Depends` + `app.dependency_overrides`)"
+
+    ```python
+    from fastapi import FastAPI
+    from fastapi.testclient import TestClient
+
+
+    def test_get_user(app: FastAPI):
+        app.dependency_overrides[get_user_service] = lambda: FakeUserService()
+        try:
+            with TestClient(app) as client:
+                response = client.get("/users/123")
+        finally:
+            app.dependency_overrides.clear()
+
+        assert response.status_code == 200
+    ```
+
+=== "After (Wireup override context manager)"
+
+    ```python
+    from fastapi import FastAPI
+    from fastapi.testclient import TestClient
+    from wireup.integration.fastapi import get_app_container
+
+
+    def test_get_user(app: FastAPI):
+        with get_app_container(app).override.injectable(
+            UserService, new=FakeUserService()
+        ):
+            with TestClient(app) as client:
+                response = client.get("/users/123")
+
+        assert response.status_code == 200
+    ```
+
 ## Incremental Migration Plan
 
-1. Baseline first. Add or improve endpoint tests for one module before changing DI.
 1. Integrate Wireup once. Create container and call `wireup.integration.fastapi.setup(container, app)` after routes are
     registered.
 1. Migrate leaf services (services that don't depend on other services you've written). Add `@injectable` to them, then
