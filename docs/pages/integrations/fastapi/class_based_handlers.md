@@ -108,6 +108,12 @@ def client(app: FastAPI):
 
 To test with overridden dependencies (mocks, stubs, fakes, etc.), set up the override before creating the `TestClient`.
 
+!!! warning
+
+    For class-based handlers, constructor dependencies are resolved at app startup.
+    Overrides applied after startup do not re-instantiate handlers and will not affect already-created constructor
+    dependencies.
+
 ```python
 from wireup.integration.fastapi import get_app_container
 
@@ -119,6 +125,16 @@ def test_user_handler(app):
         # Start the client INSIDE the override block
         # The handler is initialized with the mock during startup
         with TestClient(app) as client:
+            client.get("/users/")
+```
+
+```python title="Don't"
+def test_user_handler_wrong(app):
+    # Handler has already been instantiated at startup.
+    with TestClient(app) as client:
+        with get_app_container(app).override.injectable(
+            UserProfileService, new=MockUserService()
+        ):
             client.get("/users/")
 ```
 

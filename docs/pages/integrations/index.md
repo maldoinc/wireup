@@ -1,7 +1,9 @@
-Integrations handle the boilerplate of connecting Wireup to your framework: automatic scope management per request,
-injection in route handlers, and container lifecycle tied to the application.
+Wireup is framework-agnostic and can be used in any project. 
 
-Wireup is framework-agnostic and can be used in any project. It also provides integrations grouped by type:
+Integrations handle the boilerplate of connecting Wireup to your framework: automatic scope management per request,
+injection in route handlers, and container lifecycle tied to the application leading to a smooth developer experience
+and a richer set of features.
+
 
 ### Web Frameworks
 

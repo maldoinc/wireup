@@ -33,9 +33,13 @@ nav:
         - Troubleshooting: integrations/django/troubleshooting.md
       - FastAPI: 
         - FastAPI Integration: integrations/fastapi/index.md
+        - Inject in Routes: integrations/fastapi/inject_in_routes.md
+        - Request and WebSocket Context in Services: integrations/fastapi/context_in_services.md
         - Class Based Handlers: integrations/fastapi/class_based_handlers.md
         - Request Lifecycle Patterns: integrations/fastapi/request_lifecycle_patterns.md
         - Background Tasks: integrations/fastapi/background_tasks.md
+        - FastAPI Testing: integrations/fastapi/testing.md
+        - Troubleshooting: integrations/fastapi/troubleshooting.md
       - Flask: 
         - Flask Integration: integrations/flask/index.md
       - FastMCP:
