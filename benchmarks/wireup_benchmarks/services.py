@@ -8,7 +8,7 @@ to avoid code duplication.
 import os
 from dataclasses import dataclass
 from threading import Lock
-from typing import AsyncIterator, Dict, Iterator, Tuple
+from typing import AsyncIterator, Dict, Iterator, Optional, Tuple
 
 _COUNTERS: Dict[str, int] = {}
 _COUNTER_LOCK = Lock()
@@ -69,7 +69,7 @@ def _expected_counts(requests_singleton: int, requests_scoped: int) -> Dict[str,
 
 
 def assert_workload(
-    overrides: Dict[str, int] | None = None,
+    overrides: Optional[Dict[str, int]] = None,
 ) -> Tuple[bool, Dict[str, int], Dict[str, int], Dict[str, int]]:
     if not _ASSERT_ENABLED:
         return True, {}, {}, {}

@@ -642,7 +642,7 @@ def main() -> None:
                     bench_assert=args.bench_assert,
                 )
                 if res:
-                    run_row: dict[str, Any] = dict.fromkeys(run_fieldnames, "")
+                    run_row: Dict[str, Any] = dict.fromkeys(run_fieldnames, "")
                     run_row.update(
                         {
                             "project_id": project_id,
