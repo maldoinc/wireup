@@ -4,6 +4,7 @@ nav:
     - Introduction:
       - Overview: index.md
       - Getting Started: getting_started.md
+      - Benchmarks: benchmarks.md
     - Core Concepts:
       - Container: container.md
       - Injectables: injectables.md

@@ -1,7 +1,7 @@
 <div align="center">
 <h1>Wireup</h1>
 <p>
-Type-driven dependency injection for Python. Wireup is battle-tested in production, thread-safe, no-GIL (PEP 703) ready, and designed to fail fast: <strong>if the container starts, it works</strong>.
+Type-driven dependency injection for Python. Wireup is battle-tested in production, thread-safe, no-GIL (PEP 703) ready, and fail-fast by design: <strong>if the container starts, it works</strong>.
 </p>
 
 [![GitHub](https://img.shields.io/github/license/maldoinc/wireup)](https://github.com/maldoinc/wireup)
@@ -15,6 +15,24 @@ Type-driven dependency injection for Python. Wireup is battle-tested in producti
 </div>
 
 
+<p align="center">
+    <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/pages/img/benchmarks_scoped_dark.svg">
+    <source media="(prefers-color-scheme: light)" srcset="docs/pages/img/benchmarks_scoped_light.svg">
+    <img alt="Scoped Dependency Injection Performance" src="docs/pages/img/benchmarks_scoped_light.svg">
+    </picture>
+</p>
+
+<p align="center">
+    <i>Inject a dense dependency graph in FastAPI + Uvicorn on every request<br>
+    (Requests per second, higher is better. Manual Wiring represents the upper bound.).<br>
+    Full methodology and reproducibility: <a href="https://maldoinc.github.io/wireup/latest/benchmarks/">benchmarks</a>.</i>
+</p>
+
+
+
+> [!TIP]
+> **New**: Inject singleton dependencies in FastAPI with zero overhead using [Class-Based Handlers](https://maldoinc.github.io/wireup/latest/integrations/fastapi/class_based_handlers/).
 ## Why Wireup?
 
 - **Correct by default**: Wireup catches missing dependencies, circular references, lifetime mismatches, duplicate registrations, and missing config keys at startup. Shared dependencies are created in a thread-safe way.
@@ -342,7 +360,7 @@ Have a useful integration to recommend? Create an issue or PR!
 
 Native integrations manage request scopes, endpoint injection, and dependency lifetimes.
 
-Supported: **FastAPI**, **Flask**, **Django**, **AIOHTTP**, **Starlette**, **ASGI**, **FastMCP**, **Celery**, **Click**, **Typer**, **Strawberry**
+Supported: **FastAPI**, **Flask**, **Django**, **AIOHTTP**, **Starlette**, **Click**, **Typer**, **Strawberry**
 
 [View all integrations →](https://maldoinc.github.io/wireup/latest/integrations/)
 
