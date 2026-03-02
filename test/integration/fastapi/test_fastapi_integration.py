@@ -11,6 +11,7 @@ import wireup
 import wireup.integration
 import wireup.integration.fastapi
 from fastapi import BackgroundTasks, FastAPI, Request, WebSocket
+from fastapi.routing import APIRoute
 from fastapi.testclient import TestClient
 from starlette.middleware.base import BaseHTTPMiddleware
 from wireup._annotations import Injected, injectable
@@ -482,6 +483,22 @@ async def test_overrides_in_class_based_handlers() -> None:
         assert res.json() == {"counter": 1, "random": 100}
 
         assert await get_app_container(app).get(RandomService) is new_instance
+
+
+def test_class_based_handlers_work_across_lifespan_restarts() -> None:
+    app = create_app(expose_container_in_middleware=True)
+
+    with TestClient(app) as client:
+        first = client.get("/cbr").json()
+
+    with TestClient(app) as client:
+        second = client.get("/cbr").json()
+
+    cbr_routes = [route for route in app.routes if isinstance(route, APIRoute) and route.path == "/cbr/"]
+
+    assert first == {"counter": 1, "random": 4}
+    assert second == {"counter": 2, "random": 4}
+    assert len(cbr_routes) == 1
 
 
 def test_injects_background_tasks() -> None:
