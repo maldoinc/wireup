@@ -19,6 +19,7 @@ from wireup import (
 )
 from wireup._decorators import inject_from_container_unchecked
 from wireup.errors import WireupError
+from wireup.ioc.util import is_wireup_injected
 
 
 @injectable
@@ -71,7 +72,7 @@ def async_container() -> AsyncContainer:
 
 
 def _get_generated_code(fn: Any) -> str:
-    if not hasattr(fn, "__wireup_generated_code__"):
+    if not is_wireup_injected(fn):
         pytest.fail("Target has no generated code.")
     return fn.__wireup_generated_code__
 

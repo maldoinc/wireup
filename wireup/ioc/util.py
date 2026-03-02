@@ -200,6 +200,11 @@ def hide_annotated_names(func: AnyCallable) -> None:
     return
 
 
+def is_wireup_injected(target: Any) -> bool:
+    """Return True if the callable has been wrapped by Wireup injection."""
+    return hasattr(target, "__wireup_generated_code__")
+
+
 def get_inject_annotated_parameters(target: AnyCallable) -> dict[str, AnnotatedParameter]:
     """Retrieve annotated parameters from a given callable target.
 

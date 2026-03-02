@@ -36,6 +36,7 @@ from wireup.ioc.util import (
     get_inject_annotated_parameters,
     hide_annotated_names,
     injection_requires_scope,
+    is_wireup_injected,
 )
 
 __all__ = [
@@ -101,7 +102,7 @@ def _inject_routes(
 
         # Injection wrappers compiled by Wireup set this marker.
         # If present, the route has already been wrapped and should not be wrapped again.
-        if hasattr(route.dependant.call, "__wireup_generated_code__"):
+        if is_wireup_injected(route.dependant.call):
             continue
 
         names_to_inject = get_inject_annotated_parameters(route.dependant.call)

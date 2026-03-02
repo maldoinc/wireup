@@ -17,6 +17,7 @@ from starlette.middleware.base import BaseHTTPMiddleware
 from wireup._annotations import Injected, injectable
 from wireup.errors import WireupError
 from wireup.integration.fastapi import WireupTask, get_app_container, get_request_container
+from wireup.ioc.util import is_wireup_injected
 
 from test.integration.fastapi import cbr, wireup_route
 from test.integration.fastapi import services as fastapi_test_services
@@ -72,10 +73,10 @@ def _get_http_route_call(app: FastAPI, path: str) -> Any:
 def _wireup_wrapper_count(fn: Any) -> int:
     count = 0
     while hasattr(fn, "__wrapped__"):
-        if hasattr(fn, "__wireup_generated_code__"):
+        if is_wireup_injected(fn):
             count += 1
         fn = fn.__wrapped__
-    if hasattr(fn, "__wireup_generated_code__"):
+    if is_wireup_injected(fn):
         count += 1
 
     return count

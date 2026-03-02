@@ -11,6 +11,7 @@ import wireup.integration.fastapi
 from fastapi import FastAPI, Request, WebSocket
 from fastapi.routing import APIRoute, APIWebSocketRoute
 from wireup._annotations import Injected, injectable
+from wireup.ioc.util import is_wireup_injected
 
 
 @injectable
@@ -31,7 +32,7 @@ def _normalize_generated_code(code: str) -> str:
 
 
 def _get_generated_code(target: Any) -> str:
-    if not hasattr(target, "__wireup_generated_code__"):
+    if not is_wireup_injected(target):
         pytest.fail("Target has no generated code.")
 
     return _normalize_generated_code(target.__wireup_generated_code__)
