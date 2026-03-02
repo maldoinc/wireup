@@ -3,6 +3,15 @@
 Type-driven dependency injection for Python. Wireup is battle-tested in production, thread-safe, no-GIL (PEP 703) ready,
 and designed to fail fast: **if the container starts, it works**.
 
+![Scoped Performance](img/benchmarks_scoped_light.svg#only-light)
+![Scoped Performance](img/benchmarks_scoped_dark.svg#only-dark)
+
+<p align="center"><i>Inject a dense dependency graph in FastAPI + Uvicorn on every request
+<br>(Requests per second, higher is better. Manual Wiring represents the upper bound.)
+</i>
+</p>
+<p align="center"><i></i></p>
+
 <div class="grid cards annotate index-cards" markdown>
 
 - :material-shield-check:{ .lg .middle } __Correct by Default__

@@ -71,3 +71,13 @@ body[data-md-color-scheme="slate"] .grid.cards>ul>li {
         padding-right: 60px;
     }
 }
+
+/* Benchmark table deltas */
+.bench-diff {
+    color: var(--md-default-fg-color--light);
+}
+
+.bench-worse {
+    color: #c62828;
+    font-weight: 700;
+}

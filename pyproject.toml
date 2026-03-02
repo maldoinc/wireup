@@ -118,6 +118,46 @@ lint.ignore = [
     "PLR2004",
     "PLR0913",
 ]
+"benchmarks/*" = [
+    "BLE001",
+    "C901",
+    "E501",
+    "ERA001",
+    "FBT001",
+    "FBT002",
+    "I001",
+    "INP001",
+    "PERF203",
+    "PTH",
+    "PLC0415",
+    "PLR0912",
+    "PLR0913",
+    "PLR0915",
+    "PLR2004",
+    "PLW1509",
+    "RUF001",
+    "RUF034",
+    "RUF046",
+    "S311",
+    "S603",
+    "S607",
+    "SIM108",
+    "SIM117",
+    "T201",
+    "UP015",
+]
+"benchmarks/wireup_benchmarks/*" = [
+    "ANN",
+    "ARG001",
+    "B010",
+    "B008",
+    "E742",
+    "ERA001",
+    "FA102",
+    "PLR0913",
+    "PLR2004",
+    "S101",
+]
 
 
 # Taken from https://coverage.readthedocs.io/en/latest/excluding.html
