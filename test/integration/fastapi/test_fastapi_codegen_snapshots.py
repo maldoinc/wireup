@@ -110,6 +110,30 @@ def test_codegen_http_scoped_dependency_enters_scope_with_context() -> None:
     assert code == expected
 
 
+def test_codegen_http_scoped_dependency_with_existing_connection_param_uses_non_pop_context() -> None:
+    app = FastAPI()
+    container = wireup.create_async_container(injectables=[_SnapshotScopedService])
+
+    @app.get("/snap/http-scoped-explicit")
+    async def endpoint(request: Request, sc: Injected[_SnapshotScopedService]) -> None:
+        _ = request, sc
+
+    route = _get_route(app, "/snap/http-scoped-explicit", APIRoute)
+    route.dependant.http_connection_param_name = "request"
+
+    wireup.integration.fastapi.setup(container, app, middleware_mode=False)
+    code = _get_generated_code(route.dependant.call)
+
+    expected = textwrap.dedent("""
+        async def _wireup_generated_wrapper(*args, **kwargs):
+            async with _wireup_container.enter_scope({_context_type_ID: kwargs['request']}) as scope:
+                kwargs['sc'] = _wireup_scoped_factories[_wireup_obj_sc_obj_id].factory(scope)
+                return await _wireup_target(*args, **kwargs)
+    """).strip()
+
+    assert code == expected
+
+
 def test_codegen_http_middleware_mode_uses_scoped_supplier() -> None:
     app = FastAPI()
     container = wireup.create_async_container(injectables=[_SnapshotSingletonService, wireup.integration.fastapi])
