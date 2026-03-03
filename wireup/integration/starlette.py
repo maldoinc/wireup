@@ -144,6 +144,9 @@ dependency injection and use `Injected[T]` or `Annotated[T, Inject()]` to specif
 
 
 def _expose_wireup_task(container: AsyncContainer) -> None:
+    if container._registry.is_type_with_qualifier_known(WireupTask, None):
+        return
+
     def wireup_task_factory() -> WireupTask:
         return WireupTask(container)
 

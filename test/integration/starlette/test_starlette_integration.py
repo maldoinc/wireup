@@ -269,3 +269,12 @@ def test_background_task_uses_different_scope_than_request() -> None:
 
     assert response.status_code == 200
     assert ids["request"] != ids["task"]
+
+
+def test_setup_allows_reusing_container_across_apps() -> None:
+    container = wireup.create_async_container(injectables=[shared_services, wireup.integration.starlette])
+    app_one = Starlette()
+    app_two = Starlette()
+
+    wireup.integration.starlette.setup(container, app_one)
+    wireup.integration.starlette.setup(container, app_two)

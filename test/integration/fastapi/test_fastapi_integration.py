@@ -584,6 +584,15 @@ def test_setup_called_before_adding_routes_injects_at_startup() -> None:
     assert res.json() == {"number": 4}
 
 
+def test_setup_allows_reusing_container_across_apps() -> None:
+    container = wireup.create_async_container(injectables=[shared_services, wireup.integration.fastapi])
+    app_one = FastAPI()
+    app_two = FastAPI()
+
+    wireup.integration.fastapi.setup(container, app_one)
+    wireup.integration.fastapi.setup(container, app_two)
+
+
 def test_lifespan_injection_pass_does_not_rewrap_routes_already_injected_at_setup() -> None:
     app = FastAPI()
     container = wireup.create_async_container(injectables=[shared_services, wireup.integration.fastapi])
