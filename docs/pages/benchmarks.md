@@ -25,20 +25,20 @@ This benchmark uses an artificial workload to measure the overhead of the depend
 services, the test focuses on how fast the library can resolve and inject dependencies without the results being hidden
 by application logic.
 
-Testing is done within a FastAPI + Uvicorn environment to measure performance in a realistic web-based environment
+Testing is done within a FastAPI + Uvicorn environment to measure performance in a realistic web-based environment.
 Notably, this also allows for the inclusion of `fastapi.Depends` in the comparison, 
 as it is the most popular choice by virtue of being the FastAPI default. 
 
 This setup tests also the overall dependency injection package of each library which includes container resolution, scoping,
 injecting into functions/route handlers as well as framework integration rather than a microbenchmark where 
-you repeatedly resolve dependencies from the raw container instance in a tight loop
+you repeatedly resolve dependencies from the raw container instance in a tight loop.
 This benchmark intentionally uses non-trivial singleton/scoped graphs to stress test the containers.
 
 The workload uses two separate, independent graphs:
 the singleton graph (`Settings -> A -> B`) and the scoped graph (`C -> I`) where each service depends on multiple others.
 H is a context manager, I is an async context manager.
 
-This graph is intentionally non-trivial: large enough to emulate realistic container behavior, but still representative of practical applications (rather than synthetic 100-node chains). The exact shape is less important than the workload characteristics: multiple dependencies and lifecycle-managed resources, which stress container resolution, scoping, and teardown more than a simple linear graph.
+This graph is intentionally non-trivial: large enough to emulate realistic container behavior, but still representative of practical applications (rather than 100-node chains). The exact shape is less important than the workload characteristics: multiple dependencies and lifecycle-managed resources, which stress container resolution, scoping, and teardown more than a simple linear graph.
 
 ??? "Click to view the graphs"
 
@@ -99,8 +99,8 @@ For each run, the server is started, a liveness probe must pass, warmup traffic 
 Actual requests per second (RPS) will change based on your hardware. The most important metric is how the libraries
 perform relative to each other.
 
-**Globals** represents the theoretical maximum performance. In this setup, services are accessed directly from the
-global scope or manually instantiated within the route handler, bypassing DI containers entirely.
+**Manual Wiring (No DI)** represents the theoretical maximum performance. In this setup, services are manually instantiated
+within the route handler, bypassing DI containers entirely.
 This row exists purely to establish an upper bound on DI overhead, not as an endorsement of global state or manual wiring.
 
 **Wireup Class-Based** represents the performance of Wireup when using the
@@ -120,6 +120,7 @@ The benchmark measures the following:
     performance with fewer outliers. **Lower is better.**
 - **RSS Memory Peak (MB)**: The highest post-iteration RSS sample observed across runs. **Lower is better.**
     This includes the full server process footprint (Uvicorn + FastAPI app + framework runtime), not only service objects.
+    Summary percentages and relative-throughput comparisons on this page are computed from the main Median Run tables, not the Stability or Total Time tables.
 
 ### Hardware Environment
 
@@ -265,7 +266,7 @@ and Settings** from the graph.
 This tests the container's bookkeeping performance and how efficiently it can return existing instances.
 
 <!-- singleton-summary-start -->
-In this benchmark, both **Wireup Class-Based** (<!-- meta:singleton_wireup_cbr_pct -->**99.93%**<!-- /meta:singleton_wireup_cbr_pct -->) and **Wireup** (<!-- meta:singleton_wireup_pct -->**98.97%**<!-- /meta:singleton_wireup_pct -->) operate within measurement noise of manual wiring throughput, showing very small overhead vs globals in this workload.
+In this benchmark, both **Wireup Class-Based** (<!-- meta:singleton_wireup_cbr_pct -->**99.93%**<!-- /meta:singleton_wireup_cbr_pct -->) and **Wireup** (<!-- meta:singleton_wireup_pct -->**98.97%**<!-- /meta:singleton_wireup_pct -->) operate very close to manual wiring throughput, showing very small overhead vs manual wiring in this workload.
 For context, this corresponds to roughly <!-- meta:singleton_wireup_vs_fastapi_x -->**2.15x**<!-- /meta:singleton_wireup_vs_fastapi_x --> the throughput of **FastAPI Depends** and <!-- meta:singleton_wireup_vs_next_best_x -->**1.25x**<!-- /meta:singleton_wireup_vs_next_best_x --> the next closest library in this benchmark (**<!-- meta:singleton_next_best_name -->diwire<!-- /meta:singleton_next_best_name -->**).
 <!-- singleton-summary-end -->
 
@@ -337,8 +338,9 @@ Prerequisite:
 
 Run from repository root:
 
-
-`make bench`
+```bash
+make bench
+```
 
 Enable workload-shape assertions:
 

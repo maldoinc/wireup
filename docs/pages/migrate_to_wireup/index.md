@@ -1,6 +1,6 @@
 # Migrate to Wireup
 
-This section contains migration guides for teams moving to Wireup from other Python dependency-injection approaches.
+This section contains migration guides for teams moving to Wireup from other Python dependency-injection systems.
 
 ## FastAPI (from `Depends`)
 
