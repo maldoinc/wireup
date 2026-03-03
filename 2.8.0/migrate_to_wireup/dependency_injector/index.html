@@ -1,0 +1,4786 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Migrate from dependency-injector to Wireup with practical provider-to-injectable mappings, async resource patterns, lifetime rules, and incremental migration guide.">
+      
+      
+      
+      
+        <link rel="prev" href="../fastapi_depends/">
+      
+      
+        <link rel="next" href="../../class/wireup/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.1">
+    
+    
+      
+        <title>Dependency Injector - Wireup</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.484c7ddc.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CJetBrains+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"JetBrains Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/_mkdocstrings.css">
+    
+      <link rel="stylesheet" href="../../stylesheets/extra.css">
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#migrate-from-dependency-injector-to-wireup" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+        <aside class="md-banner">
+          <div class="md-banner__inner md-grid md-typeset">
+            
+            
+  <div class="announce-right">
+    <a class="announce-star-link" href="https://github.com/maldoinc/wireup" target="_blank" rel="noopener">
+      ⭐ Enjoying Wireup? Star it on GitHub
+    </a>
+  </div>
+
+          </div>
+          
+        </aside>
+      
+    </div>
+    
+      <div data-md-color-scheme="default" data-md-component="outdated" hidden>
+        
+          <aside class="md-banner md-banner--warning">
+            <div class="md-banner__inner md-grid md-typeset">
+              
+  You're not viewing the latest version.
+  <a href="../../..">
+
+    <strong>Click here to go to latest.</strong>
+  </a>
+
+            </div>
+            <script>var el=document.querySelector("[data-md-component=outdated]"),base=new URL("../.."),outdated=__md_get("__outdated",sessionStorage,base);!0===outdated&&el&&(el.hidden=!1)</script>
+          </aside>
+        
+      </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="Wireup" class="md-header__button md-logo" aria-label="Wireup" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M24 14.475a7.395 7.395 0 0 1-7.38 7.41h-.016a7.3 7.3 0 0 1-4.5-1.605A7.498 7.498 0 0 1 0 14.475V2.82h1.41v11.655a6 6 0 0 0 9.585 4.815 7.38 7.38 0 0 1-1.815-4.814v-9.54a2.82 2.82 0 0 1 5.64 0v9.54a7.37 7.37 0 0 1-1.77 4.814 5.997 5.997 0 0 0 8.383-1.304 6 6 0 0 0 1.157-3.511V2.82H24zm-10.59-9.54a1.41 1.41 0 0 0-2.82 0v9.54A6 6 0 0 0 12 18.33a6 6 0 0 0 1.41-3.855z"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Wireup
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Dependency Injector
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme)" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7a5 5 0 0 0-5 5 5 5 0 0 0 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1M8 13h8v-2H8zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4a5 5 0 0 0 5-5 5 5 0 0 0-5-5"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_2" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M17 7H7a5 5 0 0 0-5 5 5 5 0 0 0 5 5h10a5 5 0 0 0 5-5 5 5 0 0 0-5-5m0 8a3 3 0 0 1-3-3 3 3 0 0 1 3-3 3 3 0 0 1 3 3 3 3 0 0 1-3 3"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="black" data-md-color-accent="indigo"  aria-label="Switch to system preference"  type="radio" name="__palette" id="__palette_2">
+    
+      <label class="md-header__button md-icon" title="Switch to system preference" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M17 7H7a5 5 0 0 0-5 5 5 5 0 0 0 5 5h10a5 5 0 0 0 5-5 5 5 0 0 0-5-5M7 15a3 3 0 0 1-3-3 3 3 0 0 1 3-3 3 3 0 0 1 3 3 3 3 0 0 1-3 3"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/maldoinc/wireup" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    maldoinc/wireup
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+            
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    
+    
+      
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../.." class="md-tabs__link">
+          
+  
+  
+    
+  
+  📚 Documentation
+
+        </a>
+      </li>
+    
+  
+
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../integrations/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Integrations
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+    
+  
+  
+    
+    
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="../" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Migrate to Wireup
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../class/wireup/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  API Reference
+
+        </a>
+      </li>
+    
+  
+
+      
+    </ul>
+  </div>
+</nav>
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="Wireup" class="md-nav__button md-logo" aria-label="Wireup" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M24 14.475a7.395 7.395 0 0 1-7.38 7.41h-.016a7.3 7.3 0 0 1-4.5-1.605A7.498 7.498 0 0 1 0 14.475V2.82h1.41v11.655a6 6 0 0 0 9.585 4.815 7.38 7.38 0 0 1-1.815-4.814v-9.54a2.82 2.82 0 0 1 5.64 0v9.54a7.37 7.37 0 0 1-1.77 4.814 5.997 5.997 0 0 0 8.383-1.304 6 6 0 0 0 1.157-3.511V2.82H24zm-10.59-9.54a1.41 1.41 0 0 0-2.82 0v9.54A6 6 0 0 0 12 18.33a6 6 0 0 0 1.41-3.855z"/></svg>
+
+    </a>
+    Wireup
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/maldoinc/wireup" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    maldoinc/wireup
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_1" >
+        
+          
+          <label class="md-nav__link" for="__nav_1" id="__nav_1_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    📚 Documentation
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_1_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_1">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    📚 Documentation
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_1_1" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../.." class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Introduction
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_1_1" id="__nav_1_1_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_1_1_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_1_1">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Introduction
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../getting_started/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Getting Started
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../benchmarks/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Benchmarks
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_1_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_1_2" id="__nav_1_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Core Concepts
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_1_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_1_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Core Concepts
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../container/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Container
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../injectables/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Injectables
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../configuration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Configuration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_1_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_1_3" id="__nav_1_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Advanced Features
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_1_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_1_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Advanced Features
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../lifetimes_and_scopes/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Lifetimes & Scopes
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../factories/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Factories
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../resources/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Resource Management
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../interfaces/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Interfaces
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../function_injection/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Function Injection
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_1_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_1_4" id="__nav_1_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Guides
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_1_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_1_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Guides
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../testing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Testing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../conditional_registration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Conditional Registration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../upgrading/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Upgrading
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../versioning/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Versioning
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../integrations/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Integrations
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_2" id="__nav_2_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Integrations
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2_2" id="__nav_2_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Web Frameworks
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Web Frameworks
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_2_1" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../integrations/django/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Django
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_2_2_1" id="__nav_2_2_1_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_2_2_1_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2_2_1">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Django
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../integrations/django/setup/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Setup and Installation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../integrations/django/view_injection/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Inject in Views
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../integrations/django/request_lifecycle_patterns/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Request Lifecycle Patterns
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../integrations/django/app_injection/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    App-Level Injection
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../integrations/django/testing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Django Testing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../integrations/django/troubleshooting/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Troubleshooting
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_2_2" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../integrations/fastapi/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FastAPI
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_2_2_2" id="__nav_2_2_2_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_2_2_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2_2_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    FastAPI
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../integrations/fastapi/inject_in_routes/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Inject in Routes
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../integrations/fastapi/context_in_services/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Request and WebSocket Context in Services
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../integrations/fastapi/class_based_handlers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Class Based Handlers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../integrations/fastapi/request_lifecycle_patterns/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Request Lifecycle Patterns
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../integrations/fastapi/background_tasks/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Background Tasks
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../integrations/fastapi/testing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FastAPI Testing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../integrations/fastapi/troubleshooting/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Troubleshooting
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_2_3" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../integrations/flask/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Flask
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_2_2_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2_2_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Flask
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_2_4" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../integrations/fastmcp/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FastMCP
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_2_2_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2_2_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    FastMCP
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_2_5" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../integrations/aiohttp/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    AIOHTTP
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_2_2_5" id="__nav_2_2_5_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_2_2_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2_2_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    AIOHTTP
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../integrations/aiohttp/class_based_handlers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Class-Based Handlers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_2_6" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../integrations/starlette/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Starlette
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_2_2_6" id="__nav_2_2_6_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_2_2_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2_2_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Starlette
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../integrations/starlette/background_tasks/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Background Tasks
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_2_7" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../integrations/strawberry/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Strawberry
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_2_2_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2_2_7">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Strawberry
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_2_3" id="__nav_2_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Generic ASGI
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Generic ASGI
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../integrations/asgi/generic_asgi/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ASGI Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_2_4" id="__nav_2_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Command Line Interfaces
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Command Line Interfaces
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_4_1" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../integrations/click/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Click
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_2_4_1_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2_4_1">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Click
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_4_2" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../integrations/typer/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Typer
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_2_4_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2_4_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Typer
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_2_5" id="__nav_2_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Task Queues
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Task Queues
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_5_1" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../integrations/celery/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Celery
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_2_5_1_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2_5_1">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Celery
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" checked>
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Migrate to Wireup
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_3" id="__nav_3_label" tabindex="">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Migrate to Wireup
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../fastapi_depends/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FastAPI (from Depends)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dependency Injector
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dependency Injector
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#why-migrate-to-wireup" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Why Migrate to Wireup
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Why Migrate to Wireup">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-limited-async-capabilities-in-dependency-injector" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1) Limited async capabilities in Dependency Injector
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-dependency-injector-caveat-provide-mapping-is-runtime-wiring" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2) Dependency Injector caveat (Provide[...] mapping is runtime wiring)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3-ceremony-at-the-call-site-dependsclosingprovide" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3) Ceremony at the call site (Depends(Closing[Provide[...]]))
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#4-wireup-validation-checks-with-no-equivalent-in-dependency-injector" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4) Wireup validation checks with no equivalent in Dependency Injector
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="4) Wireup validation checks with no equivalent in Dependency Injector">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#startup-dependency-graph-validation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Startup dependency-graph validation
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#enforced-lifetime-dependency-rules" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Enforced lifetime dependency rules
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#migrating-provider-types-to-injectables" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Migrating Provider Types to Injectables
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#container-management-in-fastapi" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Container Management in FastAPI
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#resource-type-migration-beforeafter" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Resource Type Migration (Before/After)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Resource Type Migration (Before/After)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-singleton-service" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1) Singleton Service
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-transient-value-factory-transient" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2) Transient value (Factory -&gt; transient)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3-per-request-value-contextlocalsingleton-scoped" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3) Per-request value (ContextLocalSingleton -&gt; scoped)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#4-sync-resource-with-cleanup" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4) Sync Resource with Cleanup
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#5-async-resource-functionrequest-scope" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5) Async Resource (Function/request scope)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#6-scoped-async-resource-fastapi-request-dependency-di-factory" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6) Scoped Async Resource (FastAPI request dependency + DI factory)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#7-configuration-values" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7) Configuration Values
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#injection-outside-fastapi" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Injection Outside FastAPI
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#testing-and-overrides" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Testing and Overrides
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#suggested-migration-order" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Suggested Migration Order
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    API Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../class/wireup/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    wireup
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../class/override_manager/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    OverrideManager
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../class/config_store/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ConfigStore
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4_4" id="__nav_4_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Integrations
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_4_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Integrations
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../class/django_integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Django
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../class/fastapi_integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FastAPI
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../class/flask_integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Flask
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../class/fastmcp_integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FastMCP
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../class/aiohttp_integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    AIOHTTP
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../class/asgi_integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ASGI
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../class/starlette_integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Starlette
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../class/celery_integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Celery
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../class/click_integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Click
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../class/typer_integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Typer
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#why-migrate-to-wireup" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Why Migrate to Wireup
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Why Migrate to Wireup">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-limited-async-capabilities-in-dependency-injector" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1) Limited async capabilities in Dependency Injector
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-dependency-injector-caveat-provide-mapping-is-runtime-wiring" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2) Dependency Injector caveat (Provide[...] mapping is runtime wiring)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3-ceremony-at-the-call-site-dependsclosingprovide" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3) Ceremony at the call site (Depends(Closing[Provide[...]]))
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#4-wireup-validation-checks-with-no-equivalent-in-dependency-injector" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4) Wireup validation checks with no equivalent in Dependency Injector
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="4) Wireup validation checks with no equivalent in Dependency Injector">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#startup-dependency-graph-validation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Startup dependency-graph validation
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#enforced-lifetime-dependency-rules" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Enforced lifetime dependency rules
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#migrating-provider-types-to-injectables" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Migrating Provider Types to Injectables
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#container-management-in-fastapi" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Container Management in FastAPI
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#resource-type-migration-beforeafter" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Resource Type Migration (Before/After)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Resource Type Migration (Before/After)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-singleton-service" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1) Singleton Service
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-transient-value-factory-transient" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2) Transient value (Factory -&gt; transient)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3-per-request-value-contextlocalsingleton-scoped" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3) Per-request value (ContextLocalSingleton -&gt; scoped)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#4-sync-resource-with-cleanup" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4) Sync Resource with Cleanup
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#5-async-resource-functionrequest-scope" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5) Async Resource (Function/request scope)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#6-scoped-async-resource-fastapi-request-dependency-di-factory" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6) Scoped Async Resource (FastAPI request dependency + DI factory)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#7-configuration-values" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7) Configuration Values
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#injection-outside-fastapi" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Injection Outside FastAPI
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#testing-and-overrides" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Testing and Overrides
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#suggested-migration-order" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Suggested Migration Order
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="migrate-from-dependency-injector-to-wireup">Migrate from Dependency Injector to Wireup<a class="headerlink" href="#migrate-from-dependency-injector-to-wireup" title="Permanent link">&para;</a></h1>
+<p>If you're looking for a Dependency Injector alternative with a type-first API, this guide shows how to migrate from
+<code>dependency-injector</code> to Wireup with practical before/after patterns.
+If you've hit friction around async resource patterns or want more startup-time validation of DI misconfigurations, this
+guide is designed for that migration path.</p>
+<p>The core idea is simple:</p>
+<ul>
+<li>Keep your existing framework (FastAPI, CLI tools, workers, scripts).</li>
+<li>Move from provider-object wiring to type-based injectables.</li>
+</ul>
+<p>This migration is mostly a shift from provider objects to type-based injectables, not a rewrite of your application
+architecture.</p>
+<div class="admonition info">
+<p class="admonition-title">Framework examples are illustrative</p>
+<p>This page uses FastAPI examples frequently because they make DI wiring differences easy to see in small snippets.
+The migration patterns apply beyond FastAPI. Wireup supports a wide
+range of frameworks. See the <a href="../../integrations/">Integrations</a> page for more details.</p>
+</div>
+<p>In the service layer, the biggest shift is structure. Wireup does not rely on one central container class where all
+providers are declared. Instead, you annotate services and factories in place with <code>@injectable</code> and <code>Inject(...)</code>, and
+Wireup builds the graph from those declarations. Compared with Dependency Injector's provider-first style, this is a
+more decentralized model.</p>
+<p>Another shift is how provider types are expressed. In Dependency Injector, different behaviors are modeled with
+different provider classes (<code>Singleton</code>, <code>Factory</code>, <code>Resource</code>, and so on). In Wireup, the same <code>@injectable</code> model is
+used with lifetime configuration and <code>yield</code>-based factories for resources. This gives a more unified API, and because
+dependency shapes come from function/class signatures, they evolve with the code instead of being split across separate
+provider declarations.</p>
+<h2 id="why-migrate-to-wireup">Why Migrate to Wireup<a class="headerlink" href="#why-migrate-to-wireup" title="Permanent link">&para;</a></h2>
+<h3 id="1-limited-async-capabilities-in-dependency-injector">1) Limited async capabilities in Dependency Injector<a class="headerlink" href="#1-limited-async-capabilities-in-dependency-injector" title="Permanent link">&para;</a></h3>
+<p>Dependency Injector does not have a first-class provider for a per-request async generator with teardown. In practice,
+this means DB transactions or other per-request resources that need async context-managed creation must delegate this responsibility to other systems.</p>
+<p>With Wireup:</p>
+<div class="highlight"><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">contextlib</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">collections.abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">AsyncIterator</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">wireup</span><span class="w"> </span><span class="kn">import</span> <span class="n">Injected</span><span class="p">,</span> <span class="n">injectable</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">ScopedDbSession</span><span class="p">:</span>
+    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">aclose</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span> <span class="o">...</span>
+
+
+<span class="nd">@injectable</span><span class="p">(</span><span class="n">lifetime</span><span class="o">=</span><span class="s2">&quot;scoped&quot;</span><span class="p">)</span>
+<span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">db_session_factory</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">AsyncIterator</span><span class="p">[</span><span class="n">ScopedDbSession</span><span class="p">]:</span>
+    <span class="k">async</span> <span class="k">with</span> <span class="n">contextlib</span><span class="o">.</span><span class="n">aclosing</span><span class="p">(</span><span class="n">ScopedDbSession</span><span class="p">())</span> <span class="k">as</span> <span class="n">sess</span><span class="p">:</span>
+        <span class="k">yield</span> <span class="n">sess</span>
+
+
+<span class="nd">@app</span><span class="o">.</span><span class="n">post</span><span class="p">(</span><span class="s2">&quot;/transfer&quot;</span><span class="p">)</span>
+<span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">transfer_money</span><span class="p">(</span><span class="n">session</span><span class="p">:</span> <span class="n">Injected</span><span class="p">[</span><span class="n">ScopedDbSession</span><span class="p">]):</span> <span class="o">...</span>
+</code></pre></div>
+<p>In Wireup, the cleanup behavior is defined once in the <code>@injectable</code> factory via <code>yield</code>, and the scope lifecycle
+guarantees teardown at scope exit without extra call-site wrappers.</p>
+<details class="note">
+<summary>Closest match to Wireup's scoped async dependencies</summary>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Annotated</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">collections.abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">AsyncIterator</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">dependency_injector</span><span class="w"> </span><span class="kn">import</span> <span class="n">containers</span><span class="p">,</span> <span class="n">providers</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">dependency_injector.wiring</span><span class="w"> </span><span class="kn">import</span> <span class="n">Provide</span><span class="p">,</span> <span class="n">inject</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">fastapi</span><span class="w"> </span><span class="kn">import</span> <span class="n">Depends</span><span class="p">,</span> <span class="n">Request</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">ScopedDbSession</span><span class="p">:</span>
+    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">aclose</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span> <span class="o">...</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">Container</span><span class="p">(</span><span class="n">containers</span><span class="o">.</span><span class="n">DeclarativeContainer</span><span class="p">):</span>
+    <span class="n">db_session_factory</span> <span class="o">=</span> <span class="n">providers</span><span class="o">.</span><span class="n">Factory</span><span class="p">(</span><span class="n">ScopedDbSession</span><span class="p">)</span>
+
+
+<span class="nd">@inject</span>
+<span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">get_request_db_session</span><span class="p">(</span>
+    <span class="n">request</span><span class="p">:</span> <span class="n">Request</span><span class="p">,</span>
+    <span class="n">make_session</span><span class="p">:</span> <span class="n">Annotated</span><span class="p">[</span>
+        <span class="n">providers</span><span class="o">.</span><span class="n">Factory</span><span class="p">[</span><span class="n">ScopedDbSession</span><span class="p">],</span>
+        <span class="n">Depends</span><span class="p">(</span><span class="n">Provide</span><span class="p">[</span><span class="n">Container</span><span class="o">.</span><span class="n">db_session_factory</span><span class="o">.</span><span class="n">provider</span><span class="p">]),</span>
+    <span class="p">],</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">AsyncIterator</span><span class="p">[</span><span class="n">ScopedDbSession</span><span class="p">]:</span>
+    <span class="n">session</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">request</span><span class="o">.</span><span class="n">state</span><span class="p">,</span> <span class="s2">&quot;db_session&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">session</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">session</span> <span class="o">=</span> <span class="n">make_session</span><span class="p">()</span>
+        <span class="n">request</span><span class="o">.</span><span class="n">state</span><span class="o">.</span><span class="n">db_session</span> <span class="o">=</span> <span class="n">session</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="k">yield</span> <span class="n">session</span>
+    <span class="k">finally</span><span class="p">:</span>
+        <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">request</span><span class="o">.</span><span class="n">state</span><span class="p">,</span> <span class="s2">&quot;db_session&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">is</span> <span class="n">session</span><span class="p">:</span>
+            <span class="k">await</span> <span class="n">session</span><span class="o">.</span><span class="n">aclose</span><span class="p">()</span>
+            <span class="k">del</span> <span class="n">request</span><span class="o">.</span><span class="n">state</span><span class="o">.</span><span class="n">db_session</span>
+
+
+<span class="nd">@app</span><span class="o">.</span><span class="n">post</span><span class="p">(</span><span class="s2">&quot;/transfer&quot;</span><span class="p">)</span>
+<span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">transfer_money</span><span class="p">(</span>
+    <span class="n">session</span><span class="p">:</span> <span class="n">Annotated</span><span class="p">[</span><span class="n">ScopedDbSession</span><span class="p">,</span> <span class="n">Depends</span><span class="p">(</span><span class="n">get_request_db_session</span><span class="p">)],</span>
+<span class="p">):</span> <span class="o">...</span>
+</code></pre></div>
+<p><em>If you know a canonical way to achieve this with Dependency Injector alone, please open an issue to correct this
+section.</em></p>
+</details>
+<h3 id="2-dependency-injector-caveat-provide-mapping-is-runtime-wiring">2) Dependency Injector caveat (<code>Provide[...]</code> mapping is runtime wiring)<a class="headerlink" href="#2-dependency-injector-caveat-provide-mapping-is-runtime-wiring" title="Permanent link">&para;</a></h3>
+<p>In Dependency Injector, <code>Provide[...]</code> is runtime wiring, and type checkers cannot verify that the mapped provider
+actually returns the annotated type.</p>
+<p>Dependency Injector + FastAPI example:</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Annotated</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">dependency_injector.wiring</span><span class="w"> </span><span class="kn">import</span> <span class="n">Provide</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">fastapi</span><span class="w"> </span><span class="kn">import</span> <span class="n">Depends</span>
+
+
+<span class="nd">@app</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;/users&quot;</span><span class="p">)</span>
+<span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">list_users</span><span class="p">(</span>
+    <span class="c1"># ❓ No static guarantee this provider resolves UserService</span>
+    <span class="n">user_service</span><span class="p">:</span> <span class="n">Annotated</span><span class="p">[</span>
+        <span class="n">UserService</span><span class="p">,</span>
+        <span class="n">Depends</span><span class="p">(</span><span class="n">Provide</span><span class="p">[</span><span class="n">Container</span><span class="o">.</span><span class="n">user_service</span><span class="p">]),</span>
+    <span class="p">],</span>
+    <span class="c1"># ❌ Wiring mistake, provider does not match annotation</span>
+    <span class="n">auth_service</span><span class="p">:</span> <span class="n">Annotated</span><span class="p">[</span>
+        <span class="n">AuthService</span><span class="p">,</span>
+        <span class="n">Depends</span><span class="p">(</span><span class="n">Provide</span><span class="p">[</span><span class="n">Container</span><span class="o">.</span><span class="n">user_service</span><span class="p">]),</span>
+    <span class="p">],</span>
+<span class="p">):</span> <span class="o">...</span>
+</code></pre></div>
+<p>Non-FastAPI example:</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Annotated</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">dependency_injector.wiring</span><span class="w"> </span><span class="kn">import</span> <span class="n">Provide</span><span class="p">,</span> <span class="n">inject</span>
+
+
+<span class="nd">@inject</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">run_job</span><span class="p">(</span>
+    <span class="c1"># ❌ Wiring mistake: provider does not match annotation</span>
+    <span class="n">auth_service</span><span class="p">:</span> <span class="n">Annotated</span><span class="p">[</span><span class="n">AuthService</span><span class="p">,</span> <span class="n">Provide</span><span class="p">[</span><span class="n">Container</span><span class="o">.</span><span class="n">user_service</span><span class="p">]],</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span> <span class="o">...</span>
+</code></pre></div>
+<p>These mismatches are usually caught by tests or at runtime, not by static typing. In contrast, with Wireup the
+dependency key is the type (<code>Injected[T]</code>), so there is no call-site <code>Provide[...]</code> mapping to mismatch. If a type
+cannot be resolved, container creation fails during startup validation.</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">wireup</span><span class="w"> </span><span class="kn">import</span> <span class="n">Injected</span>
+
+
+<span class="nd">@app</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;/users&quot;</span><span class="p">)</span>
+<span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">list_users</span><span class="p">(</span>
+    <span class="n">user_service</span><span class="p">:</span> <span class="n">Injected</span><span class="p">[</span><span class="n">UserService</span><span class="p">],</span>
+    <span class="n">auth_service</span><span class="p">:</span> <span class="n">Injected</span><span class="p">[</span><span class="n">AuthService</span><span class="p">],</span>
+<span class="p">):</span> <span class="o">...</span>
+</code></pre></div>
+<h3 id="3-ceremony-at-the-call-site-dependsclosingprovide">3) Ceremony at the call site (<code>Depends(Closing[Provide[...]])</code>)<a class="headerlink" href="#3-ceremony-at-the-call-site-dependsclosingprovide" title="Permanent link">&para;</a></h3>
+<p>For DI resources injected into FastAPI endpoints, cleanup timing is expressed at each call site:</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Annotated</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">dependency_injector.wiring</span><span class="w"> </span><span class="kn">import</span> <span class="n">Closing</span><span class="p">,</span> <span class="n">Provide</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">fastapi</span><span class="w"> </span><span class="kn">import</span> <span class="n">Depends</span>
+
+
+<span class="nd">@app</span><span class="o">.</span><span class="n">post</span><span class="p">(</span><span class="s2">&quot;/transfer&quot;</span><span class="p">)</span>
+<span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">transfer_money</span><span class="p">(</span>
+    <span class="n">session</span><span class="p">:</span> <span class="n">Annotated</span><span class="p">[</span>
+        <span class="n">ScopedDbSession</span><span class="p">,</span>
+        <span class="n">Depends</span><span class="p">(</span><span class="n">Closing</span><span class="p">[</span><span class="n">Provide</span><span class="p">[</span><span class="n">Container</span><span class="o">.</span><span class="n">db_session</span><span class="p">]]),</span>
+    <span class="p">],</span>
+<span class="p">):</span> <span class="o">...</span>
+</code></pre></div>
+<p>This is explicit but ceremony-heavy. If <code>Closing[...]</code> is omitted where it is needed, request-boundary cleanup does not
+run there.</p>
+<p>Wireup usage stays intent-only:</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">wireup</span><span class="w"> </span><span class="kn">import</span> <span class="n">Injected</span>
+
+
+<span class="nd">@app</span><span class="o">.</span><span class="n">post</span><span class="p">(</span><span class="s2">&quot;/transfer&quot;</span><span class="p">)</span>
+<span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">transfer_money</span><span class="p">(</span><span class="n">session</span><span class="p">:</span> <span class="n">Injected</span><span class="p">[</span><span class="n">ScopedDbSession</span><span class="p">]):</span> <span class="o">...</span>
+</code></pre></div>
+<h3 id="4-wireup-validation-checks-with-no-equivalent-in-dependency-injector">4) Wireup validation checks with no equivalent in Dependency Injector<a class="headerlink" href="#4-wireup-validation-checks-with-no-equivalent-in-dependency-injector" title="Permanent link">&para;</a></h3>
+<h4 id="startup-dependency-graph-validation">Startup dependency-graph validation<a class="headerlink" href="#startup-dependency-graph-validation" title="Permanent link">&para;</a></h4>
+<p>In Dependency Injector:</p>
+<ul>
+<li>No single built-in startup step that validates the full graph in one pass (missing deps, circular refs, scope/lifetime
+    rule violations, config key issues).</li>
+</ul>
+<p>Wireup behavior:</p>
+<div class="highlight"><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">UnknownDep</span><span class="p">:</span> <span class="o">...</span>
+
+
+<span class="nd">@injectable</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">Service</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">missing</span><span class="p">:</span> <span class="n">UnknownDep</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">missing</span> <span class="o">=</span> <span class="n">missing</span>
+
+
+<span class="c1"># Fails immediately during container creation.</span>
+<span class="n">container</span> <span class="o">=</span> <span class="n">wireup</span><span class="o">.</span><span class="n">create_sync_container</span><span class="p">(</span><span class="n">injectables</span><span class="o">=</span><span class="p">[</span><span class="n">Service</span><span class="p">])</span>
+</code></pre></div>
+<p>Dependency Injector behavior (not caught at container creation):</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">dependency_injector</span><span class="w"> </span><span class="kn">import</span> <span class="n">containers</span><span class="p">,</span> <span class="n">providers</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">MissingDep</span><span class="p">:</span> <span class="o">...</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">Service</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">missing</span><span class="p">:</span> <span class="n">MissingDep</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">missing</span> <span class="o">=</span> <span class="n">missing</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">Container</span><span class="p">(</span><span class="n">containers</span><span class="o">.</span><span class="n">DeclarativeContainer</span><span class="p">):</span>
+    <span class="n">service</span> <span class="o">=</span> <span class="n">providers</span><span class="o">.</span><span class="n">Singleton</span><span class="p">(</span><span class="n">Service</span><span class="p">)</span>  <span class="c1"># missing arg is not validated here</span>
+
+
+<span class="n">container</span> <span class="o">=</span> <span class="p">(</span>
+    <span class="n">Container</span><span class="p">()</span>
+<span class="p">)</span>  <span class="c1"># ❌ silently succeeds - misconfiguration not caught here</span>
+<span class="n">container</span><span class="o">.</span><span class="n">service</span><span class="p">()</span>  <span class="c1"># ❌ fails only when resolved/called</span>
+</code></pre></div>
+<h4 id="enforced-lifetime-dependency-rules">Enforced lifetime dependency rules<a class="headerlink" href="#enforced-lifetime-dependency-rules" title="Permanent link">&para;</a></h4>
+<p>In Dependency Injector:</p>
+<ul>
+<li>No direct equivalent to Wireup's global lifetime-rule validation step.</li>
+</ul>
+<p>Wireup behavior:</p>
+<div class="highlight"><pre><span></span><code><span class="nd">@injectable</span><span class="p">(</span><span class="n">lifetime</span><span class="o">=</span><span class="s2">&quot;scoped&quot;</span><span class="p">)</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">RequestCtx</span><span class="p">:</span> <span class="o">...</span>
+
+
+<span class="nd">@injectable</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">SingletonService</span><span class="p">:</span>
+    <span class="c1"># Invalid: singleton depending on scoped dependency.</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ctx</span><span class="p">:</span> <span class="n">RequestCtx</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ctx</span> <span class="o">=</span> <span class="n">ctx</span>
+
+
+<span class="c1"># Fails during validation.</span>
+<span class="n">container</span> <span class="o">=</span> <span class="n">wireup</span><span class="o">.</span><span class="n">create_sync_container</span><span class="p">(</span>
+    <span class="n">injectables</span><span class="o">=</span><span class="p">[</span><span class="n">RequestCtx</span><span class="p">,</span> <span class="n">SingletonService</span><span class="p">]</span>
+<span class="p">)</span>
+</code></pre></div>
+<p>Dependency Injector behavior (easy to define, not globally validated at startup):</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">dependency_injector</span><span class="w"> </span><span class="kn">import</span> <span class="n">containers</span><span class="p">,</span> <span class="n">providers</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">RequestCtx</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">request_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">request_id</span> <span class="o">=</span> <span class="n">request_id</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">SingletonService</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ctx</span><span class="p">:</span> <span class="n">RequestCtx</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ctx</span> <span class="o">=</span> <span class="n">ctx</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">Container</span><span class="p">(</span><span class="n">containers</span><span class="o">.</span><span class="n">DeclarativeContainer</span><span class="p">):</span>
+    <span class="n">request_ctx</span> <span class="o">=</span> <span class="n">providers</span><span class="o">.</span><span class="n">ContextLocalSingleton</span><span class="p">(</span>
+        <span class="n">RequestCtx</span><span class="p">,</span> <span class="n">request_id</span><span class="o">=</span><span class="s2">&quot;req-1&quot;</span>
+    <span class="p">)</span>
+    <span class="n">singleton_service</span> <span class="o">=</span> <span class="n">providers</span><span class="o">.</span><span class="n">Singleton</span><span class="p">(</span><span class="n">SingletonService</span><span class="p">,</span> <span class="n">ctx</span><span class="o">=</span><span class="n">request_ctx</span><span class="p">)</span>
+
+
+<span class="n">container</span> <span class="o">=</span> <span class="n">Container</span><span class="p">()</span>  <span class="c1"># ❌ no startup validation error</span>
+</code></pre></div>
+<h2 id="migrating-provider-types-to-injectables">Migrating Provider Types to Injectables<a class="headerlink" href="#migrating-provider-types-to-injectables" title="Permanent link">&para;</a></h2>
+<p>High-level overview of how common Dependency Injector provider types map to Wireup injectables:</p>
+<table>
+<thead>
+<tr>
+<th>Dependency Injector</th>
+<th>Wireup</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>providers.Singleton(...)</code></td>
+<td><code>@injectable</code> class/function (singleton by default)</td>
+</tr>
+<tr>
+<td><code>providers.ContextLocalSingleton(...)</code></td>
+<td><code>@injectable(lifetime="scoped")</code></td>
+</tr>
+<tr>
+<td><code>providers.Factory(...)</code></td>
+<td><code>@injectable(lifetime="transient")</code></td>
+</tr>
+<tr>
+<td><code>providers.Resource(...)</code></td>
+<td><code>@injectable</code> generator/async generator factory</td>
+</tr>
+<tr>
+<td><code>providers.Configuration()</code></td>
+<td><code>Inject(config="...")</code></td>
+</tr>
+<tr>
+<td><code>Provide[...]</code> + <code>@inject</code> wiring</td>
+<td><code>Injected[T]</code> (framework integrations) or <code>inject_from_container(...)</code></td>
+</tr>
+</tbody>
+</table>
+<h2 id="container-management-in-fastapi">Container Management in FastAPI<a class="headerlink" href="#container-management-in-fastapi" title="Permanent link">&para;</a></h2>
+<div class="tabbed-set tabbed-alternate" data-tabs="1:2"><input checked="checked" id="dependency-injector" name="__tabbed_1" type="radio" /><input id="wireup" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="dependency-injector">Dependency Injector</label><label for="wireup">Wireup</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">collections.abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">AsyncIterator</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">contextlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">asynccontextmanager</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">dependency_injector</span><span class="w"> </span><span class="kn">import</span> <span class="n">containers</span><span class="p">,</span> <span class="n">providers</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">fastapi</span><span class="w"> </span><span class="kn">import</span> <span class="n">FastAPI</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">Container</span><span class="p">(</span><span class="n">containers</span><span class="o">.</span><span class="n">DeclarativeContainer</span><span class="p">):</span>
+    <span class="n">config</span> <span class="o">=</span> <span class="n">providers</span><span class="o">.</span><span class="n">Configuration</span><span class="p">()</span>
+    <span class="n">http_client</span> <span class="o">=</span> <span class="n">providers</span><span class="o">.</span><span class="n">Resource</span><span class="p">(</span><span class="o">...</span><span class="p">)</span>
+
+
+<span class="nd">@asynccontextmanager</span>
+<span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">lifespan</span><span class="p">(</span><span class="n">app</span><span class="p">:</span> <span class="n">FastAPI</span><span class="p">):</span>
+    <span class="n">container</span> <span class="o">=</span> <span class="n">Container</span><span class="p">()</span>
+    <span class="n">container</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">api_base</span><span class="o">.</span><span class="n">from_env</span><span class="p">(</span><span class="s2">&quot;API_BASE&quot;</span><span class="p">)</span>
+    <span class="n">container</span><span class="o">.</span><span class="n">wire</span><span class="p">(</span><span class="n">modules</span><span class="o">=</span><span class="p">[</span><span class="vm">__name__</span><span class="p">])</span>
+    <span class="k">await</span> <span class="n">container</span><span class="o">.</span><span class="n">init_resources</span><span class="p">()</span>
+    <span class="n">app</span><span class="o">.</span><span class="n">container</span> <span class="o">=</span> <span class="n">container</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="k">yield</span>
+    <span class="k">finally</span><span class="p">:</span>
+        <span class="k">await</span> <span class="n">container</span><span class="o">.</span><span class="n">shutdown_resources</span><span class="p">()</span>
+        <span class="n">container</span><span class="o">.</span><span class="n">unwire</span><span class="p">()</span>
+
+
+<span class="n">app</span> <span class="o">=</span> <span class="n">FastAPI</span><span class="p">(</span><span class="n">lifespan</span><span class="o">=</span><span class="n">lifespan</span><span class="p">)</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">wireup</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">wireup.integration.fastapi</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">fastapi</span><span class="w"> </span><span class="kn">import</span> <span class="n">FastAPI</span>
+
+<span class="n">container</span> <span class="o">=</span> <span class="n">wireup</span><span class="o">.</span><span class="n">create_async_container</span><span class="p">(</span>
+    <span class="c1"># Let Wireup discover injectables in these modules or list them explicitly.</span>
+    <span class="n">injectables</span><span class="o">=</span><span class="p">[</span><span class="n">services</span><span class="p">,</span> <span class="n">wireup</span><span class="o">.</span><span class="n">integration</span><span class="o">.</span><span class="n">fastapi</span><span class="p">],</span>
+    <span class="n">config</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;api_base&quot;</span><span class="p">:</span> <span class="s2">&quot;...&quot;</span><span class="p">},</span>
+<span class="p">)</span>
+
+<span class="n">app</span> <span class="o">=</span> <span class="n">FastAPI</span><span class="p">()</span>
+<span class="n">wireup</span><span class="o">.</span><span class="n">integration</span><span class="o">.</span><span class="n">fastapi</span><span class="o">.</span><span class="n">setup</span><span class="p">(</span><span class="n">container</span><span class="p">,</span> <span class="n">app</span><span class="p">)</span>
+</code></pre></div>
+</div>
+</div>
+</div>
+<h2 id="resource-type-migration-beforeafter">Resource Type Migration (Before/After)<a class="headerlink" href="#resource-type-migration-beforeafter" title="Permanent link">&para;</a></h2>
+<h3 id="1-singleton-service">1) Singleton Service<a class="headerlink" href="#1-singleton-service" title="Permanent link">&para;</a></h3>
+<p>Type: One shared instance for the entire application/container lifetime.</p>
+<div class="tabbed-set tabbed-alternate" data-tabs="2:2"><input checked="checked" id="dependency-injector_1" name="__tabbed_2" type="radio" /><input id="wireup_1" name="__tabbed_2" type="radio" /><div class="tabbed-labels"><label for="dependency-injector_1">Dependency Injector</label><label for="wireup_1">Wireup</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Annotated</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">dependency_injector</span><span class="w"> </span><span class="kn">import</span> <span class="n">containers</span><span class="p">,</span> <span class="n">providers</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">dependency_injector.wiring</span><span class="w"> </span><span class="kn">import</span> <span class="n">Provide</span><span class="p">,</span> <span class="n">inject</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">fastapi</span><span class="w"> </span><span class="kn">import</span> <span class="n">Depends</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">Settings</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">api_key</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">api_key</span> <span class="o">=</span> <span class="n">api_key</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">Container</span><span class="p">(</span><span class="n">containers</span><span class="o">.</span><span class="n">DeclarativeContainer</span><span class="p">):</span>
+    <span class="n">config</span> <span class="o">=</span> <span class="n">providers</span><span class="o">.</span><span class="n">Configuration</span><span class="p">()</span>
+    <span class="n">settings</span> <span class="o">=</span> <span class="n">providers</span><span class="o">.</span><span class="n">Singleton</span><span class="p">(</span><span class="n">Settings</span><span class="p">,</span> <span class="n">api_key</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">api_key</span><span class="p">)</span>
+
+
+<span class="nd">@app</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;/settings&quot;</span><span class="p">)</span>
+<span class="nd">@inject</span>
+<span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">read_settings</span><span class="p">(</span>
+    <span class="n">settings</span><span class="p">:</span> <span class="n">Annotated</span><span class="p">[</span><span class="n">Settings</span><span class="p">,</span> <span class="n">Depends</span><span class="p">(</span><span class="n">Provide</span><span class="p">[</span><span class="n">Container</span><span class="o">.</span><span class="n">settings</span><span class="p">])],</span>
+<span class="p">):</span>
+    <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;api_key&quot;</span><span class="p">:</span> <span class="n">settings</span><span class="o">.</span><span class="n">api_key</span><span class="p">}</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Annotated</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">wireup</span><span class="w"> </span><span class="kn">import</span> <span class="n">Inject</span><span class="p">,</span> <span class="n">Injected</span><span class="p">,</span> <span class="n">injectable</span>
+
+
+<span class="nd">@injectable</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">Settings</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">api_key</span><span class="p">:</span> <span class="n">Annotated</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Inject</span><span class="p">(</span><span class="n">config</span><span class="o">=</span><span class="s2">&quot;api_key&quot;</span><span class="p">)]</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">api_key</span> <span class="o">=</span> <span class="n">api_key</span>
+
+
+<span class="nd">@app</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;/settings&quot;</span><span class="p">)</span>
+<span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">read_settings</span><span class="p">(</span><span class="n">settings</span><span class="p">:</span> <span class="n">Injected</span><span class="p">[</span><span class="n">Settings</span><span class="p">]):</span>
+    <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;api_key&quot;</span><span class="p">:</span> <span class="n">settings</span><span class="o">.</span><span class="n">api_key</span><span class="p">}</span>
+</code></pre></div>
+</div>
+</div>
+</div>
+<h3 id="2-transient-value-factory-transient">2) Transient value (<code>Factory</code> -&gt; <code>transient</code>)<a class="headerlink" href="#2-transient-value-factory-transient" title="Permanent link">&para;</a></h3>
+<p>Type: New instance every time the dependency is resolved.</p>
+<div class="tabbed-set tabbed-alternate" data-tabs="3:2"><input checked="checked" id="dependency-injector_2" name="__tabbed_3" type="radio" /><input id="wireup_2" name="__tabbed_3" type="radio" /><div class="tabbed-labels"><label for="dependency-injector_2">Dependency Injector</label><label for="wireup_2">Wireup</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Annotated</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">dependency_injector</span><span class="w"> </span><span class="kn">import</span> <span class="n">containers</span><span class="p">,</span> <span class="n">providers</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">dependency_injector.wiring</span><span class="w"> </span><span class="kn">import</span> <span class="n">Provide</span><span class="p">,</span> <span class="n">inject</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">fastapi</span><span class="w"> </span><span class="kn">import</span> <span class="n">Depends</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">TokenBuilder</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">build</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="k">return</span> <span class="s2">&quot;...&quot;</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">Container</span><span class="p">(</span><span class="n">containers</span><span class="o">.</span><span class="n">DeclarativeContainer</span><span class="p">):</span>
+    <span class="n">token_builder</span> <span class="o">=</span> <span class="n">providers</span><span class="o">.</span><span class="n">Factory</span><span class="p">(</span><span class="n">TokenBuilder</span><span class="p">)</span>
+
+
+<span class="nd">@app</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;/token&quot;</span><span class="p">)</span>
+<span class="nd">@inject</span>
+<span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">token</span><span class="p">(</span>
+    <span class="n">builder</span><span class="p">:</span> <span class="n">Annotated</span><span class="p">[</span><span class="n">TokenBuilder</span><span class="p">,</span> <span class="n">Depends</span><span class="p">(</span><span class="n">Provide</span><span class="p">[</span><span class="n">Container</span><span class="o">.</span><span class="n">token_builder</span><span class="p">])],</span>
+<span class="p">):</span>
+    <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;token&quot;</span><span class="p">:</span> <span class="n">builder</span><span class="o">.</span><span class="n">build</span><span class="p">()}</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">wireup</span><span class="w"> </span><span class="kn">import</span> <span class="n">Injected</span><span class="p">,</span> <span class="n">injectable</span>
+
+
+<span class="nd">@injectable</span><span class="p">(</span><span class="n">lifetime</span><span class="o">=</span><span class="s2">&quot;transient&quot;</span><span class="p">)</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">TokenBuilder</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">build</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="k">return</span> <span class="s2">&quot;...&quot;</span>
+
+
+<span class="nd">@app</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;/token&quot;</span><span class="p">)</span>
+<span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">token</span><span class="p">(</span><span class="n">builder</span><span class="p">:</span> <span class="n">Injected</span><span class="p">[</span><span class="n">TokenBuilder</span><span class="p">]):</span>
+    <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;token&quot;</span><span class="p">:</span> <span class="n">builder</span><span class="o">.</span><span class="n">build</span><span class="p">()}</span>
+</code></pre></div>
+</div>
+</div>
+</div>
+<h3 id="3-per-request-value-contextlocalsingleton-scoped">3) Per-request value (<code>ContextLocalSingleton</code> -&gt; <code>scoped</code>)<a class="headerlink" href="#3-per-request-value-contextlocalsingleton-scoped" title="Permanent link">&para;</a></h3>
+<p>Type: One instance per request/task scope, reused within that same scope.</p>
+<div class="tabbed-set tabbed-alternate" data-tabs="4:2"><input checked="checked" id="dependency-injector_3" name="__tabbed_4" type="radio" /><input id="wireup_3" name="__tabbed_4" type="radio" /><div class="tabbed-labels"><label for="dependency-injector_3">Dependency Injector</label><label for="wireup_3">Wireup</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">uuid</span><span class="w"> </span><span class="kn">import</span> <span class="n">uuid4</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Annotated</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">dependency_injector</span><span class="w"> </span><span class="kn">import</span> <span class="n">containers</span><span class="p">,</span> <span class="n">providers</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">dependency_injector.wiring</span><span class="w"> </span><span class="kn">import</span> <span class="n">Provide</span><span class="p">,</span> <span class="n">inject</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">fastapi</span><span class="w"> </span><span class="kn">import</span> <span class="n">Depends</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">RequestId</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">value</span> <span class="o">=</span> <span class="n">uuid4</span><span class="p">()</span><span class="o">.</span><span class="n">hex</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">Container</span><span class="p">(</span><span class="n">containers</span><span class="o">.</span><span class="n">DeclarativeContainer</span><span class="p">):</span>
+    <span class="n">request_id</span> <span class="o">=</span> <span class="n">providers</span><span class="o">.</span><span class="n">ContextLocalSingleton</span><span class="p">(</span><span class="n">RequestId</span><span class="p">)</span>
+
+
+<span class="nd">@app</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;/trace&quot;</span><span class="p">)</span>
+<span class="nd">@inject</span>
+<span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">trace</span><span class="p">(</span>
+    <span class="n">rid</span><span class="p">:</span> <span class="n">Annotated</span><span class="p">[</span><span class="n">RequestId</span><span class="p">,</span> <span class="n">Depends</span><span class="p">(</span><span class="n">Provide</span><span class="p">[</span><span class="n">Container</span><span class="o">.</span><span class="n">request_id</span><span class="p">])],</span>
+<span class="p">):</span>
+    <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;request_id&quot;</span><span class="p">:</span> <span class="n">rid</span><span class="o">.</span><span class="n">value</span><span class="p">}</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">uuid</span><span class="w"> </span><span class="kn">import</span> <span class="n">uuid4</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">wireup</span><span class="w"> </span><span class="kn">import</span> <span class="n">Injected</span><span class="p">,</span> <span class="n">injectable</span>
+
+
+<span class="nd">@injectable</span><span class="p">(</span><span class="n">lifetime</span><span class="o">=</span><span class="s2">&quot;scoped&quot;</span><span class="p">)</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">RequestId</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">value</span> <span class="o">=</span> <span class="n">uuid4</span><span class="p">()</span><span class="o">.</span><span class="n">hex</span>
+
+
+<span class="nd">@app</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;/trace&quot;</span><span class="p">)</span>
+<span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">trace</span><span class="p">(</span><span class="n">rid</span><span class="p">:</span> <span class="n">Injected</span><span class="p">[</span><span class="n">RequestId</span><span class="p">]):</span>
+    <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;request_id&quot;</span><span class="p">:</span> <span class="n">rid</span><span class="o">.</span><span class="n">value</span><span class="p">}</span>
+</code></pre></div>
+</div>
+</div>
+</div>
+<h3 id="4-sync-resource-with-cleanup">4) Sync Resource with Cleanup<a class="headerlink" href="#4-sync-resource-with-cleanup" title="Permanent link">&para;</a></h3>
+<p>Type: Resource with setup/teardown managed via <code>yield</code> (synchronous cleanup).</p>
+<div class="tabbed-set tabbed-alternate" data-tabs="5:2"><input checked="checked" id="dependency-injector_4" name="__tabbed_5" type="radio" /><input id="wireup_4" name="__tabbed_5" type="radio" /><div class="tabbed-labels"><label for="dependency-injector_4">Dependency Injector</label><label for="wireup_4">Wireup</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Annotated</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">contextlib</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">collections.abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">Iterator</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">dependency_injector</span><span class="w"> </span><span class="kn">import</span> <span class="n">containers</span><span class="p">,</span> <span class="n">providers</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">dependency_injector.wiring</span><span class="w"> </span><span class="kn">import</span> <span class="n">Provide</span><span class="p">,</span> <span class="n">inject</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">fastapi</span><span class="w"> </span><span class="kn">import</span> <span class="n">Depends</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">Session</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">close</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span> <span class="o">...</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">open_db_session</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">Iterator</span><span class="p">[</span><span class="n">Session</span><span class="p">]:</span>
+    <span class="k">with</span> <span class="n">contextlib</span><span class="o">.</span><span class="n">closing</span><span class="p">(</span><span class="n">Session</span><span class="p">())</span> <span class="k">as</span> <span class="n">sess</span><span class="p">:</span>
+        <span class="k">yield</span> <span class="n">sess</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">Container</span><span class="p">(</span><span class="n">containers</span><span class="o">.</span><span class="n">DeclarativeContainer</span><span class="p">):</span>
+    <span class="n">db_session</span> <span class="o">=</span> <span class="n">providers</span><span class="o">.</span><span class="n">Resource</span><span class="p">(</span><span class="n">open_db_session</span><span class="p">)</span>
+
+
+<span class="nd">@app</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;/users&quot;</span><span class="p">)</span>
+<span class="nd">@inject</span>
+<span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">list_users</span><span class="p">(</span>
+    <span class="n">session</span><span class="p">:</span> <span class="n">Annotated</span><span class="p">[</span><span class="n">Session</span><span class="p">,</span> <span class="n">Depends</span><span class="p">(</span><span class="n">Provide</span><span class="p">[</span><span class="n">Container</span><span class="o">.</span><span class="n">db_session</span><span class="p">])],</span>
+<span class="p">):</span> <span class="o">...</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">contextlib</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">collections.abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">Iterator</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">wireup</span><span class="w"> </span><span class="kn">import</span> <span class="n">Injected</span><span class="p">,</span> <span class="n">injectable</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">Session</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">close</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span> <span class="o">...</span>
+
+
+<span class="nd">@injectable</span><span class="p">(</span><span class="n">lifetime</span><span class="o">=</span><span class="s2">&quot;scoped&quot;</span><span class="p">)</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">db_session_factory</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">Iterator</span><span class="p">[</span><span class="n">Session</span><span class="p">]:</span>
+    <span class="k">with</span> <span class="n">contextlib</span><span class="o">.</span><span class="n">closing</span><span class="p">(</span><span class="n">Session</span><span class="p">())</span> <span class="k">as</span> <span class="n">sess</span><span class="p">:</span>
+        <span class="k">yield</span> <span class="n">sess</span>
+
+
+<span class="nd">@app</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;/users&quot;</span><span class="p">)</span>
+<span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">list_users</span><span class="p">(</span><span class="n">session</span><span class="p">:</span> <span class="n">Injected</span><span class="p">[</span><span class="n">Session</span><span class="p">]):</span> <span class="o">...</span>
+</code></pre></div>
+</div>
+</div>
+</div>
+<h3 id="5-async-resource-functionrequest-scope">5) Async Resource (Function/request scope)<a class="headerlink" href="#5-async-resource-functionrequest-scope" title="Permanent link">&para;</a></h3>
+<p>Type: Async resource with setup/teardown managed via <code>yield</code>, created per resolution (not shared).</p>
+<div class="tabbed-set tabbed-alternate" data-tabs="6:2"><input checked="checked" id="dependency-injector_5" name="__tabbed_6" type="radio" /><input id="wireup_5" name="__tabbed_6" type="radio" /><div class="tabbed-labels"><label for="dependency-injector_5">Dependency Injector</label><label for="wireup_5">Wireup</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Annotated</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">contextlib</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">collections.abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">AsyncIterator</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">dependency_injector</span><span class="w"> </span><span class="kn">import</span> <span class="n">containers</span><span class="p">,</span> <span class="n">providers</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">dependency_injector.wiring</span><span class="w"> </span><span class="kn">import</span> <span class="n">Closing</span><span class="p">,</span> <span class="n">Provide</span><span class="p">,</span> <span class="n">inject</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">fastapi</span><span class="w"> </span><span class="kn">import</span> <span class="n">Depends</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">DbSession</span><span class="p">:</span>
+    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">aclose</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span> <span class="o">...</span>
+
+
+<span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">db_session_resource</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">AsyncIterator</span><span class="p">[</span><span class="n">DbSession</span><span class="p">]:</span>
+    <span class="k">async</span> <span class="k">with</span> <span class="n">contextlib</span><span class="o">.</span><span class="n">aclosing</span><span class="p">(</span><span class="n">DbSession</span><span class="p">())</span> <span class="k">as</span> <span class="n">sess</span><span class="p">:</span>
+        <span class="k">yield</span> <span class="n">sess</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">Container</span><span class="p">(</span><span class="n">containers</span><span class="o">.</span><span class="n">DeclarativeContainer</span><span class="p">):</span>
+    <span class="n">db_session</span> <span class="o">=</span> <span class="n">providers</span><span class="o">.</span><span class="n">Resource</span><span class="p">(</span><span class="n">db_session_resource</span><span class="p">)</span>
+
+
+<span class="nd">@app</span><span class="o">.</span><span class="n">post</span><span class="p">(</span><span class="s2">&quot;/transfer&quot;</span><span class="p">)</span>
+<span class="nd">@inject</span>
+<span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">transfer_money</span><span class="p">(</span>
+    <span class="n">session</span><span class="p">:</span> <span class="n">Annotated</span><span class="p">[</span>
+        <span class="n">DbSession</span><span class="p">,</span>
+        <span class="n">Depends</span><span class="p">(</span><span class="n">Closing</span><span class="p">[</span><span class="n">Provide</span><span class="p">[</span><span class="n">Container</span><span class="o">.</span><span class="n">db_session</span><span class="p">]]),</span>
+    <span class="p">],</span>
+<span class="p">):</span> <span class="o">...</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">contextlib</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">collections.abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">AsyncIterator</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">wireup</span><span class="w"> </span><span class="kn">import</span> <span class="n">Injected</span><span class="p">,</span> <span class="n">injectable</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">DbSession</span><span class="p">:</span>
+    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">aclose</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span> <span class="o">...</span>
+
+
+<span class="nd">@injectable</span><span class="p">(</span><span class="n">lifetime</span><span class="o">=</span><span class="s2">&quot;transient&quot;</span><span class="p">)</span>
+<span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">db_session_factory</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">AsyncIterator</span><span class="p">[</span><span class="n">DbSession</span><span class="p">]:</span>
+    <span class="k">async</span> <span class="k">with</span> <span class="n">contextlib</span><span class="o">.</span><span class="n">aclosing</span><span class="p">(</span><span class="n">DbSession</span><span class="p">())</span> <span class="k">as</span> <span class="n">sess</span><span class="p">:</span>
+        <span class="k">yield</span> <span class="n">sess</span>
+
+
+<span class="nd">@app</span><span class="o">.</span><span class="n">post</span><span class="p">(</span><span class="s2">&quot;/transfer&quot;</span><span class="p">)</span>
+<span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">transfer_money</span><span class="p">(</span><span class="n">session</span><span class="p">:</span> <span class="n">Injected</span><span class="p">[</span><span class="n">DbSession</span><span class="p">]):</span> <span class="o">...</span>
+</code></pre></div>
+</div>
+</div>
+</div>
+<p>In Wireup this uses <code>transient</code> to represent non-shared resource resolution. For per-request/task cached semantics, use
+<code>scoped</code> (next section).</p>
+<h3 id="6-scoped-async-resource-fastapi-request-dependency-di-factory">6) Scoped Async Resource (FastAPI request dependency + DI factory)<a class="headerlink" href="#6-scoped-async-resource-fastapi-request-dependency-di-factory" title="Permanent link">&para;</a></h3>
+<p>Type: Per-request scoped async resource reused inside the same request and closed at request end.</p>
+<p>Dependency Injector has no native provider for per-request async resources with teardown. <code>Resource</code> is
+app-lifecycle-oriented, <code>Factory</code> has no async teardown hook, and composing them does not produce reliable per-request
+scoping. The only workaround escapes DI and manually manages state in FastAPI dependencies.</p>
+<details class="note">
+<summary>Closest match to Wireup's scoped async dependencies</summary>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Annotated</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">collections.abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">AsyncIterator</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">dependency_injector</span><span class="w"> </span><span class="kn">import</span> <span class="n">containers</span><span class="p">,</span> <span class="n">providers</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">dependency_injector.wiring</span><span class="w"> </span><span class="kn">import</span> <span class="n">Provide</span><span class="p">,</span> <span class="n">inject</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">fastapi</span><span class="w"> </span><span class="kn">import</span> <span class="n">Depends</span><span class="p">,</span> <span class="n">Request</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">ScopedDbSession</span><span class="p">:</span>
+    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">aclose</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span> <span class="o">...</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">Container</span><span class="p">(</span><span class="n">containers</span><span class="o">.</span><span class="n">DeclarativeContainer</span><span class="p">):</span>
+    <span class="n">db_session_factory</span> <span class="o">=</span> <span class="n">providers</span><span class="o">.</span><span class="n">Factory</span><span class="p">(</span><span class="n">ScopedDbSession</span><span class="p">)</span>
+
+
+<span class="nd">@inject</span>
+<span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">get_request_db_session</span><span class="p">(</span>
+    <span class="n">request</span><span class="p">:</span> <span class="n">Request</span><span class="p">,</span>
+    <span class="n">make_session</span><span class="p">:</span> <span class="n">Annotated</span><span class="p">[</span>
+        <span class="n">providers</span><span class="o">.</span><span class="n">Factory</span><span class="p">[</span><span class="n">ScopedDbSession</span><span class="p">],</span>
+        <span class="n">Depends</span><span class="p">(</span><span class="n">Provide</span><span class="p">[</span><span class="n">Container</span><span class="o">.</span><span class="n">db_session_factory</span><span class="o">.</span><span class="n">provider</span><span class="p">]),</span>
+    <span class="p">],</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">AsyncIterator</span><span class="p">[</span><span class="n">ScopedDbSession</span><span class="p">]:</span>
+    <span class="n">session</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">request</span><span class="o">.</span><span class="n">state</span><span class="p">,</span> <span class="s2">&quot;db_session&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">session</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">session</span> <span class="o">=</span> <span class="n">make_session</span><span class="p">()</span>
+        <span class="n">request</span><span class="o">.</span><span class="n">state</span><span class="o">.</span><span class="n">db_session</span> <span class="o">=</span> <span class="n">session</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="k">yield</span> <span class="n">session</span>
+    <span class="k">finally</span><span class="p">:</span>
+        <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">request</span><span class="o">.</span><span class="n">state</span><span class="p">,</span> <span class="s2">&quot;db_session&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">is</span> <span class="n">session</span><span class="p">:</span>
+            <span class="k">await</span> <span class="n">session</span><span class="o">.</span><span class="n">aclose</span><span class="p">()</span>
+            <span class="k">del</span> <span class="n">request</span><span class="o">.</span><span class="n">state</span><span class="o">.</span><span class="n">db_session</span>
+
+
+<span class="nd">@app</span><span class="o">.</span><span class="n">post</span><span class="p">(</span><span class="s2">&quot;/transfer&quot;</span><span class="p">)</span>
+<span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">transfer_money</span><span class="p">(</span>
+    <span class="n">session</span><span class="p">:</span> <span class="n">Annotated</span><span class="p">[</span><span class="n">ScopedDbSession</span><span class="p">,</span> <span class="n">Depends</span><span class="p">(</span><span class="n">get_request_db_session</span><span class="p">)],</span>
+<span class="p">):</span> <span class="o">...</span>
+</code></pre></div>
+<p><em>If you know a canonical way to achieve this with Dependency Injector alone, please open an issue to correct this
+section.</em></p>
+</details>
+<p>Wireup:</p>
+<div class="highlight"><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">contextlib</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">collections.abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">AsyncIterator</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">wireup</span><span class="w"> </span><span class="kn">import</span> <span class="n">Injected</span><span class="p">,</span> <span class="n">injectable</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">ScopedDbSession</span><span class="p">:</span>
+    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">aclose</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span> <span class="o">...</span>
+
+
+<span class="nd">@injectable</span><span class="p">(</span><span class="n">lifetime</span><span class="o">=</span><span class="s2">&quot;scoped&quot;</span><span class="p">)</span>
+<span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">db_session_factory</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">AsyncIterator</span><span class="p">[</span><span class="n">ScopedDbSession</span><span class="p">]:</span>
+    <span class="k">async</span> <span class="k">with</span> <span class="n">contextlib</span><span class="o">.</span><span class="n">aclosing</span><span class="p">(</span><span class="n">ScopedDbSession</span><span class="p">())</span> <span class="k">as</span> <span class="n">sess</span><span class="p">:</span>
+        <span class="k">yield</span> <span class="n">sess</span>
+
+
+<span class="nd">@app</span><span class="o">.</span><span class="n">post</span><span class="p">(</span><span class="s2">&quot;/transfer&quot;</span><span class="p">)</span>
+<span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">transfer_money</span><span class="p">(</span><span class="n">session</span><span class="p">:</span> <span class="n">Injected</span><span class="p">[</span><span class="n">ScopedDbSession</span><span class="p">]):</span> <span class="o">...</span>
+</code></pre></div>
+<p>Dependency Injector cannot express this pattern purely within its provider system. In practice, this requires delegating
+lifecycle management to FastAPI. Wireup handles it with <code>@injectable(lifetime="scoped")</code> on an async generator.</p>
+<h3 id="7-configuration-values">7) Configuration Values<a class="headerlink" href="#7-configuration-values" title="Permanent link">&para;</a></h3>
+<p>Type: Inject runtime configuration values into services without manual wiring.</p>
+<div class="tabbed-set tabbed-alternate" data-tabs="7:2"><input checked="checked" id="dependency-injector_6" name="__tabbed_7" type="radio" /><input id="wireup_6" name="__tabbed_7" type="radio" /><div class="tabbed-labels"><label for="dependency-injector_6">Dependency Injector</label><label for="wireup_6">Wireup</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Annotated</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">dependency_injector.wiring</span><span class="w"> </span><span class="kn">import</span> <span class="n">Provide</span><span class="p">,</span> <span class="n">inject</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">fastapi</span><span class="w"> </span><span class="kn">import</span> <span class="n">Depends</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">dependency_injector</span><span class="w"> </span><span class="kn">import</span> <span class="n">containers</span><span class="p">,</span> <span class="n">providers</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">WeatherService</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">api_key</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">timeout_seconds</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">api_key</span> <span class="o">=</span> <span class="n">api_key</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">timeout_seconds</span> <span class="o">=</span> <span class="n">timeout_seconds</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">Container</span><span class="p">(</span><span class="n">containers</span><span class="o">.</span><span class="n">DeclarativeContainer</span><span class="p">):</span>
+    <span class="n">config</span> <span class="o">=</span> <span class="n">providers</span><span class="o">.</span><span class="n">Configuration</span><span class="p">()</span>
+    <span class="n">weather</span> <span class="o">=</span> <span class="n">providers</span><span class="o">.</span><span class="n">Factory</span><span class="p">(</span>
+        <span class="n">WeatherService</span><span class="p">,</span>
+        <span class="n">api_key</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">weather_api_key</span><span class="p">,</span>
+        <span class="n">timeout_seconds</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">timeout</span><span class="o">.</span><span class="n">as_int</span><span class="p">(),</span>
+    <span class="p">)</span>
+
+
+<span class="nd">@app</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;/forecast&quot;</span><span class="p">)</span>
+<span class="nd">@inject</span>
+<span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">forecast</span><span class="p">(</span>
+    <span class="n">service</span><span class="p">:</span> <span class="n">Annotated</span><span class="p">[</span><span class="n">WeatherService</span><span class="p">,</span> <span class="n">Depends</span><span class="p">(</span><span class="n">Provide</span><span class="p">[</span><span class="n">Container</span><span class="o">.</span><span class="n">weather</span><span class="p">])],</span>
+<span class="p">):</span> <span class="o">...</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Annotated</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">wireup</span><span class="w"> </span><span class="kn">import</span> <span class="n">Inject</span><span class="p">,</span> <span class="n">Injected</span><span class="p">,</span> <span class="n">injectable</span>
+
+
+<span class="nd">@injectable</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">WeatherService</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">api_key</span><span class="p">:</span> <span class="n">Annotated</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Inject</span><span class="p">(</span><span class="n">config</span><span class="o">=</span><span class="s2">&quot;weather_api_key&quot;</span><span class="p">)],</span>
+        <span class="n">timeout_seconds</span><span class="p">:</span> <span class="n">Annotated</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">Inject</span><span class="p">(</span><span class="n">config</span><span class="o">=</span><span class="s2">&quot;timeout&quot;</span><span class="p">)],</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">api_key</span> <span class="o">=</span> <span class="n">api_key</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">timeout_seconds</span> <span class="o">=</span> <span class="n">timeout_seconds</span>
+
+
+<span class="nd">@app</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;/forecast&quot;</span><span class="p">)</span>
+<span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">forecast</span><span class="p">(</span><span class="n">service</span><span class="p">:</span> <span class="n">Injected</span><span class="p">[</span><span class="n">WeatherService</span><span class="p">]):</span> <span class="o">...</span>
+</code></pre></div>
+</div>
+</div>
+</div>
+<p>Wireup config values are passed explicitly when creating the container:</p>
+<div class="highlight"><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">wireup</span>
+
+<span class="n">container</span> <span class="o">=</span> <span class="n">wireup</span><span class="o">.</span><span class="n">create_async_container</span><span class="p">(</span>
+    <span class="n">injectables</span><span class="o">=</span><span class="p">[</span><span class="n">WeatherService</span><span class="p">],</span>
+    <span class="n">config</span><span class="o">=</span><span class="p">{</span>
+        <span class="s2">&quot;weather_api_key&quot;</span><span class="p">:</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s2">&quot;WEATHER_API_KEY&quot;</span><span class="p">],</span>
+        <span class="s2">&quot;timeout&quot;</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;WEATHER_TIMEOUT&quot;</span><span class="p">,</span> <span class="s2">&quot;5&quot;</span><span class="p">)),</span>
+    <span class="p">},</span>
+<span class="p">)</span>
+</code></pre></div>
+<h2 id="injection-outside-fastapi">Injection Outside FastAPI<a class="headerlink" href="#injection-outside-fastapi" title="Permanent link">&para;</a></h2>
+<p>When an integration exists (FastAPI, Flask, Django, Starlette, AIOHTTP, Click, Typer), prefer that integration's
+automatic injection model first. Use <code>@inject_from_container</code> as an advanced pattern for scripts, jobs, custom runtime
+hooks, or frameworks without a dedicated Wireup integration.</p>
+<div class="tabbed-set tabbed-alternate" data-tabs="8:2"><input checked="checked" id="dependency-injector_7" name="__tabbed_8" type="radio" /><input id="wireup_7" name="__tabbed_8" type="radio" /><div class="tabbed-labels"><label for="dependency-injector_7">Dependency Injector</label><label for="wireup_7">Wireup</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Annotated</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">dependency_injector.wiring</span><span class="w"> </span><span class="kn">import</span> <span class="n">Provide</span><span class="p">,</span> <span class="n">inject</span>
+
+
+<span class="nd">@inject</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">run_job</span><span class="p">(</span>
+    <span class="n">service</span><span class="p">:</span> <span class="n">Annotated</span><span class="p">[</span><span class="n">UserService</span><span class="p">,</span> <span class="n">Provide</span><span class="p">[</span><span class="n">Container</span><span class="o">.</span><span class="n">user_service</span><span class="p">]],</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="n">service</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">wireup</span><span class="w"> </span><span class="kn">import</span> <span class="n">Injected</span><span class="p">,</span> <span class="n">inject_from_container</span>
+
+
+<span class="nd">@inject_from_container</span><span class="p">(</span><span class="n">container</span><span class="p">)</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">run_job</span><span class="p">(</span><span class="n">service</span><span class="p">:</span> <span class="n">Injected</span><span class="p">[</span><span class="n">UserService</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="n">service</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
+</code></pre></div>
+</div>
+</div>
+</div>
+<h2 id="testing-and-overrides">Testing and Overrides<a class="headerlink" href="#testing-and-overrides" title="Permanent link">&para;</a></h2>
+<p>Both libraries support context-manager based overrides in tests.</p>
+<div class="tabbed-set tabbed-alternate" data-tabs="9:2"><input checked="checked" id="dependency-injector_8" name="__tabbed_9" type="radio" /><input id="wireup_8" name="__tabbed_9" type="radio" /><div class="tabbed-labels"><label for="dependency-injector_8">Dependency Injector</label><label for="wireup_8">Wireup</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">unittest.mock</span><span class="w"> </span><span class="kn">import</span> <span class="n">MagicMock</span>
+
+<span class="n">service_mock</span> <span class="o">=</span> <span class="n">MagicMock</span><span class="p">(</span><span class="n">spec</span><span class="o">=</span><span class="n">UserService</span><span class="p">)</span>
+
+<span class="k">with</span> <span class="n">container</span><span class="o">.</span><span class="n">user_service</span><span class="o">.</span><span class="n">override</span><span class="p">(</span><span class="n">service_mock</span><span class="p">):</span>
+    <span class="k">assert</span> <span class="n">container</span><span class="o">.</span><span class="n">user_service</span><span class="p">()</span> <span class="ow">is</span> <span class="n">service_mock</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">unittest.mock</span><span class="w"> </span><span class="kn">import</span> <span class="n">MagicMock</span>
+
+<span class="n">service_mock</span> <span class="o">=</span> <span class="n">MagicMock</span><span class="p">(</span><span class="n">spec</span><span class="o">=</span><span class="n">UserService</span><span class="p">)</span>
+
+<span class="k">with</span> <span class="n">container</span><span class="o">.</span><span class="n">override</span><span class="o">.</span><span class="n">injectable</span><span class="p">(</span><span class="n">UserService</span><span class="p">,</span> <span class="n">new</span><span class="o">=</span><span class="n">service_mock</span><span class="p">):</span>
+    <span class="k">assert</span> <span class="n">container</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">UserService</span><span class="p">)</span> <span class="ow">is</span> <span class="n">service_mock</span>
+<span class="c1"># UserService is back to normal after the block.</span>
+</code></pre></div>
+</div>
+</div>
+</div>
+<h2 id="suggested-migration-order">Suggested Migration Order<a class="headerlink" href="#suggested-migration-order" title="Permanent link">&para;</a></h2>
+<ol>
+<li>Keep your framework/runtime setup; migrate one provider group at a time.</li>
+<li>Start with singleton/factory providers that have no complex cleanup.</li>
+<li>Migrate resource providers (<code>providers.Resource</code>) to generator factories.</li>
+<li>Move FastAPI route signatures from <code>Provide[...]</code>/<code>Depends(...)</code> to <code>Injected[T]</code>.</li>
+<li>Remove old container wiring after all consumers are migrated.</li>
+</ol>
+
+
+
+
+
+
+
+  
+  
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["search.highlight", "navigation.sections", "content.code.annotate", "navigation.instant", "navigation.tabs", "navigation.indexes"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+    
+  </body>
+</html>

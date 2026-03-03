@@ -1,0 +1,4866 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+      
+        <link rel="prev" href="../getting_started/">
+      
+      
+        <link rel="next" href="../container/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.1">
+    
+    
+      
+        <title>Benchmarks - Wireup</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.484c7ddc.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CJetBrains+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"JetBrains Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/_mkdocstrings.css">
+    
+      <link rel="stylesheet" href="../stylesheets/extra.css">
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#benchmark-design-stress-test" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+        <aside class="md-banner">
+          <div class="md-banner__inner md-grid md-typeset">
+            
+            
+  <div class="announce-right">
+    <a class="announce-star-link" href="https://github.com/maldoinc/wireup" target="_blank" rel="noopener">
+      ⭐ Enjoying Wireup? Star it on GitHub
+    </a>
+  </div>
+
+          </div>
+          
+        </aside>
+      
+    </div>
+    
+      <div data-md-color-scheme="default" data-md-component="outdated" hidden>
+        
+          <aside class="md-banner md-banner--warning">
+            <div class="md-banner__inner md-grid md-typeset">
+              
+  You're not viewing the latest version.
+  <a href="../..">
+
+    <strong>Click here to go to latest.</strong>
+  </a>
+
+            </div>
+            <script>var el=document.querySelector("[data-md-component=outdated]"),base=new URL(".."),outdated=__md_get("__outdated",sessionStorage,base);!0===outdated&&el&&(el.hidden=!1)</script>
+          </aside>
+        
+      </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="Wireup" class="md-header__button md-logo" aria-label="Wireup" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M24 14.475a7.395 7.395 0 0 1-7.38 7.41h-.016a7.3 7.3 0 0 1-4.5-1.605A7.498 7.498 0 0 1 0 14.475V2.82h1.41v11.655a6 6 0 0 0 9.585 4.815 7.38 7.38 0 0 1-1.815-4.814v-9.54a2.82 2.82 0 0 1 5.64 0v9.54a7.37 7.37 0 0 1-1.77 4.814 5.997 5.997 0 0 0 8.383-1.304 6 6 0 0 0 1.157-3.511V2.82H24zm-10.59-9.54a1.41 1.41 0 0 0-2.82 0v9.54A6 6 0 0 0 12 18.33a6 6 0 0 0 1.41-3.855z"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Wireup
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Benchmarks
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme)" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7a5 5 0 0 0-5 5 5 5 0 0 0 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1M8 13h8v-2H8zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4a5 5 0 0 0 5-5 5 5 0 0 0-5-5"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_2" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M17 7H7a5 5 0 0 0-5 5 5 5 0 0 0 5 5h10a5 5 0 0 0 5-5 5 5 0 0 0-5-5m0 8a3 3 0 0 1-3-3 3 3 0 0 1 3-3 3 3 0 0 1 3 3 3 3 0 0 1-3 3"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="black" data-md-color-accent="indigo"  aria-label="Switch to system preference"  type="radio" name="__palette" id="__palette_2">
+    
+      <label class="md-header__button md-icon" title="Switch to system preference" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M17 7H7a5 5 0 0 0-5 5 5 5 0 0 0 5 5h10a5 5 0 0 0 5-5 5 5 0 0 0-5-5M7 15a3 3 0 0 1-3-3 3 3 0 0 1 3-3 3 3 0 0 1 3 3 3 3 0 0 1-3 3"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/maldoinc/wireup" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    maldoinc/wireup
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+            
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+    
+  
+  
+    
+    
+      
+  
+  
+  
+    
+  
+  
+    
+    
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href=".." class="md-tabs__link">
+          
+  
+  
+    
+  
+  📚 Documentation
+
+        </a>
+      </li>
+    
+  
+
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../integrations/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Integrations
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../migrate_to_wireup/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Migrate to Wireup
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../class/wireup/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  API Reference
+
+        </a>
+      </li>
+    
+  
+
+      
+    </ul>
+  </div>
+</nav>
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+                
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="Wireup" class="md-nav__button md-logo" aria-label="Wireup" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M24 14.475a7.395 7.395 0 0 1-7.38 7.41h-.016a7.3 7.3 0 0 1-4.5-1.605A7.498 7.498 0 0 1 0 14.475V2.82h1.41v11.655a6 6 0 0 0 9.585 4.815 7.38 7.38 0 0 1-1.815-4.814v-9.54a2.82 2.82 0 0 1 5.64 0v9.54a7.37 7.37 0 0 1-1.77 4.814 5.997 5.997 0 0 0 8.383-1.304 6 6 0 0 0 1.157-3.511V2.82H24zm-10.59-9.54a1.41 1.41 0 0 0-2.82 0v9.54A6 6 0 0 0 12 18.33a6 6 0 0 0 1.41-3.855z"/></svg>
+
+    </a>
+    Wireup
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/maldoinc/wireup" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    maldoinc/wireup
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_1" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_1" id="__nav_1_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    📚 Documentation
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_1_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_1">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    📚 Documentation
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+          
+          
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_1_1" checked>
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href=".." class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Introduction
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_1_1" id="__nav_1_1_label" tabindex="">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_1_1_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_1_1">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Introduction
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../getting_started/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Getting Started
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Benchmarks
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Benchmarks
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#benchmark-design-stress-test" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Benchmark Design &amp; Stress Test
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#benchmark-setup" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Benchmark Setup
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Benchmark Setup">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#metrics" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Metrics
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#hardware-environment" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Hardware Environment
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#execution-details" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Execution Details
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#feature-completeness" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Feature Completeness
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#per-request-injection-performance" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Per-Request Injection Performance
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Per-Request Injection Performance">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#stability-across-runs" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Stability (Across Runs)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#time-to-complete-all-runs-lower-is-better" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Time to Complete All Runs (Lower Is Better)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#singleton-performance" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Singleton Performance
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Singleton Performance">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#stability-across-runs_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Stability (Across Runs)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#time-to-complete-all-runs-lower-is-better_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Time to Complete All Runs (Lower Is Better)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#reproducibility" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Reproducibility
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#source-code" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Source Code
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+          
+          
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_1_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_1_2" id="__nav_1_2_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Core Concepts
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_1_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_1_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Core Concepts
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../container/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Container
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../injectables/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Injectables
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../configuration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Configuration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+          
+          
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_1_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_1_3" id="__nav_1_3_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Advanced Features
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_1_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_1_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Advanced Features
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../lifetimes_and_scopes/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Lifetimes & Scopes
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../factories/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Factories
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../resources/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Resource Management
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../interfaces/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Interfaces
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../function_injection/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Function Injection
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+          
+          
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_1_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_1_4" id="__nav_1_4_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Guides
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_1_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_1_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Guides
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../testing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Testing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../conditional_registration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Conditional Registration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../upgrading/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Upgrading
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../versioning/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Versioning
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../integrations/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Integrations
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_2" id="__nav_2_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Integrations
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2_2" id="__nav_2_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Web Frameworks
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Web Frameworks
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_2_1" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../integrations/django/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Django
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_2_2_1" id="__nav_2_2_1_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_2_2_1_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2_2_1">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Django
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../integrations/django/setup/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Setup and Installation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../integrations/django/view_injection/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Inject in Views
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../integrations/django/request_lifecycle_patterns/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Request Lifecycle Patterns
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../integrations/django/app_injection/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    App-Level Injection
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../integrations/django/testing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Django Testing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../integrations/django/troubleshooting/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Troubleshooting
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_2_2" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../integrations/fastapi/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FastAPI
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_2_2_2" id="__nav_2_2_2_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_2_2_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2_2_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    FastAPI
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../integrations/fastapi/inject_in_routes/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Inject in Routes
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../integrations/fastapi/context_in_services/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Request and WebSocket Context in Services
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../integrations/fastapi/class_based_handlers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Class Based Handlers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../integrations/fastapi/request_lifecycle_patterns/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Request Lifecycle Patterns
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../integrations/fastapi/background_tasks/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Background Tasks
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../integrations/fastapi/testing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FastAPI Testing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../integrations/fastapi/troubleshooting/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Troubleshooting
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_2_3" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../integrations/flask/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Flask
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_2_2_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2_2_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Flask
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_2_4" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../integrations/fastmcp/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FastMCP
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_2_2_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2_2_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    FastMCP
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_2_5" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../integrations/aiohttp/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    AIOHTTP
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_2_2_5" id="__nav_2_2_5_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_2_2_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2_2_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    AIOHTTP
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../integrations/aiohttp/class_based_handlers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Class-Based Handlers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_2_6" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../integrations/starlette/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Starlette
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_2_2_6" id="__nav_2_2_6_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_2_2_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2_2_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Starlette
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../integrations/starlette/background_tasks/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Background Tasks
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_2_7" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../integrations/strawberry/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Strawberry
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_2_2_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2_2_7">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Strawberry
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_2_3" id="__nav_2_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Generic ASGI
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Generic ASGI
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../integrations/asgi/generic_asgi/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ASGI Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_2_4" id="__nav_2_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Command Line Interfaces
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Command Line Interfaces
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_4_1" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../integrations/click/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Click
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_2_4_1_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2_4_1">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Click
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_4_2" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../integrations/typer/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Typer
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_2_4_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2_4_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Typer
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_2_5" id="__nav_2_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Task Queues
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Task Queues
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_5_1" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../integrations/celery/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Celery
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_2_5_1_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2_5_1">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Celery
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../migrate_to_wireup/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Migrate to Wireup
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_3" id="__nav_3_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Migrate to Wireup
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../migrate_to_wireup/fastapi_depends/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FastAPI (from Depends)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../migrate_to_wireup/dependency_injector/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dependency Injector
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    API Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../class/wireup/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    wireup
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../class/override_manager/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    OverrideManager
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../class/config_store/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ConfigStore
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4_4" id="__nav_4_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Integrations
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_4_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Integrations
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../class/django_integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Django
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../class/fastapi_integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FastAPI
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../class/flask_integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Flask
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../class/fastmcp_integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FastMCP
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../class/aiohttp_integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    AIOHTTP
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../class/asgi_integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ASGI
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../class/starlette_integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Starlette
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../class/celery_integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Celery
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../class/click_integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Click
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../class/typer_integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Typer
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+                
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" hidden>
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#benchmark-design-stress-test" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Benchmark Design &amp; Stress Test
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#benchmark-setup" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Benchmark Setup
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Benchmark Setup">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#metrics" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Metrics
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#hardware-environment" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Hardware Environment
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#execution-details" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Execution Details
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#feature-completeness" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Feature Completeness
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#per-request-injection-performance" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Per-Request Injection Performance
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Per-Request Injection Performance">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#stability-across-runs" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Stability (Across Runs)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#time-to-complete-all-runs-lower-is-better" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Time to Complete All Runs (Lower Is Better)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#singleton-performance" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Singleton Performance
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Singleton Performance">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#stability-across-runs_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Stability (Across Runs)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#time-to-complete-all-runs-lower-is-better_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Time to Complete All Runs (Lower Is Better)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#reproducibility" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Reproducibility
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#source-code" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Source Code
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+  
+
+
+
+  
+  
+
+
+  <h1>Benchmarks</h1>
+
+<div class="admonition abstract">
+<p class="admonition-title">A note on benchmarks</p>
+<p>Measuring dependency injection overhead in isolation often produces performance numbers 
+that may not fully reflect real-world patterns. For most practical applications,
+the DI container will rarely be your performance bottleneck.
+Database queries, network calls, and business logic usually dominate response times.</p>
+<p>That said, optimizations compound: a faster DI layer, faster serialization, faster validation, 
+etc. all add up to meaningful improvements.</p>
+<p>While these results aim to be as objective as possible, Wireup is actively optimized for performance,
+so I expect it to perform well in this benchmark.
+Even so, I would not pick a DI container solely from performance benchmarks, but if you're happy with Wireup's
+features and want to see how it stacks up against the field, here are the results.</p>
+</div>
+<h2 id="benchmark-design-stress-test">Benchmark Design &amp; Stress Test<a class="headerlink" href="#benchmark-design-stress-test" title="Permanent link">&para;</a></h2>
+<p>This benchmark uses an artificial workload to measure the overhead of the dependency injection container. By using empty
+services, the test focuses on how fast the library can resolve and inject dependencies without the results being hidden
+by application logic.</p>
+<p>Testing is done within a FastAPI + Uvicorn environment to measure performance in a realistic web-based environment
+Notably, this also allows for the inclusion of <code>fastapi.Depends</code> in the comparison, 
+as it is the most popular choice by virtue of being the FastAPI default. </p>
+<p>This setup tests also the overall dependency injection package of each library which includes container resolution, scoping,
+injecting into functions/route handlers as well as framework integration rather than a microbenchmark where 
+you repeatedly resolve dependencies from the raw container instance in a tight loop
+This benchmark intentionally uses non-trivial singleton/scoped graphs to stress test the containers.</p>
+<p>The workload uses two separate, independent graphs:
+the singleton graph (<code>Settings -&gt; A -&gt; B</code>) and the scoped graph (<code>C -&gt; I</code>) where each service depends on multiple others.
+H is a context manager, I is an async context manager.</p>
+<p>This graph is intentionally non-trivial: large enough to emulate realistic container behavior, but still representative of practical applications (rather than synthetic 100-node chains). The exact shape is less important than the workload characteristics: multiple dependencies and lifecycle-managed resources, which stress container resolution, scoping, and teardown more than a simple linear graph.</p>
+<details>
+<summary>Click to view the graphs</summary>
+<p><strong>Singleton graph</strong></p>
+<pre class="mermaid"><code>graph LR
+    Settings[Settings] --&gt; A[Service A]
+    A --&gt; B[Service B]</code></pre>
+<p><strong>Per-Request Injected graph</strong></p>
+<pre class="mermaid"><code>graph TD
+    C --&gt; D
+    C --&gt; E
+    D --&gt; E
+    C --&gt; F
+    D --&gt; F
+    E --&gt; F
+    C --&gt; G
+    D --&gt; G
+    E --&gt; G
+    F --&gt; G
+    C --&gt; H
+    D --&gt; H
+    E --&gt; I
+    F --&gt; I</code></pre>
+</details>
+<div class="admonition info">
+<p class="admonition-title">For library authors</p>
+<p>If you are benchmarking Wireup against your library, <code>container.get(...)</code> is not Wireup's canonical
+entry point. It is primarily intended as an advanced feature for users who want to access the container directly in edge cases, not as the main way to resolve dependencies.</p>
+<p>For representative results, benchmark function-based injection via <code>inject_from_container(...)</code>, which reflects
+Wireup's recommended dependency-injection usage pattern rather than service-locator style access.</p>
+</div>
+<p>Summary comparisons below always use Wireup (not Wireup Class-Based) as the reference to avoid cherry-picking the best-performing variant.</p>
+<h2 id="benchmark-setup">Benchmark Setup<a class="headerlink" href="#benchmark-setup" title="Permanent link">&para;</a></h2>
+<p>The benchmarks were run on a local machine with <!-- meta:iterations -->50<!-- /meta:iterations --> rounds of
+    <!-- meta:requests -->100,000<!-- /meta:requests --> requests per round per library. The tables and bar charts show the result of the
+<strong>Representative Median Run</strong>:</p>
+<ol>
+<li>All rounds are sorted by <strong>RPS</strong>.</li>
+<li>The median round is selected.</li>
+<li><strong>RPS</strong> and <strong>Latency</strong> are taken from this specific run to ensure consistency.</li>
+<li><strong>RSS (Memory)</strong> shows the <em>peak</em> usage observed across <strong>all</strong> rounds.</li>
+</ol>
+<p>For each run, the server is started, a liveness probe must pass, warmup traffic is sent, and only then the measured run begins.</p>
+<p>Actual requests per second (RPS) will change based on your hardware. The most important metric is how the libraries
+perform relative to each other.</p>
+<p><strong>Globals</strong> represents the theoretical maximum performance. In this setup, services are accessed directly from the
+global scope or manually instantiated within the route handler, bypassing DI containers entirely.
+This row exists purely to establish an upper bound on DI overhead, not as an endorsement of global state or manual wiring.</p>
+<p><strong>Wireup Class-Based</strong> represents the performance of Wireup when using the
+<a href="../integrations/fastapi/class_based_handlers/">Class-Based Handlers</a> for FastAPI.</p>
+<h3 id="metrics">Metrics<a class="headerlink" href="#metrics" title="Permanent link">&para;</a></h3>
+<p>The benchmark measures the following:</p>
+<ul>
+<li><strong>RPS (Requests Per Second)</strong>: The number of requests the server can handle in one second. <strong>Higher is better.</strong></li>
+<li><strong>Latency (p50, p95, p99)</strong>: The time it takes for a request to be completed, measured in milliseconds. <strong>Lower is
+    better.</strong><ul>
+<li><strong>p50 (Median)</strong>: Half of the requests are faster than this.</li>
+<li><strong>p95</strong>: 95% of requests are faster than this.</li>
+<li><strong>p99</strong>: 99% of requests are faster than this.</li>
+</ul>
+</li>
+<li><strong>σ (Standard Deviation)</strong>: Measures the stability of response times (Jitter). A lower number means more consistent
+    performance with fewer outliers. <strong>Lower is better.</strong></li>
+<li><strong>RSS Memory Peak (MB)</strong>: The highest post-iteration RSS sample observed across runs. <strong>Lower is better.</strong>
+    This includes the full server process footprint (Uvicorn + FastAPI app + framework runtime), not only service objects.</li>
+</ul>
+<h3 id="hardware-environment">Hardware Environment<a class="headerlink" href="#hardware-environment" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>CPU</strong>: 12th Gen Intel(R) Core(TM) i7-12700K</li>
+<li><strong>Memory</strong>: 32 GB RAM</li>
+<li><strong>OS</strong>: Fedora Linux 43 (Workstation Edition); Kernel 6.18.13-200.fc43.x86_64</li>
+</ul>
+<h3 id="execution-details">Execution Details<a class="headerlink" href="#execution-details" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Python</strong>: <!-- meta:python_version -->v3.14.3<!-- /meta:python_version --></li>
+<li><strong>Server</strong>: Uvicorn with 1 worker process</li>
+<li><strong>Event Loop</strong>: <code>uvloop</code></li>
+<li><strong>Load generator</strong>: <a href="https://github.com/rakyll/hey"><code>hey</code></a> v0.1.5 (must be installed and available on <code>PATH</code>)</li>
+<li><strong>CPU pinning</strong>: The benchmark runner pins the load generator to CPU 1 and the server process to CPU 2, both mapped to performance cores on this machine.
+    For reproducibility on hybrid CPUs, pin benchmark processes to performance cores (P-cores), not efficiency cores (E-cores).</li>
+<li><strong>Startup liveness probe</strong>: Each server process is polled on <code>/healthz</code> before warmup and measurement begin.</li>
+<li><strong>Load Parameters</strong>: <!-- meta:concurrency -->50<!-- /meta:concurrency --> concurrent connections</li>
+<li><strong>Warmup</strong>: <!-- meta:warmup_requests -->2,000<!-- /meta:warmup_requests --> warmup requests per run, using the same concurrency as measured runs.</li>
+<li><strong>Verification</strong>: All endpoints are verified for correctness (status code 200 plus endpoint-level assertions on
+    dependency values and scoping behavior).</li>
+<li><strong>Workload assertions</strong>: When <code>BENCH_ASSERT=1</code>, creation/lifecycle counters are checked against the expected
+    workload shape and mismatches are reported as observed.</li>
+</ul>
+<details>
+<summary>See exact package versions used</summary>
+<!-- versions-start -->
+<table>
+<thead>
+<tr>
+<th style="text-align: left;">Package</th>
+<th style="text-align: left;">Version</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;">wireup</td>
+<td style="text-align: left;">local@6f38e1d</td>
+</tr>
+<tr>
+<td style="text-align: left;">fastapi</td>
+<td style="text-align: left;">0.124.4</td>
+</tr>
+<tr>
+<td style="text-align: left;">uvicorn[standard]</td>
+<td style="text-align: left;">0.40.0</td>
+</tr>
+<tr>
+<td style="text-align: left;">aioinject</td>
+<td style="text-align: left;">1.10.2</td>
+</tr>
+<tr>
+<td style="text-align: left;">dishka</td>
+<td style="text-align: left;">1.7.2</td>
+</tr>
+<tr>
+<td style="text-align: left;">dependency-injector</td>
+<td style="text-align: left;">4.48.3</td>
+</tr>
+<tr>
+<td style="text-align: left;">lagom</td>
+<td style="text-align: left;">2.7.7</td>
+</tr>
+<tr>
+<td style="text-align: left;">injector</td>
+<td style="text-align: left;">0.24.0</td>
+</tr>
+<tr>
+<td style="text-align: left;">fastapi-injector</td>
+<td style="text-align: left;">0.9.0</td>
+</tr>
+<tr>
+<td style="text-align: left;">svcs</td>
+<td style="text-align: left;">25.1.0</td>
+</tr>
+<tr>
+<td style="text-align: left;">that-depends</td>
+<td style="text-align: left;">3.9.1</td>
+</tr>
+<tr>
+<td style="text-align: left;">diwire</td>
+<td style="text-align: left;">1.3.0</td>
+</tr>
+</tbody>
+</table>
+<!-- versions-end -->
+</details>
+<h2 id="feature-completeness">Feature Completeness<a class="headerlink" href="#feature-completeness" title="Permanent link">&para;</a></h2>
+<p>Not all libraries support the same features. Some required test simplifications and are marked with a <code>†</code> in the tables and charts below.
+In general, these simplifications tend to favor the affected libraries because they skip work that fully modeled implementations still perform.</p>
+<ul>
+<li>
+<p><strong>FastAPI</strong>: FastAPI DI is request-scoped by default; singletons are not a first-class DI concept. This benchmark uses
+  the documented <code>Depends</code> + <code>@lru_cache</code> pattern for singletons, which is the recommended approach in the FastAPI documentation. See:
+  <a href="https://fastapi.tiangolo.com/advanced/settings/#creating-the-settings-only-once-with-lru-cache">Creating the settings only once with lru_cache</a>.</p>
+</li>
+<li>
+<p><strong>Injector</strong>: Uses <code>fastapi-injector</code> for FastAPI integration. The library does not support async dependencies or
+  request-scoped context managers, so services H and I are implemented as plain request-scoped objects (no enter/exit).</p>
+</li>
+<li>
+<p><strong>Lagom</strong>: Does not support async context managers. Service I (which should be an async iterator in the specification)
+    is implemented as a sync iterator.</p>
+</li>
+<li>
+<p><strong>Dependency Injector</strong>: The resource lifecycle for H and I is not modeled per request. They are provided as
+  context-local singletons without entering/exiting context managers.</p>
+</li>
+</ul>
+<h2 id="per-request-injection-performance">Per-Request Injection Performance<a class="headerlink" href="#per-request-injection-performance" title="Permanent link">&para;</a></h2>
+<p>Each request to <code>/scoped</code> creates new instances only for scoped services (C through I), without resolving any singleton services.
+This test emphasizes container lifecycle and graph traversal performance, as the container must create and tear down
+a dense dependency graph on <strong>every</strong> request.</p>
+<!-- scoped-summary-start -->
+<p>In this benchmark, <strong>Wireup Class-Based</strong> operates at <!-- meta:scoped_wireup_cbr_pct --><strong>99.38%</strong><!-- /meta:scoped_wireup_cbr_pct --> of manual wiring throughput, and <strong>Wireup</strong> at <!-- meta:scoped_wireup_pct --><strong>99.87%</strong><!-- /meta:scoped_wireup_pct -->, placing both near the manual-wiring upper bound in this workload.
+For context, this corresponds to roughly <!-- meta:scoped_wireup_vs_fastapi_x --><strong>2.79x</strong><!-- /meta:scoped_wireup_vs_fastapi_x --> the throughput of <strong>FastAPI Depends</strong> and <!-- meta:scoped_wireup_vs_next_best_x --><strong>1.29x</strong><!-- /meta:scoped_wireup_vs_next_best_x --> the next closest library in this benchmark (<strong><!-- meta:scoped_next_best_name -->Dishka<!-- /meta:scoped_next_best_name --></strong>).</p>
+<!-- scoped-summary-end -->
+
+<p><img alt="Scoped Performance" src="../img/benchmarks_scoped_light.svg#only-light" />
+<img alt="Scoped Performance" src="../img/benchmarks_scoped_dark.svg#only-dark" /></p>
+<!-- scoped-start -->
+<table>
+<thead>
+<tr>
+<th style="text-align: left;">Project</th>
+<th style="text-align: left;">RPS (Median Run)</th>
+<th style="text-align: left;">P50 (ms)</th>
+<th style="text-align: left;">P95 (ms)</th>
+<th style="text-align: left;">P99 (ms)</th>
+<th style="text-align: left;">σ (ms)</th>
+<th style="text-align: left;">Mem Peak</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><strong>Manual Wiring (No DI)</strong></td>
+<td style="text-align: left;">11,044 <span class="bench-diff">(100.00%)</span></td>
+<td style="text-align: left;">4.20</td>
+<td style="text-align: left;">4.50</td>
+<td style="text-align: left;">4.70</td>
+<td style="text-align: left;">0.70</td>
+<td style="text-align: left;">52.93 MB</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Wireup</strong></td>
+<td style="text-align: left;">11,030 <span class="bench-diff">(99.87%)</span></td>
+<td style="text-align: left;">4.20</td>
+<td style="text-align: left;">4.50</td>
+<td style="text-align: left;">4.70</td>
+<td style="text-align: left;">0.83</td>
+<td style="text-align: left;">53.69 MB</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Wireup Class-Based</strong></td>
+<td style="text-align: left;">10,976 <span class="bench-diff">(99.38%)</span></td>
+<td style="text-align: left;">4.30</td>
+<td style="text-align: left;">4.50</td>
+<td style="text-align: left;">4.70</td>
+<td style="text-align: left;">0.70</td>
+<td style="text-align: left;">53.80 MB</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Dishka</strong></td>
+<td style="text-align: left;">8,538 <span class="bench-diff">(77.30%)</span></td>
+<td style="text-align: left;">5.30</td>
+<td style="text-align: left;">6.30</td>
+<td style="text-align: left;">9.40</td>
+<td style="text-align: left;">1.30</td>
+<td style="text-align: left;">103.23 MB</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Svcs</strong></td>
+<td style="text-align: left;">8,394 <span class="bench-diff">(76.00%)</span></td>
+<td style="text-align: left;">5.70</td>
+<td style="text-align: left;">6.00</td>
+<td style="text-align: left;">6.20</td>
+<td style="text-align: left;">0.93</td>
+<td style="text-align: left;">67.09 MB</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Aioinject</strong></td>
+<td style="text-align: left;">8,177 <span class="bench-diff">(74.04%)</span></td>
+<td style="text-align: left;">5.60</td>
+<td style="text-align: left;">6.60</td>
+<td style="text-align: left;">10.40</td>
+<td style="text-align: left;">1.31</td>
+<td style="text-align: left;">100.52 MB</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>diwire</strong></td>
+<td style="text-align: left;">7,390 <span class="bench-diff">(66.91%)</span></td>
+<td style="text-align: left;">6.50</td>
+<td style="text-align: left;">6.90</td>
+<td style="text-align: left;">7.10</td>
+<td style="text-align: left;">1.07</td>
+<td style="text-align: left;">58.22 MB</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>That Depends</strong></td>
+<td style="text-align: left;">4,892 <span class="bench-diff">(44.30%)</span></td>
+<td style="text-align: left;">9.80</td>
+<td style="text-align: left;">10.40</td>
+<td style="text-align: left;">10.60</td>
+<td style="text-align: left;">0.59</td>
+<td style="text-align: left;">53.82 MB</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>FastAPI Depends</strong></td>
+<td style="text-align: left;">3,950 <span class="bench-diff">(35.76%)</span></td>
+<td style="text-align: left;">12.30</td>
+<td style="text-align: left;">13.80</td>
+<td style="text-align: left;">14.10</td>
+<td style="text-align: left;">1.39</td>
+<td style="text-align: left;">57.68 MB</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Injector †</strong></td>
+<td style="text-align: left;">3,192 <span class="bench-diff">(28.90%)</span></td>
+<td style="text-align: left;">15.20</td>
+<td style="text-align: left;">15.40</td>
+<td style="text-align: left;">16.10</td>
+<td style="text-align: left;">0.58</td>
+<td style="text-align: left;">53.52 MB</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Dependency Injector †</strong></td>
+<td style="text-align: left;">2,576 <span class="bench-diff">(23.33%)</span></td>
+<td style="text-align: left;">19.10</td>
+<td style="text-align: left;">19.70</td>
+<td style="text-align: left;">20.10</td>
+<td style="text-align: left;">0.75</td>
+<td style="text-align: left;">60.55 MB</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Lagom †</strong></td>
+<td style="text-align: left;">898 <span class="bench-diff">(8.13%)</span></td>
+<td style="text-align: left;">55.30</td>
+<td style="text-align: left;">57.20</td>
+<td style="text-align: left;">58.30</td>
+<td style="text-align: left;">1.63</td>
+<td style="text-align: left;">1.32 GB</td>
+</tr>
+</tbody>
+</table>
+<h4 id="stability-across-runs">Stability (Across Runs)<a class="headerlink" href="#stability-across-runs" title="Permanent link">&para;</a></h4>
+<p>These values summarize all runs for each project in this test. <strong>Median P50/P95/P99</strong> are the medians of those per-run latency percentiles, while <strong>Within ±3%</strong> shows the share of runs whose RPS stayed within 3% of that project's median-run RPS.
+Look for <strong>smaller Δ RPS</strong>, <strong>higher Within ±3%</strong>, and <strong>lower median tail latencies (P95/P99)</strong> for the most consistent behavior.</p>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;">Project</th>
+<th style="text-align: left;">Min RPS</th>
+<th style="text-align: left;">Max RPS</th>
+<th style="text-align: left;">Δ RPS</th>
+<th style="text-align: left;">Within ±3%</th>
+<th style="text-align: left;">Med P50 (ms)</th>
+<th style="text-align: left;">Med P95 (ms)</th>
+<th style="text-align: left;">Med P99 (ms)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><strong>Manual Wiring (No DI)</strong></td>
+<td style="text-align: left;">10,910</td>
+<td style="text-align: left;">11,112</td>
+<td style="text-align: left;">1.84%</td>
+<td style="text-align: left;">100.0%</td>
+<td style="text-align: left;">4.20</td>
+<td style="text-align: left;">4.50</td>
+<td style="text-align: left;">4.70</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Wireup</strong></td>
+<td style="text-align: left;">10,917</td>
+<td style="text-align: left;">11,108</td>
+<td style="text-align: left;">1.73%</td>
+<td style="text-align: left;">100.0%</td>
+<td style="text-align: left;">4.20</td>
+<td style="text-align: left;">4.50</td>
+<td style="text-align: left;">4.70</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Wireup Class-Based</strong></td>
+<td style="text-align: left;">10,838</td>
+<td style="text-align: left;">11,076</td>
+<td style="text-align: left;">2.17%</td>
+<td style="text-align: left;">100.0%</td>
+<td style="text-align: left;">4.20</td>
+<td style="text-align: left;">4.50</td>
+<td style="text-align: left;">4.70</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Dishka</strong></td>
+<td style="text-align: left;">8,466</td>
+<td style="text-align: left;">8,639</td>
+<td style="text-align: left;">2.02%</td>
+<td style="text-align: left;">100.0%</td>
+<td style="text-align: left;">5.30</td>
+<td style="text-align: left;">6.30</td>
+<td style="text-align: left;">9.40</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Svcs</strong></td>
+<td style="text-align: left;">8,268</td>
+<td style="text-align: left;">8,513</td>
+<td style="text-align: left;">2.91%</td>
+<td style="text-align: left;">100.0%</td>
+<td style="text-align: left;">5.70</td>
+<td style="text-align: left;">6.00</td>
+<td style="text-align: left;">6.20</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Aioinject</strong></td>
+<td style="text-align: left;">8,102</td>
+<td style="text-align: left;">8,283</td>
+<td style="text-align: left;">2.21%</td>
+<td style="text-align: left;">100.0%</td>
+<td style="text-align: left;">5.60</td>
+<td style="text-align: left;">6.60</td>
+<td style="text-align: left;">10.10</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>diwire</strong></td>
+<td style="text-align: left;">7,257</td>
+<td style="text-align: left;">7,483</td>
+<td style="text-align: left;">3.06%</td>
+<td style="text-align: left;">100.0%</td>
+<td style="text-align: left;">6.50</td>
+<td style="text-align: left;">6.90</td>
+<td style="text-align: left;">7.10</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>That Depends</strong></td>
+<td style="text-align: left;">4,817</td>
+<td style="text-align: left;">4,968</td>
+<td style="text-align: left;">3.09%</td>
+<td style="text-align: left;">100.0%</td>
+<td style="text-align: left;">9.80</td>
+<td style="text-align: left;">10.20</td>
+<td style="text-align: left;">10.60</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>FastAPI Depends</strong></td>
+<td style="text-align: left;">3,922</td>
+<td style="text-align: left;">3,973</td>
+<td style="text-align: left;">1.28%</td>
+<td style="text-align: left;">100.0%</td>
+<td style="text-align: left;">12.25</td>
+<td style="text-align: left;">13.70</td>
+<td style="text-align: left;">14.10</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Injector †</strong></td>
+<td style="text-align: left;">3,136</td>
+<td style="text-align: left;">3,225</td>
+<td style="text-align: left;">2.79%</td>
+<td style="text-align: left;">100.0%</td>
+<td style="text-align: left;">15.20</td>
+<td style="text-align: left;">15.40</td>
+<td style="text-align: left;">15.90</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Dependency Injector †</strong></td>
+<td style="text-align: left;">2,559</td>
+<td style="text-align: left;">2,605</td>
+<td style="text-align: left;">1.76%</td>
+<td style="text-align: left;">100.0%</td>
+<td style="text-align: left;">19.00</td>
+<td style="text-align: left;">19.70</td>
+<td style="text-align: left;">20.00</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Lagom †</strong></td>
+<td style="text-align: left;">893</td>
+<td style="text-align: left;">903</td>
+<td style="text-align: left;">1.19%</td>
+<td style="text-align: left;">100.0%</td>
+<td style="text-align: left;">55.30</td>
+<td style="text-align: left;">57.10</td>
+<td style="text-align: left;">58.20</td>
+</tr>
+</tbody>
+</table>
+<h4 id="time-to-complete-all-runs-lower-is-better">Time to Complete All Runs (Lower Is Better)<a class="headerlink" href="#time-to-complete-all-runs-lower-is-better" title="Permanent link">&para;</a></h4>
+<p>This aggregates measured request-phase runtime across all runs for each project in this test.</p>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;">Project</th>
+<th style="text-align: left;">Total Time (HH:MM:SS)</th>
+<th style="text-align: left;">Total Time (s)</th>
+<th style="text-align: left;">+ vs Fastest</th>
+<th style="text-align: left;">Avg Time / Run</th>
+<th style="text-align: left;">Runs</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><strong>Manual Wiring (No DI)</strong></td>
+<td style="text-align: left;">07:33</td>
+<td style="text-align: left;">452.97</td>
+<td style="text-align: left;">+00:00</td>
+<td style="text-align: left;">9.06s</td>
+<td style="text-align: left;">50</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Wireup</strong></td>
+<td style="text-align: left;">07:34</td>
+<td style="text-align: left;">453.51</td>
+<td style="text-align: left;">+00:01</td>
+<td style="text-align: left;">9.07s</td>
+<td style="text-align: left;">50</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Wireup Class-Based</strong></td>
+<td style="text-align: left;">07:36</td>
+<td style="text-align: left;">455.81</td>
+<td style="text-align: left;">+00:03</td>
+<td style="text-align: left;">9.12s</td>
+<td style="text-align: left;">50</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Dishka</strong></td>
+<td style="text-align: left;">09:45</td>
+<td style="text-align: left;">585.49</td>
+<td style="text-align: left;">+02:13</td>
+<td style="text-align: left;">11.71s</td>
+<td style="text-align: left;">50</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Svcs</strong></td>
+<td style="text-align: left;">09:56</td>
+<td style="text-align: left;">596.05</td>
+<td style="text-align: left;">+02:23</td>
+<td style="text-align: left;">11.92s</td>
+<td style="text-align: left;">50</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Aioinject</strong></td>
+<td style="text-align: left;">10:11</td>
+<td style="text-align: left;">611.25</td>
+<td style="text-align: left;">+02:38</td>
+<td style="text-align: left;">12.23s</td>
+<td style="text-align: left;">50</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>diwire</strong></td>
+<td style="text-align: left;">11:17</td>
+<td style="text-align: left;">677.42</td>
+<td style="text-align: left;">+03:44</td>
+<td style="text-align: left;">13.55s</td>
+<td style="text-align: left;">50</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>That Depends</strong></td>
+<td style="text-align: left;">17:03</td>
+<td style="text-align: left;">1023.26</td>
+<td style="text-align: left;">+09:30</td>
+<td style="text-align: left;">20.47s</td>
+<td style="text-align: left;">50</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>FastAPI Depends</strong></td>
+<td style="text-align: left;">21:06</td>
+<td style="text-align: left;">1265.92</td>
+<td style="text-align: left;">+13:33</td>
+<td style="text-align: left;">25.32s</td>
+<td style="text-align: left;">50</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Injector †</strong></td>
+<td style="text-align: left;">26:06</td>
+<td style="text-align: left;">1566.24</td>
+<td style="text-align: left;">+18:33</td>
+<td style="text-align: left;">31.32s</td>
+<td style="text-align: left;">50</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Dependency Injector †</strong></td>
+<td style="text-align: left;">32:20</td>
+<td style="text-align: left;">1940.33</td>
+<td style="text-align: left;">+24:47</td>
+<td style="text-align: left;">38.81s</td>
+<td style="text-align: left;">50</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Lagom †</strong></td>
+<td style="text-align: left;">1:32:46</td>
+<td style="text-align: left;">5566.48</td>
+<td style="text-align: left;">+1:25:14</td>
+<td style="text-align: left;">111.33s</td>
+<td style="text-align: left;">50</td>
+</tr>
+</tbody>
+</table>
+<!-- scoped-end -->
+
+<h2 id="singleton-performance">Singleton Performance<a class="headerlink" href="#singleton-performance" title="Permanent link">&para;</a></h2>
+<p>Services are created once when the app starts and reused throughout. In this test, the endpoint injects <strong>Services A, B,
+and Settings</strong> from the graph.
+This tests the container's bookkeeping performance and how efficiently it can return existing instances.</p>
+<!-- singleton-summary-start -->
+<p>In this benchmark, both <strong>Wireup Class-Based</strong> (<!-- meta:singleton_wireup_cbr_pct --><strong>99.93%</strong><!-- /meta:singleton_wireup_cbr_pct -->) and <strong>Wireup</strong> (<!-- meta:singleton_wireup_pct --><strong>98.97%</strong><!-- /meta:singleton_wireup_pct -->) operate within measurement noise of manual wiring throughput, showing very small overhead vs globals in this workload.
+For context, this corresponds to roughly <!-- meta:singleton_wireup_vs_fastapi_x --><strong>2.15x</strong><!-- /meta:singleton_wireup_vs_fastapi_x --> the throughput of <strong>FastAPI Depends</strong> and <!-- meta:singleton_wireup_vs_next_best_x --><strong>1.25x</strong><!-- /meta:singleton_wireup_vs_next_best_x --> the next closest library in this benchmark (<strong><!-- meta:singleton_next_best_name -->diwire<!-- /meta:singleton_next_best_name --></strong>).</p>
+<!-- singleton-summary-end -->
+
+<p><img alt="Singleton Performance" src="../img/benchmarks_singleton_light.svg#only-light" />
+<img alt="Singleton Performance" src="../img/benchmarks_singleton_dark.svg#only-dark" /></p>
+<!-- singleton-start -->
+<table>
+<thead>
+<tr>
+<th style="text-align: left;">Project</th>
+<th style="text-align: left;">RPS (Median Run)</th>
+<th style="text-align: left;">P50 (ms)</th>
+<th style="text-align: left;">P95 (ms)</th>
+<th style="text-align: left;">P99 (ms)</th>
+<th style="text-align: left;">σ (ms)</th>
+<th style="text-align: left;">Mem Peak</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><strong>Manual Wiring (No DI)</strong></td>
+<td style="text-align: left;">13,351 <span class="bench-diff">(100.00%)</span></td>
+<td style="text-align: left;">3.40</td>
+<td style="text-align: left;">3.60</td>
+<td style="text-align: left;">3.90</td>
+<td style="text-align: left;">0.72</td>
+<td style="text-align: left;">52.98 MB</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Wireup Class-Based</strong></td>
+<td style="text-align: left;">13,342 <span class="bench-diff">(99.93%)</span></td>
+<td style="text-align: left;">3.40</td>
+<td style="text-align: left;">3.60</td>
+<td style="text-align: left;">3.80</td>
+<td style="text-align: left;">0.73</td>
+<td style="text-align: left;">53.73 MB</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Wireup</strong></td>
+<td style="text-align: left;">13,214 <span class="bench-diff">(98.97%)</span></td>
+<td style="text-align: left;">3.50</td>
+<td style="text-align: left;">3.70</td>
+<td style="text-align: left;">3.90</td>
+<td style="text-align: left;">0.58</td>
+<td style="text-align: left;">53.64 MB</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>diwire</strong></td>
+<td style="text-align: left;">10,532 <span class="bench-diff">(78.88%)</span></td>
+<td style="text-align: left;">4.50</td>
+<td style="text-align: left;">4.80</td>
+<td style="text-align: left;">4.90</td>
+<td style="text-align: left;">0.74</td>
+<td style="text-align: left;">58.21 MB</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Svcs</strong></td>
+<td style="text-align: left;">10,447 <span class="bench-diff">(78.25%)</span></td>
+<td style="text-align: left;">4.50</td>
+<td style="text-align: left;">4.80</td>
+<td style="text-align: left;">5.00</td>
+<td style="text-align: left;">0.75</td>
+<td style="text-align: left;">67.02 MB</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Injector †</strong></td>
+<td style="text-align: left;">10,269 <span class="bench-diff">(76.92%)</span></td>
+<td style="text-align: left;">4.60</td>
+<td style="text-align: left;">4.90</td>
+<td style="text-align: left;">5.00</td>
+<td style="text-align: left;">0.75</td>
+<td style="text-align: left;">53.46 MB</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Aioinject</strong></td>
+<td style="text-align: left;">10,219 <span class="bench-diff">(76.54%)</span></td>
+<td style="text-align: left;">4.40</td>
+<td style="text-align: left;">5.20</td>
+<td style="text-align: left;">8.00</td>
+<td style="text-align: left;">1.17</td>
+<td style="text-align: left;">103.16 MB</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Dishka</strong></td>
+<td style="text-align: left;">9,650 <span class="bench-diff">(72.28%)</span></td>
+<td style="text-align: left;">4.70</td>
+<td style="text-align: left;">5.30</td>
+<td style="text-align: left;">8.20</td>
+<td style="text-align: left;">1.21</td>
+<td style="text-align: left;">105.03 MB</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>That Depends</strong></td>
+<td style="text-align: left;">7,792 <span class="bench-diff">(58.36%)</span></td>
+<td style="text-align: left;">6.20</td>
+<td style="text-align: left;">6.50</td>
+<td style="text-align: left;">6.70</td>
+<td style="text-align: left;">1.00</td>
+<td style="text-align: left;">53.82 MB</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Dependency Injector †</strong></td>
+<td style="text-align: left;">6,905 <span class="bench-diff">(51.71%)</span></td>
+<td style="text-align: left;">6.80</td>
+<td style="text-align: left;">7.30</td>
+<td style="text-align: left;">7.70</td>
+<td style="text-align: left;">0.60</td>
+<td style="text-align: left;">60.42 MB</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>FastAPI Depends</strong></td>
+<td style="text-align: left;">6,153 <span class="bench-diff">(46.08%)</span></td>
+<td style="text-align: left;">7.70</td>
+<td style="text-align: left;">8.20</td>
+<td style="text-align: left;">8.60</td>
+<td style="text-align: left;">0.37</td>
+<td style="text-align: left;">55.74 MB</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Lagom †</strong></td>
+<td style="text-align: left;">2,936 <span class="bench-diff">(21.99%)</span></td>
+<td style="text-align: left;">16.70</td>
+<td style="text-align: left;">18.30</td>
+<td style="text-align: left;">20.10</td>
+<td style="text-align: left;">1.29</td>
+<td style="text-align: left;">238.93 MB</td>
+</tr>
+</tbody>
+</table>
+<h4 id="stability-across-runs_1">Stability (Across Runs)<a class="headerlink" href="#stability-across-runs_1" title="Permanent link">&para;</a></h4>
+<p>These values summarize all runs for each project in this test. <strong>Median P50/P95/P99</strong> are the medians of those per-run latency percentiles, while <strong>Within ±3%</strong> shows the share of runs whose RPS stayed within 3% of that project's median-run RPS.
+Look for <strong>smaller Δ RPS</strong>, <strong>higher Within ±3%</strong>, and <strong>lower median tail latencies (P95/P99)</strong> for the most consistent behavior.</p>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;">Project</th>
+<th style="text-align: left;">Min RPS</th>
+<th style="text-align: left;">Max RPS</th>
+<th style="text-align: left;">Δ RPS</th>
+<th style="text-align: left;">Within ±3%</th>
+<th style="text-align: left;">Med P50 (ms)</th>
+<th style="text-align: left;">Med P95 (ms)</th>
+<th style="text-align: left;">Med P99 (ms)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><strong>Manual Wiring (No DI)</strong></td>
+<td style="text-align: left;">13,169</td>
+<td style="text-align: left;">13,460</td>
+<td style="text-align: left;">2.18%</td>
+<td style="text-align: left;">100.0%</td>
+<td style="text-align: left;">3.40</td>
+<td style="text-align: left;">3.70</td>
+<td style="text-align: left;">3.80</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Wireup Class-Based</strong></td>
+<td style="text-align: left;">13,168</td>
+<td style="text-align: left;">13,439</td>
+<td style="text-align: left;">2.03%</td>
+<td style="text-align: left;">100.0%</td>
+<td style="text-align: left;">3.40</td>
+<td style="text-align: left;">3.70</td>
+<td style="text-align: left;">3.80</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Wireup</strong></td>
+<td style="text-align: left;">13,031</td>
+<td style="text-align: left;">13,332</td>
+<td style="text-align: left;">2.28%</td>
+<td style="text-align: left;">100.0%</td>
+<td style="text-align: left;">3.50</td>
+<td style="text-align: left;">3.70</td>
+<td style="text-align: left;">3.90</td>
+</tr>
+<tr>
+<td style="text-align: left;"><span class="bench-worse"><strong>diwire</strong></span></td>
+<td style="text-align: left;"><span class="bench-worse"><strong>8,871</strong></span></td>
+<td style="text-align: left;"><span class="bench-worse"><strong>10,667</strong></span></td>
+<td style="text-align: left;"><span class="bench-worse"><strong>17.05%</strong></span></td>
+<td style="text-align: left;"><span class="bench-worse"><strong>98.0%</strong></span></td>
+<td style="text-align: left;"><span class="bench-worse"><strong>4.40</strong></span></td>
+<td style="text-align: left;"><span class="bench-worse"><strong>4.80</strong></span></td>
+<td style="text-align: left;"><span class="bench-worse"><strong>4.90</strong></span></td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Svcs</strong></td>
+<td style="text-align: left;">10,291</td>
+<td style="text-align: left;">10,536</td>
+<td style="text-align: left;">2.34%</td>
+<td style="text-align: left;">100.0%</td>
+<td style="text-align: left;">4.50</td>
+<td style="text-align: left;">4.80</td>
+<td style="text-align: left;">5.00</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Injector †</strong></td>
+<td style="text-align: left;">10,164</td>
+<td style="text-align: left;">10,333</td>
+<td style="text-align: left;">1.65%</td>
+<td style="text-align: left;">100.0%</td>
+<td style="text-align: left;">4.60</td>
+<td style="text-align: left;">4.90</td>
+<td style="text-align: left;">5.10</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Aioinject</strong></td>
+<td style="text-align: left;">10,133</td>
+<td style="text-align: left;">10,301</td>
+<td style="text-align: left;">1.64%</td>
+<td style="text-align: left;">100.0%</td>
+<td style="text-align: left;">4.40</td>
+<td style="text-align: left;">5.20</td>
+<td style="text-align: left;">7.90</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Dishka</strong></td>
+<td style="text-align: left;">9,551</td>
+<td style="text-align: left;">9,732</td>
+<td style="text-align: left;">1.88%</td>
+<td style="text-align: left;">100.0%</td>
+<td style="text-align: left;">4.70</td>
+<td style="text-align: left;">5.30</td>
+<td style="text-align: left;">8.20</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>That Depends</strong></td>
+<td style="text-align: left;">7,647</td>
+<td style="text-align: left;">7,898</td>
+<td style="text-align: left;">3.22%</td>
+<td style="text-align: left;">100.0%</td>
+<td style="text-align: left;">6.20</td>
+<td style="text-align: left;">6.50</td>
+<td style="text-align: left;">6.70</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Dependency Injector †</strong></td>
+<td style="text-align: left;">6,852</td>
+<td style="text-align: left;">6,991</td>
+<td style="text-align: left;">2.00%</td>
+<td style="text-align: left;">100.0%</td>
+<td style="text-align: left;">6.80</td>
+<td style="text-align: left;">7.30</td>
+<td style="text-align: left;">7.70</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>FastAPI Depends</strong></td>
+<td style="text-align: left;">6,069</td>
+<td style="text-align: left;">6,197</td>
+<td style="text-align: left;">2.07%</td>
+<td style="text-align: left;">100.0%</td>
+<td style="text-align: left;">7.70</td>
+<td style="text-align: left;">8.20</td>
+<td style="text-align: left;">8.60</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Lagom †</strong></td>
+<td style="text-align: left;">2,908</td>
+<td style="text-align: left;">2,949</td>
+<td style="text-align: left;">1.40%</td>
+<td style="text-align: left;">100.0%</td>
+<td style="text-align: left;">16.70</td>
+<td style="text-align: left;">18.30</td>
+<td style="text-align: left;">20.30</td>
+</tr>
+</tbody>
+</table>
+<h4 id="time-to-complete-all-runs-lower-is-better_1">Time to Complete All Runs (Lower Is Better)<a class="headerlink" href="#time-to-complete-all-runs-lower-is-better_1" title="Permanent link">&para;</a></h4>
+<p>This aggregates measured request-phase runtime across all runs for each project in this test.</p>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;">Project</th>
+<th style="text-align: left;">Total Time (HH:MM:SS)</th>
+<th style="text-align: left;">Total Time (s)</th>
+<th style="text-align: left;">+ vs Fastest</th>
+<th style="text-align: left;">Avg Time / Run</th>
+<th style="text-align: left;">Runs</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><strong>Manual Wiring (No DI)</strong></td>
+<td style="text-align: left;">06:15</td>
+<td style="text-align: left;">374.52</td>
+<td style="text-align: left;">+00:00</td>
+<td style="text-align: left;">7.49s</td>
+<td style="text-align: left;">50</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Wireup Class-Based</strong></td>
+<td style="text-align: left;">06:15</td>
+<td style="text-align: left;">375.27</td>
+<td style="text-align: left;">+00:01</td>
+<td style="text-align: left;">7.51s</td>
+<td style="text-align: left;">50</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Wireup</strong></td>
+<td style="text-align: left;">06:18</td>
+<td style="text-align: left;">378.28</td>
+<td style="text-align: left;">+00:04</td>
+<td style="text-align: left;">7.57s</td>
+<td style="text-align: left;">50</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>diwire</strong></td>
+<td style="text-align: left;">07:57</td>
+<td style="text-align: left;">477.04</td>
+<td style="text-align: left;">+01:43</td>
+<td style="text-align: left;">9.54s</td>
+<td style="text-align: left;">50</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Svcs</strong></td>
+<td style="text-align: left;">07:59</td>
+<td style="text-align: left;">478.80</td>
+<td style="text-align: left;">+01:44</td>
+<td style="text-align: left;">9.58s</td>
+<td style="text-align: left;">50</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Injector †</strong></td>
+<td style="text-align: left;">08:07</td>
+<td style="text-align: left;">487.14</td>
+<td style="text-align: left;">+01:53</td>
+<td style="text-align: left;">9.74s</td>
+<td style="text-align: left;">50</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Aioinject</strong></td>
+<td style="text-align: left;">08:09</td>
+<td style="text-align: left;">489.38</td>
+<td style="text-align: left;">+01:55</td>
+<td style="text-align: left;">9.79s</td>
+<td style="text-align: left;">50</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Dishka</strong></td>
+<td style="text-align: left;">08:38</td>
+<td style="text-align: left;">518.09</td>
+<td style="text-align: left;">+02:24</td>
+<td style="text-align: left;">10.36s</td>
+<td style="text-align: left;">50</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>That Depends</strong></td>
+<td style="text-align: left;">10:42</td>
+<td style="text-align: left;">642.13</td>
+<td style="text-align: left;">+04:28</td>
+<td style="text-align: left;">12.84s</td>
+<td style="text-align: left;">50</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Dependency Injector †</strong></td>
+<td style="text-align: left;">12:04</td>
+<td style="text-align: left;">724.05</td>
+<td style="text-align: left;">+05:50</td>
+<td style="text-align: left;">14.48s</td>
+<td style="text-align: left;">50</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>FastAPI Depends</strong></td>
+<td style="text-align: left;">13:33</td>
+<td style="text-align: left;">813.17</td>
+<td style="text-align: left;">+07:19</td>
+<td style="text-align: left;">16.26s</td>
+<td style="text-align: left;">50</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Lagom †</strong></td>
+<td style="text-align: left;">28:23</td>
+<td style="text-align: left;">1703.37</td>
+<td style="text-align: left;">+22:09</td>
+<td style="text-align: left;">34.07s</td>
+<td style="text-align: left;">50</td>
+</tr>
+</tbody>
+</table>
+<!-- singleton-end -->
+
+<h3 id="reproducibility">Reproducibility<a class="headerlink" href="#reproducibility" title="Permanent link">&para;</a></h3>
+<p>Prerequisite:</p>
+<ul>
+<li>Install <a href="https://github.com/rakyll/hey"><code>hey</code></a> and ensure the <code>hey</code> binary is available on your <code>PATH</code>.</li>
+</ul>
+<p>Run from repository root:</p>
+<p><code>make bench</code></p>
+<p>Enable workload-shape assertions:</p>
+<div class="highlight"><pre><span></span><code>make<span class="w"> </span>bench<span class="w"> </span><span class="nv">bench_assert</span><span class="o">=</span><span class="m">1</span>
+</code></pre></div>
+<p>If you want to reproduce this exact run pass iterations=<!-- meta:iterations -->50<!-- /meta:iterations --> requests=<!-- meta:requests -->100,000<!-- /meta:requests --> to the make command.</p>
+<p>This command reruns benchmarks and regenerates charts/tables/versions for this page.</p>
+<h2 id="source-code">Source Code<a class="headerlink" href="#source-code" title="Permanent link">&para;</a></h2>
+<p>The benchmark code is available in the <a href="https://github.com/maldoinc/wireup/tree/master/benchmarks"><code>benchmarks/</code></a> directory.</p>
+
+
+
+
+
+
+
+  
+  
+
+
+
+
+  
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["search.highlight", "navigation.sections", "content.code.annotate", "navigation.instant", "navigation.tabs", "navigation.indexes"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+    
+  </body>
+</html>
