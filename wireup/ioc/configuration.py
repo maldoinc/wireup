@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import re
 from re import Match
-from typing import Any
+from typing import Any, Mapping
 
 from wireup.errors import UnknownParameterError
 from wireup.ioc.types import ConfigurationReference, TemplatedString
@@ -28,10 +28,38 @@ class ConfigStore:
         )
 
     def __get_value_from_name(self, name: str) -> Any:
-        if name not in self.__bag:
-            raise UnknownParameterError(name)
+        # To not break backwards compatibility, we need to check if there exists
+        # a value in baggage that matches the full name first
+        if name in self.__bag:
+            return self.__bag[name]
 
-        return self.__bag[name]
+        match_parts = name.split(".")
+        parent = self.__bag
+
+        for i, part in enumerate(match_parts):
+            if part == "":
+                msg = (
+                    f"Provided config key format is invalid: '{name}'."
+                    " Please provide a non-empty config key, or a valid dot-separated path, "
+                    f"with non-empty parts."
+                )
+                raise ValueError(msg)
+            parent = self.__get_value_from_name_and_holder(i, match_parts, part, parent)
+
+        return parent
+
+    @classmethod
+    def __get_value_from_name_and_holder(cls, index: int, matched_parts: list[str], name: str, holder: Any) -> Any:
+        if isinstance(holder, Mapping):
+            if name not in holder:
+                raise UnknownParameterError(name, parent_path=".".join(matched_parts[:index]))
+
+            return holder[name]
+
+        if not hasattr(holder, name):
+            raise UnknownParameterError(name, parent_path=".".join(matched_parts[:index]))
+
+        return getattr(holder, name)
 
     def __interpolate(self, val: str) -> str:
         if val in self.__cache:

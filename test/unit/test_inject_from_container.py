@@ -1,15 +1,18 @@
+import contextlib
 import re
-from typing import Optional
+from dataclasses import dataclass
+from typing import AsyncIterator, Iterator, NewType, Optional, Tuple
 
 import pytest
 import wireup
 from typing_extensions import Annotated
-from wireup import Inject, inject_from_container, service
-from wireup._annotations import Injected
+from wireup import Inject, Injected, create_sync_container, inject_from_container, injectable, service
+from wireup._decorators import inject_from_container_unchecked
 from wireup.errors import WireupError
 
 from test.conftest import Container
 from test.unit import services
+from test.unit.services.async_reg import AsyncDependency, make_async_dependency
 from test.unit.services.no_annotations.random.random_service import RandomService
 from test.unit.services.with_annotations.services import Foo, FooImpl, OtherFooImpl, random_service_factory
 
@@ -87,6 +90,53 @@ async def test_injects_targets_async() -> None:
 
     target(not_managed_by_wireup=NotManagedByWireup())
     await async_target(not_managed_by_wireup=NotManagedByWireup())
+
+
+def test_inject_from_container_unchecked_config() -> None:
+    container = wireup.create_sync_container(config={"env_name": "test"})
+
+    with container.enter_scope() as scoped:
+
+        @inject_from_container_unchecked(lambda: scoped)
+        def target(env_name: Annotated[str, Inject(config="env_name")]) -> str:
+            return env_name
+
+        assert target() == "test"
+
+
+async def test_inject_from_container_unchecked_with_async_scope_and_override() -> None:
+    class Dep:
+        pass
+
+    @injectable(lifetime="scoped")
+    async def make_dep() -> Dep:
+        return Dep()
+
+    @injectable(lifetime="transient")
+    class Consumer:
+        def __init__(self, dep: Dep):
+            self.dep = dep
+
+    container = wireup.create_async_container(injectables=[make_dep, Consumer])
+
+    async with container.enter_scope() as scoped:
+
+        @inject_from_container_unchecked(lambda: scoped)
+        async def target(dep: Injected[Dep], consumer: Injected[Consumer]) -> Tuple[Dep, Consumer]:
+            return dep, consumer
+
+        class OverrideDep:
+            pass
+
+        override = OverrideDep()
+        with container.override.injectable(Dep, override):
+            dep, consumer = await target()
+            assert dep is override
+            assert consumer.dep is override
+
+        dep, consumer = await target()
+        assert isinstance(dep, Dep)
+        assert isinstance(consumer.dep, Dep)
 
 
 @pytest.mark.parametrize("qualifier", [None, "foo"])
@@ -171,6 +221,24 @@ async def test_injects_service_with_provided_async_scoped_container() -> None:
         @inject_from_container(container, lambda: scoped)
         def target(rand_service: Annotated[RandomService, Inject(qualifier="foo")]) -> None:
             assert isinstance(rand_service, RandomService)
+
+        target()
+
+
+def test_inject_from_container_falsy_qualifier_injected() -> None:
+    @injectable(qualifier="")
+    @dataclass
+    class EmptyQualifierService:
+        name: str = "empty"
+
+    container = wireup.create_sync_container(injectables=[EmptyQualifierService])
+
+    @inject_from_container_unchecked(lambda: container.enter_scope())
+    def target(
+        svc: Annotated[EmptyQualifierService, Inject(qualifier="")],
+    ) -> None:
+        assert isinstance(svc, EmptyQualifierService)
+        assert svc.name == "empty"
 
     target()
 
@@ -265,3 +333,156 @@ def test_inject_from_container_handles_optionals() -> None:
         assert isinstance(thing, Thing)
 
     main()
+
+
+async def test_raises_generator_cleanup() -> None:
+    Something = NewType("Something", str)
+    exception_notified = False
+
+    @wireup.injectable(lifetime="scoped")
+    async def f1() -> AsyncIterator[Something]:
+        try:
+            yield Something("Something")
+        except:  # noqa: E722
+            nonlocal exception_notified
+            exception_notified = True
+
+    c = wireup.create_async_container(injectables=[f1])
+
+    @inject_from_container(c)
+    async def main(_: Injected[Something]):
+        raise ValueError("boom!")
+
+    with contextlib.suppress(Exception):
+        await main()
+
+    assert exception_notified
+
+
+def test_inject_from_container_generator(container: Container) -> None:
+    @inject_from_container(container)
+    def generator_target(
+        foo: Injected[Foo],
+        env_name: Annotated[str, Inject(config="env_name")],
+    ) -> Iterator[str]:
+        assert isinstance(foo, Foo)
+        assert env_name == "test"
+        yield env_name
+        yield "after_yield"
+
+    gen = generator_target()
+    assert next(gen) == "test"
+    assert next(gen) == "after_yield"
+    with contextlib.suppress(StopIteration):
+        next(gen)
+
+
+def test_inject_from_container_context_manager(container: Container) -> None:
+    # Test that inject_from_container works with contextlib.contextmanager targets
+
+    @inject_from_container(container)
+    @contextlib.contextmanager
+    def _context_manager_target(
+        foo: Injected[Foo],
+        env_name: Annotated[str, Inject(config="env_name")],
+    ) -> Iterator[str]:
+        assert isinstance(foo, Foo)
+        assert env_name == "test"
+        yield env_name
+
+    with _context_manager_target() as val:
+        assert val == "test"
+
+
+async def test_inject_from_container_async_generator() -> None:
+    container = wireup.create_async_container(injectables=[services], config={"env_name": "test"})
+
+    @inject_from_container(container)
+    async def async_generator_target(
+        foo: Injected[Foo],
+        env_name: Annotated[str, Inject(config="env_name")],
+    ) -> AsyncIterator[str]:
+        assert isinstance(foo, Foo)
+        assert env_name == "test"
+        yield env_name
+        yield "after_yield"
+
+    gen = async_generator_target()
+    assert await gen.__anext__() == "test"
+    assert await gen.__anext__() == "after_yield"
+    with pytest.raises(StopAsyncIteration):
+        await gen.__anext__()
+
+
+async def test_async_injects_sync_reuses_async_dependency_in_sync_context() -> None:
+    container = wireup.create_async_container(injectables=[make_async_dependency])
+
+    # Injection fails here since the current sync scope cannot create the async dependency.
+    @inject_from_container(container)
+    def sync_func_fail(a: Injected[AsyncDependency]) -> None:
+        pass
+
+    with pytest.raises(WireupError, match="is an async dependency and it cannot be created in a synchronous context"):
+        sync_func_fail()
+
+    inst = await container.get(AsyncDependency)
+
+    # Dependency is already created so just reuse the instance.
+    @inject_from_container(container)
+    def sync_func_success(a: Injected[AsyncDependency]) -> AsyncDependency:
+        return a
+
+    assert sync_func_success() is inst
+
+
+def test_async_override_with_sync_value_in_sync_context(container: Container) -> None:
+    fake_b = AsyncDependency()
+    with container.override.injectable(AsyncDependency, fake_b):
+
+        @inject_from_container(container)
+        def sync_func_override(b: Injected[AsyncDependency]) -> AsyncDependency:
+            return b
+
+        assert sync_func_override() is fake_b
+
+
+@injectable
+class SingletonService:
+    pass
+
+
+@injectable(lifetime="scoped")
+class ScopedService:
+    pass
+
+
+@injectable(lifetime="scoped")
+class ScopedService2:
+    pass
+
+
+def test_mixed_lifetime_injection_optimizes_correctly_singleton_first() -> None:
+    container = create_sync_container(injectables=[SingletonService, ScopedService, ScopedService2])
+
+    @inject_from_container(container)
+    def target(
+        s: Injected[SingletonService], sc: Injected[ScopedService], ss2: Injected[ScopedService2]
+    ) -> Tuple[SingletonService, ScopedService, ScopedService2]:
+        return s, sc, ss2
+
+    s, sc, ss2 = target()
+    assert s is container.get(SingletonService)
+    assert isinstance(sc, ScopedService)
+    assert isinstance(ss2, ScopedService2)
+
+
+def test_mixed_lifetime_injection_optimizes_correctly_scoped_first() -> None:
+    container = create_sync_container(injectables=[SingletonService, ScopedService])
+
+    @inject_from_container(container)
+    def target(sc: Injected[ScopedService], s: Injected[SingletonService]) -> Tuple[SingletonService, ScopedService]:
+        return s, sc
+
+    s, sc = target()
+    assert s is container.get(SingletonService)
+    assert isinstance(sc, ScopedService)

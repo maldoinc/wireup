@@ -26,6 +26,11 @@ graph LR
 The container uses types and annotations to define dependencies and discover relationships between them. This results in
 self-contained definitions without having to create factories for every dependency.
 
+!!! note "`Injected[T]` vs `Inject(...)`"
+
+    `Injected[T]` marks parameters for injection in external call sites. `Inject(...)` describes how to find them (for
+    example config keys or qualifiers).
+
 #### 🐍 `KeyValueStore`
 
 To create the `KeyValueStore`, we need a value for `redis_url`. The `@injectable` decorator registers the class, and the
@@ -104,6 +109,12 @@ class WeatherService:
 ### 2. Create the container
 
 The next step is to create a container and register the dependencies we just defined.
+
+!!! tip "Default Registration Style"
+
+    In production apps, prefer module/package scanning (`injectables=[my_app.services]`) as the default registration style.
+    Use explicit class/function lists mainly for small examples, tests, or when you need very tight control over what gets
+    registered.
 
 ```python title="container.py"
 import wireup

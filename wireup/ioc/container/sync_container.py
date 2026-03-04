@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from typing_extensions import Self
 
@@ -9,6 +9,8 @@ from wireup.ioc.container.base_container import BaseContainer
 
 if TYPE_CHECKING:
     from types import TracebackType
+
+    from wireup.ioc.types import ContainerObjectIdentifier
 
 
 class BareSyncContainer(BaseContainer):
@@ -34,7 +36,7 @@ class ScopedSyncContainer(BareSyncContainer):
 
 
 class SyncContainer(BareSyncContainer):
-    def enter_scope(self) -> ScopedSyncContainer:
+    def enter_scope(self, provided: dict[ContainerObjectIdentifier, Any] | None = None, /) -> ScopedSyncContainer:
         """Enter a new scope.
 
         The returned scope context manager controls the lifetime of scoped dependencies.
@@ -51,8 +53,9 @@ class SyncContainer(BareSyncContainer):
             override_manager=self._override_mgr,
             global_scope_objects=self._global_scope_objects,
             global_scope_exit_stack=self._global_scope_exit_stack,
-            current_scope_objects={},
+            current_scope_objects=provided or {},
             current_scope_exit_stack=[],
             factory_compiler=self._scoped_compiler,
             scoped_compiler=self._scoped_compiler,
+            concurrent_scoped_access=self._concurrent_scoped_access,
         )

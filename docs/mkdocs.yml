@@ -4,6 +4,7 @@ nav:
     - Introduction:
       - Overview: index.md
       - Getting Started: getting_started.md
+      - Benchmarks: benchmarks.md
     - Core Concepts:
       - Container: container.md
       - Injectables: injectables.md
@@ -16,6 +17,7 @@ nav:
       - Function Injection: function_injection.md
     - Guides:
       - Testing: testing.md
+      - Conditional Registration: conditional_registration.md
       - Upgrading: upgrading.md
       - Versioning: versioning.md
 
@@ -24,20 +26,47 @@ nav:
     - Web Frameworks:
       - Django: 
         - Django Integration: integrations/django/index.md
+        - Setup and Installation: integrations/django/setup.md
+        - Inject in Views: integrations/django/view_injection.md
+        - Request Lifecycle Patterns: integrations/django/request_lifecycle_patterns.md
+        - App-Level Injection: integrations/django/app_injection.md
+        - Django Testing: integrations/django/testing.md
+        - Troubleshooting: integrations/django/troubleshooting.md
       - FastAPI: 
         - FastAPI Integration: integrations/fastapi/index.md
+        - Inject in Routes: integrations/fastapi/inject_in_routes.md
+        - Request and WebSocket Context in Services: integrations/fastapi/context_in_services.md
         - Class Based Handlers: integrations/fastapi/class_based_handlers.md
-        - Direct container access: integrations/fastapi/direct_container_access.md
+        - Request Lifecycle Patterns: integrations/fastapi/request_lifecycle_patterns.md
+        - Background Tasks: integrations/fastapi/background_tasks.md
+        - FastAPI Testing: integrations/fastapi/testing.md
+        - Troubleshooting: integrations/fastapi/troubleshooting.md
       - Flask: 
         - Flask Integration: integrations/flask/index.md
+      - FastMCP:
+        - FastMCP Usage: integrations/fastmcp/index.md
       - AIOHTTP: 
         - AIOHTTP Integration: integrations/aiohttp/index.md
         - Class-Based Handlers: integrations/aiohttp/class_based_handlers.md
       - Starlette: 
         - Starlette Integration: integrations/starlette/index.md
+        - Background Tasks: integrations/starlette/background_tasks.md
+      - Strawberry:
+        - Strawberry Integration: integrations/strawberry/index.md
+    - Generic ASGI:
+      - ASGI Integration: integrations/asgi/generic_asgi.md
     - Command Line Interfaces:
       - Click:
         - Click Integration: integrations/click/index.md
+      - Typer:
+        - Typer Integration: integrations/typer/index.md
+    - Task Queues:
+      - Celery:
+        - Celery Integration: integrations/celery/index.md
+  - Migrate to Wireup:
+    - Overview: migrate_to_wireup/index.md
+    - FastAPI (from Depends): migrate_to_wireup/fastapi_depends.md
+    - Dependency Injector: migrate_to_wireup/dependency_injector.md
   - API Reference:
       - wireup: class/wireup.md
       - OverrideManager: class/override_manager.md
@@ -46,9 +75,13 @@ nav:
         - Django: class/django_integration.md
         - FastAPI: class/fastapi_integration.md
         - Flask: class/flask_integration.md
+        - FastMCP: class/fastmcp_integration.md
         - AIOHTTP: class/aiohttp_integration.md
+        - ASGI: class/asgi_integration.md
         - Starlette: class/starlette_integration.md
+        - Celery: class/celery_integration.md
         - Click: class/click_integration.md
+        - Typer: class/typer_integration.md
 repo_url: https://github.com/maldoinc/wireup
 repo_name: maldoinc/wireup
 theme:
@@ -85,6 +118,7 @@ theme:
           icon: material/toggle-switch-off
           name: Switch to system preference
 markdown_extensions:
+  - meta
   - attr_list
   - md_in_html
   - admonition

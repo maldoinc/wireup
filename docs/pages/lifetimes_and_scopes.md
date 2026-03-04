@@ -194,6 +194,83 @@ Dependencies have restrictions on what they can depend on to prevent **Scope Lea
 - **Scoped** can depend on singletons, scoped, and config.
 - **Transient** can depend on any lifetime and config.
 
+## Concurrent Access
+
+Scopes are typically accessed by a single thread or asyncio task (e.g., one web request). By default, Wireup does **not
+use locks** for scoped dependencies, optimizing for this common pattern.
+
+### When to Enable Locking
+
+If you need to share a scope across multiple concurrent tasks, such as, parallelizing work within a request while
+sharing a common context, enable `concurrent_scoped_access` when creating the container:
+
+```python
+container = wireup.create_async_container(
+    injectables=[...],
+    concurrent_scoped_access=True,  # Safe for shared scopes
+)
+```
+
+!!! note
+
+    This is an advanced use case. Most applications don't need this.
+
+### Provided Instances
+
+You can provide pre-created instances when entering a scope. Those instances can be created manually, or fetched from another scope first. A common advanced use case is fan-out:
+
+```python hl_lines="9 10 15-17"
+import asyncio
+
+
+async def run_worker(
+    container: wireup.AsyncContainer,
+    provided: dict[object, object],
+    item_id: str,
+) -> None:
+    async with container.enter_scope(provided) as worker_scope:
+        worker = await worker_scope.get(WorkerService)
+        return await worker.process(item_id)
+
+
+async def main():
+    async with root_container.enter_scope() as parent_scope:
+        request_ctx = await parent_scope.get(RequestContext)
+        tenant_scope = await parent_scope.get(TenantScope)
+
+        tasks = []
+        for item_id in ("a", "b", "c"):
+            provided = {
+                RequestContext: request_ctx,
+                TenantScope: tenant_scope,
+            }
+            tasks.append(run_worker(container, provided, item_id))
+
+        await asyncio.gather(*tasks)
+```
+
+Guidelines for what to share:
+
+- Good candidates: `RequestContext`, tenant/account context, auth claims, correlation/tracing metadata, immutable per-request flags.
+- Usually avoid sharing: DB sessions/transactions, unit-of-work objects, mutable caches, task-affine resources.
+- Rule of thumb: share context, not mutable resource handles.
+
+!!! note "Caution"
+
+    Providing instances at scope entry is an advanced feature. Use it only when you need strict control over scope composition.
+    
+    * **Validity**
+        * Provided keys must be real dependencies already known to Wireup's graph (injectables/factories); otherwise those
+        values will not be used for dependency resolution.
+        * Wireup does **not** type-check provided values. If you provide a wrong object for a key, resulting runtime failures are
+        your responsibility.
+    * **Ownership**
+        * Wireup also assumes ownership of the passed mapping for the scope lifetime and may mutate it by storing resolved
+        scoped instances. Do not reuse the same mapping across scopes. Do not modify the mapping after passing it to `enter_scope()`.
+        * Ownership of provided instances is not transferred to Wireup. You are responsible for cleanup of those objects if needed. Wireup will not attempt to close or clean them up when the scope exits.
+        * Provided instances must outlive the scope they are provided to. If you provide instances from a parent scope, ensure the child scope does not outlive that parent scope. This is paramount for
+        resources that require cleanup (i.e., anything that is created via a yielding factory in Wireup.)
+
 ## Next Steps
 
 - [Factories](factories.md) - Create complex dependencies with setup and teardown logic.

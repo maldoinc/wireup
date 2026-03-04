@@ -4,7 +4,7 @@ import contextlib
 import importlib
 import warnings
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, TypeVar, overload
+from typing import TYPE_CHECKING, Any, TypeVar, cast, overload
 
 from typing_extensions import Annotated, ParamSpec
 
@@ -22,13 +22,15 @@ from wireup.util import stringify_type
 if TYPE_CHECKING:
     from collections.abc import Callable
 
+_UNSET = object()
+
 
 def Inject(  # noqa: N802
     *,
     config: str | None = None,
     param: str | None = None,
     expr: str | None = None,
-    qualifier: Qualifier | None = None,
+    qualifier: Qualifier | None | object = _UNSET,
 ) -> InjectableType:
     """Let the Wireup container know how to inject this parameter.
 
@@ -56,8 +58,8 @@ def Inject(  # noqa: N802
         res = ConfigInjectionRequest(param)
     elif expr:
         res = ConfigInjectionRequest(TemplatedString(expr))
-    elif qualifier:
-        res = InjectableQualifier(qualifier)
+    elif qualifier is not _UNSET:
+        res = InjectableQualifier(cast("Qualifier | None", qualifier))
     else:
         res = EmptyContainerInjectionRequest()
 

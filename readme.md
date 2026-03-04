@@ -1,37 +1,91 @@
 <div align="center">
 <h1>Wireup</h1>
-<p>Performant, concise and type-safe Dependency Injection for Python</p>
+<p>
+Type-driven dependency injection for Python. Wireup is battle-tested in production, thread-safe, no-GIL (PEP 703) ready, and fail-fast by design: <strong>if the container starts, it works</strong>.
+</p>
 
 [![GitHub](https://img.shields.io/github/license/maldoinc/wireup)](https://github.com/maldoinc/wireup)
 [![GitHub Workflow Status (with event)](https://img.shields.io/github/actions/workflow/status/maldoinc/wireup/run_all.yml)](https://github.com/maldoinc/wireup)
 [![PyPI - Python Version](https://img.shields.io/pypi/pyversions/wireup)](https://pypi.org/project/wireup/)
 [![PyPI - Version](https://img.shields.io/pypi/v/wireup)](https://pypi.org/project/wireup/)
-[![Documentation](https://img.shields.io/badge/%F0%9F%93%9A%20Documentation-3D9970)](https://maldoinc.github.io/wireup)
+<br />
+[![Documentation](https://img.shields.io/badge/%F0%9F%93%9A%20-Documentation-3D9970)](https://maldoinc.github.io/wireup)
+[![Documentation](https://img.shields.io/badge/%E2%AD%90-Enjoying%20Wireup%3F%20Star%20on%20GitHub-3D9970)](https://maldoinc.github.io/wireup)
+
 </div>
 
-Automate dependency management using Python's type system. Build complex applications with native support for async and generators, plus integrations for popular frameworks out of the box.
+
+<p align="center">
+    <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/pages/img/benchmarks_scoped_dark.svg">
+    <source media="(prefers-color-scheme: light)" srcset="docs/pages/img/benchmarks_scoped_light.svg">
+    <img alt="Scoped Dependency Injection Performance" src="docs/pages/img/benchmarks_scoped_light.svg">
+    </picture>
+</p>
+
+<p align="center">
+    <i>Inject a dense dependency graph in FastAPI + Uvicorn on every request<br>
+    (Requests per second, higher is better. Manual Wiring represents the upper bound.).<br>
+    Full methodology and reproducibility: <a href="https://maldoinc.github.io/wireup/latest/benchmarks/">benchmarks</a>.</i>
+</p>
+
+
 
 > [!TIP]
-> **New**: Inject Dependencies in FastAPI with zero runtime overhead using [Class-Based Handlers](https://maldoinc.github.io/wireup/latest/integrations/fastapi/class_based_handlers/).
+> **New**: Inject singleton dependencies in FastAPI with zero overhead using [Class-Based Handlers](https://maldoinc.github.io/wireup/latest/integrations/fastapi/class_based_handlers/).
+## Why Wireup?
 
+- **Correct by default**: Wireup catches missing dependencies, circular references, lifetime mismatches, duplicate registrations, and missing config keys at startup. Shared dependencies are created in a thread-safe way.
+- **Define once, inject anywhere**: reuse the same service layer in APIs, CLIs, workers, and scripts.
+- **Framework-ready**: native integrations for **FastAPI**, **Flask**, **Django**, **Starlette**, **AIOHTTP**, **ASGI**, **FastMCP**, **Celery**, **Click**, **Typer**, and **Strawberry**. [See Integrations](https://maldoinc.github.io/wireup/latest/integrations).
+- **Startup-resolved constructor injection for [FastAPI](https://maldoinc.github.io/wireup/latest/integrations/fastapi/class_based_handlers/) and [AIOHTTP](https://maldoinc.github.io/wireup/latest/integrations/aiohttp/class_based_handlers/) handlers**: constructor dependencies are resolved once at startup, not per request. [FastAPI class-based handlers](https://maldoinc.github.io/wireup/latest/integrations/fastapi/class_based_handlers/).
+- **Test overrides with context managers**: replace any injectable for a test scope and restore automatically. [See testing docs](https://maldoinc.github.io/wireup/latest/testing/).
+- **Reusable sub-graphs**: run multiple configured instances of the same dependency graph without spinning up separate containers. [See reusable factory bundles](https://maldoinc.github.io/wireup/latest/factories/#reusable-factory-bundles).
 
-## 📦 Installation
+## Installation
 
 ```bash
 pip install wireup
 ```
 
+
+## Complete Example
+
+```python
+@injectable
+class Database:
+    def query(self, sql: str) -> list[str]: ...
+
+@injectable
+class UserService:
+    def __init__(self, db: Database) -> None:
+        self.db = db
+
+    def get_users(self) -> list[str]:
+        return self.db.query("SELECT name FROM users")
+
+app = fastapi.FastAPI()
+
+@app.get("/users")
+def get_users(service: Injected[UserService]) -> list[str]:
+    return service.get_users()
+
+container = wireup.create_async_container(injectables=[Database, UserService])
+wireup.integration.fastapi.setup(container, app)
+```
+
+For a fully working end-to-end walkthrough, see the [Getting Started guide](https://maldoinc.github.io/wireup/latest/getting_started/).
+
 ## Features
- 
+
 ### ⚡ Clean & Type-Safe DI
- 
+
 Use decorators and annotations for concise, co-located definitions, or factories to keep your domain model pure and decoupled.
- 
+
 **1. Basic Usage**
- 
-Start simple. Register classes directly using decorators and let the container resolve 
-dependencies automatically.
- 
+
+Register classes with `@injectable` and let the container resolve dependencies automatically.
+
 ```python
 @injectable
 class Database:
@@ -44,25 +98,25 @@ class UserService:
         self.db = db
 
 container = wireup.create_sync_container(injectables=[Database, UserService])
-user_service = container.get(UserService)  # ✅ Dependencies resolved.
+
+# Inject via framework integration or @inject_from_container (recommended)
+@app.get("/users")
+def get_users(service: Injected[UserService]) -> list[str]: ...
+
+# Or resolve directly for advanced use cases (middleware, startup, scripts)
+user_service = container.get(UserService)
 ```
 
-
- 
 **2. Inject Configuration**
- 
-Seamlessly inject configuration alongside other dependencies, eliminating the need for 
-manually wiring them up via factories.
+
+Inject configuration alongside dependencies. No need to write factories just to pass a config value.
 
 <details>
 <summary>View Code</summary>
 
-
-
 ```python
 @injectable
 class Database:
-    # Inject "db_url" directly
     def __init__(self, url: Annotated[str, Inject(config="db_url")]) -> None:
         self.engine = sqlalchemy.create_engine(url)
 
@@ -70,15 +124,13 @@ container = wireup.create_sync_container(
     injectables=[Database],
     config={"db_url": os.environ["DB_URL"]}
 )
-db = container.get(Database)  # ✅ Dependencies resolved.
 ```
 
 </details>
 
 **3. Clean Architecture**
- 
-Need strict boundaries? Use factories to wire pure domain objects and integrate 
-external libraries like Pydantic.
+
+Need strict boundaries? Use factories to wire pure domain objects and integrate external libraries like Pydantic.
 
 ```python
 # 1. No Wireup imports
@@ -102,19 +154,18 @@ def make_database(settings: Settings) -> Database:
     return Database(url=settings.db_url)
 
 container = wireup.create_sync_container(injectables=[make_settings, make_database])
-database = container.get(Database)  # ✅ Dependencies resolved.
 ```
 
 **4. Auto-Discover**
 
-No need to list every injectable manually. Scan entire modules or packages to register all at once.
+No need to list every injectable manually. Scan entire modules or packages to register all at once. This is the recommended default for larger applications.
 
 <details>
 <summary>View Code</summary>
 
 ```python
-import wireup
 import app
+import wireup
 
 container = wireup.create_sync_container(
     injectables=[
@@ -123,21 +174,18 @@ container = wireup.create_sync_container(
         app.factories
     ]
 )
-
-user_service = container.get(UserService)  # ✅ Dependencies resolved.
 ```
 
 </details>
 
 ### 🎯 Function Injection
 
-Inject dependencies directly into any function. This is useful for CLI commands, background tasks, event handlers, or any standalone function that needs access to the container.
+Inject dependencies into any function. CLI commands, background tasks, event handlers, or any standalone function that needs container access.
 
 ```python
 @inject_from_container(container)
-def migrate_database(db: Injected[Database], settings: Injected[Settings]):
-    # ✅ Database and Settings injected.
-    pass
+def migrate_database(db: Injected[Database], settings: Injected[Settings]) -> None:
+    ...
 ```
 
 ### 📝 Interfaces & Abstractions
@@ -153,39 +201,16 @@ class SlackNotifier:
     def notify(self) -> None: ...
 
 container = create_sync_container(injectables=[SlackNotifier])
-notifier = container.get(Notifier) # ✅ SlackNotifier instance.
+
+# SlackNotifier is injected wherever Notifier is requested
+@app.post("/notify")
+def send_notification(notifier: Injected[Notifier]) -> None:
+    notifier.notify()
 ```
-
-
-### 🔄 Managed Lifetimes
-
-Declare dependencies as singletons, scoped, or transient to control whether to inject a fresh copy or reuse existing instances.
-
-
-```python
-# Singleton: One instance per application. `@injectable(lifetime="singleton")` is the default.
-@injectable
-class Database:
-    pass
-
-# Scoped: One instance per scope/request, shared within that scope/request.
-@injectable(lifetime="scoped")
-class RequestContext:
-    def __init__(self) -> None:
-        self.request_id = uuid4()
-
-# Transient: When full isolation and clean state is required.
-# Every request to create transient services results in a new instance.
-@injectable(lifetime="transient")
-class OrderProcessor:
-    pass
-```
-
 
 ### 🏭 Flexible Creation Patterns
 
-Defer instantiation to specialized factories when complex initialization or cleanup is required.
-Full support for async and generators. Wireup handles cleanup at the correct time depending on the injectable lifetime.
+Defer instantiation to factories when initialization or cleanup is non-trivial. Full support for sync, async, and generator factories. Wireup handles cleanup at the right time based on lifetime.
 
 ```python
 class WeatherClient:
@@ -199,7 +224,7 @@ def weather_client_factory() -> Iterator[WeatherClient]:
 ```
 
 <details>
-<summary>Async Example</summary>
+<summary>Async example</summary>
 
 ```python
 class WeatherClient:
@@ -214,9 +239,39 @@ async def weather_client_factory() -> AsyncIterator[WeatherClient]:
 
 </details>
 
+
+### 🔄 Managed Lifetimes
+
+Declare dependencies as singleton, scoped, or transient to control instance reuse.
+
+```python
+# Singleton: one instance per application (default)
+@injectable
+class Settings:
+    pass
+
+# Async singleton with cleanup — no lru_cache, no app.state
+@injectable
+async def database_factory(settings: Settings) -> AsyncIterator[AsyncConnection]:
+    async with create_async_engine(settings.db_url).connect() as connection:
+        yield connection
+
+# Scoped: one instance per request, shared within that request
+@injectable(lifetime="scoped")
+class RequestContext:
+    def __init__(self) -> None:
+        self.request_id = uuid4()
+
+# Transient: fresh instance every time
+@injectable(lifetime="transient")
+class OrderProcessor:
+    pass
+```
+
+
 ### ❓ Optional Dependencies
 
-Wireup has first-class support for `Optional[T]` and `T | None`. Expose optional dependencies and let Wireup handle the rest.
+First-class support for `Optional[T]` and `T | None`.
 
 ```python
 @injectable
@@ -225,134 +280,105 @@ def make_cache(settings: Settings) -> RedisCache | None:
 
 @injectable
 class UserService:
-    def __init__(self, cache: RedisCache | None):
+    def __init__(self, cache: RedisCache | None) -> None:
         self.cache = cache
 
-# You can also retrieve optional dependencies directly
+# Retrieve optional dependencies directly when needed
 cache = container.get(RedisCache | None)
 ```
 
+### 🧩 Reusable sub-graphs
 
-### 🛡️ Improved Safety
+Need to register multiple sub-graphs with different settings (e.g. primary + analytics DB)?
 
-Wireup is compatible with mypy strict mode. It will also warn you at the earliest possible stage about configuration errors to avoid surprises.
+Wireup supports this natively without requiring a dedicated provider class or a separate container. 
+See [Reusable Factory Bundles](https://maldoinc.github.io/wireup/latest/factories/#reusable-factory-bundles).
 
-**Container Creation**
 
-The container will raise errors at creation time about missing dependencies or other issues.
+### 🛡️ Startup Validation
+
+Wireup validates the entire dependency graph when the container is created.
 
 ```python
+# Missing dependencies: caught at startup, not at runtime
 @injectable
 class Foo:
-    def __init__(self, unknown: NotManagedByWireup) -> None:
-        pass
+    def __init__(self, unknown: NotManagedByWireup) -> None: ...
 
 container = wireup.create_sync_container(injectables=[Foo])
 # ❌ Parameter 'unknown' of 'Foo' depends on an unknown injectable 'NotManagedByWireup'.
 ```
 
-**Function Injection**
-
-Injected functions will raise errors at module import time rather than when called.
-
 ```python
+container = wireup.create_sync_container(injectables=[])
+
+# Decorated functions validated at import time
 @inject_from_container(container)
 def my_function(oops: Injected[NotManagedByWireup]): ...
-
 # ❌ Parameter 'oops' of 'my_function' depends on an unknown injectable 'NotManagedByWireup'.
+
 ```
-
-**Integrations**
-
-Wireup integrations assert that requested injections in the framework are valid.
 
 ```python
-app = FastAPI()
+# Missing config keys caught at startup
+@injectable
+class Database:
+    def __init__(self, url: Annotated[str, Inject(config="db_url")]) -> None: ...
 
-@app.get("/")
-def home(foo: Injected[NotManagedByWireup]): ...
-
-wireup.integration.fastapi.setup(container, app)
-# ❌ Parameter 'foo' of 'home' depends on an unknown injectable 'NotManagedByWireup'.
+container = wireup.create_sync_container(injectables=[Database], config={})
+# ❌ Parameter 'url' of Type 'Database' depends on an unknown Wireup config key 'db_url'.
 ```
+
+Additional checks: circular dependencies, lifetime mismatches (e.g. singleton depending on scoped), and duplicate registrations.
 
 ### 📍 Framework Independent
 
-With Wireup, business logic is decoupled from your runtime. Define injectables once and reuse them across
-Web Applications, CLI Tools, and Task Queues without duplication or refactoring.
+Define your service layer once. Run it anywhere.
 
 ```python
-# 1. Define your Service Layer once (e.g. in my_app.services)
+# Define once
 # injectables = [UserService, Database, ...]
 
-# 2. Run in FastAPI
-@app.get("/")
-@inject_from_container(container)
+# FastAPI (native integration, no extra decorator needed)
+@app.get("/users")
 async def view(service: Injected[UserService]): ...
 
-# 3. Run in CLI
+# Click
 @click.command()
-@inject_from_container(container)
 def command(service: Injected[UserService]): ...
 
-# 4. Run in Workers (Celery)
-@app.task
+# Use @inject_from_container to inject dependencies into any function.
+# Most useful for scripts or when no Wireup integration is available.
 @inject_from_container(container)
-def task(service: Injected[UserService]): ...
+def run_worker(service: Injected[UserService]): ...
 ```
 
-```mermaid
-graph LR
-    subgraph "Core Business Logic"
-        Services[Injectables & Services]
-        Domain[Domain Models]
-    end
+Have a useful integration to recommend? Create an issue or PR!
 
-    subgraph "Entry Points"
-        API[FastAPI / Web]
-        CLI[Click / CLI]
-        Worker[Celery / Worker]
-    end
 
-    API -->|Uses| Services
-    CLI -->|Uses| Services
-    Worker -->|Uses| Services
+### 🔌 Framework Integrations
 
-    Services --> Domain
-```
+Native integrations manage request scopes, endpoint injection, and dependency lifetimes.
 
-### 🔌 Native Integration with popular frameworks
-
-Integrate with popular frameworks for a smoother developer experience.
-Integrations manage request scopes, injection in endpoints, and dependency lifetimes.
-
-```python title="Full FastAPI example"
-app = FastAPI()
-container = create_async_container(injectables=[UserService, Database])
-
-@app.get("/")
-def users_list(user_service: Injected[UserService]):
-    pass
-
-wireup.integration.fastapi.setup(container, app)
-```
+Supported: **FastAPI**, **Flask**, **Django**, **AIOHTTP**, **Starlette**, **Click**, **Typer**, **Strawberry**
 
 [View all integrations →](https://maldoinc.github.io/wireup/latest/integrations/)
 
 ### 🧪 Simplified Testing
 
-Wireup decorators only collect metadata. Injectables remain plain classes or functions with no added magic to them. Test them directly with mocks or fakes, no special setup required.
+Wireup decorators only collect metadata. Injectables are plain classes and functions. Test them directly with no special setup.
 
-You can also use `container.override` to swap dependencies during tests:
+Swap dependencies during tests with `container.override`:
 
 ```python
 with container.override.injectable(target=Database, new=in_memory_database):
-    # The /users endpoint depends on Database.
-    # During the lifetime of this context manager, requests to inject `Database`
-    # will result in `in_memory_database` being injected instead.
+    # All code that depends on Database will receive in_memory_database
+    # for the duration of this context manager
     response = client.get("/users")
 ```
 
 ## 📚 Documentation
 
-For more information [check out the documentation](https://maldoinc.github.io/wireup)
+[https://maldoinc.github.io/wireup](https://maldoinc.github.io/wireup)
+
+If Wireup helps your team move faster, consider starring the repo to help more Python developers discover it.

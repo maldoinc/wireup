@@ -1,4 +1,5 @@
 import sys
+import warnings
 from typing import Any, NewType, Optional
 
 import pytest
@@ -44,7 +45,7 @@ def test_register_abstract() -> None:
 def test_register_factory() -> None:
     registry = ContainerRegistry(impls=[InjectableDeclaration(obj=random_service_factory, lifetime="singleton")])
 
-    assert (RandomService, None) in registry.factories
+    assert RandomService in registry.factories
     assert registry.impls[RandomService] == {None}
 
     def invalid_factory() -> None:
@@ -103,6 +104,30 @@ def test_register_with_redundant_annotation() -> None:
         )
 
 
+def test_register_with_explicit_none_qualifier_does_not_warn_redundant_annotation() -> None:
+    class MyDep: ...
+
+    class MyService:
+        def __init__(self, dep: Annotated[MyDep, Inject(qualifier=None)]) -> None:
+            self.dep = dep
+
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("always")
+        ContainerRegistry(
+            impls=[
+                InjectableDeclaration(obj=MyDep),
+                InjectableDeclaration(obj=MyService),
+            ],
+        )
+
+    redundant_warnings = [
+        warning
+        for warning in caught
+        if "Redundant Injected[T] or Annotated[T, Inject()] in parameter" in str(warning.message)
+    ]
+    assert not redundant_warnings
+
+
 def test_is_interface_known() -> None:
     registry = ContainerRegistry()
     assert not registry.is_interface_known(MyInterface)
@@ -122,7 +147,7 @@ def test_registry_newtypes_class() -> None:
 
     registry = ContainerRegistry(impls=[InjectableDeclaration(obj=y_factory, lifetime="singleton")])
 
-    assert registry.lifetime[Y, None] == "singleton"
+    assert registry.lifetime[Y] == "singleton"
 
 
 def test_registry_newtypes_anything() -> None:
@@ -133,7 +158,7 @@ def test_registry_newtypes_anything() -> None:
 
     registry = ContainerRegistry(impls=[InjectableDeclaration(obj=y_factory, lifetime="singleton")])
 
-    assert registry.lifetime[Y, None] == "singleton"
+    assert registry.lifetime[Y] == "singleton"
 
 
 def test_register_invalid_target() -> None:

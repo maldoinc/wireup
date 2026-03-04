@@ -19,7 +19,7 @@ class CustomGreeter(GreeterService):
         return f"Hoi, {name}"
 
 
-def create_app() -> web.Application:
+def _create_app(*, middleware_mode: bool) -> web.Application:
     app = web.Application()
 
     app.router.add_routes(routes.router)
@@ -27,14 +27,24 @@ def create_app() -> web.Application:
     container = wireup.create_async_container(
         injectables=[shared_services, aio_test_services, wireup.integration.aiohttp]
     )
-    wireup.integration.aiohttp.setup(container, app, handlers=[handler.WireupTestHandler])
+    wireup.integration.aiohttp.setup(
+        container,
+        app,
+        handlers=[handler.WireupTestHandler],
+        middleware_mode=middleware_mode,
+    )
 
     return app
 
 
+@pytest.fixture(params=[True, False], ids=["middleware_mode=True", "middleware_mode=False"])
+def middleware_mode(request: pytest.FixtureRequest) -> bool:
+    return request.param
+
+
 @pytest.fixture()
-def app() -> web.Application:
-    return create_app()
+def app(*, middleware_mode: bool) -> web.Application:
+    return _create_app(middleware_mode=middleware_mode)
 
 
 @pytest.fixture()
@@ -53,6 +63,16 @@ async def test_hello(client: TestClient) -> None:
 async def test_inject_request(client: TestClient) -> None:
     res = await client.get("/inject_request")
     assert res.status == 200
+
+
+async def test_request_container_only_in_middleware_mode(client: TestClient, *, middleware_mode: bool) -> None:
+    res = await client.get("/request_container")
+    if middleware_mode:
+        assert res.status == 200
+        body = await res.json()
+        assert body == {"is_same_request": True}
+    else:
+        assert res.status == 500
 
 
 async def test_webview(client: TestClient) -> None:
@@ -79,7 +99,7 @@ async def test_handler(client: TestClient) -> None:
 
 
 async def test_handler_override(aiohttp_client: Callable[[web.Application], Awaitable[TestClient]]) -> None:
-    app = create_app()
+    app = _create_app(middleware_mode=True)
     container = get_app_container(app)
 
     with container.override.injectable(GreeterService, new=CustomGreeter()):

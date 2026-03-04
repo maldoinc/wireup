@@ -5,14 +5,16 @@ import typing
 import warnings
 from collections import defaultdict
 from dataclasses import dataclass
-from enum import Enum, auto
 from typing import TYPE_CHECKING, Any, Callable, TypeVar, Union
 
 from wireup.errors import (
+    AsTypeMismatchError,
     DuplicateQualifierForInterfaceError,
     DuplicateServiceRegistrationError,
     FactoryReturnTypeIsEmptyError,
+    InvalidAsTypeError,
     InvalidRegistrationTypeError,
+    PositionalOnlyParameterError,
     UnknownParameterError,
     UnknownQualifiedServiceRequestedError,
     WireupError,
@@ -20,14 +22,17 @@ from wireup.errors import (
 from wireup.ioc.configuration import ConfigStore
 from wireup.ioc.type_analysis import analyze_type
 from wireup.ioc.types import (
+    ASYNC_CALLABLE_TYPES,
     AnnotatedParameter,
     AnyCallable,
+    CallableType,
     ConfigInjectionRequest,
     ContainerObjectIdentifier,
     EmptyContainerInjectionRequest,
     InjectableLifetime,
+    get_container_object_id,
 )
-from wireup.ioc.util import ensure_is_type, get_globals, param_get_annotation
+from wireup.ioc.util import ensure_is_type, get_callable_type, get_globals, param_get_annotation
 from wireup.util import format_name, stringify_type
 
 if TYPE_CHECKING:
@@ -42,38 +47,13 @@ InjectionTarget = Union[AnyCallable, type]
 """Represents valid dependency injection targets: Functions and Classes."""
 
 
-class FactoryType(Enum):
-    REGULAR = auto()
-    COROUTINE_FN = auto()
-    GENERATOR = auto()
-    ASYNC_GENERATOR = auto()
-
-
-GENERATOR_FACTORY_TYPES = {FactoryType.GENERATOR, FactoryType.ASYNC_GENERATOR}
-ASYNC_FACTORY_TYPES = {FactoryType.ASYNC_GENERATOR, FactoryType.COROUTINE_FN}
-
-
 @dataclass
 class InjectableFactory:
     factory: Callable[..., Any]
-    factory_type: FactoryType
+    callable_type: CallableType
     is_async: bool
     is_optional_type: bool
     raw_type: type
-
-
-def _get_factory_type(fn: Callable[..., T]) -> FactoryType:
-    """Determine the type of factory based on the function signature."""
-    if inspect.iscoroutinefunction(fn):
-        return FactoryType.COROUTINE_FN
-
-    if inspect.isgeneratorfunction(fn):
-        return FactoryType.GENERATOR
-
-    if inspect.isasyncgenfunction(fn):
-        return FactoryType.ASYNC_GENERATOR
-
-    return FactoryType.REGULAR
 
 
 def _function_get_unwrapped_return_type(fn: Callable[..., T]) -> type[T] | None:
@@ -99,7 +79,7 @@ def _function_get_unwrapped_return_type(fn: Callable[..., T]) -> type[T] | None:
 class ContainerRegistry:
     """Container class holding injectable registration info and dependencies among them."""
 
-    __slots__ = ("dependencies", "factories", "impls", "interfaces", "lifetime", "parameters")
+    __slots__ = ("dependencies", "factories", "impls", "interfaces", "lifetime", "on_change", "parameters")
 
     def __init__(
         self,
@@ -113,6 +93,7 @@ class ContainerRegistry:
         self.factories: dict[ContainerObjectIdentifier, InjectableFactory] = {}
         self.dependencies: dict[InjectionTarget, dict[str, AnnotatedParameter]] = defaultdict(defaultdict)
         self.lifetime: dict[ContainerObjectIdentifier, InjectableLifetime] = {}
+        self.on_change: Callable[[], None] | None = None
         self.extend(abstracts=abstracts or [], impls=impls or [])
 
     def extend(
@@ -134,15 +115,20 @@ class ContainerRegistry:
             if klass is None:
                 raise FactoryReturnTypeIsEmptyError(obj)
 
+            type_analysis = analyze_type(klass)
+
+            if impl.as_type is not None:
+                self._assert_as_type_compatible(implementation_type=type_analysis.raw_type, as_type=impl.as_type)
+
             target_type = impl.as_type
 
-            if target_type and analyze_type(klass).is_optional:
+            if target_type is not None and type_analysis.is_optional:
                 from typing import Optional  # noqa: PLC0415
 
                 target_type = Optional[target_type]
 
             self._register(
-                klass=target_type or klass,
+                klass=target_type if target_type is not None else klass,
                 factory_fn=obj,
                 lifetime=impl.lifetime,
                 qualifier=impl.qualifier,
@@ -151,13 +137,44 @@ class ContainerRegistry:
 
         self.assert_dependencies_valid()
         self._update_factories_async_flag()
+        if self.on_change:
+            self.on_change()
+
+    @staticmethod
+    def _assert_as_type_compatible(implementation_type: Any, as_type: Any) -> None:
+        """Try and validate the as_type matches the decorated item on a best-effort basis."""
+        if not isinstance(implementation_type, type):
+            return
+
+        as_type_analysis = analyze_type(as_type)
+        target_type = as_type_analysis.raw_type
+
+        # Raise for anything in as_type=xxx that's not a type.
+        if not isinstance(target_type, type):  # type: ignore[reportUnnecessaryIsInstance, unused-ignore]
+            raise InvalidAsTypeError(as_type)
+
+        is_protocol = getattr(target_type, "_is_protocol", False)
+        is_runtime_protocol = getattr(target_type, "_is_runtime_protocol", False)
+
+        # Protocols are structural. Validate only when runtime-checkable.
+        if is_protocol and not is_runtime_protocol:
+            return
+
+        try:
+            is_compatible = issubclass(implementation_type, target_type)
+        except TypeError:
+            # Some runtime-checkable protocols are not compatible with issubclass().
+            # Skip these failures on a best-effort basis.
+            if is_protocol:
+                return
+            raise
+
+        if not is_compatible:
+            raise AsTypeMismatchError(implementation=implementation_type, as_type=target_type)
 
     def _update_factories_async_flag(self) -> None:
-        def _is_dependency_async(impl: type, qualifier: Qualifier) -> bool:
-            if self.is_interface_known(impl):
-                impl = self.interface_resolve_impl(impl, qualifier)
-
-            factory = self.factories[impl, qualifier]
+        def _is_dependency_async(impl: type, qualifier: Qualifier | None) -> bool:
+            factory = self.factories[get_container_object_id(self.get_implementation(impl, qualifier), qualifier)]
 
             if factory.is_async:
                 return True
@@ -173,7 +190,7 @@ class ContainerRegistry:
 
         for impl, qualifiers in self.impls.items():
             for qualifier in qualifiers:
-                factory = self.factories[impl, qualifier]
+                factory = self.factories[get_container_object_id(impl, qualifier)]
 
                 factory.is_async = _is_dependency_async(impl, qualifier)
 
@@ -205,12 +222,12 @@ class ContainerRegistry:
             discover_interfaces(klass.__bases__)
 
         self._target_init_context(factory_fn)
-        self.lifetime[klass, qualifier] = lifetime
-        factory_type = _get_factory_type(factory_fn)
-        self.factories[klass, qualifier] = InjectableFactory(
+        self.lifetime[get_container_object_id(klass, qualifier)] = lifetime
+        callable_type = get_callable_type(factory_fn)
+        self.factories[get_container_object_id(klass, qualifier)] = InjectableFactory(
             factory=factory_fn,
-            factory_type=factory_type,
-            is_async=factory_type in ASYNC_FACTORY_TYPES,
+            callable_type=callable_type,
+            is_async=callable_type in ASYNC_CALLABLE_TYPES,
             is_optional_type=type_analysis.is_optional,
             raw_type=type_analysis.raw_type,
         )
@@ -272,6 +289,9 @@ class ContainerRegistry:
                 msg = f"Wireup dependencies must have types. Please add a type to the '{name}' parameter in {target}."
                 raise WireupError(msg)
 
+            if parameter.kind == inspect.Parameter.POSITIONAL_ONLY:
+                raise PositionalOnlyParameterError(name, target)
+
             if isinstance(annotated_param.annotation, EmptyContainerInjectionRequest):
                 warnings.warn(
                     f"Redundant Injected[T] or Annotated[T, Inject()] in parameter '{name}' of "
@@ -312,9 +332,23 @@ class ContainerRegistry:
 
         raise UnknownQualifiedServiceRequestedError(klass, qualifier, set(impls.keys()))
 
+    def get_implementation(self, klass: type, qualifier: Qualifier | None) -> type:
+        """Return the concrete implementation for a given class/interface and qualifier."""
+        if self.is_interface_known(klass):
+            return self.interface_resolve_impl(klass, qualifier)
+
+        return klass
+
+    def get_lifetime(self, klass: type, qualifier: Qualifier | None) -> InjectableLifetime:
+        return self.lifetime[get_container_object_id(self.get_implementation(klass, qualifier), qualifier)]
+
     def assert_dependencies_valid(self) -> None:
         """Assert that all required dependencies exist for this registry instance."""
-        for (impl, impl_qualifier), injectable_factory in self.factories.items():
+        for obj_id, injectable_factory in self.factories.items():
+            if isinstance(obj_id, tuple):
+                impl, impl_qualifier = obj_id
+            else:
+                impl, impl_qualifier = obj_id, None
             unknown_dependencies_with_default: list[str] = []
 
             for name, dependency in self.dependencies[injectable_factory.factory].items():
@@ -351,14 +385,12 @@ class ContainerRegistry:
         if dependency.is_parameter:
             return
 
-        dependency_class = (
-            self.interface_resolve_impl(dependency.klass, dependency.qualifier_value)
-            if dependency.klass in self.interfaces
-            else dependency.klass
-        )
-        dependency_lifetime = self.lifetime[dependency_class, dependency.qualifier_value]
+        dependency_lifetime = self.get_lifetime(dependency.klass, dependency.qualifier_value)
 
-        if self.lifetime[impl, impl_qualifier] == "singleton" and dependency_lifetime != "singleton":
+        if (
+            self.lifetime[get_container_object_id(impl, impl_qualifier)] == "singleton"
+            and dependency_lifetime != "singleton"
+        ):
             msg = (
                 f"Parameter '{parameter_name}' of {stringify_type(factory)} "
                 f"depends on an injectable with a '{dependency_lifetime}' lifetime which is not supported. "
@@ -394,7 +426,9 @@ class ContainerRegistry:
         """Assert that the resolution path for a dependency does not create a cycle."""
         if dependency.klass in self.interfaces or dependency.is_parameter:
             return
-        dependency_injectable_factory = self.factories[dependency.klass, dependency.qualifier_value]
+        dependency_injectable_factory = self.factories[
+            get_container_object_id(dependency.klass, dependency.qualifier_value)
+        ]
         new_path: list[tuple[AnnotatedParameter, Any]] = [*path, (dependency, dependency_injectable_factory)]
 
         if any(p.klass == dependency.klass and p.qualifier_value == dependency.qualifier_value for p, _ in path):

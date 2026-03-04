@@ -8,11 +8,26 @@ import typing
 from inspect import Parameter
 from typing import Any, Sequence, TypeVar, cast
 
-from wireup.errors import WireupError
+from wireup.errors import PositionalOnlyParameterError, WireupError
 from wireup.ioc.type_analysis import analyze_type
-from wireup.ioc.types import AnnotatedParameter, AnyCallable, InjectableType
+from wireup.ioc.types import AnnotatedParameter, AnyCallable, CallableType, ConfigInjectionRequest, InjectableType
 
 T = TypeVar("T")
+
+
+def get_callable_type(fn: Callable[..., Any]) -> CallableType:
+    if inspect.iscoroutinefunction(fn):
+        return CallableType.COROUTINE_FN
+
+    if inspect.isgeneratorfunction(fn):
+        return CallableType.GENERATOR
+
+    if inspect.isasyncgenfunction(fn):
+        return CallableType.ASYNC_GENERATOR
+
+    return CallableType.REGULAR
+
+
 _eval_type = cast("Callable[..., Any]", typing._eval_type)  # type: ignore[attr-defined]
 
 if typing.TYPE_CHECKING:
@@ -22,14 +37,19 @@ if typing.TYPE_CHECKING:
 
 
 def _get_injectable_type(metadata: Any) -> InjectableType | None:
+    if isinstance(metadata, InjectableType):
+        return metadata
+
     # When using fastapi, the injectable type will be wrapped with Depends.
     # As such, it needs to be unwrapped in order to get the actual metadata
     # Need to be careful here not to unwrap FastAPI dependencies
     # not owned by wireup as they might cause side effects.
     if hasattr(metadata, "dependency") and hasattr(metadata.dependency, "__is_wireup_depends__"):
         metadata = metadata.dependency()
+        if isinstance(metadata, InjectableType):
+            return metadata
 
-    return metadata if isinstance(metadata, InjectableType) else None
+    return None
 
 
 def _get_wireup_annotation(metadata: Sequence[Any]) -> InjectableType | None:
@@ -180,6 +200,11 @@ def hide_annotated_names(func: AnyCallable) -> None:
     return
 
 
+def is_wireup_injected(target: Any) -> bool:
+    """Return True if the callable has been wrapped by Wireup injection."""
+    return hasattr(target, "__wireup_generated_code__")
+
+
 def get_inject_annotated_parameters(target: AnyCallable) -> dict[str, AnnotatedParameter]:
     """Retrieve annotated parameters from a given callable target.
 
@@ -198,12 +223,16 @@ def get_inject_annotated_parameters(target: AnyCallable) -> dict[str, AnnotatedP
     if hasattr(target, "__wireup_names__"):
         return target.__wireup_names__  # type:ignore[no-any-return]
 
-    return {
-        name: param
-        for name, parameter in inspect.signature(target).parameters.items()
-        if (param := param_get_annotation(parameter, globalns_supplier=lambda: get_globals(target)))
-        and isinstance(param.annotation, InjectableType)
-    }
+    res: dict[str, AnnotatedParameter] = {}
+    for name, parameter in inspect.signature(target).parameters.items():
+        if (param := param_get_annotation(parameter, globalns_supplier=lambda: get_globals(target))) and isinstance(
+            param.annotation, InjectableType
+        ):
+            if parameter.kind == inspect.Parameter.POSITIONAL_ONLY:
+                raise PositionalOnlyParameterError(name, target)
+
+            res[name] = param
+    return res
 
 
 def get_valid_injection_annotated_parameters(
@@ -215,3 +244,15 @@ def get_valid_injection_annotated_parameters(
         container._registry.assert_dependency_exists(parameter=parameter, target=target, name=name)
 
     return names_to_inject
+
+
+def injection_requires_scope(names_to_inject: dict[str, AnnotatedParameter], container: BaseContainer) -> bool:
+    """Return True when any injected dependency requires entering a scope."""
+    for param in names_to_inject.values():
+        if isinstance(param.annotation, ConfigInjectionRequest):
+            continue
+
+        if container._registry.get_lifetime(param.klass, param.qualifier_value) != "singleton":
+            return True
+
+    return False

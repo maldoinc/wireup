@@ -3,7 +3,7 @@ from __future__ import annotations
 import sys
 from typing import TYPE_CHECKING, Any
 
-from wireup.util import format_name
+from wireup.util import format_name, stringify_type
 
 if TYPE_CHECKING:
     from wireup.ioc.types import AnyCallable, Qualifier
@@ -36,9 +36,18 @@ class DuplicateQualifierForInterfaceError(WireupError):
 class UnknownParameterError(WireupError):
     """Raised when requesting a config by name which does not exist."""
 
-    def __init__(self, parameter_name: str) -> None:
+    def __init__(self, parameter_name: str, parent_path: str | None = None) -> None:
         self.parameter_name = parameter_name
-        super().__init__(f"Unknown config key requested: {parameter_name}")
+
+        if parent_path:
+            message = (
+                f"Unknown config key requested: '{parent_path}.{parameter_name}'."
+                f" '{parameter_name}' not found in '{parent_path}'"
+            )
+        else:
+            message = f"Unknown config key requested: '{parameter_name}'"
+
+        super().__init__(message)
 
 
 class FactoryReturnTypeIsEmptyError(WireupError):
@@ -87,11 +96,41 @@ class InvalidRegistrationTypeError(WireupError):
         super().__init__(f"Cannot register {attempted} with the container. Allowed types are callables and types.")
 
 
+class AsTypeMismatchError(WireupError):
+    """Raised when as_type registration does not match the implementation type."""
+
+    def __init__(self, *, implementation: type[Any], as_type: type[Any]) -> None:
+        super().__init__(
+            f"Cannot register implementation {stringify_type(implementation)} as {stringify_type(as_type)}. "
+            f"{stringify_type(implementation)} is not a subclass of {stringify_type(as_type)}."
+        )
+
+
+class InvalidAsTypeError(WireupError):
+    """Raised when as_type is not a valid registration key."""
+
+    def __init__(self, as_type: Any) -> None:
+        super().__init__(
+            f"Invalid as_type value {as_type!r}. as_type must be a runtime type usable as a registration key."
+        )
+
+
 class UnknownOverrideRequestedError(WireupError):
     """Raised when attempting to override a injectable which does not exist."""
 
     def __init__(self, klass: type, qualifier: Qualifier | None) -> None:
         super().__init__(f"Cannot override unknown {format_name(klass, qualifier)}.")
+
+
+class PositionalOnlyParameterError(WireupError):
+    """Raised when Wireup encounters a positional-only parameter that it must inject."""
+
+    def __init__(self, name: str, target: Any) -> None:
+        msg = (
+            f"Cannot inject parameter '{name}' of '{stringify_type(target)}' because it is positional-only. "
+            "Injection is performed by keyword arguments. Remove the '/' separator or move this parameter after it."
+        )
+        super().__init__(msg)
 
 
 if sys.version_info >= (3, 11):

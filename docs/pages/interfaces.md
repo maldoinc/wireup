@@ -47,12 +47,26 @@ to bind a concrete class to a Protocol or an Abstract Base Class.
 !!! warning "Type Checking Limitation"
 
     Type checkers cannot verify that the decorated class implements the protocol or ABC specified in `as_type`. This is a
-    Python type system limitation.
+    Python type system limitation. If you want static guarantees, consider using factory functions with return type
+    annotations instead of class decorators.
 
-!!! tip "Factories Control Registration Type"
+!!! note "Runtime Validation"
 
-    With factories, you control the type the dependency is registered as by specifying the return type annotation. This
-    makes `as_type` largely unnecessary for factories and allows type checkers to verify the return type.
+    Wireup performs runtime validation for `as_type` with the following behavior:
+
+    - Non-protocol targets (`ABC`/regular classes): strict `issubclass` validation.
+    - `@runtime_checkable` protocols: best-effort runtime validation.
+    - Non-runtime-checkable protocols: no runtime structural validation.
+
+    To get the most reliable guarantees:
+
+    - Prefer factory return types over `as_type` when possible, since return annotations are statically checkable.
+    - Prefer `ABC`s when you need strict runtime enforcement.
+    - Mark protocols as `@runtime_checkable` if you want Wireup to attempt runtime checks.
+
+    ______________________________________________________________________
+
+    With factories, you control the registration type via the return annotation, which gives stronger static checks:
 
     ```python
     from wireup import injectable
@@ -70,8 +84,8 @@ to bind a concrete class to a Protocol or an Abstract Base Class.
     class InMemoryCache: ...
     ```
 
-    The `as_type` parameter is still useful when you want the function to retain its original type for other purposes (e.g.,
-    testing, direct usage) while registering it under a different type in the container.
+    Use `as_type` when you want to register under a different type while keeping the original implementation type for other
+    direct uses.
 
 ## Multiple Implementations
 
@@ -114,6 +128,24 @@ def main(
 
     @injectable(as_type=Cache, qualifier=CacheType.REDIS)
     class RedisCache: ...
+    ```
+
+!!! tip "Use Type Aliases for Repeated Qualified Injections"
+
+    If you repeatedly inject the same qualified dependency, consider creating a type alias once and reusing it:
+
+    ```python
+    from typing import Annotated
+    from wireup import Inject, Injected, inject_from_container
+
+    RedisCacheDep = Annotated[Cache, Inject(qualifier="redis")]
+
+
+    @inject_from_container(container)
+    def main(
+        default_cache: Injected[Cache],
+        redis_cache: RedisCacheDep,
+    ): ...
     ```
 
 ## Default Implementation

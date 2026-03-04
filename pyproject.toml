@@ -1,6 +1,6 @@
 [project]
 name = "wireup"
-version = "2.4.0"
+version = "2.8.0"
 description = "Python Dependency Injection Library"
 authors = [{ name = "Aldo Mateli", email = "aldo.mateli@gmail.com" }]
 license = { text = "MIT" }
@@ -117,6 +117,46 @@ lint.ignore = [
     "S101",
     "PLR2004",
     "PLR0913",
+]
+"benchmarks/*" = [
+    "BLE001",
+    "C901",
+    "E501",
+    "ERA001",
+    "FBT001",
+    "FBT002",
+    "I001",
+    "INP001",
+    "PERF203",
+    "PTH",
+    "PLC0415",
+    "PLR0912",
+    "PLR0913",
+    "PLR0915",
+    "PLR2004",
+    "PLW1509",
+    "RUF001",
+    "RUF034",
+    "RUF046",
+    "S311",
+    "S603",
+    "S607",
+    "SIM108",
+    "SIM117",
+    "T201",
+    "UP015",
+]
+"benchmarks/wireup_benchmarks/*" = [
+    "ANN",
+    "ARG001",
+    "B010",
+    "B008",
+    "E742",
+    "ERA001",
+    "FA102",
+    "PLR0913",
+    "PLR2004",
+    "S101",
 ]
 
 

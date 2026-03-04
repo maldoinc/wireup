@@ -2,15 +2,30 @@ from __future__ import annotations
 
 from collections.abc import Hashable
 from dataclasses import dataclass
-from typing import Any, Callable, Optional, Tuple, Union
+from enum import Enum, auto
+from typing import Any, AsyncGenerator, Callable, Generator, List, Tuple, Type, Union
 
 from typing_extensions import Literal
 
+from wireup.errors import WireupError
+
 AnyCallable = Callable[..., Any]
+ExitStackEntry = Tuple[Union[Generator[Any, Any, Any], AsyncGenerator[Any, Any]], bool]
+ExitStack = List[ExitStackEntry]
 
 
 class InjectableType:
     """Base type for anything that should be injected using annotation hints."""
+
+    def __getattr__(self, name: str) -> Any:
+        msg = (
+            f"You're trying to access the attribute '{name}' of an unresolved Wireup injectable.\n"
+            "Injection is not set up correctly.\n"
+            "How to fix it:\n"
+            "1) Ensure your Wireup integration setup function is called for your framework.\n"
+            "2) Call setup after routes/handlers are added to the app."
+        )
+        raise WireupError(msg)
 
 
 @dataclass(frozen=True)
@@ -38,7 +53,11 @@ class ConfigInjectionRequest(InjectableType):
 
 
 Qualifier = Hashable
-ContainerObjectIdentifier = Tuple[type, Optional[Qualifier]]
+ContainerObjectIdentifier = Union[Type[Any], Tuple[Type[Any], Qualifier]]
+
+
+def get_container_object_id(klass: type[Any], qualifier: Qualifier | None) -> ContainerObjectIdentifier:
+    return klass if qualifier is None else (klass, qualifier)
 
 
 @dataclass(frozen=True)
@@ -67,7 +86,7 @@ InjectableLifetime = Literal["singleton", "scoped", "transient"]
 class AnnotatedParameter:
     """Represent an annotated dependency parameter."""
 
-    __slots__ = ("annotation", "has_default_value", "is_parameter", "klass", "obj_id", "qualifier_value")
+    __slots__ = ("annotation", "has_default_value", "is_parameter", "klass", "qualifier_value")
 
     def __init__(
         self, klass: type[Any], annotation: InjectableType | None = None, *, has_default_value: bool = False
@@ -84,7 +103,6 @@ class AnnotatedParameter:
         self.qualifier_value = self.annotation.qualifier if isinstance(self.annotation, InjectableQualifier) else None
         self.is_parameter = isinstance(self.annotation, ConfigInjectionRequest)
         self.has_default_value = has_default_value
-        self.obj_id = self.klass, self.qualifier_value
 
     def __eq__(self, other: object) -> bool:
         """Check if two things are equal."""
@@ -117,3 +135,14 @@ class InjectableOverride:
     target: type[Any]
     new: Any
     qualifier: Qualifier | None = None
+
+
+class CallableType(Enum):
+    REGULAR = auto()
+    COROUTINE_FN = auto()
+    GENERATOR = auto()
+    ASYNC_GENERATOR = auto()
+
+
+GENERATOR_CALLABLE_TYPES = {CallableType.GENERATOR, CallableType.ASYNC_GENERATOR}
+ASYNC_CALLABLE_TYPES = {CallableType.ASYNC_GENERATOR, CallableType.COROUTINE_FN}
