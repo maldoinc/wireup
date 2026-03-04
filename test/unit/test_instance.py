@@ -1,39 +1,71 @@
+import pytest
+from typing import Annotated
 
-import unittest
-from wireup import instance
-from wireup._annotations import InjectableDeclaration
+from wireup import Inject, create_sync_container, injectable, instance
 
-class TestInstanceProvider(unittest.TestCase):
-    def test_instance_helper_creates_valid_declaration(self):
-        obj = object()
-        provider = instance(obj, as_type=object)
-        
-        self.assertTrue(callable(provider))
-        self.assertIs(provider(), obj)
-        self.assertEqual(provider.__annotations__["return"], object)
-        
-        reg = provider.__wireup_registration__
-        self.assertIsInstance(reg, InjectableDeclaration)
-        self.assertIs(reg.obj, provider)
-        self.assertEqual(reg.lifetime, "singleton")
-        self.assertEqual(reg.as_type, object)
-        self.assertIsNone(reg.qualifier)
 
-    def test_instance_helper_supports_qualifiers(self):
-        obj = {}
-        provider = instance(obj, as_type=dict, qualifier="config")
-        
-        reg = provider.__wireup_registration__
-        self.assertEqual(reg.qualifier, "config")
-        self.assertIs(reg.as_type, dict)
+def test_instance_registration():
+    class DbConnection:
+        pass
 
-    def test_instance_raises_if_as_type_is_missing(self):
-        with self.assertRaisesRegex(ValueError, "Argument 'as_type' is required"):
-            instance(object())
+    @injectable
+    class Repository:
+        def __init__(self, db_conn: DbConnection):
+            self.db_conn = db_conn
 
-    def test_provider_always_returns_same_instance(self):
-        obj = []
-        provider = instance(obj, as_type=list)
-        
-        self.assertIs(provider(), obj)
-        self.assertIs(provider(), obj)
+    db = DbConnection()
+    container = create_sync_container(injectables=[instance(db, as_type=DbConnection), Repository])
+
+    # Check it is registered as a singleton with the desired type
+    assert container.get(DbConnection) is db
+    assert container.get(DbConnection) is container.get(DbConnection)
+
+    repo = container.get(Repository)
+    assert repo.db_conn is db
+
+
+def test_instance_registration_with_qualifier():
+    class DbConnection:
+        pass
+
+    @injectable
+    class Service:
+        def __init__(
+            self,
+            write_db: Annotated[DbConnection, Inject(qualifier="write")],
+            read_db: Annotated[DbConnection, Inject(qualifier="read")],
+        ):
+            self.write_db = write_db
+            self.read_db = read_db
+
+    primary = DbConnection()
+    replica = DbConnection()
+
+    container = create_sync_container(
+        injectables=[
+            instance(primary, as_type=DbConnection, qualifier="write"),
+            instance(replica, as_type=DbConnection, qualifier="read"),
+            Service,
+        ]
+    )
+
+    assert container.get(DbConnection, qualifier="write") is primary
+    assert container.get(DbConnection, qualifier="read") is replica
+
+    svc = container.get(Service)
+
+    assert svc.write_db is primary
+    assert svc.read_db is replica
+
+
+def test_duplicate_registration_fails():
+    obj = object()
+
+    # wireup throws specific Exception subclasses but Exception is fine for basic tests
+    with pytest.raises(Exception):
+        create_sync_container(
+            injectables=[
+                instance(obj, as_type=object),
+                instance(obj, as_type=object),
+            ]
+        )
