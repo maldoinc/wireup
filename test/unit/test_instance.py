@@ -1,7 +1,8 @@
-import pytest
 from typing import Annotated
 
+import pytest
 from wireup import Inject, create_sync_container, injectable, instance
+from wireup.errors import DuplicateServiceRegistrationError
 
 
 def test_instance_registration():
@@ -14,9 +15,9 @@ def test_instance_registration():
             self.db_conn = db_conn
 
     db = DbConnection()
-    container = create_sync_container(injectables=[instance(db, as_type=DbConnection), Repository])
-
-    # Check it is registered as a singleton with the desired type
+    container = create_sync_container(
+        injectables=[instance(db, as_type=DbConnection), Repository]
+    )
     assert container.get(DbConnection) is db
     assert container.get(DbConnection) is container.get(DbConnection)
 
@@ -60,9 +61,7 @@ def test_instance_registration_with_qualifier():
 
 def test_duplicate_registration_fails():
     obj = object()
-
-    # wireup throws specific Exception subclasses but Exception is fine for basic tests
-    with pytest.raises(Exception):
+    with pytest.raises(DuplicateServiceRegistrationError):
         create_sync_container(
             injectables=[
                 instance(obj, as_type=object),
