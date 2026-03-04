@@ -41,14 +41,14 @@ _WIREUP_GENERATED_FACTORY_NAME = "_wireup_factory"
 _SENTINEL = object()
 
 
-def _create_sync_singleton_fast_factory(value: Any) -> Callable[[BaseContainer], Any]:
+def _create_sync_singleton_instance_factory(value: Any) -> Callable[[BaseContainer], Any]:
     def _factory(_: BaseContainer) -> Any:
         return value
 
     return _factory
 
 
-def _create_async_singleton_fast_factory(value: Any) -> Callable[[BaseContainer], Any]:
+def _create_async_singleton_instance_factory(value: Any) -> Callable[[BaseContainer], Any]:
     async def _factory(_: BaseContainer) -> Any:
         return value
 
@@ -180,7 +180,7 @@ class FactoryCompiler:
                 if is_interface:
                     cg += "storage[ORIGINAL_OBJ_ID] = instance"
                 if is_singleton:
-                    cg += "factories[OBJ_FACTORY_KEY].factory = _create_singleton_fast_factory(instance)"
+                    cg += "factories[OBJ_FACTORY_KEY].factory = _create_singleton_instance_factory(instance)"
 
             cg += "return instance"
 
@@ -255,8 +255,10 @@ class FactoryCompiler:
                 "OBJ_ID": resolved_obj_id,
                 "OBJ_FACTORY_KEY": obj_factory_key,
                 "ORIGINAL_FACTORY": self._registry.factories[resolved_obj_id].factory,
-                "_create_singleton_fast_factory": (
-                    _create_async_singleton_fast_factory if result.is_async else _create_sync_singleton_fast_factory
+                "_create_singleton_instance_factory": (
+                    _create_async_singleton_instance_factory
+                    if result.is_async
+                    else _create_sync_singleton_instance_factory
                 ),
                 "TemplatedString": TemplatedString,
                 "WireupError": WireupError,
