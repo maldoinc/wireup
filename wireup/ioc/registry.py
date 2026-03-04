@@ -206,7 +206,15 @@ class ContainerRegistry:
         type_analysis = analyze_type(klass)
         klass = type_analysis.normalized_type
 
+        object_id = get_container_object_id(klass, qualifier)
         if self.is_type_with_qualifier_known(klass, qualifier):
+            existing_factory = self.factories.get(object_id)
+            existing_lifetime = self.lifetime.get(object_id)
+
+            # Idempotent registration: same provider + same metadata can be safely ignored.
+            if existing_factory and existing_factory.factory is factory_fn and existing_lifetime == lifetime:
+                return
+
             raise DuplicateServiceRegistrationError(klass, qualifier=qualifier)
 
         def discover_interfaces(bases: tuple[type, ...]) -> None:
@@ -222,9 +230,9 @@ class ContainerRegistry:
             discover_interfaces(klass.__bases__)
 
         self._target_init_context(factory_fn)
-        self.lifetime[get_container_object_id(klass, qualifier)] = lifetime
+        self.lifetime[object_id] = lifetime
         callable_type = get_callable_type(factory_fn)
-        self.factories[get_container_object_id(klass, qualifier)] = InjectableFactory(
+        self.factories[object_id] = InjectableFactory(
             factory=factory_fn,
             callable_type=callable_type,
             is_async=callable_type in ASYNC_CALLABLE_TYPES,

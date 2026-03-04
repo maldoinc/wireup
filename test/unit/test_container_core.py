@@ -236,15 +236,29 @@ def test_get_class_with_param_bindings() -> None:
     assert svc.cache_dir == "/var/cache/etc"
 
 
-def test_raises_multiple_definitions():
+def test_allows_duplicate_same_definition():
     @injectable
     class Multiple: ...
+
+    container = wireup.create_sync_container(injectables=[Multiple, Multiple])
+    assert isinstance(container.get(Multiple), Multiple)
+
+
+def test_raises_multiple_definitions_for_different_providers():
+    @injectable
+    class Multiple: ...
+
+    @injectable
+    def make_multiple():
+        return Multiple()
+
+    make_multiple.__annotations__["return"] = Multiple
 
     with pytest.raises(
         DuplicateServiceRegistrationError,
         match=re.escape(f"Cannot register type Type {Multiple.__module__}.{Multiple.__name__} as it already exists."),
     ):
-        wireup.create_sync_container(injectables=[Multiple, Multiple])
+        wireup.create_sync_container(injectables=[Multiple, make_multiple])
 
 
 def test_register_same_qualifier_should_raise():

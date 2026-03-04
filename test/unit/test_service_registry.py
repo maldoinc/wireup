@@ -28,13 +28,13 @@ def test_register_service() -> None:
     assert registry.is_type_with_qualifier_known(MyService, "default")
     assert registry.lifetime[MyService, "default"] == "singleton"
 
-    with pytest.raises(DuplicateServiceRegistrationError):
-        ContainerRegistry(
-            impls=[
-                InjectableDeclaration(obj=MyService, qualifier="default", lifetime="singleton"),
-                InjectableDeclaration(obj=MyService, qualifier="default", lifetime="singleton"),
-            ]
-        )
+    deduped_registry = ContainerRegistry(
+        impls=[
+            InjectableDeclaration(obj=MyService, qualifier="default", lifetime="singleton"),
+            InjectableDeclaration(obj=MyService, qualifier="default", lifetime="singleton"),
+        ]
+    )
+    assert deduped_registry.is_impl_with_qualifier_known(MyService, "default")
 
 
 def test_register_abstract() -> None:
@@ -54,11 +54,26 @@ def test_register_factory() -> None:
     with pytest.raises(FactoryReturnTypeIsEmptyError):
         ContainerRegistry(impls=[InjectableDeclaration(obj=invalid_factory, lifetime="singleton")])
 
+    deduped_registry = ContainerRegistry(
+        impls=[
+            InjectableDeclaration(obj=random_service_factory, lifetime="singleton"),
+            InjectableDeclaration(obj=random_service_factory, lifetime="singleton"),
+        ]
+    )
+    assert deduped_registry.is_impl_with_qualifier_known(RandomService, None)
+
+
+def test_register_same_target_with_different_provider_raises() -> None:
+    class X: ...
+
+    def make_x() -> X:
+        return X()
+
     with pytest.raises(DuplicateServiceRegistrationError):
         ContainerRegistry(
             impls=[
-                InjectableDeclaration(obj=random_service_factory, lifetime="singleton"),
-                InjectableDeclaration(obj=random_service_factory, lifetime="singleton"),
+                InjectableDeclaration(obj=X, lifetime="singleton"),
+                InjectableDeclaration(obj=make_x, lifetime="singleton"),
             ]
         )
 
