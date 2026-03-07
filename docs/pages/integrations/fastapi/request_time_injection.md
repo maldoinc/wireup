@@ -1,7 +1,7 @@
-# Request Lifecycle Patterns
+# Request-Time Injection
 
 While Wireup primarily handles dependency injection in FastAPI routes, you can also use dependencies in other functions
-during the request lifecycle to create composable and reusable patterns:
+during the request lifecycle to build reusable decorators:
 
 - **Reusable Route Decorators**: `@require_admin`, `@require_permission`, `@rate_limit`
 - **Middleware Integration**: request context setup and cross-cutting request logic
@@ -9,7 +9,7 @@ during the request lifecycle to create composable and reusable patterns:
 
 !!! info "Advanced Feature - Requires Middleware Mode"
 
-    The patterns shown on this page require `middleware_mode=True` during Wireup setup.
+    The examples on this page require `middleware_mode=True` during Wireup setup.
 
     ```python
     wireup.integration.fastapi.setup(container, app, middleware_mode=True)
@@ -17,7 +17,7 @@ during the request lifecycle to create composable and reusable patterns:
 
     Normally, the request-scoped container is created just before the route handler is called. With middleware mode enabled,
     it's created at the start of the HTTP request lifecycle, making it available in middleware and other request handlers.
-    These patterns apply to HTTP requests only, not WebSocket handlers.
+    These examples apply to HTTP requests only, not WebSocket handlers.
 
 ## Composable Route Decorators
 
@@ -27,44 +27,47 @@ endpoints. Examples below:
 ### Authentication & Authorization
 
 ```python
+import contextlib
+from collections.abc import AsyncIterator
 from wireup import Injected
 from wireup.integration.fastapi import inject
 
 
-@inject
 @contextlib.asynccontextmanager
-async def require_permission(
-    permission: str,
-    auth: Injected[AuthService],
-) -> AsyncIterator[None]:
-    if not await auth.has_permission(permission):
-        raise HTTPException(status_code=403, detail="Insufficient permissions")
+@inject
+async def require_auth(auth: Injected[AuthService]) -> AsyncIterator[None]:
+    if not await auth.is_authenticated():
+        raise HTTPException(status_code=401, detail="Authentication required")
 
     yield
 
 
 @router.get("/users")
-@require_permission("read_users")
+@require_auth()
 async def get_users(user_service: Injected[UserService]): ...
 ```
 
 ### Rate Limiting
 
 ```python
+import contextlib
+from collections.abc import AsyncIterator
 from wireup import Injected
 from wireup.integration.fastapi import inject
 
 
-@inject
-@contextlib.asynccontextmanager
-async def rate_limit(
-    rate_limiter: Injected[RateLimiterService],
-    max_requests: int = 100,
-) -> AsyncIterator[None]:
-    if not await rate_limiter.check(max_requests):
-        raise HTTPException(status_code=429, detail="Too many requests")
+def rate_limit(*, max_requests: int = 100):
+    @contextlib.asynccontextmanager
+    @inject
+    async def guard(
+        rate_limiter: Injected[RateLimiterService],
+    ) -> AsyncIterator[None]:
+        if not await rate_limiter.check(max_requests):
+            raise HTTPException(status_code=429, detail="Too many requests")
 
-    yield
+        yield
+
+    return guard()
 
 
 @router.get("/api/data")
@@ -76,7 +79,7 @@ async def get_data(data_service: Injected[DataService]): ...
 
 Access Wireup services in FastAPI middleware for request setup or other cross-cutting concerns.
 
-### Request-Time Middleware Pattern
+### Middleware Injection
 
 FastAPI's dependency system (`Depends`) does not apply to middleware. Middleware runs outside route handlers, so this is
 one of the places where FastAPI cannot inject your services for you.
@@ -130,17 +133,16 @@ async def get_users(
 
 !!! warning "Avoid When Possible"
 
-    This pattern should be rare. Prefer pure Wireup injection. Use this only when:
+    This should be rare. Prefer pure Wireup injection. Use this only when:
 
     - **Migrating gradually to Wireup** from pure FastAPI `Depends()`
     - **External libraries** require `Depends()` integration
 
     Remember: Wireup services cannot depend on `Depends()` providers.
 
-## Testing Patterns
+## Testing
 
-When testing code that runs request-time helpers (`@inject` or `get_request_container()`), ensure the request-scoped
-container is available.
+When testing code that uses request-time injection (`@inject` or `get_request_container()`), make sure the request-scoped container is available.
 
 ### Testing Route Decorators
 
@@ -159,18 +161,18 @@ wireup.integration.fastapi.setup(container, app, middleware_mode=True)
 
 
 @router.get("/users")
-@require_permission("read_users")
+@require_auth()
 async def get_users(user_service: Injected[UserService]): ...
 
 
-def test_require_permission_denied():
+def test_require_auth_denied():
     with TestClient(app) as client:
         # AuthService will be mocked via container overrides
         response = client.get("/users")
-        assert response.status_code == 403
+        assert response.status_code == 401
 
 
-def test_require_permission_allowed():
+def test_require_auth_allowed():
     with TestClient(app) as client:
         # Override AuthService to return True
         with get_app_container(app).override.injectable(
@@ -192,11 +194,11 @@ def test_request_middleware_runs():
 !!! tip
 
     Use `get_app_container(app).override.injectable()` to inject mocks and fakes during tests. This works for both route
-    decorators and middleware patterns.
+    decorators and middleware.
 
 ## Direct Container Access
 
-For utilities, helpers, or other cases where you need direct access to the container APIs:
+For utilities or other cases where you need direct access to the container APIs:
 
 ```python
 from wireup.integration.fastapi import get_app_container, get_request_container
@@ -212,9 +214,9 @@ app_container = get_app_container(app)
 The app container is always retrievable given an instance of the application. The request-scoped container is only
 available when `middleware_mode=True` is enabled.
 
-!!! tip "Prefer `@inject` for request-time helpers"
+!!! tip
 
-    `@inject` keeps signatures type-driven and avoids manual container lookups. If you prefer explicit container access,
+    `@inject` keeps dependency wiring in the function signature and avoids manual container lookups. If you prefer explicit container access,
     `get_request_container()` works anywhere during a request:
 
     ```python

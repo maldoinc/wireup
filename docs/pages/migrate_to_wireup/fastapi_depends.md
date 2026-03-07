@@ -1,5 +1,5 @@
 ---
-description: Migrate FastAPI Depends to Wireup with a low-risk, step-by-step path, including factory-first migration patterns, lifetimes, and request/background task injection.
+description: Migrate FastAPI Depends to Wireup with a low-risk, step-by-step path, including factory-first migration, lifetimes, and request/background task injection.
 ---
 
 # Migrate from FastAPI Depends to Wireup
@@ -17,7 +17,7 @@ The core idea is simple:
 
 !!! info "Need full FastAPI integration setup?"
 
-    This page focuses on migration strategy and mechanical rewrites. For full integration setup, advanced patterns, and API
+    This page focuses on migration strategy and mechanical rewrites. For full integration setup, advanced usage, and API
     details, see the [FastAPI integration guide](../integrations/fastapi/index.md).
 
 ## Not Leaving the FastAPI Ecosystem
@@ -32,7 +32,7 @@ generator. Auth extraction can stay in FastAPI, while auth/domain services can b
 - Shared services are defined once and reused across FastAPI, CLI commands, workers, and scripts instead of rebuilding
     DI wiring per runtime.
 - Reusable sub-graphs let you run multiple configured instances of the same dependency graph without duplicating wiring.
-- `singleton`, `scoped`, and `transient` lifetimes are explicit and enforced, avoiding ad-hoc lifetime patterns
+- `singleton`, `scoped`, and `transient` lifetimes are explicit and enforced, avoiding ad-hoc lifetime workarounds
     (`lru_cache`, `app.state`, custom factories).
 - With class-based handlers, constructor dependencies are resolved at startup instead of per request.
 
@@ -192,9 +192,9 @@ async def list_users(
 
 This means dependency-function mixups are usually caught in tests or at runtime, not by static typing.
 
-### 2) Singleton patterns are process-global
+### 2) Singleton helpers are process-global
 
-FastAPI singleton patterns are usually process-global. With `@lru_cache`, state can leak across tests if the
+FastAPI singletons are usually process-global. With `@lru_cache`, state can leak across tests if the
 returned object is mutable and the cache is not reset.
 
 ### 3) Async singleton resources cannot use `@lru_cache`
@@ -262,7 +262,7 @@ adds startup graph validation for this layer.
 | Service/repository/client construction          | No                                                   | Yes                                                                                                |
 | App settings and long-lived clients             | No                                                   | Yes                                                                                                |
 | Request-scoped domain services/context          | No                                                   | Yes (`lifetime="scoped"`)                                                                          |
-| Decorators/middleware needing container access  | Sometimes                                            | Sometimes. See [Request Lifecycle Patterns](../integrations/fastapi/request_lifecycle_patterns.md) |
+| Decorators/middleware needing container access  | Sometimes                                            | Sometimes. See [Request-Time Injection](../integrations/fastapi/request_time_injection.md) |
 
 Keeping this boundary explicit prevents confusion when both systems coexist during migration.
 
@@ -301,21 +301,21 @@ wireup.integration.fastapi.setup(container, app)
 
 For setup details and advanced usage, see the [FastAPI integration guide](../integrations/fastapi/index.md).
 
-## Core Migration Patterns (Mechanical Before/After)
+## Core Migration Steps (Mechanical Before/After)
 
-The snippets below are migration templates: copy the pattern, adapt names, and apply incrementally. They focus on DI
+The snippets below are migration templates: copy the example, adapt names, and apply incrementally. They focus on DI
 shape, not full app bootstrap. For full setup (`create_async_container`, module registration, and
 `wireup.integration.fastapi.setup(...)`), see the [FastAPI integration guide](../integrations/fastapi/index.md).
 
 ### 1) Service factory chains
 
-This is the core mechanical rewrite pattern you'll repeat during migration.
+This is the core rewrite you'll repeat during migration.
 Wireup also supports a factory-first style, so you can keep function factories after migration if that fits
 your team conventions. This is also the easiest initial migration path because it reuses most of your existing wiring.
 
-Mechanical mapping for the factory-first migration path:
+Mapping for the factory-first migration path:
 
-| Current FastAPI pattern                | Wireup mapping                   | Where it applies                          |
+| Current FastAPI usage                  | Wireup mapping                   | Where it applies                          |
 | -------------------------------------- | -------------------------------- | ----------------------------------------- |
 | `@lru_cache` on dependency function    | `@injectable`                    | Wireup factory functions                  |
 | No `@lru_cache` on dependency function | `@injectable(lifetime="scoped")` | Wireup factory functions (request-scoped) |
@@ -364,12 +364,12 @@ Mechanical mapping for the factory-first migration path:
 
 
     @injectable
-    def make_repo(db: DB) -> Repo:
+    def get_repo(db: DB) -> Repo:
         return Repo(db)
 
 
     @injectable
-    def make_service(repo: Repo) -> Service:
+    def get_service(repo: Repo) -> Service:
         return Service(repo)
 
 
@@ -554,7 +554,7 @@ container = wireup.create_async_container(
         return {"ok": True}
     ```
 
-See [Resource Management](../resources.md) for more lifecycle patterns.
+See [Resource Management](../resources.md) for more lifecycle examples.
 
 ### 5) Keep FastAPI-native params, move service wiring
 
@@ -646,8 +646,8 @@ scope behavior details.
 
 ### 7) Router-level pre-handler checks (`dependencies=[Depends(...)]`)
 
-Use this when logic must run before the endpoint body. This pattern requires `middleware_mode=True` on FastAPI setup
-(not on container creation). This pattern looks different between the two but
+Use this when logic must run before the endpoint body. This requires `middleware_mode=True` on FastAPI setup
+(not on container creation). The code looks different between the two, but
 it is equivalent.
 
 ```python
@@ -710,17 +710,15 @@ wireup.integration.fastapi.setup(
 
     @contextlib.asynccontextmanager
     @inject
-    async def require_permission(
-        permission: str,
-        auth: Injected[AuthService],
-    ) -> AsyncIterator[None]:
-        if not await auth.has_permission(permission):
-            raise HTTPException(status_code=403, detail="Forbidden")
+    async def require_auth(auth: Injected[AuthService]) -> AsyncIterator[None]:
+        if not await auth.is_authenticated():
+            raise HTTPException(status_code=401, detail="Authentication required")
+
         yield
 
 
     @router.get("/users")
-    @require_permission("users:read")
+    @require_auth()
     async def list_users(service: Injected[UserService]):
         return await service.list_all()
     ```
@@ -830,4 +828,4 @@ that depend on those leaves.
 ## Next Steps
 
 - [Full FastAPI Integration Guide](../integrations/fastapi/index.md)
-- [FastAPI Request Lifecycle Patterns](../integrations/fastapi/request_lifecycle_patterns.md)
+- [FastAPI Request-Time Injection](../integrations/fastapi/request_time_injection.md)

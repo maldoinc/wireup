@@ -96,7 +96,7 @@ Run the app with `python manage.py runserver`, then open `http://127.0.0.1:8000/
 
 - [Django Setup and Installation](setup.md): installation, middleware placement, and settings/config integration.
 - [Inject in Views](view_injection.md): core Django, DRF, Ninja, forms, and request-scoped patterns.
-- [Request Lifecycle Patterns](request_lifecycle_patterns.md): reusable decorators, middleware-adjacent hooks, and direct container access.
+- [Request-Time Injection](request_time_injection.md): reusable decorators, middleware entry points, and direct container access.
 - [App-Level Injection](app_injection.md): management commands, signals, checks, and scripts with `@inject_app`.
 - [Django Testing](testing.md): `Client`, `AsyncClient`, `call_command`, and override patterns.
 - [Troubleshooting](troubleshooting.md): common errors and quick fixes.

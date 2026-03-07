@@ -14,8 +14,8 @@ Symptom:
 
 Fix:
 
-1. Ensure `wireup.integration.fastapi.setup(container, app)` is called.
-2. Ensure routes use `Injected[...]` or `@inject` where expected.
+1. Make sure `wireup.integration.fastapi.setup(container, app)` is called.
+2. Make sure routes use `Injected[...]` or `@inject` where expected.
 
 ```python
 container = wireup.create_async_container(
@@ -52,7 +52,7 @@ Symptom:
 Fix:
 
 1. Call setup with `middleware_mode=True`.
-2. Ensure Wireup middleware is outermost (middleware ordering matters).
+2. Make sure Wireup middleware is outermost (middleware ordering matters).
 
 ```python
 wireup.integration.fastapi.setup(container, app, middleware_mode=True)
@@ -92,7 +92,7 @@ Symptom:
 
 Fix:
 
-- For class-based handlers, ensure endpoint methods are not wrapped after router registration.
+- For class-based handlers, make sure endpoint methods are not wrapped after router registration.
 - If decorating methods, place decorators before router registration and follow the class-based handlers guide.
 
 See [Class-Based Handlers](class_based_handlers.md) for the supported pattern.
