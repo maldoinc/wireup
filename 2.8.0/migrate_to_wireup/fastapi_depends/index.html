@@ -4908,6 +4908,15 @@ not need it.</p>
 </div>
 </div>
 <h2 id="testing">Testing<a class="headerlink" href="#testing" title="Permanent link">&para;</a></h2>
+<p>For tests, the main difference is that overrides move from dependency functions to injected types. In Wireup, you override the target type instead of overriding the factory or class that produces it. </p>
+<p>You still test FastAPI with
+<code>TestClient</code>, but Wireup makes the override target explicit and scopes it with a context manager instead of mutating
+<code>app.dependency_overrides</code> and remembering to clean it up.</p>
+<ul>
+<li>FastAPI <code>Depends</code>: override the factory/dependency function object.</li>
+<li>Wireup: override the resolved service type.</li>
+<li>In both cases: use <code>TestClient</code> as a context manager so lifespan runs.</li>
+</ul>
 <div class="tabbed-set tabbed-alternate" data-tabs="10:2"><input checked="checked" id="before-depends--appdependency_overrides" name="__tabbed_10" type="radio" /><input id="after-wireup-override-context-manager" name="__tabbed_10" type="radio" /><div class="tabbed-labels"><label for="before-depends--appdependency_overrides">Before (<code>Depends</code> + <code>app.dependency_overrides</code>)</label><label for="after-wireup-override-context-manager">After (Wireup override context manager)</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
@@ -4944,6 +4953,8 @@ not need it.</p>
 </div>
 </div>
 </div>
+<p>For a more in-depth guide on testing with Wireup and FastAPI, see
+<a href="../../integrations/fastapi/testing/">FastAPI Testing</a> and the general <a href="../../testing/">Testing</a> guide.</p>
 <h2 id="incremental-migration-plan">Incremental Migration Plan<a class="headerlink" href="#incremental-migration-plan" title="Permanent link">&para;</a></h2>
 <ol>
 <li>Integrate Wireup once. Create container and call <code>wireup.integration.fastapi.setup(container, app)</code> after routes are

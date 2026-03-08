@@ -1570,6 +1570,17 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#django-6-background-tasks" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Django 6 Background Tasks
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#management-commands" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -3534,6 +3545,17 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#django-6-background-tasks" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Django 6 Background Tasks
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#management-commands" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -3618,6 +3640,32 @@
 <li>Startup or script entry points after <code>django.setup()</code></li>
 </ul>
 <p>Use <code>@inject</code> for request handlers (Django views, DRF handlers, Ninja endpoints).</p>
+<h2 id="django-6-background-tasks">Django 6 Background Tasks<a class="headerlink" href="#django-6-background-tasks" title="Permanent link">&para;</a></h2>
+<p>Django 6 background tasks also run outside the request lifecycle, so they should use <code>@inject_app</code>.</p>
+<div class="highlight"><span class="filename">myapp/tasks.py</span><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">django.tasks</span><span class="w"> </span><span class="kn">import</span> <span class="n">task</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">wireup</span><span class="w"> </span><span class="kn">import</span> <span class="n">Injected</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">wireup.integration.django</span><span class="w"> </span><span class="kn">import</span> <span class="n">inject_app</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">myapp.services</span><span class="w"> </span><span class="kn">import</span> <span class="n">EmailService</span>
+
+
+<span class="nd">@task</span>
+<span class="nd">@inject_app</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">send_welcome_email</span><span class="p">(</span><span class="n">user_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">email</span><span class="p">:</span> <span class="n">Injected</span><span class="p">[</span><span class="n">EmailService</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="n">email</span><span class="o">.</span><span class="n">send_welcome</span><span class="p">(</span><span class="n">user_id</span><span class="p">)</span>
+</code></pre></div>
+<p>You can enqueue the task from a view or service as usual:</p>
+<div class="highlight"><span class="filename">myapp/views.py</span><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">django.http</span><span class="w"> </span><span class="kn">import</span> <span class="n">HttpResponse</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">myapp.tasks</span><span class="w"> </span><span class="kn">import</span> <span class="n">send_welcome_email</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">signup_complete</span><span class="p">(</span><span class="n">request</span><span class="p">):</span>
+    <span class="n">send_welcome_email</span><span class="o">.</span><span class="n">enqueue</span><span class="p">(</span><span class="n">request</span><span class="o">.</span><span class="n">user</span><span class="o">.</span><span class="n">id</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">HttpResponse</span><span class="p">(</span><span class="s2">&quot;queued&quot;</span><span class="p">)</span>
+</code></pre></div>
+<p>This uses the application/root container rather than the request-scoped container, which is the correct behavior for
+work that executes after the request path.</p>
 <h2 id="management-commands">Management Commands<a class="headerlink" href="#management-commands" title="Permanent link">&para;</a></h2>
 <div class="highlight"><span class="filename">myapp/management/commands/greet.py</span><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">django.core.management.base</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseCommand</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">wireup</span><span class="w"> </span><span class="kn">import</span> <span class="n">Injected</span>
