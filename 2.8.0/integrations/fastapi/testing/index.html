@@ -6,7 +6,7 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="Test FastAPI apps with Wireup using TestClient lifespan patterns, dependency overrides, and class-based handler startup-safe mocking.">
+        <meta name="description" content="Test FastAPI apps with Wireup using TestClient, dependency overrides, and class-based handler startup-safe mocking.">
       
       
       
@@ -773,6 +773,8 @@
       
         
       
+        
+      
     
     
     
@@ -917,6 +919,34 @@
     
   
     Interfaces
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../generic_dependencies/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Generic Dependencies
   
 
     
@@ -1450,14 +1480,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../../django/request_lifecycle_patterns/" class="md-nav__link">
+      <a href="../../django/request_time_injection/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Request Lifecycle Patterns
+    Request-Time Injection
   
 
     
@@ -1737,14 +1767,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../request_lifecycle_patterns/" class="md-nav__link">
+      <a href="../request_time_injection/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Request Lifecycle Patterns
+    Request-Time Injection
   
 
     
@@ -1875,10 +1905,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#testing-request-lifecycle-patterns" class="md-nav__link">
+  <a href="#testing-request-lifecycle-injection" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Testing Request-Lifecycle Patterns
+        Testing Request-Lifecycle Injection
       
     </span>
   </a>
@@ -3548,10 +3578,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#testing-request-lifecycle-patterns" class="md-nav__link">
+  <a href="#testing-request-lifecycle-injection" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Testing Request-Lifecycle Patterns
+        Testing Request-Lifecycle Injection
       
     </span>
   </a>
@@ -3654,8 +3684,8 @@
 
     <span class="k">assert</span> <span class="n">response</span><span class="o">.</span><span class="n">status_code</span> <span class="o">==</span> <span class="mi">200</span>
 </code></pre></div>
-<h2 id="testing-request-lifecycle-patterns">Testing Request-Lifecycle Patterns<a class="headerlink" href="#testing-request-lifecycle-patterns" title="Permanent link">&para;</a></h2>
-<p>If tests depend on request-time helpers (middleware/decorators using <code>@inject</code> or <code>get_request_container()</code>), enable
+<h2 id="testing-request-lifecycle-injection">Testing Request-Lifecycle Injection<a class="headerlink" href="#testing-request-lifecycle-injection" title="Permanent link">&para;</a></h2>
+<p>If tests depend on request-time injection (middleware/decorators using <code>@inject</code> or <code>get_request_container()</code>), enable
 <code>middleware_mode=True</code> and run with <code>TestClient</code> context manager.</p>
 <div class="highlight"><pre><span></span><code><span class="n">wireup</span><span class="o">.</span><span class="n">integration</span><span class="o">.</span><span class="n">fastapi</span><span class="o">.</span><span class="n">setup</span><span class="p">(</span><span class="n">container</span><span class="p">,</span> <span class="n">app</span><span class="p">,</span> <span class="n">middleware_mode</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
@@ -3701,11 +3731,11 @@ handling requests (again, use <code>TestClient</code> as a context manager).</p>
 </code></pre></div>
 <p>See <a href="../class_based_handlers/#testing">Class-Based Handlers</a> for more details.</p>
 <h2 id="background-tasks">Background Tasks<a class="headerlink" href="#background-tasks" title="Permanent link">&para;</a></h2>
-<p>For task injection patterns and testing, see <a href="../background_tasks/">Background Tasks</a>.</p>
+<p>For task injection and testing, see <a href="../background_tasks/">Background Tasks</a>.</p>
 <h2 id="common-test-failures">Common Test Failures<a class="headerlink" href="#common-test-failures" title="Permanent link">&para;</a></h2>
 <ul>
 <li>Injection not set up: verify <code>wireup.integration.fastapi.setup(container, app)</code> was called.</li>
-<li>Request container unavailable: verify <code>middleware_mode=True</code> for request-time middleware/decorator patterns.</li>
+<li>Request container unavailable: verify <code>middleware_mode=True</code> for request-time middleware/decorator code.</li>
 <li>Lifespan not running: verify <code>with TestClient(app) as client:</code> usage.</li>
 </ul>
 <p>For runtime/setup issues beyond tests, see <a href="../troubleshooting/">Troubleshooting</a>.</p>

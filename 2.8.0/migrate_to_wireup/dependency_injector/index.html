@@ -773,6 +773,8 @@
       
         
       
+        
+      
     
     
     
@@ -917,6 +919,34 @@
     
   
     Interfaces
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../generic_dependencies/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Generic Dependencies
   
 
     
@@ -1440,14 +1470,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../../integrations/django/request_lifecycle_patterns/" class="md-nav__link">
+      <a href="../../integrations/django/request_time_injection/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Request Lifecycle Patterns
+    Request-Time Injection
   
 
     
@@ -1725,14 +1755,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../../integrations/fastapi/request_lifecycle_patterns/" class="md-nav__link">
+      <a href="../../integrations/fastapi/request_time_injection/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Request Lifecycle Patterns
+    Request-Time Injection
   
 
     
@@ -4665,7 +4695,7 @@ lifecycle management to FastAPI. Wireup handles it with <code>@injectable(lifeti
 <h2 id="injection-outside-fastapi">Injection Outside FastAPI<a class="headerlink" href="#injection-outside-fastapi" title="Permanent link">&para;</a></h2>
 <p>When an integration exists (FastAPI, Flask, Django, Starlette, AIOHTTP, Click, Typer), prefer that integration's
 automatic injection model first. Use <code>@inject_from_container</code> as an advanced pattern for scripts, jobs, custom runtime
-hooks, or frameworks without a dedicated Wireup integration.</p>
+entry points, or frameworks without a dedicated Wireup integration.</p>
 <div class="tabbed-set tabbed-alternate" data-tabs="8:2"><input checked="checked" id="dependency-injector_7" name="__tabbed_8" type="radio" /><input id="wireup_7" name="__tabbed_8" type="radio" /><div class="tabbed-labels"><label for="dependency-injector_7">Dependency Injector</label><label for="wireup_7">Wireup</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">

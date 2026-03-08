@@ -12,7 +12,7 @@
         <link rel="prev" href="../resources/">
       
       
-        <link rel="next" href="../function_injection/">
+        <link rel="next" href="../generic_dependencies/">
       
       
         
@@ -786,6 +786,8 @@
       
         
       
+        
+      
     
     
     
@@ -1028,6 +1030,34 @@
   
 </nav>
       
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../generic_dependencies/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Generic Dependencies
+  
+
+    
+  </span>
+  
+  
+
+      </a>
     </li>
   
 
@@ -1546,14 +1576,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../integrations/django/request_lifecycle_patterns/" class="md-nav__link">
+      <a href="../integrations/django/request_time_injection/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Request Lifecycle Patterns
+    Request-Time Injection
   
 
     
@@ -1831,14 +1861,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../integrations/fastapi/request_lifecycle_patterns/" class="md-nav__link">
+      <a href="../integrations/fastapi/request_time_injection/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Request Lifecycle Patterns
+    Request-Time Injection
   
 
     
@@ -3553,6 +3583,7 @@
 <p>Use protocols or abstract base classes (ABCs) to define the behavior your application needs, separately from how it is
 implemented. This allows you to easily switch between different implementations, for example using an in-memory
 repository during testing instead of a real database.</p>
+<p>For generic repository patterns and other parameterized types, see <a href="../generic_dependencies/">Generic Dependencies</a>.</p>
 <h2 id="basic-usage">Basic Usage<a class="headerlink" href="#basic-usage" title="Permanent link">&para;</a></h2>
 <p>You can use the <code>as_type</code> parameter in <code>@injectable</code> to register an injectable as any other type. This is commonly used
 to bind a concrete class to a Protocol or an Abstract Base Class.</p>

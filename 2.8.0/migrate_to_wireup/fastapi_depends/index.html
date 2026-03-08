@@ -6,7 +6,7 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="Migrate FastAPI Depends to Wireup with a low-risk, step-by-step path, including factory-first migration patterns, lifetimes, and request/background task injection.">
+        <meta name="description" content="Migrate FastAPI Depends to Wireup with a low-risk, step-by-step path, including factory-first migration, lifetimes, and request/background task injection.">
       
       
       
@@ -773,6 +773,8 @@
       
         
       
+        
+      
     
     
     
@@ -917,6 +919,34 @@
     
   
     Interfaces
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../generic_dependencies/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Generic Dependencies
   
 
     
@@ -1440,14 +1470,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../../integrations/django/request_lifecycle_patterns/" class="md-nav__link">
+      <a href="../../integrations/django/request_time_injection/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Request Lifecycle Patterns
+    Request-Time Injection
   
 
     
@@ -1725,14 +1755,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../../integrations/fastapi/request_lifecycle_patterns/" class="md-nav__link">
+      <a href="../../integrations/fastapi/request_time_injection/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Request Lifecycle Patterns
+    Request-Time Injection
   
 
     
@@ -2915,10 +2945,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#2-singleton-patterns-are-process-global" class="md-nav__link">
+  <a href="#2-singleton-helpers-are-process-global" class="md-nav__link">
     <span class="md-ellipsis">
       
-        2) Singleton patterns are process-global
+        2) Singleton helpers are process-global
       
     </span>
   </a>
@@ -2975,15 +3005,15 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#core-migration-patterns-mechanical-beforeafter" class="md-nav__link">
+  <a href="#core-migration-steps-mechanical-beforeafter" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Core Migration Patterns (Mechanical Before/After)
+        Core Migration Steps (Mechanical Before/After)
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Core Migration Patterns (Mechanical Before/After)">
+    <nav class="md-nav" aria-label="Core Migration Steps (Mechanical Before/After)">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -3782,10 +3812,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#2-singleton-patterns-are-process-global" class="md-nav__link">
+  <a href="#2-singleton-helpers-are-process-global" class="md-nav__link">
     <span class="md-ellipsis">
       
-        2) Singleton patterns are process-global
+        2) Singleton helpers are process-global
       
     </span>
   </a>
@@ -3842,15 +3872,15 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#core-migration-patterns-mechanical-beforeafter" class="md-nav__link">
+  <a href="#core-migration-steps-mechanical-beforeafter" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Core Migration Patterns (Mechanical Before/After)
+        Core Migration Steps (Mechanical Before/After)
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Core Migration Patterns (Mechanical Before/After)">
+    <nav class="md-nav" aria-label="Core Migration Steps (Mechanical Before/After)">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -4029,7 +4059,7 @@ framework and non-framework runtimes.</p>
 </ul>
 <div class="admonition info">
 <p class="admonition-title">Need full FastAPI integration setup?</p>
-<p>This page focuses on migration strategy and mechanical rewrites. For full integration setup, advanced patterns, and API
+<p>This page focuses on migration strategy and mechanical rewrites. For full integration setup, advanced usage, and API
 details, see the <a href="../../integrations/fastapi/">FastAPI integration guide</a>.</p>
 </div>
 <h2 id="not-leaving-the-fastapi-ecosystem">Not Leaving the FastAPI Ecosystem<a class="headerlink" href="#not-leaving-the-fastapi-ecosystem" title="Permanent link">&para;</a></h2>
@@ -4042,7 +4072,7 @@ generator. Auth extraction can stay in FastAPI, while auth/domain services can b
 <li>Shared services are defined once and reused across FastAPI, CLI commands, workers, and scripts instead of rebuilding
     DI wiring per runtime.</li>
 <li>Reusable sub-graphs let you run multiple configured instances of the same dependency graph without duplicating wiring.</li>
-<li><code>singleton</code>, <code>scoped</code>, and <code>transient</code> lifetimes are explicit and enforced, avoiding ad-hoc lifetime patterns
+<li><code>singleton</code>, <code>scoped</code>, and <code>transient</code> lifetimes are explicit and enforced, avoiding ad-hoc lifetime workarounds
     (<code>lru_cache</code>, <code>app.state</code>, custom factories).</li>
 <li>With class-based handlers, constructor dependencies are resolved at startup instead of per request.</li>
 </ul>
@@ -4331,8 +4361,8 @@ injectables. See below for a low-risk port that lets you reuse existing factorie
 <span class="p">):</span> <span class="o">...</span>
 </code></pre></div>
 <p>This means dependency-function mixups are usually caught in tests or at runtime, not by static typing.</p>
-<h3 id="2-singleton-patterns-are-process-global">2) Singleton patterns are process-global<a class="headerlink" href="#2-singleton-patterns-are-process-global" title="Permanent link">&para;</a></h3>
-<p>FastAPI singleton patterns are usually process-global. With <code>@lru_cache</code>, state can leak across tests if the
+<h3 id="2-singleton-helpers-are-process-global">2) Singleton helpers are process-global<a class="headerlink" href="#2-singleton-helpers-are-process-global" title="Permanent link">&para;</a></h3>
+<p>FastAPI singletons are usually process-global. With <code>@lru_cache</code>, state can leak across tests if the
 returned object is mutable and the cache is not reset.</p>
 <h3 id="3-async-singleton-resources-cannot-use-lru_cache">3) Async singleton resources cannot use <code>@lru_cache</code><a class="headerlink" href="#3-async-singleton-resources-cannot-use-lru_cache" title="Permanent link">&para;</a></h3>
 <p><code>@lru_cache</code> cannot be used with <code>async def</code>, so singleton async clients are usually managed through lifespan +
@@ -4422,7 +4452,7 @@ adds startup graph validation for this layer.</p>
 <tr>
 <td>Decorators/middleware needing container access</td>
 <td>Sometimes</td>
-<td>Sometimes. See <a href="../../integrations/fastapi/request_lifecycle_patterns/">Request Lifecycle Patterns</a></td>
+<td>Sometimes. See <a href="../../integrations/fastapi/request_time_injection/">Request-Time Injection</a></td>
 </tr>
 </tbody>
 </table>
@@ -4457,19 +4487,19 @@ adds startup graph validation for this layer.</p>
 <span class="n">wireup</span><span class="o">.</span><span class="n">integration</span><span class="o">.</span><span class="n">fastapi</span><span class="o">.</span><span class="n">setup</span><span class="p">(</span><span class="n">container</span><span class="p">,</span> <span class="n">app</span><span class="p">)</span>
 </code></pre></div>
 <p>For setup details and advanced usage, see the <a href="../../integrations/fastapi/">FastAPI integration guide</a>.</p>
-<h2 id="core-migration-patterns-mechanical-beforeafter">Core Migration Patterns (Mechanical Before/After)<a class="headerlink" href="#core-migration-patterns-mechanical-beforeafter" title="Permanent link">&para;</a></h2>
-<p>The snippets below are migration templates: copy the pattern, adapt names, and apply incrementally. They focus on DI
+<h2 id="core-migration-steps-mechanical-beforeafter">Core Migration Steps (Mechanical Before/After)<a class="headerlink" href="#core-migration-steps-mechanical-beforeafter" title="Permanent link">&para;</a></h2>
+<p>The snippets below are migration templates: copy the example, adapt names, and apply incrementally. They focus on DI
 shape, not full app bootstrap. For full setup (<code>create_async_container</code>, module registration, and
 <code>wireup.integration.fastapi.setup(...)</code>), see the <a href="../../integrations/fastapi/">FastAPI integration guide</a>.</p>
 <h3 id="1-service-factory-chains">1) Service factory chains<a class="headerlink" href="#1-service-factory-chains" title="Permanent link">&para;</a></h3>
-<p>This is the core mechanical rewrite pattern you'll repeat during migration.
+<p>This is the core rewrite you'll repeat during migration.
 Wireup also supports a factory-first style, so you can keep function factories after migration if that fits
 your team conventions. This is also the easiest initial migration path because it reuses most of your existing wiring.</p>
-<p>Mechanical mapping for the factory-first migration path:</p>
+<p>Mapping for the factory-first migration path:</p>
 <table>
 <thead>
 <tr>
-<th>Current FastAPI pattern</th>
+<th>Current FastAPI usage</th>
 <th>Wireup mapping</th>
 <th>Where it applies</th>
 </tr>
@@ -4537,12 +4567,12 @@ your team conventions. This is also the easiest initial migration path because i
 
 
 <span class="nd">@injectable</span>
-<span class="k">def</span><span class="w"> </span><span class="nf">make_repo</span><span class="p">(</span><span class="n">db</span><span class="p">:</span> <span class="n">DB</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Repo</span><span class="p">:</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_repo</span><span class="p">(</span><span class="n">db</span><span class="p">:</span> <span class="n">DB</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Repo</span><span class="p">:</span>
     <span class="k">return</span> <span class="n">Repo</span><span class="p">(</span><span class="n">db</span><span class="p">)</span>
 
 
 <span class="nd">@injectable</span>
-<span class="k">def</span><span class="w"> </span><span class="nf">make_service</span><span class="p">(</span><span class="n">repo</span><span class="p">:</span> <span class="n">Repo</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Service</span><span class="p">:</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_service</span><span class="p">(</span><span class="n">repo</span><span class="p">:</span> <span class="n">Repo</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Service</span><span class="p">:</span>
     <span class="k">return</span> <span class="n">Service</span><span class="p">(</span><span class="n">repo</span><span class="p">)</span>
 
 
@@ -4719,7 +4749,7 @@ creation:</p>
 </div>
 </div>
 </div>
-<p>See <a href="../../resources/">Resource Management</a> for more lifecycle patterns.</p>
+<p>See <a href="../../resources/">Resource Management</a> for more lifecycle examples.</p>
 <h3 id="5-keep-fastapi-native-params-move-service-wiring">5) Keep FastAPI-native params, move service wiring<a class="headerlink" href="#5-keep-fastapi-native-params-move-service-wiring" title="Permanent link">&para;</a></h3>
 <div class="tabbed-set tabbed-alternate" data-tabs="7:2"><input checked="checked" id="depends--fastapi-params" name="__tabbed_7" type="radio" /><input id="wireup--fastapi-params" name="__tabbed_7" type="radio" /><div class="tabbed-labels"><label for="depends--fastapi-params">Depends + FastAPI params</label><label for="wireup--fastapi-params">Wireup + FastAPI params</label></div>
 <div class="tabbed-content">
@@ -4804,8 +4834,8 @@ creation:</p>
 <p>See <a href="../../integrations/fastapi/background_tasks/">FastAPI background tasks</a> for <code>Response(background=...)</code> examples and
 scope behavior details.</p>
 <h3 id="7-router-level-pre-handler-checks-dependenciesdepends">7) Router-level pre-handler checks (<code>dependencies=[Depends(...)]</code>)<a class="headerlink" href="#7-router-level-pre-handler-checks-dependenciesdepends" title="Permanent link">&para;</a></h3>
-<p>Use this when logic must run before the endpoint body. This pattern requires <code>middleware_mode=True</code> on FastAPI setup
-(not on container creation). This pattern looks different between the two but
+<p>Use this when logic must run before the endpoint body. This requires <code>middleware_mode=True</code> on FastAPI setup
+(not on container creation). The code looks different between the two, but
 it is equivalent.</p>
 <div class="highlight"><pre><span></span><code><span class="n">wireup</span><span class="o">.</span><span class="n">integration</span><span class="o">.</span><span class="n">fastapi</span><span class="o">.</span><span class="n">setup</span><span class="p">(</span>
     <span class="n">container</span><span class="p">,</span>
@@ -4862,17 +4892,15 @@ not need it.</p>
 
 <span class="nd">@contextlib</span><span class="o">.</span><span class="n">asynccontextmanager</span>
 <span class="nd">@inject</span>
-<span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">require_permission</span><span class="p">(</span>
-    <span class="n">permission</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
-    <span class="n">auth</span><span class="p">:</span> <span class="n">Injected</span><span class="p">[</span><span class="n">AuthService</span><span class="p">],</span>
-<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">AsyncIterator</span><span class="p">[</span><span class="kc">None</span><span class="p">]:</span>
-    <span class="k">if</span> <span class="ow">not</span> <span class="k">await</span> <span class="n">auth</span><span class="o">.</span><span class="n">has_permission</span><span class="p">(</span><span class="n">permission</span><span class="p">):</span>
-        <span class="k">raise</span> <span class="n">HTTPException</span><span class="p">(</span><span class="n">status_code</span><span class="o">=</span><span class="mi">403</span><span class="p">,</span> <span class="n">detail</span><span class="o">=</span><span class="s2">&quot;Forbidden&quot;</span><span class="p">)</span>
+<span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">require_auth</span><span class="p">(</span><span class="n">auth</span><span class="p">:</span> <span class="n">Injected</span><span class="p">[</span><span class="n">AuthService</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">AsyncIterator</span><span class="p">[</span><span class="kc">None</span><span class="p">]:</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="k">await</span> <span class="n">auth</span><span class="o">.</span><span class="n">is_authenticated</span><span class="p">():</span>
+        <span class="k">raise</span> <span class="n">HTTPException</span><span class="p">(</span><span class="n">status_code</span><span class="o">=</span><span class="mi">401</span><span class="p">,</span> <span class="n">detail</span><span class="o">=</span><span class="s2">&quot;Authentication required&quot;</span><span class="p">)</span>
+
     <span class="k">yield</span>
 
 
 <span class="nd">@router</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;/users&quot;</span><span class="p">)</span>
-<span class="nd">@require_permission</span><span class="p">(</span><span class="s2">&quot;users:read&quot;</span><span class="p">)</span>
+<span class="nd">@require_auth</span><span class="p">()</span>
 <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">list_users</span><span class="p">(</span><span class="n">service</span><span class="p">:</span> <span class="n">Injected</span><span class="p">[</span><span class="n">UserService</span><span class="p">]):</span>
     <span class="k">return</span> <span class="k">await</span> <span class="n">service</span><span class="o">.</span><span class="n">list_all</span><span class="p">()</span>
 </code></pre></div>
@@ -4980,7 +5008,7 @@ that depend on those leaves.</p>
 <h2 id="next-steps">Next Steps<a class="headerlink" href="#next-steps" title="Permanent link">&para;</a></h2>
 <ul>
 <li><a href="../../integrations/fastapi/">Full FastAPI Integration Guide</a></li>
-<li><a href="../../integrations/fastapi/request_lifecycle_patterns/">FastAPI Request Lifecycle Patterns</a></li>
+<li><a href="../../integrations/fastapi/request_time_injection/">FastAPI Request-Time Injection</a></li>
 </ul>
 
 

@@ -773,6 +773,8 @@
       
         
       
+        
+      
     
     
     
@@ -917,6 +919,34 @@
     
   
     Interfaces
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../generic_dependencies/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Generic Dependencies
   
 
     
@@ -1450,14 +1480,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../../django/request_lifecycle_patterns/" class="md-nav__link">
+      <a href="../../django/request_time_injection/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Request Lifecycle Patterns
+    Request-Time Injection
   
 
     
@@ -1737,14 +1767,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../request_lifecycle_patterns/" class="md-nav__link">
+      <a href="../request_time_injection/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Request Lifecycle Patterns
+    Request-Time Injection
   
 
     
@@ -3609,8 +3639,8 @@
 </ul>
 <p>Fix:</p>
 <ol>
-<li>Ensure <code>wireup.integration.fastapi.setup(container, app)</code> is called.</li>
-<li>Ensure routes use <code>Injected[...]</code> or <code>@inject</code> where expected.</li>
+<li>Make sure <code>wireup.integration.fastapi.setup(container, app)</code> is called.</li>
+<li>Make sure routes use <code>Injected[...]</code> or <code>@inject</code> where expected.</li>
 </ol>
 <div class="highlight"><pre><span></span><code><span class="n">container</span> <span class="o">=</span> <span class="n">wireup</span><span class="o">.</span><span class="n">create_async_container</span><span class="p">(</span>
     <span class="n">injectables</span><span class="o">=</span><span class="p">[</span><span class="n">services</span><span class="p">,</span> <span class="n">wireup</span><span class="o">.</span><span class="n">integration</span><span class="o">.</span><span class="n">fastapi</span><span class="p">]</span>
@@ -3639,7 +3669,7 @@
 <p>Fix:</p>
 <ol>
 <li>Call setup with <code>middleware_mode=True</code>.</li>
-<li>Ensure Wireup middleware is outermost (middleware ordering matters).</li>
+<li>Make sure Wireup middleware is outermost (middleware ordering matters).</li>
 </ol>
 <div class="highlight"><pre><span></span><code><span class="n">wireup</span><span class="o">.</span><span class="n">integration</span><span class="o">.</span><span class="n">fastapi</span><span class="o">.</span><span class="n">setup</span><span class="p">(</span><span class="n">container</span><span class="p">,</span> <span class="n">app</span><span class="p">,</span> <span class="n">middleware_mode</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 </code></pre></div>
@@ -3674,7 +3704,7 @@
 </ul>
 <p>Fix:</p>
 <ul>
-<li>For class-based handlers, ensure endpoint methods are not wrapped after router registration.</li>
+<li>For class-based handlers, make sure endpoint methods are not wrapped after router registration.</li>
 <li>If decorating methods, place decorators before router registration and follow the class-based handlers guide.</li>
 </ul>
 <p>See <a href="../class_based_handlers/">Class-Based Handlers</a> for the supported pattern.</p>

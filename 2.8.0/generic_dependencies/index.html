@@ -9,28 +9,28 @@
       
       
       
-        <link rel="prev" href="../view_injection/">
+        <link rel="prev" href="../interfaces/">
       
       
-        <link rel="next" href="../app_injection/">
+        <link rel="next" href="../function_injection/">
       
       
         
       
       
-      <link rel="icon" href="../../../assets/images/favicon.png">
+      <link rel="icon" href="../assets/images/favicon.png">
       <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.1">
     
     
       
-        <title>Request Lifecycle Patterns - Wireup</title>
+        <title>Generic Dependencies - Wireup</title>
       
     
     
-      <link rel="stylesheet" href="../../../assets/stylesheets/main.484c7ddc.min.css">
+      <link rel="stylesheet" href="../assets/stylesheets/main.484c7ddc.min.css">
       
         
-        <link rel="stylesheet" href="../../../assets/stylesheets/palette.ab4e12ef.min.css">
+        <link rel="stylesheet" href="../assets/stylesheets/palette.ab4e12ef.min.css">
       
       
 
@@ -49,11 +49,11 @@
       
     
     
-      <link rel="stylesheet" href="../../../assets/_mkdocstrings.css">
+      <link rel="stylesheet" href="../assets/_mkdocstrings.css">
     
-      <link rel="stylesheet" href="../../../stylesheets/extra.css">
+      <link rel="stylesheet" href="../stylesheets/extra.css">
     
-    <script>__md_scope=new URL("../../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
     
       
 
@@ -78,7 +78,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#request-lifecycle-patterns" class="md-skip">
+        <a href="#sqlalchemy-example" class="md-skip">
           Skip to content
         </a>
       
@@ -107,13 +107,13 @@
             <div class="md-banner__inner md-grid md-typeset">
               
   You're not viewing the latest version.
-  <a href="../../../..">
+  <a href="../..">
 
     <strong>Click here to go to latest.</strong>
   </a>
 
             </div>
-            <script>var el=document.querySelector("[data-md-component=outdated]"),base=new URL("../../.."),outdated=__md_get("__outdated",sessionStorage,base);!0===outdated&&el&&(el.hidden=!1)</script>
+            <script>var el=document.querySelector("[data-md-component=outdated]"),base=new URL(".."),outdated=__md_get("__outdated",sessionStorage,base);!0===outdated&&el&&(el.hidden=!1)</script>
           </aside>
         
       </div>
@@ -123,7 +123,7 @@
 
 <header class="md-header" data-md-component="header">
   <nav class="md-header__inner md-grid" aria-label="Header">
-    <a href="../../.." title="Wireup" class="md-header__button md-logo" aria-label="Wireup" data-md-component="logo">
+    <a href=".." title="Wireup" class="md-header__button md-logo" aria-label="Wireup" data-md-component="logo">
       
   
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M24 14.475a7.395 7.395 0 0 1-7.38 7.41h-.016a7.3 7.3 0 0 1-4.5-1.605A7.498 7.498 0 0 1 0 14.475V2.82h1.41v11.655a6 6 0 0 0 9.585 4.815 7.38 7.38 0 0 1-1.815-4.814v-9.54a2.82 2.82 0 0 1 5.64 0v9.54a7.37 7.37 0 0 1-1.77 4.814 5.997 5.997 0 0 0 8.383-1.304 6 6 0 0 0 1.157-3.511V2.82H24zm-10.59-9.54a1.41 1.41 0 0 0-2.82 0v9.54A6 6 0 0 0 12 18.33a6 6 0 0 0 1.41-3.855z"/></svg>
@@ -143,7 +143,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Request Lifecycle Patterns
+              Generic Dependencies
             
           </span>
         </div>
@@ -262,6 +262,8 @@
   
   
   
+    
+  
   
     
     
@@ -269,11 +271,13 @@
   
   
   
+    
+  
   
     
     
-      <li class="md-tabs__item">
-        <a href="../../.." class="md-tabs__link">
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href=".." class="md-tabs__link">
           
   
   
@@ -294,13 +298,11 @@
   
   
   
-    
-  
   
     
     
-      <li class="md-tabs__item md-tabs__item--active">
-        <a href="../../" class="md-tabs__link">
+      <li class="md-tabs__item">
+        <a href="../integrations/" class="md-tabs__link">
           
   
   
@@ -322,7 +324,7 @@
     
     
       <li class="md-tabs__item">
-        <a href="../../../migrate_to_wireup/" class="md-tabs__link">
+        <a href="../migrate_to_wireup/" class="md-tabs__link">
           
   
   
@@ -344,7 +346,7 @@
     
     
       <li class="md-tabs__item">
-        <a href="../../../class/wireup/" class="md-tabs__link">
+        <a href="../class/wireup/" class="md-tabs__link">
           
   
   
@@ -380,7 +382,7 @@
 
 <nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
   <label class="md-nav__title" for="__drawer">
-    <a href="../../.." title="Wireup" class="md-nav__button md-logo" aria-label="Wireup" data-md-component="logo">
+    <a href=".." title="Wireup" class="md-nav__button md-logo" aria-label="Wireup" data-md-component="logo">
       
   
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M24 14.475a7.395 7.395 0 0 1-7.38 7.41h-.016a7.3 7.3 0 0 1-4.5-1.605A7.498 7.498 0 0 1 0 14.475V2.82h1.41v11.655a6 6 0 0 0 9.585 4.815 7.38 7.38 0 0 1-1.815-4.814v-9.54a2.82 2.82 0 0 1 5.64 0v9.54a7.37 7.37 0 0 1-1.77 4.814 5.997 5.997 0 0 0 8.383-1.304 6 6 0 0 0 1.157-3.511V2.82H24zm-10.59-9.54a1.41 1.41 0 0 0-2.82 0v9.54A6 6 0 0 0 12 18.33a6 6 0 0 0 1.41-3.855z"/></svg>
@@ -407,8 +409,10 @@
       
   
   
+    
   
   
+  
     
     
       
@@ -424,19 +428,22 @@
     
     
       
+        
+        
+      
       
         
       
     
     
-    <li class="md-nav__item md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_1" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_1" checked>
         
           
-          <label class="md-nav__link" for="__nav_1" id="__nav_1_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_1" id="__nav_1_label" tabindex="">
             
   
   
@@ -454,7 +461,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_1_label" aria-expanded="false">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_1_label" aria-expanded="true">
           <label class="md-nav__title" for="__nav_1">
             <span class="md-nav__icon md-icon"></span>
             
@@ -488,10 +495,13 @@
       
       
         
+          
+          
+        
       
     
     
-    <li class="md-nav__item md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
       
         
         
@@ -499,7 +509,7 @@
         
           
           <div class="md-nav__link md-nav__container">
-            <a href="../../.." class="md-nav__link ">
+            <a href=".." class="md-nav__link ">
               
   
   
@@ -517,7 +527,7 @@
             </a>
             
               
-              <label class="md-nav__link " for="__nav_1_1" id="__nav_1_1_label" tabindex="0">
+              <label class="md-nav__link " for="__nav_1_1" id="__nav_1_1_label" tabindex="">
                 <span class="md-nav__icon md-icon"></span>
               </label>
             
@@ -543,7 +553,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../getting_started/" class="md-nav__link">
+      <a href="../getting_started/" class="md-nav__link">
         
   
   
@@ -571,7 +581,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../benchmarks/" class="md-nav__link">
+      <a href="../benchmarks/" class="md-nav__link">
         
   
   
@@ -621,17 +631,20 @@
       
       
         
+          
+          
+        
       
     
     
-    <li class="md-nav__item md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
       
         
         
         <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_1_2" >
         
           
-          <label class="md-nav__link" for="__nav_1_2" id="__nav_1_2_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_1_2" id="__nav_1_2_label" tabindex="">
             
   
   
@@ -667,7 +680,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../container/" class="md-nav__link">
+      <a href="../container/" class="md-nav__link">
         
   
   
@@ -695,7 +708,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../injectables/" class="md-nav__link">
+      <a href="../injectables/" class="md-nav__link">
         
   
   
@@ -723,7 +736,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../configuration/" class="md-nav__link">
+      <a href="../configuration/" class="md-nav__link">
         
   
   
@@ -756,8 +769,10 @@
                 
   
   
+    
   
   
+  
     
     
       
@@ -771,23 +786,28 @@
       
         
       
-    
-    
-    
-      
-      
         
       
     
     
-    <li class="md-nav__item md-nav__item--nested">
+    
       
-        
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_1_3" >
+      
         
           
-          <label class="md-nav__link" for="__nav_1_3" id="__nav_1_3_label" tabindex="0">
+          
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_1_3" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_1_3" id="__nav_1_3_label" tabindex="">
             
   
   
@@ -805,7 +825,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_1_3_label" aria-expanded="false">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_1_3_label" aria-expanded="true">
           <label class="md-nav__title" for="__nav_1_3">
             <span class="md-nav__icon md-icon"></span>
             
@@ -823,7 +843,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../lifetimes_and_scopes/" class="md-nav__link">
+      <a href="../lifetimes_and_scopes/" class="md-nav__link">
         
   
   
@@ -851,7 +871,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../factories/" class="md-nav__link">
+      <a href="../factories/" class="md-nav__link">
         
   
   
@@ -879,7 +899,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../resources/" class="md-nav__link">
+      <a href="../resources/" class="md-nav__link">
         
   
   
@@ -907,7 +927,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../interfaces/" class="md-nav__link">
+      <a href="../interfaces/" class="md-nav__link">
         
   
   
@@ -932,10 +952,92 @@
                 
   
   
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Generic Dependencies
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Generic Dependencies
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#sqlalchemy-example" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Sqlalchemy example
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
   
   
     <li class="md-nav__item">
-      <a href="../../../function_injection/" class="md-nav__link">
+      <a href="../function_injection/" class="md-nav__link">
         
   
   
@@ -987,17 +1089,20 @@
       
       
         
+          
+          
+        
       
     
     
-    <li class="md-nav__item md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
       
         
         
         <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_1_4" >
         
           
-          <label class="md-nav__link" for="__nav_1_4" id="__nav_1_4_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_1_4" id="__nav_1_4_label" tabindex="">
             
   
   
@@ -1033,7 +1138,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../testing/" class="md-nav__link">
+      <a href="../testing/" class="md-nav__link">
         
   
   
@@ -1061,7 +1166,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../conditional_registration/" class="md-nav__link">
+      <a href="../conditional_registration/" class="md-nav__link">
         
   
   
@@ -1089,7 +1194,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../upgrading/" class="md-nav__link">
+      <a href="../upgrading/" class="md-nav__link">
         
   
   
@@ -1117,7 +1222,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../versioning/" class="md-nav__link">
+      <a href="../versioning/" class="md-nav__link">
         
   
   
@@ -1157,8 +1262,6 @@
       
   
   
-    
-  
   
   
     
@@ -1180,23 +1283,20 @@
     
     
       
-        
-        
-      
       
         
       
     
     
-    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" checked>
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
         
           
           <div class="md-nav__link md-nav__container">
-            <a href="../../" class="md-nav__link ">
+            <a href="../integrations/" class="md-nav__link ">
               
   
   
@@ -1214,13 +1314,13 @@
             </a>
             
               
-              <label class="md-nav__link " for="__nav_2" id="__nav_2_label" tabindex="">
+              <label class="md-nav__link " for="__nav_2" id="__nav_2_label" tabindex="0">
                 <span class="md-nav__icon md-icon"></span>
               </label>
             
           </div>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="true">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_2">
             <span class="md-nav__icon md-icon"></span>
             
@@ -1237,10 +1337,8 @@
                 
   
   
-    
   
   
-  
     
     
       
@@ -1263,21 +1361,18 @@
     
       
       
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_2" >
         
           
-          
-        
-      
-    
-    
-    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
-      
-        
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_2" checked>
-        
-          
-          <label class="md-nav__link" for="__nav_2_2" id="__nav_2_2_label" tabindex="">
+          <label class="md-nav__link" for="__nav_2_2" id="__nav_2_2_label" tabindex="0">
             
   
   
@@ -1295,7 +1390,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_2_label" aria-expanded="true">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_2_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_2_2">
             <span class="md-nav__icon md-icon"></span>
             
@@ -1310,8 +1405,6 @@
                 
   
   
-    
-  
   
   
     
@@ -1342,15 +1435,15 @@
       
     
     
-    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_2_1" checked>
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_2_1" >
         
           
           <div class="md-nav__link md-nav__container">
-            <a href="../" class="md-nav__link ">
+            <a href="../integrations/django/" class="md-nav__link ">
               
   
   
@@ -1374,7 +1467,7 @@
             
           </div>
         
-        <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_2_2_1_label" aria-expanded="true">
+        <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_2_2_1_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_2_2_1">
             <span class="md-nav__icon md-icon"></span>
             
@@ -1394,7 +1487,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../setup/" class="md-nav__link">
+      <a href="../integrations/django/setup/" class="md-nav__link">
         
   
   
@@ -1422,7 +1515,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../view_injection/" class="md-nav__link">
+      <a href="../integrations/django/view_injection/" class="md-nav__link">
         
   
   
@@ -1447,44 +1540,17 @@
                 
   
   
-    
   
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Request Lifecycle Patterns
-  
-
-    
-  </span>
-  
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../integrations/django/request_time_injection/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Request Lifecycle Patterns
+    Request-Time Injection
   
 
     
@@ -1493,70 +1559,6 @@
   
 
       </a>
-      
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#composable-request-decorators" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Composable Request Decorators
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#middleware-adjacent-request-hooks" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Middleware-Adjacent Request Hooks
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#direct-container-access" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Direct Container Access
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#testing-lifecycle-helpers" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Testing Lifecycle Helpers
-      
-    </span>
-  </a>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -1569,7 +1571,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../app_injection/" class="md-nav__link">
+      <a href="../integrations/django/app_injection/" class="md-nav__link">
         
   
   
@@ -1597,7 +1599,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../testing/" class="md-nav__link">
+      <a href="../integrations/django/testing/" class="md-nav__link">
         
   
   
@@ -1625,7 +1627,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../troubleshooting/" class="md-nav__link">
+      <a href="../integrations/django/troubleshooting/" class="md-nav__link">
         
   
   
@@ -1698,7 +1700,7 @@
         
           
           <div class="md-nav__link md-nav__container">
-            <a href="../../fastapi/" class="md-nav__link ">
+            <a href="../integrations/fastapi/" class="md-nav__link ">
               
   
   
@@ -1742,7 +1744,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../fastapi/inject_in_routes/" class="md-nav__link">
+      <a href="../integrations/fastapi/inject_in_routes/" class="md-nav__link">
         
   
   
@@ -1770,7 +1772,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../fastapi/context_in_services/" class="md-nav__link">
+      <a href="../integrations/fastapi/context_in_services/" class="md-nav__link">
         
   
   
@@ -1798,7 +1800,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../fastapi/class_based_handlers/" class="md-nav__link">
+      <a href="../integrations/fastapi/class_based_handlers/" class="md-nav__link">
         
   
   
@@ -1826,14 +1828,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../../fastapi/request_lifecycle_patterns/" class="md-nav__link">
+      <a href="../integrations/fastapi/request_time_injection/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Request Lifecycle Patterns
+    Request-Time Injection
   
 
     
@@ -1854,7 +1856,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../fastapi/background_tasks/" class="md-nav__link">
+      <a href="../integrations/fastapi/background_tasks/" class="md-nav__link">
         
   
   
@@ -1882,7 +1884,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../fastapi/testing/" class="md-nav__link">
+      <a href="../integrations/fastapi/testing/" class="md-nav__link">
         
   
   
@@ -1910,7 +1912,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../fastapi/troubleshooting/" class="md-nav__link">
+      <a href="../integrations/fastapi/troubleshooting/" class="md-nav__link">
         
   
   
@@ -1969,7 +1971,7 @@
         
           
           <div class="md-nav__link md-nav__container">
-            <a href="../../flask/" class="md-nav__link ">
+            <a href="../integrations/flask/" class="md-nav__link ">
               
   
   
@@ -2039,7 +2041,7 @@
         
           
           <div class="md-nav__link md-nav__container">
-            <a href="../../fastmcp/" class="md-nav__link ">
+            <a href="../integrations/fastmcp/" class="md-nav__link ">
               
   
   
@@ -2111,7 +2113,7 @@
         
           
           <div class="md-nav__link md-nav__container">
-            <a href="../../aiohttp/" class="md-nav__link ">
+            <a href="../integrations/aiohttp/" class="md-nav__link ">
               
   
   
@@ -2155,7 +2157,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../aiohttp/class_based_handlers/" class="md-nav__link">
+      <a href="../integrations/aiohttp/class_based_handlers/" class="md-nav__link">
         
   
   
@@ -2216,7 +2218,7 @@
         
           
           <div class="md-nav__link md-nav__container">
-            <a href="../../starlette/" class="md-nav__link ">
+            <a href="../integrations/starlette/" class="md-nav__link ">
               
   
   
@@ -2260,7 +2262,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../starlette/background_tasks/" class="md-nav__link">
+      <a href="../integrations/starlette/background_tasks/" class="md-nav__link">
         
   
   
@@ -2319,7 +2321,7 @@
         
           
           <div class="md-nav__link md-nav__container">
-            <a href="../../strawberry/" class="md-nav__link ">
+            <a href="../integrations/strawberry/" class="md-nav__link ">
               
   
   
@@ -2384,20 +2386,17 @@
       
       
         
-          
-          
-        
       
     
     
-    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--nested">
       
         
         
         <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_3" >
         
           
-          <label class="md-nav__link" for="__nav_2_3" id="__nav_2_3_label" tabindex="">
+          <label class="md-nav__link" for="__nav_2_3" id="__nav_2_3_label" tabindex="0">
             
   
   
@@ -2433,7 +2432,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../asgi/generic_asgi/" class="md-nav__link">
+      <a href="../integrations/asgi/generic_asgi/" class="md-nav__link">
         
   
   
@@ -2481,20 +2480,17 @@
       
       
         
-          
-          
-        
       
     
     
-    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--nested">
       
         
         
         <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_4" >
         
           
-          <label class="md-nav__link" for="__nav_2_4" id="__nav_2_4_label" tabindex="">
+          <label class="md-nav__link" for="__nav_2_4" id="__nav_2_4_label" tabindex="0">
             
   
   
@@ -2553,7 +2549,7 @@
         
           
           <div class="md-nav__link md-nav__container">
-            <a href="../../click/" class="md-nav__link ">
+            <a href="../integrations/click/" class="md-nav__link ">
               
   
   
@@ -2623,7 +2619,7 @@
         
           
           <div class="md-nav__link md-nav__container">
-            <a href="../../typer/" class="md-nav__link ">
+            <a href="../integrations/typer/" class="md-nav__link ">
               
   
   
@@ -2688,20 +2684,17 @@
       
       
         
-          
-          
-        
       
     
     
-    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--nested">
       
         
         
         <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_5" >
         
           
-          <label class="md-nav__link" for="__nav_2_5" id="__nav_2_5_label" tabindex="">
+          <label class="md-nav__link" for="__nav_2_5" id="__nav_2_5_label" tabindex="0">
             
   
   
@@ -2760,7 +2753,7 @@
         
           
           <div class="md-nav__link md-nav__container">
-            <a href="../../celery/" class="md-nav__link ">
+            <a href="../integrations/celery/" class="md-nav__link ">
               
   
   
@@ -2849,7 +2842,7 @@
         
           
           <div class="md-nav__link md-nav__container">
-            <a href="../../../migrate_to_wireup/" class="md-nav__link ">
+            <a href="../migrate_to_wireup/" class="md-nav__link ">
               
   
   
@@ -2893,7 +2886,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../migrate_to_wireup/fastapi_depends/" class="md-nav__link">
+      <a href="../migrate_to_wireup/fastapi_depends/" class="md-nav__link">
         
   
   
@@ -2921,7 +2914,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../migrate_to_wireup/dependency_injector/" class="md-nav__link">
+      <a href="../migrate_to_wireup/dependency_injector/" class="md-nav__link">
         
   
   
@@ -3018,7 +3011,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../class/wireup/" class="md-nav__link">
+      <a href="../class/wireup/" class="md-nav__link">
         
   
   
@@ -3046,7 +3039,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../class/override_manager/" class="md-nav__link">
+      <a href="../class/override_manager/" class="md-nav__link">
         
   
   
@@ -3074,7 +3067,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../class/config_store/" class="md-nav__link">
+      <a href="../class/config_store/" class="md-nav__link">
         
   
   
@@ -3176,7 +3169,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../class/django_integration/" class="md-nav__link">
+      <a href="../class/django_integration/" class="md-nav__link">
         
   
   
@@ -3204,7 +3197,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../class/fastapi_integration/" class="md-nav__link">
+      <a href="../class/fastapi_integration/" class="md-nav__link">
         
   
   
@@ -3232,7 +3225,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../class/flask_integration/" class="md-nav__link">
+      <a href="../class/flask_integration/" class="md-nav__link">
         
   
   
@@ -3260,7 +3253,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../class/fastmcp_integration/" class="md-nav__link">
+      <a href="../class/fastmcp_integration/" class="md-nav__link">
         
   
   
@@ -3288,7 +3281,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../class/aiohttp_integration/" class="md-nav__link">
+      <a href="../class/aiohttp_integration/" class="md-nav__link">
         
   
   
@@ -3316,7 +3309,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../class/asgi_integration/" class="md-nav__link">
+      <a href="../class/asgi_integration/" class="md-nav__link">
         
   
   
@@ -3344,7 +3337,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../class/starlette_integration/" class="md-nav__link">
+      <a href="../class/starlette_integration/" class="md-nav__link">
         
   
   
@@ -3372,7 +3365,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../class/celery_integration/" class="md-nav__link">
+      <a href="../class/celery_integration/" class="md-nav__link">
         
   
   
@@ -3400,7 +3393,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../class/click_integration/" class="md-nav__link">
+      <a href="../class/click_integration/" class="md-nav__link">
         
   
   
@@ -3428,7 +3421,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../class/typer_integration/" class="md-nav__link">
+      <a href="../class/typer_integration/" class="md-nav__link">
         
   
   
@@ -3481,8 +3474,6 @@
   
   
   
-    
-  
   
     <label class="md-nav__title" for="__toc">
       <span class="md-nav__icon md-icon"></span>
@@ -3491,43 +3482,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#composable-request-decorators" class="md-nav__link">
+  <a href="#sqlalchemy-example" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Composable Request Decorators
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#middleware-adjacent-request-hooks" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Middleware-Adjacent Request Hooks
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#direct-container-access" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Direct Container Access
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#testing-lifecycle-helpers" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Testing Lifecycle Helpers
+        Sqlalchemy example
       
     </span>
   </a>
@@ -3554,92 +3512,31 @@
   
 
 
-<h1 id="request-lifecycle-patterns">Request Lifecycle Patterns<a class="headerlink" href="#request-lifecycle-patterns" title="Permanent link">&para;</a></h1>
-<p>Wireup injection in Django is not limited to views. You can also inject services in request-time helpers such as custom
-decorators and middleware-adjacent functions.</p>
-<h2 id="composable-request-decorators">Composable Request Decorators<a class="headerlink" href="#composable-request-decorators" title="Permanent link">&para;</a></h2>
-<p>Use <code>@inject</code> to build reusable decorators that run inside the request lifecycle.</p>
-<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">functools</span><span class="w"> </span><span class="kn">import</span> <span class="n">wraps</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">django.http</span><span class="w"> </span><span class="kn">import</span> <span class="n">HttpRequest</span><span class="p">,</span> <span class="n">HttpResponseForbidden</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">wireup</span><span class="w"> </span><span class="kn">import</span> <span class="n">Injected</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">wireup.integration.django</span><span class="w"> </span><span class="kn">import</span> <span class="n">inject</span>
+  <h1>Generic Dependencies</h1>
 
-<span class="kn">from</span><span class="w"> </span><span class="nn">myapp.services</span><span class="w"> </span><span class="kn">import</span> <span class="n">BillingService</span>
+<p>Use standard Python generics by putting the shared behavior in a generic base class, then registering concrete subclasses that bind the concrete type.</p>
+<h2 id="sqlalchemy-example">Sqlalchemy example<a class="headerlink" href="#sqlalchemy-example" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">sqlalchemy</span><span class="w"> </span><span class="kn">import</span> <span class="n">select</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">sqlalchemy.orm</span><span class="w"> </span><span class="kn">import</span> <span class="n">Session</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">wireup</span><span class="w"> </span><span class="kn">import</span> <span class="n">injectable</span>
 
 
-<span class="k">def</span><span class="w"> </span><span class="nf">require_plan</span><span class="p">(</span><span class="n">plan</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">decorator</span><span class="p">(</span><span class="n">view_fn</span><span class="p">):</span>
-        <span class="nd">@wraps</span><span class="p">(</span><span class="n">view_fn</span><span class="p">)</span>
-        <span class="nd">@inject</span>
-        <span class="k">def</span><span class="w"> </span><span class="nf">wrapped</span><span class="p">(</span>
-            <span class="n">request</span><span class="p">:</span> <span class="n">HttpRequest</span><span class="p">,</span>
-            <span class="o">*</span><span class="n">args</span><span class="p">,</span>
-            <span class="n">billing</span><span class="p">:</span> <span class="n">Injected</span><span class="p">[</span><span class="n">BillingService</span><span class="p">],</span>
-            <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
-        <span class="p">):</span>
-            <span class="k">if</span> <span class="ow">not</span> <span class="n">billing</span><span class="o">.</span><span class="n">has_plan</span><span class="p">(</span><span class="n">request</span><span class="o">.</span><span class="n">user</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="n">plan</span><span class="p">):</span>
-                <span class="k">return</span> <span class="n">HttpResponseForbidden</span><span class="p">(</span><span class="s2">&quot;Upgrade required&quot;</span><span class="p">)</span>
-            <span class="k">return</span> <span class="n">view_fn</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">Repository</span><span class="p">[</span><span class="n">T</span><span class="p">]:</span>
+    <span class="n">model</span><span class="p">:</span> <span class="nb">type</span><span class="p">[</span><span class="n">T</span><span class="p">]</span>
 
-        <span class="k">return</span> <span class="n">wrapped</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">session</span><span class="p">:</span> <span class="n">Session</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">session</span> <span class="o">=</span> <span class="n">session</span>
 
-    <span class="k">return</span> <span class="n">decorator</span>
-</code></pre></div>
-<div class="highlight"><pre><span></span><code><span class="nd">@require_plan</span><span class="p">(</span><span class="s2">&quot;pro&quot;</span><span class="p">)</span>
-<span class="k">def</span><span class="w"> </span><span class="nf">analytics_view</span><span class="p">(</span><span class="n">request</span><span class="p">:</span> <span class="n">HttpRequest</span><span class="p">):</span> <span class="o">...</span>
-</code></pre></div>
-<div class="admonition note">
-<p class="admonition-title">Note</p>
-<p>The <code>require_plan</code> example above is sync-only. If your target view is async, use an async decorator variant and
-<code>await</code> the wrapped view function.</p>
-</div>
-<h2 id="middleware-adjacent-request-hooks">Middleware-Adjacent Request Hooks<a class="headerlink" href="#middleware-adjacent-request-hooks" title="Permanent link">&para;</a></h2>
-<p>Django middleware itself does not use Django's view signature injection. For request-time middleware hooks, call
-helpers that use <code>@inject</code> or direct request-container access.</p>
-<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">django.http</span><span class="w"> </span><span class="kn">import</span> <span class="n">HttpRequest</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">wireup</span><span class="w"> </span><span class="kn">import</span> <span class="n">Injected</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">wireup.integration.django</span><span class="w"> </span><span class="kn">import</span> <span class="n">inject</span>
-
-<span class="kn">from</span><span class="w"> </span><span class="nn">myapp.services</span><span class="w"> </span><span class="kn">import</span> <span class="n">RequestContextService</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">id</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">T</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span> <span class="nb">id</span><span class="p">)</span>
 
 
-<span class="nd">@inject</span>
-<span class="k">def</span><span class="w"> </span><span class="nf">initialize_request_context</span><span class="p">(</span>
-    <span class="n">request</span><span class="p">:</span> <span class="n">HttpRequest</span><span class="p">,</span>
-    <span class="n">context_service</span><span class="p">:</span> <span class="n">Injected</span><span class="p">[</span><span class="n">RequestContextService</span><span class="p">],</span>
-<span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-    <span class="n">context_service</span><span class="o">.</span><span class="n">initialize</span><span class="p">(</span><span class="n">request</span><span class="p">)</span>
-</code></pre></div>
-<div class="highlight"><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">RequestContextMiddleware</span><span class="p">:</span>
-    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">get_response</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">get_response</span> <span class="o">=</span> <span class="n">get_response</span>
-
-    <span class="k">def</span><span class="w"> </span><span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">request</span><span class="p">):</span>
-        <span class="n">initialize_request_context</span><span class="p">(</span><span class="n">request</span><span class="p">)</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_response</span><span class="p">(</span><span class="n">request</span><span class="p">)</span>
-</code></pre></div>
-<div class="admonition warning">
-<p class="admonition-title">Warning</p>
-<p>Ensure <code>wireup.integration.django.wireup_middleware</code> appears before middleware that calls injected helpers.
-Otherwise request-scoped injection is not available yet.</p>
-</div>
-<h2 id="direct-container-access">Direct Container Access<a class="headerlink" href="#direct-container-access" title="Permanent link">&para;</a></h2>
-<p>When needed, access containers directly:</p>
-<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">wireup.integration.django</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_app_container</span><span class="p">,</span> <span class="n">get_request_container</span>
-
-<span class="c1"># Current request-scoped container (available only during a request)</span>
-<span class="n">request_container</span> <span class="o">=</span> <span class="n">get_request_container</span><span class="p">()</span>
-
-<span class="c1"># Application-wide container</span>
-<span class="n">app_container</span> <span class="o">=</span> <span class="n">get_app_container</span><span class="p">()</span>
-</code></pre></div>
-<p>Prefer <code>@inject</code> for request-time helpers and <code>@inject_app</code> for non-request entry points.</p>
-<h2 id="testing-lifecycle-helpers">Testing Lifecycle Helpers<a class="headerlink" href="#testing-lifecycle-helpers" title="Permanent link">&para;</a></h2>
-<p>See <a href="../testing/">Django Testing</a> for endpoint tests and dependency overrides. These patterns are tested the same way:</p>
-<ul>
-<li>call endpoints with <code>Client</code> or <code>AsyncClient</code></li>
-<li>use <code>get_app_container().override.injectable(...)</code> to inject fakes</li>
-</ul>
+<span class="hll"><span class="nd">@injectable</span>
+</span><span class="hll"><span class="k">class</span><span class="w"> </span><span class="nc">UserRepository</span><span class="p">(</span><span class="n">Repository</span><span class="p">[</span><span class="n">User</span><span class="p">]):</span>
+</span><span class="hll">    <span class="n">model</span> <span class="o">=</span> <span class="n">User</span>
+</span></code></pre></div>
+<p>You can now use <code>UserRepository</code> as usual.</p>
 
 
 
@@ -3689,10 +3586,10 @@ Otherwise request-scoped injection is not available yet.</p>
     
       
       
-      <script id="__config" type="application/json">{"annotate": null, "base": "../../..", "features": ["search.highlight", "navigation.sections", "content.code.annotate", "navigation.instant", "navigation.tabs", "navigation.indexes"], "search": "../../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["search.highlight", "navigation.sections", "content.code.annotate", "navigation.instant", "navigation.tabs", "navigation.indexes"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
     
     
-      <script src="../../../assets/javascripts/bundle.79ae519e.min.js"></script>
+      <script src="../assets/javascripts/bundle.79ae519e.min.js"></script>
       
     
   </body>

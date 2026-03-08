@@ -23,7 +23,7 @@
     
     
       
-        <title>Request Lifecycle Patterns - Wireup</title>
+        <title>Request-Time Injection - Wireup</title>
       
     
     
@@ -78,7 +78,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#request-lifecycle-patterns" class="md-skip">
+        <a href="#request-time-injection" class="md-skip">
           Skip to content
         </a>
       
@@ -143,7 +143,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Request Lifecycle Patterns
+              Request-Time Injection
             
           </span>
         </div>
@@ -771,6 +771,8 @@
       
         
       
+        
+      
     
     
     
@@ -915,6 +917,34 @@
     
   
     Interfaces
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../generic_dependencies/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Generic Dependencies
   
 
     
@@ -1448,14 +1478,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../../django/request_lifecycle_patterns/" class="md-nav__link">
+      <a href="../../django/request_time_injection/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Request Lifecycle Patterns
+    Request-Time Injection
   
 
     
@@ -1751,7 +1781,7 @@
   <span class="md-ellipsis">
     
   
-    Request Lifecycle Patterns
+    Request-Time Injection
   
 
     
@@ -1769,7 +1799,7 @@
   <span class="md-ellipsis">
     
   
-    Request Lifecycle Patterns
+    Request-Time Injection
   
 
     
@@ -1846,10 +1876,10 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#request-time-middleware-pattern" class="md-nav__link">
+  <a href="#middleware-injection" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Request-Time Middleware Pattern
+        Middleware Injection
       
     </span>
   </a>
@@ -1873,15 +1903,15 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#testing-patterns" class="md-nav__link">
+  <a href="#testing" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Testing Patterns
+        Testing
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Testing Patterns">
+    <nav class="md-nav" aria-label="Testing">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -3626,10 +3656,10 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#request-time-middleware-pattern" class="md-nav__link">
+  <a href="#middleware-injection" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Request-Time Middleware Pattern
+        Middleware Injection
       
     </span>
   </a>
@@ -3653,15 +3683,15 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#testing-patterns" class="md-nav__link">
+  <a href="#testing" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Testing Patterns
+        Testing
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Testing Patterns">
+    <nav class="md-nav" aria-label="Testing">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -3722,9 +3752,9 @@
   
 
 
-<h1 id="request-lifecycle-patterns">Request Lifecycle Patterns<a class="headerlink" href="#request-lifecycle-patterns" title="Permanent link">&para;</a></h1>
+<h1 id="request-time-injection">Request-Time Injection<a class="headerlink" href="#request-time-injection" title="Permanent link">&para;</a></h1>
 <p>While Wireup primarily handles dependency injection in FastAPI routes, you can also use dependencies in other functions
-during the request lifecycle to create composable and reusable patterns:</p>
+during the request lifecycle to build reusable decorators:</p>
 <ul>
 <li><strong>Reusable Route Decorators</strong>: <code>@require_admin</code>, <code>@require_permission</code>, <code>@rate_limit</code></li>
 <li><strong>Middleware Integration</strong>: request context setup and cross-cutting request logic</li>
@@ -3732,52 +3762,55 @@ during the request lifecycle to create composable and reusable patterns:</p>
 </ul>
 <div class="admonition info">
 <p class="admonition-title">Advanced Feature - Requires Middleware Mode</p>
-<p>The patterns shown on this page require <code>middleware_mode=True</code> during Wireup setup.</p>
+<p>The examples on this page require <code>middleware_mode=True</code> during Wireup setup.</p>
 <div class="highlight"><pre><span></span><code><span class="n">wireup</span><span class="o">.</span><span class="n">integration</span><span class="o">.</span><span class="n">fastapi</span><span class="o">.</span><span class="n">setup</span><span class="p">(</span><span class="n">container</span><span class="p">,</span> <span class="n">app</span><span class="p">,</span> <span class="n">middleware_mode</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 </code></pre></div>
 <p>Normally, the request-scoped container is created just before the route handler is called. With middleware mode enabled,
 it's created at the start of the HTTP request lifecycle, making it available in middleware and other request handlers.
-These patterns apply to HTTP requests only, not WebSocket handlers.</p>
+These examples apply to HTTP requests only, not WebSocket handlers.</p>
 </div>
 <h2 id="composable-route-decorators">Composable Route Decorators<a class="headerlink" href="#composable-route-decorators" title="Permanent link">&para;</a></h2>
 <p>Route decorators let you extract cross-cutting concerns into reusable components that can be applied to multiple
 endpoints. Examples below:</p>
 <h3 id="authentication-authorization">Authentication &amp; Authorization<a class="headerlink" href="#authentication-authorization" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">wireup</span><span class="w"> </span><span class="kn">import</span> <span class="n">Injected</span>
+<div class="highlight"><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">contextlib</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">collections.abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">AsyncIterator</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">wireup</span><span class="w"> </span><span class="kn">import</span> <span class="n">Injected</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">wireup.integration.fastapi</span><span class="w"> </span><span class="kn">import</span> <span class="n">inject</span>
 
 
-<span class="nd">@inject</span>
 <span class="nd">@contextlib</span><span class="o">.</span><span class="n">asynccontextmanager</span>
-<span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">require_permission</span><span class="p">(</span>
-    <span class="n">permission</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
-    <span class="n">auth</span><span class="p">:</span> <span class="n">Injected</span><span class="p">[</span><span class="n">AuthService</span><span class="p">],</span>
-<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">AsyncIterator</span><span class="p">[</span><span class="kc">None</span><span class="p">]:</span>
-    <span class="k">if</span> <span class="ow">not</span> <span class="k">await</span> <span class="n">auth</span><span class="o">.</span><span class="n">has_permission</span><span class="p">(</span><span class="n">permission</span><span class="p">):</span>
-        <span class="k">raise</span> <span class="n">HTTPException</span><span class="p">(</span><span class="n">status_code</span><span class="o">=</span><span class="mi">403</span><span class="p">,</span> <span class="n">detail</span><span class="o">=</span><span class="s2">&quot;Insufficient permissions&quot;</span><span class="p">)</span>
+<span class="nd">@inject</span>
+<span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">require_auth</span><span class="p">(</span><span class="n">auth</span><span class="p">:</span> <span class="n">Injected</span><span class="p">[</span><span class="n">AuthService</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">AsyncIterator</span><span class="p">[</span><span class="kc">None</span><span class="p">]:</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="k">await</span> <span class="n">auth</span><span class="o">.</span><span class="n">is_authenticated</span><span class="p">():</span>
+        <span class="k">raise</span> <span class="n">HTTPException</span><span class="p">(</span><span class="n">status_code</span><span class="o">=</span><span class="mi">401</span><span class="p">,</span> <span class="n">detail</span><span class="o">=</span><span class="s2">&quot;Authentication required&quot;</span><span class="p">)</span>
 
     <span class="k">yield</span>
 
 
 <span class="nd">@router</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;/users&quot;</span><span class="p">)</span>
-<span class="nd">@require_permission</span><span class="p">(</span><span class="s2">&quot;read_users&quot;</span><span class="p">)</span>
+<span class="nd">@require_auth</span><span class="p">()</span>
 <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">get_users</span><span class="p">(</span><span class="n">user_service</span><span class="p">:</span> <span class="n">Injected</span><span class="p">[</span><span class="n">UserService</span><span class="p">]):</span> <span class="o">...</span>
 </code></pre></div>
 <h3 id="rate-limiting">Rate Limiting<a class="headerlink" href="#rate-limiting" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">wireup</span><span class="w"> </span><span class="kn">import</span> <span class="n">Injected</span>
+<div class="highlight"><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">contextlib</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">collections.abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">AsyncIterator</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">wireup</span><span class="w"> </span><span class="kn">import</span> <span class="n">Injected</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">wireup.integration.fastapi</span><span class="w"> </span><span class="kn">import</span> <span class="n">inject</span>
 
 
-<span class="nd">@inject</span>
-<span class="nd">@contextlib</span><span class="o">.</span><span class="n">asynccontextmanager</span>
-<span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">rate_limit</span><span class="p">(</span>
-    <span class="n">rate_limiter</span><span class="p">:</span> <span class="n">Injected</span><span class="p">[</span><span class="n">RateLimiterService</span><span class="p">],</span>
-    <span class="n">max_requests</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">100</span><span class="p">,</span>
-<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">AsyncIterator</span><span class="p">[</span><span class="kc">None</span><span class="p">]:</span>
-    <span class="k">if</span> <span class="ow">not</span> <span class="k">await</span> <span class="n">rate_limiter</span><span class="o">.</span><span class="n">check</span><span class="p">(</span><span class="n">max_requests</span><span class="p">):</span>
-        <span class="k">raise</span> <span class="n">HTTPException</span><span class="p">(</span><span class="n">status_code</span><span class="o">=</span><span class="mi">429</span><span class="p">,</span> <span class="n">detail</span><span class="o">=</span><span class="s2">&quot;Too many requests&quot;</span><span class="p">)</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">rate_limit</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">max_requests</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">100</span><span class="p">):</span>
+    <span class="nd">@contextlib</span><span class="o">.</span><span class="n">asynccontextmanager</span>
+    <span class="nd">@inject</span>
+    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">guard</span><span class="p">(</span>
+        <span class="n">rate_limiter</span><span class="p">:</span> <span class="n">Injected</span><span class="p">[</span><span class="n">RateLimiterService</span><span class="p">],</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">AsyncIterator</span><span class="p">[</span><span class="kc">None</span><span class="p">]:</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="k">await</span> <span class="n">rate_limiter</span><span class="o">.</span><span class="n">check</span><span class="p">(</span><span class="n">max_requests</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">HTTPException</span><span class="p">(</span><span class="n">status_code</span><span class="o">=</span><span class="mi">429</span><span class="p">,</span> <span class="n">detail</span><span class="o">=</span><span class="s2">&quot;Too many requests&quot;</span><span class="p">)</span>
 
-    <span class="k">yield</span>
+        <span class="k">yield</span>
+
+    <span class="k">return</span> <span class="n">guard</span><span class="p">()</span>
 
 
 <span class="nd">@router</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;/api/data&quot;</span><span class="p">)</span>
@@ -3786,7 +3819,7 @@ endpoints. Examples below:</p>
 </code></pre></div>
 <h2 id="middleware-integration">Middleware Integration<a class="headerlink" href="#middleware-integration" title="Permanent link">&para;</a></h2>
 <p>Access Wireup services in FastAPI middleware for request setup or other cross-cutting concerns.</p>
-<h3 id="request-time-middleware-pattern">Request-Time Middleware Pattern<a class="headerlink" href="#request-time-middleware-pattern" title="Permanent link">&para;</a></h3>
+<h3 id="middleware-injection">Middleware Injection<a class="headerlink" href="#middleware-injection" title="Permanent link">&para;</a></h3>
 <p>FastAPI's dependency system (<code>Depends</code>) does not apply to middleware. Middleware runs outside route handlers, so this is
 one of the places where FastAPI cannot inject your services for you.</p>
 <p>Use <code>@inject</code> here when you want request-scoped services in middleware, and run your service layer directly before
@@ -3831,16 +3864,15 @@ services within <code>Depends()</code> functions.</p>
 </code></pre></div>
 <div class="admonition warning">
 <p class="admonition-title">Avoid When Possible</p>
-<p>This pattern should be rare. Prefer pure Wireup injection. Use this only when:</p>
+<p>This should be rare. Prefer pure Wireup injection. Use this only when:</p>
 <ul>
 <li><strong>Migrating gradually to Wireup</strong> from pure FastAPI <code>Depends()</code></li>
 <li><strong>External libraries</strong> require <code>Depends()</code> integration</li>
 </ul>
 <p>Remember: Wireup services cannot depend on <code>Depends()</code> providers.</p>
 </div>
-<h2 id="testing-patterns">Testing Patterns<a class="headerlink" href="#testing-patterns" title="Permanent link">&para;</a></h2>
-<p>When testing code that runs request-time helpers (<code>@inject</code> or <code>get_request_container()</code>), ensure the request-scoped
-container is available.</p>
+<h2 id="testing">Testing<a class="headerlink" href="#testing" title="Permanent link">&para;</a></h2>
+<p>When testing code that uses request-time injection (<code>@inject</code> or <code>get_request_container()</code>), make sure the request-scoped container is available.</p>
 <h3 id="testing-route-decorators">Testing Route Decorators<a class="headerlink" href="#testing-route-decorators" title="Permanent link">&para;</a></h3>
 <div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">fastapi.testclient</span><span class="w"> </span><span class="kn">import</span> <span class="n">TestClient</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">wireup</span>
@@ -3856,18 +3888,18 @@ container is available.</p>
 
 
 <span class="nd">@router</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;/users&quot;</span><span class="p">)</span>
-<span class="nd">@require_permission</span><span class="p">(</span><span class="s2">&quot;read_users&quot;</span><span class="p">)</span>
+<span class="nd">@require_auth</span><span class="p">()</span>
 <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">get_users</span><span class="p">(</span><span class="n">user_service</span><span class="p">:</span> <span class="n">Injected</span><span class="p">[</span><span class="n">UserService</span><span class="p">]):</span> <span class="o">...</span>
 
 
-<span class="k">def</span><span class="w"> </span><span class="nf">test_require_permission_denied</span><span class="p">():</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">test_require_auth_denied</span><span class="p">():</span>
     <span class="k">with</span> <span class="n">TestClient</span><span class="p">(</span><span class="n">app</span><span class="p">)</span> <span class="k">as</span> <span class="n">client</span><span class="p">:</span>
         <span class="c1"># AuthService will be mocked via container overrides</span>
         <span class="n">response</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;/users&quot;</span><span class="p">)</span>
-        <span class="k">assert</span> <span class="n">response</span><span class="o">.</span><span class="n">status_code</span> <span class="o">==</span> <span class="mi">403</span>
+        <span class="k">assert</span> <span class="n">response</span><span class="o">.</span><span class="n">status_code</span> <span class="o">==</span> <span class="mi">401</span>
 
 
-<span class="k">def</span><span class="w"> </span><span class="nf">test_require_permission_allowed</span><span class="p">():</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">test_require_auth_allowed</span><span class="p">():</span>
     <span class="k">with</span> <span class="n">TestClient</span><span class="p">(</span><span class="n">app</span><span class="p">)</span> <span class="k">as</span> <span class="n">client</span><span class="p">:</span>
         <span class="c1"># Override AuthService to return True</span>
         <span class="k">with</span> <span class="n">get_app_container</span><span class="p">(</span><span class="n">app</span><span class="p">)</span><span class="o">.</span><span class="n">override</span><span class="o">.</span><span class="n">injectable</span><span class="p">(</span>
@@ -3885,10 +3917,10 @@ container is available.</p>
 <div class="admonition tip">
 <p class="admonition-title">Tip</p>
 <p>Use <code>get_app_container(app).override.injectable()</code> to inject mocks and fakes during tests. This works for both route
-decorators and middleware patterns.</p>
+decorators and middleware.</p>
 </div>
 <h2 id="direct-container-access">Direct Container Access<a class="headerlink" href="#direct-container-access" title="Permanent link">&para;</a></h2>
-<p>For utilities, helpers, or other cases where you need direct access to the container APIs:</p>
+<p>For utilities or other cases where you need direct access to the container APIs:</p>
 <div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">wireup.integration.fastapi</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_app_container</span><span class="p">,</span> <span class="n">get_request_container</span>
 
 <span class="c1"># Access the request-scoped container (used for the current request).</span>
@@ -3901,8 +3933,8 @@ decorators and middleware patterns.</p>
 <p>The app container is always retrievable given an instance of the application. The request-scoped container is only
 available when <code>middleware_mode=True</code> is enabled.</p>
 <div class="admonition tip">
-<p class="admonition-title">Prefer <code>@inject</code> for request-time helpers</p>
-<p><code>@inject</code> keeps signatures type-driven and avoids manual container lookups. If you prefer explicit container access,
+<p class="admonition-title">Tip</p>
+<p><code>@inject</code> keeps dependency wiring in the function signature and avoids manual container lookups. If you prefer explicit container access,
 <code>get_request_container()</code> works anywhere during a request:</p>
 <div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">wireup.integration.fastapi</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_request_container</span>
 

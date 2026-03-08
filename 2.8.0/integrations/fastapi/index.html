@@ -771,6 +771,8 @@
       
         
       
+        
+      
     
     
     
@@ -915,6 +917,34 @@
     
   
     Interfaces
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../generic_dependencies/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Generic Dependencies
   
 
     
@@ -1448,14 +1478,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../django/request_lifecycle_patterns/" class="md-nav__link">
+      <a href="../django/request_time_injection/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Request Lifecycle Patterns
+    Request-Time Injection
   
 
     
@@ -1735,14 +1765,14 @@
   
   
     <li class="md-nav__item">
-      <a href="request_lifecycle_patterns/" class="md-nav__link">
+      <a href="request_time_injection/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Request Lifecycle Patterns
+    Request-Time Injection
   
 
     
@@ -3458,8 +3488,8 @@
 <li>
 <p><span class="twemoji lg middle"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M18 11h-3.18C14.4 9.84 13.3 9 12 9s-2.4.84-2.82 2H6c-.33 0-2-.1-2-2V8c0-1.83 1.54-2 2-2h10.18C16.6 7.16 17.7 8 19 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3c-1.3 0-2.4.84-2.82 2H6C4.39 4 2 5.06 2 8v1c0 2.94 2.39 4 4 4h3.18c.42 1.16 1.52 2 2.82 2s2.4-.84 2.82-2H18c.33 0 2 .1 2 2v1c0 1.83-1.54 2-2 2H7.82C7.4 16.84 6.3 16 5 16a3 3 0 0 0-3 3 3 3 0 0 0 3 3c1.3 0 2.4-.84 2.82-2H18c1.61 0 4-1.07 4-4v-1c0-2.93-2.39-4-4-4m1-7a1 1 0 0 1 1 1 1 1 0 0 1-1 1 1 1 0 0 1-1-1 1 1 0 0 1 1-1M5 20a1 1 0 0 1-1-1 1 1 0 0 1 1-1 1 1 0 0 1 1 1 1 1 0 0 1-1 1"/></svg></span> <strong>Deep Integration</strong></p>
 <hr />
-<p>Inject in endpoint handlers, middleware, decorators, and other request-path hooks.</p>
-<p><a href="request_lifecycle_patterns/"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13.22 19.03a.75.75 0 0 1 0-1.06L18.19 13H3.75a.75.75 0 0 1 0-1.5h14.44l-4.97-4.97a.749.749 0 0 1 .326-1.275.75.75 0 0 1 .734.215l6.25 6.25a.75.75 0 0 1 0 1.06l-6.25 6.25a.75.75 0 0 1-1.06 0"/></svg></span> Learn more</a></p>
+<p>Inject anywhere in the request path, not just route handlers, without manually threading dependencies through each call.</p>
+<p><a href="request_time_injection/"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13.22 19.03a.75.75 0 0 1 0-1.06L18.19 13H3.75a.75.75 0 0 1 0-1.5h14.44l-4.97-4.97a.749.749 0 0 1 .326-1.275.75.75 0 0 1 .734.215l6.25 6.25a.75.75 0 0 1 0 1.06l-6.25 6.25a.75.75 0 0 1-1.06 0"/></svg></span> Learn more</a></p>
 </li>
 <li>
 <p><span class="twemoji lg middle"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 16a3 3 0 0 1-3-3c0-1.12.61-2.1 1.5-2.61l9.71-5.62-5.53 9.58c-.5.98-1.51 1.65-2.68 1.65m0-13c1.81 0 3.5.5 4.97 1.32l-2.1 1.21C14 5.19 13 5 12 5a8 8 0 0 0-8 8c0 2.21.89 4.21 2.34 5.65h.01c.39.39.39 1.02 0 1.41s-1.03.39-1.42.01A9.97 9.97 0 0 1 2 13 10 10 0 0 1 12 3m10 10c0 2.76-1.12 5.26-2.93 7.07-.39.38-1.02.38-1.41-.01a.996.996 0 0 1 0-1.41A7.95 7.95 0 0 0 20 13c0-1-.19-2-.54-2.9L20.67 8C21.5 9.5 22 11.18 22 13"/></svg></span> <strong>Zero Runtime Overhead</strong></p>
@@ -3525,9 +3555,9 @@ Best practice is to call <code>setup(...)</code> after routes are added.</p>
 <li><a href="inject_in_routes/">Inject in Routes</a>: HTTP/WebSocket handler injection and config value injection in route signatures.</li>
 <li><a href="context_in_services/">Request and WebSocket Context in Services</a>: inject <code>fastapi.Request</code> and <code>fastapi.WebSocket</code> into Wireup services.</li>
 <li><a href="class_based_handlers/">Class-Based Handlers</a>: zero per-request constructor resolution and <code>WireupRoute</code> optimizations.</li>
-<li><a href="request_lifecycle_patterns/">Request Lifecycle Patterns</a>: middleware/decorator patterns and request-time helpers.</li>
+<li><a href="request_time_injection/">Request-Time Injection</a>: injection in decorators, middleware, and other request-time call sites.</li>
 <li><a href="background_tasks/">Background Tasks</a>: inject dependencies into scheduled callbacks with <code>WireupTask</code>.</li>
-<li><a href="testing/">FastAPI Testing</a>: <code>TestClient</code> lifespan usage, overrides, and request-lifecycle test patterns.</li>
+<li><a href="testing/">FastAPI Testing</a>: <code>TestClient</code> lifespan usage, overrides, and request-lifecycle tests.</li>
 <li><a href="troubleshooting/">Troubleshooting</a>: common setup/runtime errors and fast fixes.</li>
 </ul>
 <h2 id="api-reference">API Reference<a class="headerlink" href="#api-reference" title="Permanent link">&para;</a></h2>
