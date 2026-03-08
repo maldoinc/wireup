@@ -1,8 +1,7 @@
-from typing_extensions import Annotated
-
 import pytest
+from typing_extensions import Annotated
 from wireup import Inject, create_sync_container, injectable, instance
-from wireup.errors import DuplicateServiceRegistrationError
+from wireup.errors import DuplicateServiceRegistrationError, AsTypeMismatchError
 
 
 def test_instance_registration():
@@ -69,8 +68,6 @@ def test_duplicate_registration_fails():
 
 
 def test_instance_registration_type_mismatch_fails():
-    from wireup.errors import AsTypeMismatchError
-
     class A:
         pass
 
