@@ -255,13 +255,13 @@ adds startup graph validation for this layer.
 
 ## What Stays in FastAPI vs Moves to Wireup
 
-| Concern                                         | Keep in FastAPI (`Depends`, `Query`, `Header`, etc.) | Move to Wireup                                                                                     |
-| ----------------------------------------------- | ---------------------------------------------------- | -------------------------------------------------------------------------------------------------- |
-| Request parsing and validation                  | Yes                                                  | No                                                                                                 |
-| HTTP auth extraction (OAuth2, bearer, API keys) | Yes                                                  | Yes, for request-scoped auth/domain services via `Request`                                         |
-| Service/repository/client construction          | No                                                   | Yes                                                                                                |
-| App settings and long-lived clients             | No                                                   | Yes                                                                                                |
-| Request-scoped domain services/context          | No                                                   | Yes (`lifetime="scoped"`)                                                                          |
+| Concern                                         | Keep in FastAPI (`Depends`, `Query`, `Header`, etc.) | Move to Wireup                                                                             |
+| ----------------------------------------------- | ---------------------------------------------------- | ------------------------------------------------------------------------------------------ |
+| Request parsing and validation                  | Yes                                                  | No                                                                                         |
+| HTTP auth extraction (OAuth2, bearer, API keys) | Yes                                                  | Yes, for request-scoped auth/domain services via `Request`                                 |
+| Service/repository/client construction          | No                                                   | Yes                                                                                        |
+| App settings and long-lived clients             | No                                                   | Yes                                                                                        |
+| Request-scoped domain services/context          | No                                                   | Yes (`lifetime="scoped"`)                                                                  |
 | Decorators/middleware needing container access  | Sometimes                                            | Sometimes. See [Request-Time Injection](../integrations/fastapi/request_time_injection.md) |
 
 Keeping this boundary explicit prevents confusion when both systems coexist during migration.
@@ -725,6 +725,16 @@ wireup.integration.fastapi.setup(
 
 ## Testing
 
+For tests, the main difference is that overrides move from dependency functions to injected types. In Wireup, you override the target type instead of overriding the factory or class that produces it. 
+
+You still test FastAPI with
+`TestClient`, but Wireup makes the override target explicit and scopes it with a context manager instead of mutating
+`app.dependency_overrides` and remembering to clean it up.
+
+- FastAPI `Depends`: override the factory/dependency function object.
+- Wireup: override the resolved service type.
+- In both cases: use `TestClient` as a context manager so lifespan runs.
+
 === "Before (`Depends` + `app.dependency_overrides`)"
 
     ```python
@@ -760,6 +770,9 @@ wireup.integration.fastapi.setup(
 
         assert response.status_code == 200
     ```
+
+For a more in-depth guide on testing with Wireup and FastAPI, see
+[FastAPI Testing](../integrations/fastapi/testing.md) and the general [Testing](../testing.md) guide.
 
 ## Incremental Migration Plan
 
