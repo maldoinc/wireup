@@ -117,7 +117,7 @@ def setup(
             app.router.add_routes(handler_type.router)
 
     if middleware_mode:
-        app.middlewares.append(_wireup_middleware)
+        app.middlewares.insert(0, _wireup_middleware)
 
     app.on_startup.append(_get_startup_event(container, handlers, middleware_mode=middleware_mode))
     app.on_cleanup.append(_on_cleanup)
