@@ -20,6 +20,7 @@ from wireup import injectable
 from wireup._decorators import inject_from_container
 from wireup.errors import WireupError
 from wireup.ioc.container.async_container import AsyncContainer, ScopedAsyncContainer, async_container_force_sync_scope
+from wireup.ioc.container.base_container import BaseContainer
 from wireup.ioc.container.sync_container import ScopedSyncContainer
 from wireup.ioc.types import ConfigInjectionRequest
 from wireup.ioc.util import get_valid_injection_annotated_parameters
@@ -28,9 +29,7 @@ if TYPE_CHECKING:
     from wireup.integration.django import WireupSettings
 
 
-current_request: ContextVar[HttpRequest] = ContextVar("wireup_django_request")
-async_view_request_container: ContextVar[ScopedAsyncContainer] = ContextVar("wireup_async_view_request_container")
-sync_view_request_container: ContextVar[ScopedSyncContainer] = ContextVar("wireup_sync_view_request_container")
+_request_container: ContextVar[BaseContainer] = ContextVar("_wireup_request_container")
 
 
 @sync_and_async_middleware
@@ -42,57 +41,45 @@ def wireup_middleware(
     if inspect.iscoroutinefunction(get_response):
 
         async def async_inner(request: HttpRequest) -> HttpResponse:
-            async with container.enter_scope() as scoped:
-                container_token = async_view_request_container.set(scoped)
-                request_token = current_request.set(request)
+            async with container.enter_scope({HttpRequest: request}) as scoped:
+                container_token = _request_container.set(scoped)
                 try:
                     return await get_response(request)
                 finally:
-                    current_request.reset(request_token)
-                    async_view_request_container.reset(container_token)
+                    _request_container.reset(container_token)
 
         return async_inner
 
     def sync_inner(request: HttpRequest) -> HttpResponse:
-        with async_container_force_sync_scope(container) as scoped:
-            container_token = sync_view_request_container.set(scoped)
-            request_token = current_request.set(request)
+        with async_container_force_sync_scope(container, {HttpRequest: request}) as scoped:
+            container_token = _request_container.set(scoped)
             try:
                 return get_response(request)
             finally:
-                current_request.reset(request_token)
-                sync_view_request_container.reset(container_token)
+                _request_container.reset(container_token)
 
     return sync_inner
 
 
 @injectable(lifetime="scoped")
 def _django_request_factory() -> HttpRequest:
-    try:
-        return current_request.get()
-    except LookupError as e:
-        msg = (
-            "django.http.HttpRequest in wireup is only available during a request. "
-            "Did you forget to add 'wireup.integration.django.wireup_middleware' to your list of middlewares?"
-        )
-        raise WireupError(msg) from e
+    msg = (
+        "django.http.HttpRequest in wireup is only available during a request. "
+        "Did you forget to add 'wireup.integration.django.wireup_middleware' to your list of middlewares?"
+    )
+    raise WireupError(msg)
 
 
 def get_request_container() -> Union[ScopedSyncContainer, ScopedAsyncContainer]:
     """When inside a request, returns the scoped container instance handling the current request."""
     try:
-        return async_view_request_container.get()
-    except LookupError:
-        pass
-
-    try:
-        return sync_view_request_container.get()
+        return _request_container.get()  # type:ignore[reportReturnType]
     except LookupError as e:
         msg = (
             "Wireup request container is unavailable in the current execution context.\n"
             "Common causes:\n"
             "1) The code is running outside an active Django request lifecycle.\n"
-            "2) wireup.integration.django.wireup_middleware is missing or misordered.\n"
+            "2) wireup.integration.django.wireup_middleware is missing or is not the outermost one.\n"
             "For non-request code (commands, signals, checks, scripts), use @inject_app. "
         )
         raise WireupError(msg) from e
