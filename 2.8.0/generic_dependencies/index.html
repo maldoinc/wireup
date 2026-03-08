@@ -3514,7 +3514,8 @@
 
   <h1>Generic Dependencies</h1>
 
-<p>Use standard Python generics by putting the shared behavior in a generic base class, then registering concrete subclasses that bind the concrete type.</p>
+<p>Generic dependencies let you define reusable behavior
+given a base class with a generic type parameter. This is useful when multiple dependencies share the same structure but work with different models, since you can keep the common logic in a generic base class and register concrete subclasses that bind the actual type.</p>
 <h2 id="sqlalchemy-example">Sqlalchemy example<a class="headerlink" href="#sqlalchemy-example" title="Permanent link">&para;</a></h2>
 <div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">sqlalchemy</span><span class="w"> </span><span class="kn">import</span> <span class="n">select</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">sqlalchemy.orm</span><span class="w"> </span><span class="kn">import</span> <span class="n">Session</span>
@@ -3532,10 +3533,14 @@
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span> <span class="nb">id</span><span class="p">)</span>
 
 
-<span class="hll"><span class="nd">@injectable</span>
-</span><span class="hll"><span class="k">class</span><span class="w"> </span><span class="nc">UserRepository</span><span class="p">(</span><span class="n">Repository</span><span class="p">[</span><span class="n">User</span><span class="p">]):</span>
-</span><span class="hll">    <span class="n">model</span> <span class="o">=</span> <span class="n">User</span>
-</span></code></pre></div>
+<span class="nd">@injectable</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">UserRepository</span><span class="p">(</span><span class="n">Repository</span><span class="p">[</span><span class="n">User</span><span class="p">]):</span>
+    <span class="n">model</span> <span class="o">=</span> <span class="n">User</span>
+
+<span class="nd">@injectable</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">BlogPostRepository</span><span class="p">(</span><span class="n">Repository</span><span class="p">[</span><span class="n">BlogPost</span><span class="p">]):</span>
+    <span class="n">model</span> <span class="o">=</span> <span class="n">BlogPost</span>
+</code></pre></div>
 <p>You can now use <code>UserRepository</code> as usual.</p>
 
 
