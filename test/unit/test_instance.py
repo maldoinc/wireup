@@ -15,9 +15,7 @@ def test_instance_registration():
             self.db_conn = db_conn
 
     db = DbConnection()
-    container = create_sync_container(
-        injectables=[instance(db, as_type=DbConnection), Repository]
-    )
+    container = create_sync_container(injectables=[instance(db, as_type=DbConnection), Repository])
     assert container.get(DbConnection) is db
     assert container.get(DbConnection) is container.get(DbConnection)
 
