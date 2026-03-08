@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import inspect
 from typing import TYPE_CHECKING, Any, Callable, TypeVar
 
 from wireup._annotations import injectable
@@ -27,5 +28,11 @@ def instance(
     @injectable(qualifier=qualifier, as_type=as_type)
     def _instance_provider() -> T:
         return obj
+
+    _instance_provider.__annotations__["return"] = type(obj)
+    _instance_provider.__signature__ = inspect.Signature(  # type: ignore[attr-defined]
+        parameters=[],
+        return_annotation=type(obj),
+    )
 
     return _instance_provider

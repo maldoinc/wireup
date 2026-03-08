@@ -1,4 +1,4 @@
-from typing import Annotated
+from typing_extensions import Annotated
 
 import pytest
 from wireup import Inject, create_sync_container, injectable, instance
@@ -68,3 +68,16 @@ def test_duplicate_registration_fails():
                 instance(obj, as_type=object),
             ]
         )
+
+
+def test_instance_registration_type_mismatch_fails():
+    from wireup.errors import AsTypeMismatchError
+
+    class A:
+        pass
+
+    class B:
+        pass
+
+    with pytest.raises(AsTypeMismatchError):
+        create_sync_container(injectables=[instance(A(), as_type=B)])
