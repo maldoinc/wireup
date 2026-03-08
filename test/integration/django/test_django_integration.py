@@ -2,6 +2,7 @@ import os
 import sys
 from io import StringIO
 from pathlib import Path
+from typing import List
 from unittest.mock import patch
 
 import django
@@ -70,7 +71,7 @@ urlpatterns = [
 if django.VERSION >= (6, 0):
     from django.tasks import TaskResultStatus, task
 
-    background_task_results: list[str] = []
+    background_task_results: List[str] = []
 
     @inject_app
     def background_greet(*, name: str, greeter: Injected[GreeterService]) -> str:
