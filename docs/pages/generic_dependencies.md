@@ -1,8 +1,10 @@
-Use standard Python generics by putting the shared behavior in a generic base class, then registering concrete subclasses that bind the concrete type.
+Generic dependencies let you define reusable behavior
+given a base class with a generic type parameter. This is useful when multiple dependencies share the same structure but work with different models, since you can keep the common logic in a generic base class and register concrete subclasses that bind the actual type.
+
 
 ## Sqlalchemy example
 
-```python hl_lines="17-20"
+```python
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -22,6 +24,11 @@ class Repository[T]:
 @injectable
 class UserRepository(Repository[User]):
     model = User
+
+
+@injectable
+class BlogPostRepository(Repository[BlogPost]):
+    model = BlogPost
 ```
 
 You can now use `UserRepository` as usual.
