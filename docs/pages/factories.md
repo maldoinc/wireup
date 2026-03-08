@@ -142,13 +142,11 @@ def get_current_user(auth_service: AuthService) -> AuthenticatedUser:
 
 ## Optional Dependencies
 
-Some dependencies are only available under certain conditions, like a cache that's disabled in development. Factories
-can return `None` to signal the dependency isn't available, and consumers can handle this gracefully.
+Factories can return `None` when a dependency is available only under certain conditions, such as a cache that is
+disabled in development.
 
-!!! important "Registration Required"
-
-    The factory **must still be registered** even if it returns `None`. Wireup needs to know *how* to resolve the specific
-    type, even if the result is nothing.
+For the general optional-dependency rules, including parameters satisfied via Python default values, see
+[Injectables: Optional Dependencies](injectables.md#optional-dependencies).
 
 ```python
 from wireup import injectable
@@ -162,7 +160,7 @@ def cache_factory(settings: Settings) -> Redis | None:
     return Redis.from_url(settings.redis_url)
 ```
 
-**Requesting Optional Dependencies**
+Consumers can then request `T | None` as usual:
 
 ```python
 from wireup import injectable
@@ -179,6 +177,8 @@ class UserService:
             return self.cache.get(user_id)
         # ...
 ```
+
+When a factory returns `Redis | None`, request it as `Redis | None` (or `Optional[Redis]`).
 
 ??? tip "Null Object Pattern for Optional Dependencies"
 

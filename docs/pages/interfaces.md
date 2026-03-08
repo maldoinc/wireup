@@ -177,7 +177,7 @@ def main(
 ): ...
 ```
 
-## Optional Binding
+## `as_type` with Optional Types
 
 When registering factory functions that return optional types (e.g. `Cache | None`), the binding is automatically
 registered as optional.
