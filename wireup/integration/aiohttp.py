@@ -8,7 +8,7 @@ from wireup._annotations import InjectableDeclaration, injectable
 from wireup.errors import WireupError
 from wireup.ioc.container.async_container import ScopedAsyncContainer
 
-current_request: ContextVar[web.Request] = ContextVar("wireup_aiohttp_request")
+_request_container: ContextVar[ScopedAsyncContainer] = ContextVar("_wireup_container")
 _container_key = "wireup_container"
 
 
@@ -26,11 +26,8 @@ def aiohttp_request_factory() -> web.Request:
 
     Note that this requires the Wireup-aiohttp integration to be set up.
     """
-    try:
-        return current_request.get()
-    except LookupError as e:
-        msg = "aiohttp.web.Request in wireup is only available during a request."
-        raise WireupError(msg) from e
+    msg = "aiohttp.web.Request in wireup is only available during a request."
+    raise WireupError(msg)
 
 
 def _inject_routes(container: wireup.AsyncContainer, app: web.Application, *, middleware_mode: bool) -> None:
@@ -107,13 +104,13 @@ def setup(
         request: web.Request,
         handler: Callable[[web.Request], Awaitable[web.StreamResponse]],
     ) -> web.StreamResponse:
-        token = current_request.set(request)
-        try:
-            async with container.enter_scope({web.Request: request}) as scoped_container:
-                request[_container_key] = scoped_container
+        async with container.enter_scope({web.Request: request}) as scoped_container:
+            token = _request_container.set(scoped_container)
+            request[_container_key] = scoped_container
+            try:
                 return await handler(request)
-        finally:
-            current_request.reset(token)
+            finally:
+                _request_container.reset(token)
 
     if handlers:
         for handler_type in handlers:
@@ -137,4 +134,4 @@ def get_request_container() -> ScopedAsyncContainer:
 
     This requires setup(..., middleware_mode=True).
     """
-    return current_request.get()[_container_key]
+    return _request_container.get()
