@@ -114,39 +114,11 @@ For a full end-to-end walkthrough, start with the [Getting Started guide](https:
 
 ## Basic Usage
 
-Use decorators and annotations for concise, co-located definitions, or factories to keep your domain model free of infrastructure code.
+Wireup also supports config injection, decorator-free domain models, and package-level registration.
 
-**1. Register Injectables**
-
-Register classes with `@injectable` and let the container resolve dependencies automatically.
-
-```python
-@injectable
-class Database:
-    def __init__(self) -> None:
-        self.engine = sqlalchemy.create_engine("sqlite://")
-
-@injectable
-class UserService:
-    def __init__(self, db: Database) -> None:
-        self.db = db
-
-container = wireup.create_sync_container(injectables=[Database, UserService])
-
-# Inject via framework integration or @inject_from_container (recommended)
-@app.get("/users")
-def get_users(service: Injected[UserService]) -> list[str]: ...
-
-# Or resolve directly for advanced use cases (middleware, startup, scripts)
-user_service = container.get(UserService)
-```
-
-**2. Inject Configuration**
+**1. Inject Configuration**
 
 Inject configuration alongside dependencies. No need to write factories just to pass a config value.
-
-<details>
-<summary>View Code</summary>
 
 ```python
 @injectable
@@ -160,9 +132,7 @@ container = wireup.create_sync_container(
 )
 ```
 
-</details>
-
-**3. Clean Architecture**
+**2. Clean Architecture**
 
 Need strict boundaries? Use factories to wire pure domain objects and integrate external libraries like Pydantic.
 
@@ -190,12 +160,9 @@ def make_database(settings: Settings) -> Database:
 container = wireup.create_sync_container(injectables=[make_settings, make_database])
 ```
 
-**4. Auto-Discover**
+**3. Package-level registration**
 
-No need to list every injectable manually. Scan entire modules or packages to register all at once. This is the recommended default for larger applications.
-
-<details>
-<summary>View Code</summary>
+No need to list every injectable manually. Provide entire modules or packages to register all at once.
 
 ```python
 import app
@@ -209,8 +176,6 @@ container = wireup.create_sync_container(
     ]
 )
 ```
-
-</details>
 
 ## More Features
 
