@@ -46,7 +46,7 @@ Resolve singleton constructor dependencies once at startup in <a href="https://m
 <a href="https://maldoinc.github.io/wireup/latest/factories/#reusable-factory-bundles">Provider-style wiring</a> and <a href="https://maldoinc.github.io/wireup/latest/lifetimes_and_scopes/">explicit scope context sharing</a> using plain Python.
 </td>
 <td align="center" valign="top">
-<h3>🧪 Testable by Design</h3>
+<h3>🧪 Easy to test</h3>
 Override dependencies with context managers, keep tests isolated, and restore the original graph automatically.
 </td>
 </tr>

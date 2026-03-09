@@ -261,20 +261,8 @@ async def main():
 Guidelines for what to share:
 
 - Good candidates: `RequestContext`, tenant/account context, auth claims, correlation/tracing metadata, immutable per-request flags.
-- Usually avoid sharing: DB sessions/transactions, unit-of-work objects, mutable caches, task-affine resources.
-- Rule of thumb: share context, not mutable resource handles.
-
-What this pattern is for:
-
-- reusing a small set of externally owned or previously resolved values in a new scope,
-- keeping all other scoped and transient dependencies isolated to that new scope,
-- making framework-owned context available to normal Wireup services.
-
-What this pattern is not for:
-
-- transparent ancestor lookup across nested scopes,
-- sharing mutable DB handles across unrelated child scopes,
-- general hierarchical lifetime composition.
+- Usually avoid sharing: DB transactions, unit-of-work objects.
+- Rule of thumb: share context, not mutable resources which are tied to the scope.
 
 !!! note "Ownership and Rules"
 
