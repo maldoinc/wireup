@@ -89,11 +89,6 @@
           <div class="md-banner__inner md-grid md-typeset">
             
             
-  <div class="announce-right">
-    <a class="announce-star-link" href="https://github.com/maldoinc/wireup" target="_blank" rel="noopener">
-      ⭐ Enjoying Wireup? Star it on GitHub
-    </a>
-  </div>
 
           </div>
           
@@ -106,11 +101,11 @@
           <aside class="md-banner md-banner--warning">
             <div class="md-banner__inner md-grid md-typeset">
               
-  You're not viewing the latest version.
-  <a href="../..">
+You're not viewing the latest version.
+<a href="../..">
 
-    <strong>Click here to go to latest.</strong>
-  </a>
+  <strong>Click here to go to latest.</strong>
+</a>
 
             </div>
             <script>var el=document.querySelector("[data-md-component=outdated]"),base=new URL(".."),outdated=__md_get("__outdated",sessionStorage,base);!0===outdated&&el&&(el.hidden=!1)</script>
@@ -844,13 +839,63 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#dependencies-with-default-values" class="md-nav__link">
+  <a href="#optional-dependencies-and-default-values" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Dependencies with Default Values
+        Optional Dependencies and Default Values
       
     </span>
   </a>
+  
+    <nav class="md-nav" aria-label="Optional Dependencies and Default Values">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-optional-by-default-value" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. Optional by Default Value
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-optional-by-factory" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. Optional by Factory
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#optional-value-vs-optional-registration" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Optional Value vs Optional Registration
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#when-to-use-which" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        When to Use Which
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
       
@@ -3649,13 +3694,63 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#dependencies-with-default-values" class="md-nav__link">
+  <a href="#optional-dependencies-and-default-values" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Dependencies with Default Values
+        Optional Dependencies and Default Values
       
     </span>
   </a>
+  
+    <nav class="md-nav" aria-label="Optional Dependencies and Default Values">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-optional-by-default-value" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. Optional by Default Value
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-optional-by-factory" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. Optional by Factory
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#optional-value-vs-optional-registration" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Optional Value vs Optional Registration
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#when-to-use-which" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        When to Use Which
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
       
@@ -3826,10 +3921,33 @@ required or for enforcing clean architecture.</p>
 <p>In this example, due to how the <code>@dataclass</code> decorator works, combining the two leads to code that's more difficult to
 read, since it's not immediately obvious what are dependencies and what are class fields.</p>
 </details>
-<h2 id="dependencies-with-default-values">Dependencies with Default Values<a class="headerlink" href="#dependencies-with-default-values" title="Permanent link">&para;</a></h2>
-<p>When Wireup encounters a dependency it doesn't recognize, it normally raises an error. However, if that parameter has a
-<strong>default value</strong>, Wireup will skip it and let Python use the default instead.</p>
-<p>This is useful when integrating with libraries that add their own <code>__init__</code> parameters, such as Pydantic Settings:</p>
+<h2 id="optional-dependencies-and-default-values">Optional Dependencies and Default Values<a class="headerlink" href="#optional-dependencies-and-default-values" title="Permanent link">&para;</a></h2>
+<p>Wireup thinks about constructor parameters in terms of <strong>satisfiability</strong>: can this parameter be provided by either 
+Wireup or by Python itself?</p>
+<p>When Wireup encounters a dependency it doesn't recognize, it normally raises an error. However, if that parameter has an
+explicit <strong>default value</strong>, Wireup will skip it and let Python use the default instead.</p>
+<p>This means there are two different ways an optional-looking dependency can work.</p>
+<pre class="mermaid"><code>flowchart LR
+    A[Parameter] --&gt; B{Can Wireup provide it?}
+    B --&gt;|Yes| C[Inject dependency]
+    B --&gt;|No| D{Has default value?}
+    D --&gt;|Yes| E[Use Python default]
+    D --&gt;|No| F[Raise error]</code></pre>
+<h3 id="1-optional-by-default-value">1. Optional by Default Value<a class="headerlink" href="#1-optional-by-default-value" title="Permanent link">&para;</a></h3>
+<p>If a parameter has a default value, Wireup will still try to provide it first. The default is only used when Wireup
+does not know how to provide that dependency:</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">wireup</span><span class="w"> </span><span class="kn">import</span> <span class="n">injectable</span>
+
+
+<span class="nd">@injectable</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">UserService</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cache</span><span class="p">:</span> <span class="n">Redis</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cache</span> <span class="o">=</span> <span class="n">cache</span>
+</code></pre></div>
+<p>This is valid even if <code>Redis</code> is not registered, because the constructor is still satisfiable without Wireup creating
+the dependency. If <code>Redis</code> is registered, Wireup provides it instead of using the default.</p>
+<p>This is also useful when integrating with libraries that add their own <code>__init__</code> parameters, such as Pydantic
+Settings:</p>
 <div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">pydantic_settings</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseSettings</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">wireup</span><span class="w"> </span><span class="kn">import</span> <span class="n">injectable</span>
 
@@ -3841,11 +3959,49 @@ read, since it's not immediately obvious what are dependencies and what are clas
 </code></pre></div>
 <p>In this example, Pydantic's <code>BaseSettings</code> adds parameters that Wireup doesn't manage. Since they have defaults, Wireup
 allows the class to be registered without errors.</p>
-<div class="admonition note">
-<p class="admonition-title">Note</p>
-<p>This only applies to parameters with explicit default values. Parameters without defaults that reference unknown types
-will still raise an error to catch configuration mistakes early.</p>
-</div>
+<h3 id="2-optional-by-factory">2. Optional by Factory<a class="headerlink" href="#2-optional-by-factory" title="Permanent link">&para;</a></h3>
+<p>If there is no default value, Wireup still needs a registered way to satisfy the parameter. For dependencies where
+<code>None</code> is a valid result, register a factory that returns <code>T | None</code>:</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">wireup</span><span class="w"> </span><span class="kn">import</span> <span class="n">injectable</span>
+
+
+<span class="nd">@injectable</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">cache_factory</span><span class="p">(</span><span class="n">settings</span><span class="p">:</span> <span class="n">Settings</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Redis</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">settings</span><span class="o">.</span><span class="n">use_cache</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">None</span>
+
+    <span class="k">return</span> <span class="n">Redis</span><span class="o">.</span><span class="n">from_url</span><span class="p">(</span><span class="n">settings</span><span class="o">.</span><span class="n">redis_url</span><span class="p">)</span>
+
+
+<span class="nd">@injectable</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">UserService</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cache</span><span class="p">:</span> <span class="n">Redis</span> <span class="o">|</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cache</span> <span class="o">=</span> <span class="n">cache</span>
+</code></pre></div>
+<p>In this case the dependency is optional at runtime, but it is still explicitly part of the dependency graph because
+Wireup has a registered way to resolve <code>Redis | None</code>.</p>
+<p>When you register a dependency this way, you should also request it as <code>Redis | None</code> (or <code>Optional[Redis]</code>).</p>
+<p>See <a href="../factories/#optional-dependencies">Factories: Optional Dependencies</a> and
+<a href="../interfaces/#as_type-with-optional-types">Interfaces: <code>as_type</code> with Optional Types</a>.</p>
+<h3 id="optional-value-vs-optional-registration">Optional Value vs Optional Registration<a class="headerlink" href="#optional-value-vs-optional-registration" title="Permanent link">&para;</a></h3>
+<p>These two cases are easy to confuse:</p>
+<ul>
+<li><code>client: Client | None = None</code></li>
+<li><code>cache: Redis | None = None</code>
+  Wireup may ignore the parameter entirely and let Python use the default. No registration is required.</li>
+<li><code>cache: Redis | None</code>
+  Wireup must still be able to satisfy the parameter. Without a registered binding, container creation fails.</li>
+</ul>
+<p>If you want to make a dependency skippable without requiring any DI setup, use a default value. If you want the
+dependency to remain part of the dependency graph but sometimes resolve to <code>None</code>, register a factory that returns an
+optional type.</p>
+<h3 id="when-to-use-which">When to Use Which<a class="headerlink" href="#when-to-use-which" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Use a <strong>default value</strong> when the dependency is genuinely optional and your class has a sensible fallback behavior.</li>
+<li>Use a <strong>registered optional factory</strong> when the dependency is part of the application graph but may be disabled by
+  configuration or runtime state.</li>
+<li>Prefer a <strong>Null Object</strong> when consumers should not need repeated <code>if dep is not None</code> checks.</li>
+</ul>
 <h2 id="next-steps">Next Steps<a class="headerlink" href="#next-steps" title="Permanent link">&para;</a></h2>
 <ul>
 <li><a href="../configuration/">Configuration</a> - Inject configuration values.</li>
@@ -3874,6 +4030,7 @@ will still raise an error to catch configuration mistakes early.</p>
         
       </main>
       
+
         <footer class="md-footer">
   
   <div class="md-footer-meta md-typeset">
@@ -3892,6 +4049,16 @@ will still raise an error to catch configuration mistakes early.</p>
   </div>
 </footer>
       
+<div class="md-footer-meta md-typeset">
+  <div class="md-footer-meta__inner md-grid">
+    <div class="md-copyright">
+      If Wireup is useful to you,
+      <a href="https://github.com/maldoinc/wireup" target="_blank" rel="noopener">a ⭐ on GitHub helps others find
+        it.</a>.
+    </div>
+  </div>
+</div>
+
     </div>
     <div class="md-dialog" data-md-component="dialog">
       <div class="md-dialog__inner md-typeset"></div>

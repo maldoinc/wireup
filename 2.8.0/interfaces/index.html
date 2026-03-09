@@ -89,11 +89,6 @@
           <div class="md-banner__inner md-grid md-typeset">
             
             
-  <div class="announce-right">
-    <a class="announce-star-link" href="https://github.com/maldoinc/wireup" target="_blank" rel="noopener">
-      ⭐ Enjoying Wireup? Star it on GitHub
-    </a>
-  </div>
 
           </div>
           
@@ -106,11 +101,11 @@
           <aside class="md-banner md-banner--warning">
             <div class="md-banner__inner md-grid md-typeset">
               
-  You're not viewing the latest version.
-  <a href="../..">
+You're not viewing the latest version.
+<a href="../..">
 
-    <strong>Click here to go to latest.</strong>
-  </a>
+  <strong>Click here to go to latest.</strong>
+</a>
 
             </div>
             <script>var el=document.querySelector("[data-md-component=outdated]"),base=new URL(".."),outdated=__md_get("__outdated",sessionStorage,base);!0===outdated&&el&&(el.hidden=!1)</script>
@@ -1016,10 +1011,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#optional-binding" class="md-nav__link">
+  <a href="#as_type-with-optional-types" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Optional Binding
+        as_type with Optional Types
       
     </span>
   </a>
@@ -3548,10 +3543,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#optional-binding" class="md-nav__link">
+  <a href="#as_type-with-optional-types" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Optional Binding
+        as_type with Optional Types
       
     </span>
   </a>
@@ -3736,7 +3731,7 @@ requested without a qualifier, the default will be injected.</p>
     <span class="n">redis_cache</span><span class="p">:</span> <span class="n">Annotated</span><span class="p">[</span><span class="n">Cache</span><span class="p">,</span> <span class="n">Inject</span><span class="p">(</span><span class="n">qualifier</span><span class="o">=</span><span class="s2">&quot;redis&quot;</span><span class="p">)],</span>
 <span class="p">):</span> <span class="o">...</span>
 </code></pre></div>
-<h2 id="optional-binding">Optional Binding<a class="headerlink" href="#optional-binding" title="Permanent link">&para;</a></h2>
+<h2 id="as_type-with-optional-types"><code>as_type</code> with Optional Types<a class="headerlink" href="#as_type-with-optional-types" title="Permanent link">&para;</a></h2>
 <p>When registering factory functions that return optional types (e.g. <code>Cache | None</code>), the binding is automatically
 registered as optional.</p>
 <div class="highlight"><pre><span></span><code><span class="nd">@injectable</span><span class="p">(</span><span class="n">as_type</span><span class="o">=</span><span class="n">Cache</span><span class="p">)</span>
@@ -3766,6 +3761,7 @@ registered as optional.</p>
         
       </main>
       
+
         <footer class="md-footer">
   
   <div class="md-footer-meta md-typeset">
@@ -3784,6 +3780,16 @@ registered as optional.</p>
   </div>
 </footer>
       
+<div class="md-footer-meta md-typeset">
+  <div class="md-footer-meta__inner md-grid">
+    <div class="md-copyright">
+      If Wireup is useful to you,
+      <a href="https://github.com/maldoinc/wireup" target="_blank" rel="noopener">a ⭐ on GitHub helps others find
+        it.</a>.
+    </div>
+  </div>
+</div>
+
     </div>
     <div class="md-dialog" data-md-component="dialog">
       <div class="md-dialog__inner md-typeset"></div>

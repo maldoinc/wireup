@@ -89,11 +89,6 @@
           <div class="md-banner__inner md-grid md-typeset">
             
             
-  <div class="announce-right">
-    <a class="announce-star-link" href="https://github.com/maldoinc/wireup" target="_blank" rel="noopener">
-      ⭐ Enjoying Wireup? Star it on GitHub
-    </a>
-  </div>
 
           </div>
           
@@ -106,11 +101,11 @@
           <aside class="md-banner md-banner--warning">
             <div class="md-banner__inner md-grid md-typeset">
               
-  You're not viewing the latest version.
-  <a href="../..">
+You're not viewing the latest version.
+<a href="../..">
 
-    <strong>Click here to go to latest.</strong>
-  </a>
+  <strong>Click here to go to latest.</strong>
+</a>
 
             </div>
             <script>var el=document.querySelector("[data-md-component=outdated]"),base=new URL(".."),outdated=__md_get("__outdated",sessionStorage,base);!0===outdated&&el&&(el.hidden=!1)</script>
@@ -1021,15 +1016,15 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#concurrent-access" class="md-nav__link">
+  <a href="#concurrent-scope-access" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Concurrent Access
+        Concurrent Scope Access
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Concurrent Access">
+    <nav class="md-nav" aria-label="Concurrent Scope Access">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -1043,19 +1038,19 @@
   
 </li>
         
-          <li class="md-nav__item">
-  <a href="#provided-instances" class="md-nav__link">
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#sharing-context-across-scopes" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Provided Instances
+        Sharing Context Across Scopes
       
     </span>
   </a>
-  
-</li>
-        
-      </ul>
-    </nav>
   
 </li>
       
@@ -3765,15 +3760,15 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#concurrent-access" class="md-nav__link">
+  <a href="#concurrent-scope-access" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Concurrent Access
+        Concurrent Scope Access
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Concurrent Access">
+    <nav class="md-nav" aria-label="Concurrent Scope Access">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -3787,19 +3782,19 @@
   
 </li>
         
-          <li class="md-nav__item">
-  <a href="#provided-instances" class="md-nav__link">
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#sharing-context-across-scopes" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Provided Instances
+        Sharing Context Across Scopes
       
     </span>
   </a>
-  
-</li>
-        
-      </ul>
-    </nav>
   
 </li>
       
@@ -4024,7 +4019,7 @@ things like database transactions or file handles.</p>
 <li><strong>Scoped</strong> can depend on singletons, scoped, and config.</li>
 <li><strong>Transient</strong> can depend on any lifetime and config.</li>
 </ul>
-<h2 id="concurrent-access">Concurrent Access<a class="headerlink" href="#concurrent-access" title="Permanent link">&para;</a></h2>
+<h2 id="concurrent-scope-access">Concurrent Scope Access<a class="headerlink" href="#concurrent-scope-access" title="Permanent link">&para;</a></h2>
 <p>Scopes are typically accessed by a single thread or asyncio task (e.g., one web request). By default, Wireup does <strong>not
 use locks</strong> for scoped dependencies, optimizing for this common pattern.</p>
 <h3 id="when-to-enable-locking">When to Enable Locking<a class="headerlink" href="#when-to-enable-locking" title="Permanent link">&para;</a></h3>
@@ -4039,8 +4034,16 @@ sharing a common context, enable <code>concurrent_scoped_access</code> when crea
 <p class="admonition-title">Note</p>
 <p>This is an advanced use case. Most applications don't need this.</p>
 </div>
-<h3 id="provided-instances">Provided Instances<a class="headerlink" href="#provided-instances" title="Permanent link">&para;</a></h3>
-<p>You can provide pre-created instances when entering a scope. Those instances can be created manually, or fetched from another scope first. A common advanced use case is fan-out:</p>
+<h2 id="sharing-context-across-scopes">Sharing Context Across Scopes<a class="headerlink" href="#sharing-context-across-scopes" title="Permanent link">&para;</a></h2>
+<p>Use <code>enter_scope()</code> with provided values when you need a fresh isolated scope but want to reuse a small set of
+already-created context objects. Those values can be created manually or fetched from another active scope first.</p>
+<p>This is useful for patterns like:</p>
+<ul>
+<li>fan-out work into child scopes while preserving request or tenant context,</li>
+<li>carrying request, tenant, auth, or tracing context into worker scopes,</li>
+<li>reusing immutable per-request metadata without sharing the rest of the scoped graph.</li>
+</ul>
+<p>A common advanced use case is fan-out:</p>
 <div class="highlight"><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">asyncio</span>
 
 
@@ -4072,11 +4075,11 @@ sharing a common context, enable <code>concurrent_scoped_access</code> when crea
 <p>Guidelines for what to share:</p>
 <ul>
 <li>Good candidates: <code>RequestContext</code>, tenant/account context, auth claims, correlation/tracing metadata, immutable per-request flags.</li>
-<li>Usually avoid sharing: DB sessions/transactions, unit-of-work objects, mutable caches, task-affine resources.</li>
-<li>Rule of thumb: share context, not mutable resource handles.</li>
+<li>Usually avoid sharing: DB transactions, unit-of-work objects.</li>
+<li>Rule of thumb: share context, not mutable resources which are tied to the scope.</li>
 </ul>
 <div class="admonition note">
-<p class="admonition-title">Caution</p>
+<p class="admonition-title">Ownership and Rules</p>
 <p>Providing instances at scope entry is an advanced feature. Use it only when you need strict control over scope composition.</p>
 <ul>
 <li><strong>Validity</strong><ul>
@@ -4087,11 +4090,12 @@ your responsibility.</li>
 </ul>
 </li>
 <li><strong>Ownership</strong><ul>
-<li>Wireup also assumes ownership of the passed mapping for the scope lifetime and may mutate it by storing resolved
-scoped instances. Do not reuse the same mapping across scopes. Do not modify the mapping after passing it to <code>enter_scope()</code>.</li>
-<li>Ownership of provided instances is not transferred to Wireup. You are responsible for cleanup of those objects if needed. Wireup will not attempt to close or clean them up when the scope exits.</li>
-<li>Provided instances must outlive the scope they are provided to. If you provide instances from a parent scope, ensure the child scope does not outlive that parent scope. This is paramount for
-resources that require cleanup (i.e., anything that is created via a yielding factory in Wireup.)</li>
+<li>Ownership of provided instances remains with whoever created them. The new scope will not attempt to close or clean them up when it exits.</li>
+<li>Wireup may store additional scoped instances in the provided mapping for the lifetime of that scope. Pass a fresh
+mapping to each scope and do not modify it after calling <code>enter_scope()</code>.</li>
+<li>Provided instances should remain valid for the lifetime of the scope they are provided to. Take special care when
+reusing resources from a parent scope: if the parent closes first, lifecycle-managed resources such as yielding-factory
+dependencies may already be closed while the child still references them.</li>
 </ul>
 </li>
 </ul>
@@ -4124,6 +4128,7 @@ resources that require cleanup (i.e., anything that is created via a yielding fa
         
       </main>
       
+
         <footer class="md-footer">
   
   <div class="md-footer-meta md-typeset">
@@ -4142,6 +4147,16 @@ resources that require cleanup (i.e., anything that is created via a yielding fa
   </div>
 </footer>
       
+<div class="md-footer-meta md-typeset">
+  <div class="md-footer-meta__inner md-grid">
+    <div class="md-copyright">
+      If Wireup is useful to you,
+      <a href="https://github.com/maldoinc/wireup" target="_blank" rel="noopener">a ⭐ on GitHub helps others find
+        it.</a>.
+    </div>
+  </div>
+</div>
+
     </div>
     <div class="md-dialog" data-md-component="dialog">
       <div class="md-dialog__inner md-typeset"></div>
