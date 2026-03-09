@@ -218,7 +218,7 @@ Wireup has a registered way to resolve `Redis | None`.
 When you register a dependency this way, you should also request it as `Redis | None` (or `Optional[Redis]`).
 
 See [Factories: Optional Dependencies](factories.md#optional-dependencies) and
-[Interfaces: Optional Binding](interfaces.md#optional-binding).
+[Interfaces: `as_type` with Optional Types](interfaces.md#as_type-with-optional-types).
 
 ### Optional Value vs Optional Registration
 

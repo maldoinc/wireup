@@ -146,7 +146,7 @@ Factories can return `None` when a dependency is available only under certain co
 disabled in development.
 
 For the general optional-dependency rules, including parameters satisfied via Python default values, see
-[Injectables: Optional Dependencies](injectables.md#optional-dependencies).
+[Injectables: Optional Dependencies](injectables.md#optional-dependencies-and-default-values).
 
 ```python
 from wireup import injectable

@@ -34,7 +34,7 @@ Both creation functions accept the following arguments:
 | :------------------------- | :---------------------------------------- | :---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `injectables`              | `list[Union[type, Callable, ModuleType]]` | Classes, functions decorated with `@injectable`, or modules to scan. Modules are scanned recursively, collecting only items decorated with `@injectable`. Recommended default for production apps: module/package scanning. For environment/flag-based assembly of injectables, see [Conditional Registration](conditional_registration.md). For reusable provider-style wiring (same graph, different runtime settings), see [Factories: Reusable Factory Bundles](factories.md#reusable-factory-bundles). |
 | `config`                   | `dict[str, Any]`                          | Configuration dictionary. Values from this dictionary can be injected using `Inject(config="key")`.                                                                                                                                                                                                                                                                                                                                                                                                         |
-| `concurrent_scoped_access` | `bool`                                    | Set to `True` if you share scopes across multiple threads/tasks. Defaults to `False`. See [Lifetimes & Scopes: Concurrent Access](lifetimes_and_scopes.md#concurrent-access) for details.                                                                                                                                                                                                                                                                                                                   |
+| `concurrent_scoped_access` | `bool`                                    | Set to `True` if you share scopes across multiple threads/tasks. Defaults to `False`. See [Lifetimes & Scopes: Concurrent Access](lifetimes_and_scopes.md#concurrent-scope-access) for details.                                                                                                                                                                                                                                                                                                             |
 
 !!! note "Multiple Containers"
 
@@ -97,7 +97,7 @@ with container.enter_scope({DbSession: existing_session}) as scoped:
     db_session = scoped.get(DbSession)  # Uses provided instance
 ```
 
-See [Advanced: Provided Instances](lifetimes_and_scopes.md#provided-instances) for caveats and ownership rules.
+See [Sharing Context Across Scopes](lifetimes_and_scopes.md#sharing-context-across-scopes) for more on this feature.
 
 === "Synchronous"
 
