@@ -14,11 +14,10 @@ from wireup.errors import (
     FactoryReturnTypeIsEmptyError,
     InvalidAsTypeError,
     InvalidRegistrationTypeError,
-    PositionalOnlyParameterError,
     UnknownQualifiedServiceRequestedError,
-    WireupError,
 )
 from wireup.ioc.configuration import ConfigStore
+from wireup.ioc.dependency_introspection import injectable_get_dependencies
 from wireup.ioc.registry_validation import validate_registry
 from wireup.ioc.type_analysis import analyze_type
 from wireup.ioc.types import (
@@ -27,11 +26,10 @@ from wireup.ioc.types import (
     AnyCallable,
     CallableType,
     ContainerObjectIdentifier,
-    EmptyContainerInjectionRequest,
     InjectableLifetime,
     get_container_object_id,
 )
-from wireup.ioc.util import ensure_is_type, get_callable_type, get_globals, param_get_annotation
+from wireup.ioc.util import ensure_is_type, get_callable_type, get_globals
 from wireup.util import stringify_type
 
 if TYPE_CHECKING:
@@ -90,7 +88,7 @@ class ContainerRegistry:
         self.interfaces: dict[type, dict[Qualifier, type]] = {}
         self.impls: dict[type, set[Qualifier]] = defaultdict(set)
         self.factories: dict[ContainerObjectIdentifier, InjectableFactory] = {}
-        self.dependencies: dict[InjectionTarget, dict[str, AnnotatedParameter]] = defaultdict(defaultdict)
+        self.dependencies: dict[InjectionTarget, dict[str, AnnotatedParameter]] = defaultdict(dict)
         self.lifetime: dict[ContainerObjectIdentifier, InjectableLifetime] = {}
         self.on_change: Callable[[], None] | None = None
         self.extend(abstracts=abstracts or [], impls=impls or [])
@@ -228,7 +226,7 @@ class ContainerRegistry:
         if auto_discover_interfaces and hasattr(klass, "__bases__"):
             discover_interfaces(klass.__bases__)
 
-        self._target_init_context(factory_fn)
+        self.dependencies[factory_fn] = injectable_get_dependencies(factory_fn)
         self.lifetime[object_id] = lifetime
         callable_type = get_callable_type(factory_fn)
         self.factories[object_id] = InjectableFactory(
@@ -277,37 +275,6 @@ class ContainerRegistry:
 
     def _register_abstract(self, klass: type) -> None:
         self.interfaces[klass] = {}
-
-    def _target_init_context(
-        self,
-        target: InjectionTarget,
-    ) -> None:
-        """Init and collect all the necessary dependencies to initialize the specified target."""
-        for name, parameter in inspect.signature(target).parameters.items():
-            if parameter.kind in {inspect.Parameter.VAR_POSITIONAL, inspect.Parameter.VAR_KEYWORD}:
-                continue
-
-            annotated_param = param_get_annotation(parameter, globalns_supplier=lambda: get_globals(target))
-
-            if not annotated_param:
-                if parameter.default is not inspect.Parameter.empty:
-                    continue
-
-                msg = f"Wireup dependencies must have types. Please add a type to the '{name}' parameter in {target}."
-                raise WireupError(msg)
-
-            if parameter.kind == inspect.Parameter.POSITIONAL_ONLY:
-                raise PositionalOnlyParameterError(name, target)
-
-            if isinstance(annotated_param.annotation, EmptyContainerInjectionRequest):
-                warnings.warn(
-                    f"Redundant Injected[T] or Annotated[T, Inject()] in parameter '{name}' of "
-                    f"{stringify_type(target)}. See: "
-                    "https://maldoinc.github.io/wireup/latest/annotations/",
-                    stacklevel=2,
-                )
-
-            self.dependencies[target][name] = annotated_param
 
     def is_impl_with_qualifier_known(self, klass: type, qualifier_value: Qualifier | None) -> bool:
         """Determine if klass representing a concrete implementation + qualifier is known by the registry."""
