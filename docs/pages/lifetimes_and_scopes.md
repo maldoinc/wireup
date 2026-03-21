@@ -220,6 +220,9 @@ container = wireup.create_async_container(
 Use `enter_scope()` with provided values when you need a fresh isolated scope but want to reuse a small set of
 already-created context objects. Those values can be created manually or fetched from another active scope first.
 
+Wireup intentionally avoids full nested scopes with automatic inheritance of the entire parent graph. Instead, it uses
+isolated child scopes with explicit context sharing, which covers most practical use cases for nested scopes while keeping a predictable API.
+
 This is useful for patterns like:
 
 - fan-out work into child scopes while preserving request or tenant context,
