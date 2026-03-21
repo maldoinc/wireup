@@ -8,7 +8,8 @@ from typing import TYPE_CHECKING, Any, NamedTuple, Optional
 import pytest
 import wireup
 from typing_extensions import Annotated
-from wireup._annotations import Inject, abstract, injectable
+from wireup._annotations import Inject, Injected, abstract, injectable
+from wireup._decorators import inject_from_container
 from wireup.errors import (
     DuplicateQualifierForInterfaceError,
     DuplicateServiceRegistrationError,
@@ -16,7 +17,9 @@ from wireup.errors import (
     WireupError,
 )
 from wireup.ioc.configuration import ConfigStore
+from wireup.ioc.container.sync_container import SyncContainer  # noqa: TC002
 
+from test.shared.shared_services.greeter import GreeterService
 from test.unit import service_refs, services
 from test.unit.services.abstract_multiple_bases import FooBase, FooBaseAnother
 from test.unit.services.inheritance_test import ObjWithInheritance
@@ -34,6 +37,8 @@ from test.unit.services.with_annotations.services import (
 from test.unit.util import run
 
 if TYPE_CHECKING:
+    from wireup.ioc.types import AnyCallable
+
     from test.conftest import Container
 
 
@@ -400,3 +405,35 @@ def test_container_registers_services_compat() -> None:
 
     assert isinstance(container.get(RandomService, qualifier="foo"), RandomService)
     assert isinstance(container.get(BackwardsCompatService), BackwardsCompatService)
+
+
+async def test_container_get_self(container: Container) -> None:
+    assert await run(container.get(type(container))) is container
+
+
+def test_container_injectable_depends_on_container() -> None:
+    @injectable
+    class NeedsContainer:
+        def __init__(self, container: SyncContainer) -> None:
+            self.container = container
+
+    container = wireup.create_sync_container(injectables=[NeedsContainer])
+
+    assert container.get(NeedsContainer).container is container
+
+
+def test_container_injectable_depends_on_container_task_scheduler() -> None:
+    @injectable
+    class TaskScheduler:
+        def __init__(self, container: SyncContainer) -> None:
+            self.container = container
+
+        def schedule(self, fn: AnyCallable, *args: Any, **kwargs: Any) -> Any:
+            return inject_from_container(self.container)(fn)(*args, **kwargs)
+
+    container = wireup.create_sync_container(injectables=[TaskScheduler, GreeterService])
+
+    def greet(name: str, greeter: Injected[GreeterService]) -> str:
+        return greeter.greet(name)
+
+    assert container.get(TaskScheduler).schedule(greet, name="Wireup") == "Hello Wireup"

@@ -89,6 +89,14 @@ def _create_container(  # noqa: PLR0913
     else:
         abstracts, impls = _merge_definitions(service_modules, services)
 
+    container = None
+
+    # Always create a simple factory that returns the container instance in order to also expose itself as an injectable
+    def _container_factory() -> _ContainerT:
+        return container  # type:ignore[return-value]
+
+    impls.append(InjectableDeclaration(_container_factory, as_type=klass))
+
     registry = ContainerRegistry(config=ConfigStore(parameters or config), abstracts=abstracts, impls=impls)
     # The container uses a dual-compiler optimization strategy:
     # 1. The singleton compiler generates optimized factories for singleton dependencies

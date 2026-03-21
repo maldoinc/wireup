@@ -66,7 +66,7 @@ Retrieve an instance of a registered injectable.
 
 !!! important
 
-    Prefer constructor-based dependency injection over calling `get` directly. Use `get` as an escape hatch for advanced
+    Prefer constructor-based dependency injection over calling `get` directly. Use `get` in advanced
     scenarios like dynamic service lookup or when working with framework integration code.
 
 ### `close`
@@ -128,6 +128,31 @@ db_url = container.config.get("database_url")
 !!! important
 
     Prefer `Inject(config="key")` in dependency constructors over accessing `container.config` directly.
+
+## Injecting The Container
+
+Wireup registers the root container itself as an injectable during container creation. This means other injectables can
+depend on `SyncContainer` or `AsyncContainer` directly.
+
+```python
+from wireup import injectable
+from wireup.ioc.container.sync_container import SyncContainer
+
+
+@injectable
+class NeedsContainer:
+    def __init__(self, container: SyncContainer) -> None:
+        self.container = container
+```
+
+This is mainly useful for advanced integration code, task schedulers, and other framework glue where you need runtime
+access to the container. For a full example of wrapping callables dynamically, see
+[Function Injection: Scheduling Runtime Tasks](function_injection.md#scheduling-runtime-tasks).
+
+!!! important
+
+    Prefer regular constructor injection for application services. Inject the container only for advanced scenarios
+    where you truly need runtime access to it.
 
 ### `override`
 

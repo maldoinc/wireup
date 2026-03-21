@@ -43,7 +43,7 @@ Resolve singleton constructor dependencies once at startup in <a href="https://m
 </td>
 <td align="center" valign="top">
 <h3>🧩 Advanced Wiring</h3>
-<a href="https://maldoinc.github.io/wireup/latest/factories/#reusable-factory-bundles">Provider-style wiring</a> and <a href="https://maldoinc.github.io/wireup/latest/lifetimes_and_scopes/">explicit scope context sharing</a> using plain Python.
+<a href="https://maldoinc.github.io/wireup/latest/factories/#reusable-factory-bundles">Provider-style wiring</a> and <a href="https://maldoinc.github.io/wireup/latest/lifetimes_and_scopes/">explicit scope context sharing</a> and more using plain Python.
 </td>
 <td align="center" valign="top">
 <h3>🧪 Easy to test</h3>
