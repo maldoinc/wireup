@@ -1,5 +1,5 @@
 ---
-description: Test FastAPI apps with Wireup using TestClient lifespan patterns, dependency overrides, and class-based handler startup-safe mocking.
+description: Test FastAPI apps with Wireup using TestClient, dependency overrides, and class-based handler startup-safe mocking.
 ---
 
 # FastAPI Testing
@@ -45,9 +45,9 @@ def test_override(app: FastAPI):
     assert response.status_code == 200
 ```
 
-## Testing Request-Lifecycle Patterns
+## Testing Request-Lifecycle Injection
 
-If tests depend on request-time helpers (middleware/decorators using `@inject` or `get_request_container()`), enable
+If tests depend on request-time injection (middleware/decorators using `@inject` or `get_request_container()`), enable
 `middleware_mode=True` and run with `TestClient` context manager.
 
 ```python
@@ -104,12 +104,12 @@ See [Class-Based Handlers](class_based_handlers.md#testing) for more details.
 
 ## Background Tasks
 
-For task injection patterns and testing, see [Background Tasks](background_tasks.md).
+For task injection and testing, see [Background Tasks](background_tasks.md).
 
 ## Common Test Failures
 
 - Injection not set up: verify `wireup.integration.fastapi.setup(container, app)` was called.
-- Request container unavailable: verify `middleware_mode=True` for request-time middleware/decorator patterns.
+- Request container unavailable: verify `middleware_mode=True` for request-time middleware/decorator code.
 - Lifespan not running: verify `with TestClient(app) as client:` usage.
 
 For runtime/setup issues beyond tests, see [Troubleshooting](troubleshooting.md).

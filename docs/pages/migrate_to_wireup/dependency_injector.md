@@ -792,7 +792,7 @@ container = wireup.create_async_container(
 
 When an integration exists (FastAPI, Flask, Django, Starlette, AIOHTTP, Click, Typer), prefer that integration's
 automatic injection model first. Use `@inject_from_container` as an advanced pattern for scripts, jobs, custom runtime
-hooks, or frameworks without a dedicated Wireup integration.
+entry points, or frameworks without a dedicated Wireup integration.
 
 === "Dependency Injector"
 

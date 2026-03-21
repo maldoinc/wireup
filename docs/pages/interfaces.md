@@ -2,6 +2,8 @@ Use protocols or abstract base classes (ABCs) to define the behavior your applic
 implemented. This allows you to easily switch between different implementations, for example using an in-memory
 repository during testing instead of a real database.
 
+For generic repository patterns and other parameterized types, see [Generic Dependencies](generic_dependencies.md).
+
 ## Basic Usage
 
 You can use the `as_type` parameter in `@injectable` to register an injectable as any other type. This is commonly used
@@ -175,7 +177,7 @@ def main(
 ): ...
 ```
 
-## Optional Binding
+## `as_type` with Optional Types
 
 When registering factory functions that return optional types (e.g. `Cache | None`), the binding is automatically
 registered as optional.

@@ -15,6 +15,40 @@ Such as:
 
 Use `@inject` for request handlers (Django views, DRF handlers, Ninja endpoints).
 
+## Django 6 Background Tasks
+
+Django 6 background tasks also run outside the request lifecycle, so they should use `@inject_app`.
+
+```python title="myapp/tasks.py"
+from django.tasks import task
+from wireup import Injected
+from wireup.integration.django import inject_app
+
+from myapp.services import EmailService
+
+
+@task
+@inject_app
+def send_welcome_email(user_id: int, email: Injected[EmailService]) -> None:
+    email.send_welcome(user_id)
+```
+
+You can enqueue the task from a view or service as usual:
+
+```python title="myapp/views.py"
+from django.http import HttpResponse
+
+from myapp.tasks import send_welcome_email
+
+
+def signup_complete(request):
+    send_welcome_email.enqueue(request.user.id)
+    return HttpResponse("queued")
+```
+
+This uses the application/root container rather than the request-scoped container, which is the correct behavior for
+work that executes after the request path.
+
 ## Management Commands
 
 ```python title="myapp/management/commands/greet.py"

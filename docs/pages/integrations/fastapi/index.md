@@ -1,5 +1,5 @@
 ---
-description: FastAPI dependency injection with Wireup: type-safe DI for routes, WebSockets, lifecycle hooks, class-based handlers, and background tasks.
+description: FastAPI dependency injection with Wireup: type-safe DI for routes, WebSockets, request-time injection, class-based handlers, and background tasks.
 ---
 
 # :simple-fastapi: FastAPI Integration
@@ -10,9 +10,9 @@ description: FastAPI dependency injection with Wireup: type-safe DI for routes, 
 
     ______________________________________________________________________
 
-    Inject in endpoint handlers, middleware, decorators, and other request-path hooks.
+    Inject anywhere in the request path, not just route handlers, without manually threading dependencies through each call.
 
-    [:octicons-arrow-right-24: Learn more](request_lifecycle_patterns.md)
+    [:octicons-arrow-right-24: Learn more](request_time_injection.md)
 
 - :material-speedometer:{ .lg .middle } __Zero Runtime Overhead__
 
@@ -91,9 +91,9 @@ fastapi dev main.py
 - [Inject in Routes](inject_in_routes.md): HTTP/WebSocket handler injection and config value injection in route signatures.
 - [Request and WebSocket Context in Services](context_in_services.md): inject `fastapi.Request` and `fastapi.WebSocket` into Wireup services.
 - [Class-Based Handlers](class_based_handlers.md): zero per-request constructor resolution and `WireupRoute` optimizations.
-- [Request Lifecycle Patterns](request_lifecycle_patterns.md): middleware/decorator patterns and request-time helpers.
+- [Request-Time Injection](request_time_injection.md): injection in decorators, middleware, and other request-time call sites.
 - [Background Tasks](background_tasks.md): inject dependencies into scheduled callbacks with `WireupTask`.
-- [FastAPI Testing](testing.md): `TestClient` lifespan usage, overrides, and request-lifecycle test patterns.
+- [FastAPI Testing](testing.md): `TestClient` lifespan usage, overrides, and request-lifecycle tests.
 - [Troubleshooting](troubleshooting.md): common setup/runtime errors and fast fixes.
 
 ## API Reference

@@ -6,31 +6,45 @@ description: Django dependency injection with Wireup: a type-safe DI container f
 
 <div class="grid cards annotate" markdown>
 
-- :material-cog-refresh:{ .lg .middle } __Automatic Dependency Management__
+- :material-transit-connection-variant:{ .lg .middle } __Inject Beyond Views__
 
     ______________________________________________________________________
 
-    Inject dependencies in routes and automatically manage container lifecycle.
+    Inject in core Django views, DRF handlers, Ninja endpoints, middleware helpers, decorators, and other request-time
+    call sites.
 
-- :material-web-check:{ .lg .middle } __Request Objects__
+    [:octicons-arrow-right-24: Learn more](request_time_injection.md)
 
-    ______________________________________________________________________
-
-    Use Django request in Wireup dependencies.
-
-- :material-clock-fast:{ .lg .middle } __Django Settings__
+- :material-application-braces-outline:{ .lg .middle } __App-Level Entry Points__
 
     ______________________________________________________________________
 
-    The integration exposes Django settings to Wireup as config.
+    Use `@inject_app` for management commands, Django 6 background tasks, signals, checks, and scripts outside request
+    scope.
 
-- :material-share-circle:{ .lg .middle } __Shared business logic__
+    [:octicons-arrow-right-24: Learn more](app_injection.md)
+
+- :material-web-check:{ .lg .middle } __Request Context in Services__
 
     ______________________________________________________________________
 
-    Wireup is framework-agnostic. Share the service layer between web applications and other interfaces, such as a CLI.
+    Inject `HttpRequest` and other scoped services into your application code without threading request objects through
+    every layer.
+
+    [:octicons-arrow-right-24: Learn more](view_injection.md)
+
+- :material-share-circle:{ .lg .middle } __Django, DRF, and Ninja__
+
+    ______________________________________________________________________
+
+    Use one DI model across core Django, Django REST framework, and Django Ninja while keeping your service layer
+    framework-agnostic.
 
 </div>
+
+Wireup integrates with Django at both request scope and application scope. Use `@inject` for request-time callables and
+`@inject_app` for non-request entry points, while keeping services as ordinary Python classes that are easy to test and
+reuse.
 
 ## Quick Start
 
@@ -96,8 +110,8 @@ Run the app with `python manage.py runserver`, then open `http://127.0.0.1:8000/
 
 - [Django Setup and Installation](setup.md): installation, middleware placement, and settings/config integration.
 - [Inject in Views](view_injection.md): core Django, DRF, Ninja, forms, and request-scoped patterns.
-- [Request Lifecycle Patterns](request_lifecycle_patterns.md): reusable decorators, middleware-adjacent hooks, and direct container access.
-- [App-Level Injection](app_injection.md): management commands, signals, checks, and scripts with `@inject_app`.
+- [Request-Time Injection](request_time_injection.md): reusable decorators, middleware entry points, and direct container access.
+- [App-Level Injection](app_injection.md): management commands, Django 6 background tasks, signals, checks, and scripts with `@inject_app`.
 - [Django Testing](testing.md): `Client`, `AsyncClient`, `call_command`, and override patterns.
 - [Troubleshooting](troubleshooting.md): common errors and quick fixes.
 

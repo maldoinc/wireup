@@ -6,7 +6,7 @@ import wireup.integration
 import wireup.integration.aiohttp
 from aiohttp import web
 from aiohttp.test_utils import TestClient
-from wireup.integration.aiohttp import get_app_container
+from wireup.integration.aiohttp import get_app_container, get_request_container
 
 from test.integration.aiohttp import handler, routes
 from test.integration.aiohttp import services as aio_test_services
@@ -73,6 +73,32 @@ async def test_request_container_only_in_middleware_mode(client: TestClient, *, 
         assert body == {"is_same_request": True}
     else:
         assert res.status == 500
+
+
+async def test_wireup_middleware_is_outermost_for_existing_middlewares(
+    aiohttp_client: Callable[[web.Application], Awaitable[TestClient]],
+) -> None:
+    @web.middleware
+    async def custom_middleware(
+        request: web.Request,
+        handler: Callable[[web.Request], Awaitable[web.StreamResponse]],
+    ) -> web.StreamResponse:
+        request["wireup_request_available"] = await get_request_container().get(web.Request) is request
+        return await handler(request)
+
+    app = web.Application(middlewares=[custom_middleware])
+    app.router.add_routes(routes.router)
+
+    container = wireup.create_async_container(
+        injectables=[shared_services, aio_test_services, wireup.integration.aiohttp]
+    )
+    wireup.integration.aiohttp.setup(container, app, handlers=[handler.WireupTestHandler], middleware_mode=True)
+
+    client = await aiohttp_client(app)
+    res = await client.get("/request_container")
+
+    assert res.status == 200
+    assert (await res.json()) == {"is_same_request": True}
 
 
 async def test_webview(client: TestClient) -> None:

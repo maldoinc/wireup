@@ -14,26 +14,23 @@ from wireup.errors import (
     FactoryReturnTypeIsEmptyError,
     InvalidAsTypeError,
     InvalidRegistrationTypeError,
-    PositionalOnlyParameterError,
-    UnknownParameterError,
     UnknownQualifiedServiceRequestedError,
-    WireupError,
 )
 from wireup.ioc.configuration import ConfigStore
+from wireup.ioc.dependency_introspection import injectable_get_dependencies
+from wireup.ioc.registry_validation import validate_registry
 from wireup.ioc.type_analysis import analyze_type
 from wireup.ioc.types import (
     ASYNC_CALLABLE_TYPES,
     AnnotatedParameter,
     AnyCallable,
     CallableType,
-    ConfigInjectionRequest,
     ContainerObjectIdentifier,
-    EmptyContainerInjectionRequest,
     InjectableLifetime,
     get_container_object_id,
 )
-from wireup.ioc.util import ensure_is_type, get_callable_type, get_globals, param_get_annotation
-from wireup.util import format_name, stringify_type
+from wireup.ioc.util import ensure_is_type, get_callable_type, get_globals
+from wireup.util import stringify_type
 
 if TYPE_CHECKING:
     from wireup._annotations import AbstractDeclaration, InjectableDeclaration
@@ -91,7 +88,7 @@ class ContainerRegistry:
         self.interfaces: dict[type, dict[Qualifier, type]] = {}
         self.impls: dict[type, set[Qualifier]] = defaultdict(set)
         self.factories: dict[ContainerObjectIdentifier, InjectableFactory] = {}
-        self.dependencies: dict[InjectionTarget, dict[str, AnnotatedParameter]] = defaultdict(defaultdict)
+        self.dependencies: dict[InjectionTarget, dict[str, AnnotatedParameter]] = defaultdict(dict)
         self.lifetime: dict[ContainerObjectIdentifier, InjectableLifetime] = {}
         self.on_change: Callable[[], None] | None = None
         self.extend(abstracts=abstracts or [], impls=impls or [])
@@ -135,7 +132,7 @@ class ContainerRegistry:
                 auto_discover_interfaces=impl.as_type is None,
             )
 
-        self.assert_dependencies_valid()
+        validate_registry(self)
         self._update_factories_async_flag()
         if self.on_change:
             self.on_change()
@@ -229,7 +226,7 @@ class ContainerRegistry:
         if auto_discover_interfaces and hasattr(klass, "__bases__"):
             discover_interfaces(klass.__bases__)
 
-        self._target_init_context(factory_fn)
+        self.dependencies[factory_fn] = injectable_get_dependencies(factory_fn)
         self.lifetime[object_id] = lifetime
         callable_type = get_callable_type(factory_fn)
         self.factories[object_id] = InjectableFactory(
@@ -279,37 +276,6 @@ class ContainerRegistry:
     def _register_abstract(self, klass: type) -> None:
         self.interfaces[klass] = {}
 
-    def _target_init_context(
-        self,
-        target: InjectionTarget,
-    ) -> None:
-        """Init and collect all the necessary dependencies to initialize the specified target."""
-        for name, parameter in inspect.signature(target).parameters.items():
-            if parameter.kind in {inspect.Parameter.VAR_POSITIONAL, inspect.Parameter.VAR_KEYWORD}:
-                continue
-
-            annotated_param = param_get_annotation(parameter, globalns_supplier=lambda: get_globals(target))
-
-            if not annotated_param:
-                if parameter.default is not inspect.Parameter.empty:
-                    continue
-
-                msg = f"Wireup dependencies must have types. Please add a type to the '{name}' parameter in {target}."
-                raise WireupError(msg)
-
-            if parameter.kind == inspect.Parameter.POSITIONAL_ONLY:
-                raise PositionalOnlyParameterError(name, target)
-
-            if isinstance(annotated_param.annotation, EmptyContainerInjectionRequest):
-                warnings.warn(
-                    f"Redundant Injected[T] or Annotated[T, Inject()] in parameter '{name}' of "
-                    f"{stringify_type(target)}. See: "
-                    "https://maldoinc.github.io/wireup/latest/annotations/",
-                    stacklevel=2,
-                )
-
-            self.dependencies[target][name] = annotated_param
-
     def is_impl_with_qualifier_known(self, klass: type, qualifier_value: Qualifier | None) -> bool:
         """Determine if klass representing a concrete implementation + qualifier is known by the registry."""
         return klass in self.impls and qualifier_value in self.impls[klass]
@@ -349,110 +315,3 @@ class ContainerRegistry:
 
     def get_lifetime(self, klass: type, qualifier: Qualifier | None) -> InjectableLifetime:
         return self.lifetime[get_container_object_id(self.get_implementation(klass, qualifier), qualifier)]
-
-    def assert_dependencies_valid(self) -> None:
-        """Assert that all required dependencies exist for this registry instance."""
-        for obj_id, injectable_factory in self.factories.items():
-            if isinstance(obj_id, tuple):
-                impl, impl_qualifier = obj_id
-            else:
-                impl, impl_qualifier = obj_id, None
-            unknown_dependencies_with_default: list[str] = []
-
-            for name, dependency in self.dependencies[injectable_factory.factory].items():
-                try:
-                    self.assert_dependency_exists(parameter=dependency, target=impl, name=name)
-                except WireupError:
-                    if dependency.has_default_value:
-                        unknown_dependencies_with_default.append(name)
-                        continue
-
-                    raise
-
-                self._assert_lifetime_valid(
-                    impl=impl,
-                    impl_qualifier=impl_qualifier,
-                    parameter_name=name,
-                    dependency=dependency,
-                    factory=injectable_factory.factory,
-                )
-                self._assert_valid_resolution_path(dependency=dependency, path=[])
-
-            for name in unknown_dependencies_with_default:
-                del self.dependencies[injectable_factory.factory][name]
-
-    def _assert_lifetime_valid(
-        self,
-        *,
-        impl: Any,
-        impl_qualifier: Qualifier | None,
-        parameter_name: str,
-        dependency: AnnotatedParameter,
-        factory: AnyCallable,
-    ) -> None:
-        if dependency.is_parameter:
-            return
-
-        dependency_lifetime = self.get_lifetime(dependency.klass, dependency.qualifier_value)
-
-        if (
-            self.lifetime[get_container_object_id(impl, impl_qualifier)] == "singleton"
-            and dependency_lifetime != "singleton"
-        ):
-            msg = (
-                f"Parameter '{parameter_name}' of {stringify_type(factory)} "
-                f"depends on an injectable with a '{dependency_lifetime}' lifetime which is not supported. "
-                "Singletons can only depend on other singletons."
-            )
-            raise WireupError(msg)
-
-    def assert_dependency_exists(self, parameter: AnnotatedParameter, target: Any, name: str) -> None:
-        """Assert that a dependency exists in the container for the given annotated parameter."""
-        if isinstance(parameter.annotation, ConfigInjectionRequest):
-            try:
-                self.parameters.get(parameter.annotation.config_key)
-            except UnknownParameterError as e:
-                msg = (
-                    f"Parameter '{name}' of {stringify_type(target)} "
-                    f"depends on an unknown Wireup config key '{e.parameter_name}'"
-                    + (
-                        ""
-                        if isinstance(parameter.annotation.config_key, str)
-                        else f" requested in expression '{parameter.annotation.config_key.value}'"
-                    )
-                    + "."
-                )
-                raise WireupError(msg) from e
-        elif not self.is_type_with_qualifier_known(parameter.klass, qualifier=parameter.qualifier_value):
-            type_str = format_name(analyze_type(parameter.klass).raw_type, parameter.qualifier_value)
-            msg = f"Parameter '{name}' of {stringify_type(target)} has an unknown dependency on {type_str}."
-            raise WireupError(msg)
-
-    def _assert_valid_resolution_path(
-        self, dependency: AnnotatedParameter, path: list[tuple[AnnotatedParameter, Any]]
-    ) -> None:
-        """Assert that the resolution path for a dependency does not create a cycle."""
-        if dependency.klass in self.interfaces or dependency.is_parameter:
-            return
-        dependency_injectable_factory = self.factories[
-            get_container_object_id(dependency.klass, dependency.qualifier_value)
-        ]
-        new_path: list[tuple[AnnotatedParameter, Any]] = [*path, (dependency, dependency_injectable_factory)]
-
-        if any(p.klass == dependency.klass and p.qualifier_value == dependency.qualifier_value for p, _ in path):
-
-            def stringify_dependency(p: AnnotatedParameter, factory: Any) -> str:
-                descriptors = [
-                    f"created via {factory.factory.__module__}.{factory.factory.__name__}" if factory else None,
-                ]
-                qualifier_desc = ", ".join([d for d in descriptors if d is not None])
-                qualifier_desc = f" ({qualifier_desc})" if qualifier_desc else ""
-
-                return f"{format_name(p.klass, p.qualifier_value)}{qualifier_desc}"
-
-            cycle_path = "\n -> ".join(f"{stringify_dependency(p, factory)}" for p, factory in new_path)
-            msg = f"Circular dependency detected for {cycle_path} ! Cycle here"
-            raise WireupError(msg)
-
-        for next_dependency in self.dependencies[dependency_injectable_factory.factory].values():
-            self._assert_valid_resolution_path(next_dependency, path=new_path)

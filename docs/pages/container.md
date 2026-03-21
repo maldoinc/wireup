@@ -34,7 +34,7 @@ Both creation functions accept the following arguments:
 | :------------------------- | :---------------------------------------- | :---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `injectables`              | `list[Union[type, Callable, ModuleType]]` | Classes, functions decorated with `@injectable`, or modules to scan. Modules are scanned recursively, collecting only items decorated with `@injectable`. Recommended default for production apps: module/package scanning. For environment/flag-based assembly of injectables, see [Conditional Registration](conditional_registration.md). For reusable provider-style wiring (same graph, different runtime settings), see [Factories: Reusable Factory Bundles](factories.md#reusable-factory-bundles). |
 | `config`                   | `dict[str, Any]`                          | Configuration dictionary. Values from this dictionary can be injected using `Inject(config="key")`.                                                                                                                                                                                                                                                                                                                                                                                                         |
-| `concurrent_scoped_access` | `bool`                                    | Set to `True` if you share scopes across multiple threads/tasks. Defaults to `False`. See [Lifetimes & Scopes: Concurrent Access](lifetimes_and_scopes.md#concurrent-access) for details.                                                                                                                                                                                                                                                                                                                   |
+| `concurrent_scoped_access` | `bool`                                    | Set to `True` if you share scopes across multiple threads/tasks. Defaults to `False`. See [Lifetimes & Scopes: Concurrent Access](lifetimes_and_scopes.md#concurrent-scope-access) for details.                                                                                                                                                                                                                                                                                                             |
 
 !!! note "Multiple Containers"
 
@@ -66,7 +66,7 @@ Retrieve an instance of a registered injectable.
 
 !!! important
 
-    Prefer constructor-based dependency injection over calling `get` directly. Use `get` as an escape hatch for advanced
+    Prefer constructor-based dependency injection over calling `get` directly. Use `get` in advanced
     scenarios like dynamic service lookup or when working with framework integration code.
 
 ### `close`
@@ -97,7 +97,7 @@ with container.enter_scope({DbSession: existing_session}) as scoped:
     db_session = scoped.get(DbSession)  # Uses provided instance
 ```
 
-See [Advanced: Provided Instances](lifetimes_and_scopes.md#provided-instances) for caveats and ownership rules.
+See [Sharing Context Across Scopes](lifetimes_and_scopes.md#sharing-context-across-scopes) for more on this feature.
 
 === "Synchronous"
 
@@ -128,6 +128,31 @@ db_url = container.config.get("database_url")
 !!! important
 
     Prefer `Inject(config="key")` in dependency constructors over accessing `container.config` directly.
+
+## Injecting The Container
+
+Wireup registers the root container itself as an injectable during container creation. This means other injectables can
+depend on `SyncContainer` or `AsyncContainer` directly.
+
+```python
+from wireup import injectable
+from wireup.ioc.container.sync_container import SyncContainer
+
+
+@injectable
+class NeedsContainer:
+    def __init__(self, container: SyncContainer) -> None:
+        self.container = container
+```
+
+This is mainly useful for advanced integration code, task schedulers, and other framework glue where you need runtime
+access to the container. For a full example of wrapping callables dynamically, see
+[Function Injection: Scheduling Runtime Tasks](function_injection.md#scheduling-runtime-tasks).
+
+!!! important
+
+    Prefer regular constructor injection for application services. Inject the container only for advanced scenarios
+    where you truly need runtime access to it.
 
 ### `override`
 

@@ -2,13 +2,14 @@ import os
 import sys
 from io import StringIO
 from pathlib import Path
+from typing import List
 from unittest.mock import patch
 
 import django
 import pytest
 from django.apps import apps
 from django.core.management import call_command
-from django.http import HttpRequest
+from django.http import HttpRequest, HttpResponse
 from django.test import AsyncClient, Client
 from django.urls import include, path
 from django.views.generic import TemplateView
@@ -43,6 +44,8 @@ WIREUP = WireupSettings(
 )
 SECRET_KEY = "not_actually_a_secret"  # noqa: S105
 START_NUM = 4
+if django.VERSION >= (6, 0):
+    TASKS = {"default": {"BACKEND": "django.tasks.backends.immediate.ImmediateBackend"}}
 
 MIDDLEWARE = ["wireup.integration.django.wireup_middleware"]
 
@@ -63,6 +66,24 @@ urlpatterns = [
     path("app_1", include("test.integration.django.apps.app_1.urls")),
     path("app_2", include("test.integration.django.apps.app_2.urls")),
 ]
+
+
+if django.VERSION >= (6, 0):
+    from django.tasks import TaskResultStatus, task
+
+    background_task_results: List[str] = []
+
+    @inject_app
+    def background_greet(*, name: str, greeter: Injected[GreeterService]) -> str:
+        greeting = greeter.greet(name)
+        background_task_results.append(greeting)
+        return greeting
+
+    def enqueue_background_greet(request: HttpRequest) -> HttpResponse:
+        result = task(background_greet).enqueue(name=request.GET["name"])
+        return HttpResponse(result.return_value)
+
+    urlpatterns.append(path("enqueue_task", enqueue_background_greet))
 
 
 @pytest.fixture(autouse=True, scope="module")
@@ -293,6 +314,27 @@ def test_inject_app_decorator_applied_multiple_times():
         @inject_app
         @inject_app
         def _(*__, **___): ...
+
+
+@pytest.mark.skipif(django.VERSION < (6, 0), reason="Django background tasks were added in Django 6.0")
+def test_inject_app_django_background_task():
+    background_task_results.clear()
+    result = task(background_greet).enqueue(name="Background")
+
+    assert result.status == TaskResultStatus.SUCCESSFUL
+    assert result.return_value == "Hello Background"
+    assert background_task_results == ["Hello Background"]
+
+
+@pytest.mark.skipif(django.VERSION < (6, 0), reason="Django background tasks were added in Django 6.0")
+def test_request_can_enqueue_django_background_task(client: Client):
+    background_task_results.clear()
+
+    response = client.get("/enqueue_task?name=Request")
+
+    assert response.status_code == 200
+    assert response.content.decode("utf8") == "Hello Request"
+    assert background_task_results == ["Hello Request"]
 
 
 # Django Ninja tests

@@ -194,7 +194,7 @@ Dependencies have restrictions on what they can depend on to prevent **Scope Lea
 - **Scoped** can depend on singletons, scoped, and config.
 - **Transient** can depend on any lifetime and config.
 
-## Concurrent Access
+## Concurrent Scope Access
 
 Scopes are typically accessed by a single thread or asyncio task (e.g., one web request). By default, Wireup does **not
 use locks** for scoped dependencies, optimizing for this common pattern.
@@ -215,9 +215,21 @@ container = wireup.create_async_container(
 
     This is an advanced use case. Most applications don't need this.
 
-### Provided Instances
+## Sharing Context Across Scopes
 
-You can provide pre-created instances when entering a scope. Those instances can be created manually, or fetched from another scope first. A common advanced use case is fan-out:
+Use `enter_scope()` with provided values when you need a fresh isolated scope but want to reuse a small set of
+already-created context objects. Those values can be created manually or fetched from another active scope first.
+
+Wireup intentionally avoids full nested scopes with automatic inheritance of the entire parent graph. Instead, it uses
+isolated child scopes with explicit context sharing, which covers most practical use cases for nested scopes while keeping a predictable API.
+
+This is useful for patterns like:
+
+- fan-out work into child scopes while preserving request or tenant context,
+- carrying request, tenant, auth, or tracing context into worker scopes,
+- reusing immutable per-request metadata without sharing the rest of the scoped graph.
+
+A common advanced use case is fan-out:
 
 ```python hl_lines="9 10 15-17"
 import asyncio
@@ -252,24 +264,25 @@ async def main():
 Guidelines for what to share:
 
 - Good candidates: `RequestContext`, tenant/account context, auth claims, correlation/tracing metadata, immutable per-request flags.
-- Usually avoid sharing: DB sessions/transactions, unit-of-work objects, mutable caches, task-affine resources.
-- Rule of thumb: share context, not mutable resource handles.
+- Usually avoid sharing: DB transactions, unit-of-work objects.
+- Rule of thumb: share context, not mutable resources which are tied to the scope.
 
-!!! note "Caution"
+!!! note "Ownership and Rules"
 
     Providing instances at scope entry is an advanced feature. Use it only when you need strict control over scope composition.
-    
+
     * **Validity**
         * Provided keys must be real dependencies already known to Wireup's graph (injectables/factories); otherwise those
         values will not be used for dependency resolution.
         * Wireup does **not** type-check provided values. If you provide a wrong object for a key, resulting runtime failures are
         your responsibility.
     * **Ownership**
-        * Wireup also assumes ownership of the passed mapping for the scope lifetime and may mutate it by storing resolved
-        scoped instances. Do not reuse the same mapping across scopes. Do not modify the mapping after passing it to `enter_scope()`.
-        * Ownership of provided instances is not transferred to Wireup. You are responsible for cleanup of those objects if needed. Wireup will not attempt to close or clean them up when the scope exits.
-        * Provided instances must outlive the scope they are provided to. If you provide instances from a parent scope, ensure the child scope does not outlive that parent scope. This is paramount for
-        resources that require cleanup (i.e., anything that is created via a yielding factory in Wireup.)
+        * Ownership of provided instances remains with whoever created them. The new scope will not attempt to close or clean them up when it exits.
+        * Wireup may store additional scoped instances in the provided mapping for the lifetime of that scope. Pass a fresh
+        mapping to each scope and do not modify it after calling `enter_scope()`.
+        * Provided instances should remain valid for the lifetime of the scope they are provided to. Take special care when
+        reusing resources from a parent scope: if the parent closes first, lifecycle-managed resources such as yielding-factory
+        dependencies may already be closed while the child still references them.
 
 ## Next Steps
 

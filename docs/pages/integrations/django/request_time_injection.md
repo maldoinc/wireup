@@ -1,7 +1,6 @@
-# Request Lifecycle Patterns
+# Request-Time Injection
 
-Wireup injection in Django is not limited to views. You can also inject services in request-time helpers such as custom
-decorators and middleware-adjacent functions.
+Wireup injection in Django is not limited to views. You can also inject services in custom decorators and functions that run during request handling.
 
 ## Composable Request Decorators
 
@@ -45,10 +44,10 @@ def analytics_view(request: HttpRequest): ...
     The `require_plan` example above is sync-only. If your target view is async, use an async decorator variant and
     `await` the wrapped view function.
 
-## Middleware-Adjacent Request Hooks
+## Middleware Entry Points
 
-Django middleware itself does not use Django's view signature injection. For request-time middleware hooks, call
-helpers that use `@inject` or direct request-container access.
+Django middleware itself does not use Django's view signature injection. For logic that runs from middleware, call
+functions that use `@inject` or direct request-container access.
 
 ```python
 from django.http import HttpRequest
@@ -78,7 +77,7 @@ class RequestContextMiddleware:
 
 !!! warning
 
-    Ensure `wireup.integration.django.wireup_middleware` appears before middleware that calls injected helpers.
+    Make sure `wireup.integration.django.wireup_middleware` appears before middleware that calls injected functions.
     Otherwise request-scoped injection is not available yet.
 
 ## Direct Container Access
@@ -95,9 +94,9 @@ request_container = get_request_container()
 app_container = get_app_container()
 ```
 
-Prefer `@inject` for request-time helpers and `@inject_app` for non-request entry points.
+Prefer `@inject` for request-time functions and `@inject_app` for non-request entry points.
 
-## Testing Lifecycle Helpers
+## Testing Request-Time Injection
 
 See [Django Testing](testing.md) for endpoint tests and dependency overrides. These patterns are tested the same way:
 

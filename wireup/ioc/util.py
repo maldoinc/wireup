@@ -9,6 +9,7 @@ from inspect import Parameter
 from typing import Any, Sequence, TypeVar, cast
 
 from wireup.errors import PositionalOnlyParameterError, WireupError
+from wireup.ioc.registry_validation import assert_dependency_exists
 from wireup.ioc.type_analysis import analyze_type
 from wireup.ioc.types import AnnotatedParameter, AnyCallable, CallableType, ConfigInjectionRequest, InjectableType
 
@@ -241,7 +242,13 @@ def get_valid_injection_annotated_parameters(
     names_to_inject = get_inject_annotated_parameters(target)
 
     for name, parameter in names_to_inject.items():
-        container._registry.assert_dependency_exists(parameter=parameter, target=target, name=name)
+        assert_dependency_exists(
+            parameters=container._registry.parameters,
+            is_type_with_qualifier_known=container._registry.is_type_with_qualifier_known,
+            parameter=parameter,
+            target=target,
+            name=name,
+        )
 
     return names_to_inject
 

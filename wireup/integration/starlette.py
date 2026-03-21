@@ -1,6 +1,6 @@
 import contextlib
 from contextvars import ContextVar
-from typing import Any, AsyncIterator, Union
+from typing import Any, AsyncIterator
 
 from starlette.applications import Starlette
 from starlette.requests import Request
@@ -13,35 +13,21 @@ from wireup.errors import WireupError
 from wireup.ioc.container.async_container import AsyncContainer, ScopedAsyncContainer
 from wireup.ioc.types import AnyCallable
 
-current_request: ContextVar[Union[Request, WebSocket]] = ContextVar("wireup_starlette_request")
+request_container: ContextVar[ScopedAsyncContainer] = ContextVar("wireup_scoped_container")
 
 
 @injectable(lifetime="scoped")
 def request_factory() -> Request:
     """Provide the current request as a dependency."""
     msg = "Request in Wireup is only available during a request."
-    try:
-        res = current_request.get()
-        if not isinstance(res, Request):
-            raise WireupError(msg)
-
-        return res
-    except LookupError as e:
-        raise WireupError(msg) from e
+    raise WireupError(msg)
 
 
 @injectable(lifetime="scoped")
 def websocket_factory() -> WebSocket:
     """Provide the current WebSocket as a dependency."""
     msg = "WebSocket in Wireup is only available in a websocket connection."
-    try:
-        res = current_request.get()
-        if not isinstance(res, WebSocket):
-            raise WireupError(msg)
-
-        return res
-    except LookupError as e:
-        raise WireupError(msg) from e
+    raise WireupError(msg)
 
 
 class WireupAsgiMiddleware:
@@ -59,13 +45,12 @@ class WireupAsgiMiddleware:
         else:
             request = WebSocket(scope, receive, send)
 
-        token = current_request.set(request)
-        try:
-            async with request.app.state.wireup_container.enter_scope() as scoped_container:
-                request.state.wireup_container = scoped_container
+        async with request.app.state.wireup_container.enter_scope({type(request): request}) as scoped_container:
+            token = request_container.set(scoped_container)
+            try:
                 await self.app(scope, receive, send)
-        finally:
-            current_request.reset(token)
+            finally:
+                request_container.reset(token)
 
 
 def _update_lifespan(app: Starlette) -> None:
@@ -111,7 +96,7 @@ def get_request_container() -> ScopedAsyncContainer:
     to data specific to the current request.
     """
     try:
-        return current_request.get().state.wireup_container
+        return request_container.get()
     except (LookupError, AttributeError) as e:
         msg = (
             "Wireup request container is unavailable in the current execution context.\n"
