@@ -189,7 +189,7 @@ _FULL_PAGE_TEMPLATE = """<!doctype html>
       position: absolute;
       right: 16px;
       bottom: 16px;
-      width: min(320px, calc(100% - 32px));
+      width: min(380px, calc(100% - 32px));
       padding: 14px;
       border-radius: 14px;
       border: 1px solid var(--line);
@@ -200,6 +200,12 @@ _FULL_PAGE_TEMPLATE = """<!doctype html>
     .details h2 {
       margin: 0 0 8px;
       font-size: 1rem;
+    }
+
+    .details-subtitle {
+      margin: 0 0 12px;
+      font-size: 0.9rem;
+      color: var(--muted);
     }
 
     .details-empty {
@@ -230,6 +236,63 @@ _FULL_PAGE_TEMPLATE = """<!doctype html>
       gap: 6px;
     }
 
+    .details-section {
+      margin: 0 0 12px;
+    }
+
+    .details-section-title {
+      margin: 0 0 6px;
+      font-size: 0.78rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    .details-pills {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      min-height: 28px;
+    }
+
+    .details-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      min-width: 0;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      padding: 5px 9px;
+      font-size: 0.82rem;
+      line-height: 1.2;
+      background: #fff;
+      color: var(--text);
+      cursor: pointer;
+    }
+
+    .details-pill:hover {
+      border-color: var(--accent);
+      background: rgba(255, 255, 255, 0.98);
+    }
+
+    .details-pill.empty {
+      color: var(--muted);
+      cursor: default;
+      background: rgba(255, 255, 255, 0.6);
+    }
+
+    .details-pill.empty:hover {
+      border-color: var(--line);
+    }
+
+    .details-pill-swatch {
+      width: 10px;
+      height: 10px;
+      border-radius: 999px;
+      flex: 0 0 auto;
+    }
+
     .details dl {
       margin: 0;
       display: grid;
@@ -247,6 +310,12 @@ _FULL_PAGE_TEMPLATE = """<!doctype html>
       margin: 0;
       overflow-wrap: anywhere;
       word-break: break-word;
+    }
+
+    .details-meta-code {
+      font-size: 0.84rem;
+      line-height: 1.35;
+      color: var(--muted);
     }
 
     .details-value {
@@ -721,26 +790,11 @@ _FULL_PAGE_TEMPLATE = """<!doctype html>
       dependantNodes.addClass("highlight-dependant");
       dependantEdges.removeClass("dimmed");
 
-      const kindInfo = getKindDetails(node.data("kind"));
-      const rows = [
-        `<dt>Type</dt><dd><span class="details-value"><span class="details-kind-box" style="background:${kindInfo.color};"></span><span>${kindInfo.label}</span></span></dd>`
-      ];
-
-      if (node.data("module")) {
-        rows.push(`<dt>Module</dt><dd>${node.data("module")}</dd>`);
-      }
-      if (node.data("factory_name")) {
-        rows.push(`<dt>Factory</dt><dd>${node.data("factory_name")}</dd>`);
-      }
-
-      details.innerHTML = `
-        <h2>${String(node.data("label")).replace(/\\n/g, " ")}</h2>
-        <div class="details-legend">
-          <span class="details-legend-item"><span>This depends on:</span><span class="details-kind-box" style="background:#3D9970;"></span></span>
-          <span class="details-legend-item"><span>Depends on this:</span><span class="details-kind-box" style="background:#FFDC00;"></span></span>
-        </div>
-        <dl>${rows.join("")}</dl>
-      `;
+      renderDetails(node, {
+        modeLabel: null,
+        dependencies: node.incomers("node"),
+        dependants: node.outgoers("node"),
+      });
     }
 
     function showDependencyPaths(node) {
@@ -760,26 +814,11 @@ _FULL_PAGE_TEMPLATE = """<!doctype html>
       dependencyNodes.addClass("highlight-dependency");
       dependencyEdges.removeClass("dimmed");
 
-      const kindInfo = getKindDetails(node.data("kind"));
-      const rows = [
-        `<dt>Type</dt><dd><span class="details-value"><span class="details-kind-box" style="background:${kindInfo.color};"></span><span>${kindInfo.label}</span></span></dd>`
-      ];
-
-      if (node.data("module")) {
-        rows.push(`<dt>Module</dt><dd>${node.data("module")}</dd>`);
-      }
-      if (node.data("factory_name")) {
-        rows.push(`<dt>Factory</dt><dd>${node.data("factory_name")}</dd>`);
-      }
-      rows.push("<dt>Mode</dt><dd>Dependency paths</dd>");
-
-      details.innerHTML = `
-        <h2>${String(node.data("label")).replace(/\\n/g, " ")}</h2>
-        <div class="details-legend">
-          <span class="details-legend-item"><span>This depends on:</span><span class="details-kind-box" style="background:#3D9970;"></span></span>
-        </div>
-        <dl>${rows.join("")}</dl>
-      `;
+      renderDetails(node, {
+        modeLabel: "Dependency paths",
+        dependencies: node.incomers("node"),
+        dependants: cy.collection(),
+      });
     }
 
     function resetFocus() {
@@ -795,10 +834,87 @@ _FULL_PAGE_TEMPLATE = """<!doctype html>
     function getKindDetails(kind) {
       if (kind === "service") return { label: "Class injectable", color: "#fff7ed" };
       if (kind === "factory") return { label: "Factory", color: "#eef6ff" };
-      if (kind === "consumer") return { label: "Consumer", color: "#ecfccb" };
+      if (kind === "consumer") return { label: "Route / consumer", color: "#ecfccb" };
       if (kind === "config") return { label: "Configuration", color: "#f6f2ff" };
       if (kind === "group") return { label: "Module group", color: "#fef3c7" };
       return { label: kind || "Unknown", color: "#e5e7eb" };
+    }
+
+    function escapeHtml(value) {
+      return String(value)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#39;");
+    }
+
+    function formatLifetime(value) {
+      if (!value) return null;
+      return value.charAt(0).toUpperCase() + value.slice(1);
+    }
+
+    function renderNeighborPills(nodes, color) {
+      const uniqueNodes = [];
+      const seen = new Set();
+      nodes.forEach((item) => {
+        if (item.isNode && item.isNode() && !seen.has(item.id())) {
+          seen.add(item.id());
+          uniqueNodes.push(item);
+        }
+      });
+
+      if (!uniqueNodes.length) {
+        return '<span class="details-pill empty">None</span>';
+      }
+
+      return uniqueNodes
+        .sort((left, right) => String(left.data("label")).localeCompare(String(right.data("label"))))
+        .map((item) => `
+          <button class="details-pill" type="button" data-node-id="${escapeHtml(item.id())}">
+            <span class="details-pill-swatch" style="background:${color};"></span>
+            <span>${escapeHtml(String(item.data("label")).replace(/\\n/g, " "))}</span>
+          </button>
+        `)
+        .join("");
+    }
+
+    function renderDetails(node, { modeLabel, dependencies, dependants }) {
+      const kindInfo = getKindDetails(node.data("kind"));
+      const rows = [
+        `<dt>Kind</dt><dd><span class="details-value"><span class="details-kind-box" style="background:${kindInfo.color};"></span><span>${kindInfo.label}</span></span></dd>`
+      ];
+
+      const lifetime = formatLifetime(node.data("lifetime"));
+      if (lifetime) {
+        rows.push(`<dt>Lifetime</dt><dd>${escapeHtml(lifetime)}</dd>`);
+      }
+      if (node.data("module")) {
+        rows.push(`<dt>Module</dt><dd class="details-meta-code">${escapeHtml(node.data("module"))}</dd>`);
+      }
+      if (node.data("factory_name")) {
+        rows.push(`<dt>Factory</dt><dd class="details-meta-code">${escapeHtml(node.data("factory_name"))}</dd>`);
+      }
+      if (modeLabel) {
+        rows.push(`<dt>Mode</dt><dd>${escapeHtml(modeLabel)}</dd>`);
+      }
+
+      const dependencyPills = renderNeighborPills(dependencies, "#3D9970");
+      const dependantPills = renderNeighborPills(dependants, "#FFDC00");
+
+      details.innerHTML = `
+        <h2>${escapeHtml(String(node.data("label")).replace(/\\n/g, " "))}</h2>
+        <p class="details-subtitle">Select any related node below to jump across the graph.</p>
+        <div class="details-section">
+          <div class="details-section-title">Depends on</div>
+          <div class="details-pills">${dependencyPills}</div>
+        </div>
+        <div class="details-section">
+          <div class="details-section-title">Used by</div>
+          <div class="details-pills">${dependantPills}</div>
+        </div>
+        <dl>${rows.join("")}</dl>
+      `;
     }
 
     [toggleConfig, toggleEdgeLabels, toggleEmptyGroups].forEach((checkbox) => {
@@ -833,6 +949,14 @@ _FULL_PAGE_TEMPLATE = """<!doctype html>
     cy.on("tap", (event) => {
       if (event.target === cy) {
         resetFocus();
+      }
+    });
+    details.addEventListener("click", (event) => {
+      const button = event.target.closest("[data-node-id]");
+      if (!button) return;
+      const nextNode = cy.getElementById(button.getAttribute("data-node-id"));
+      if (nextNode && nextNode.length) {
+        showNeighborhood(nextNode);
       }
     });
     cy.on("dragfreeon", "node", savePositions);
