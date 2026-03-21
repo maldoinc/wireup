@@ -62,6 +62,7 @@ class _ClassBasedHandlersProtocol(Protocol):
 
 @dataclass(frozen=True)
 class GraphEndpointOptions:
+    enabled: bool
     base_module: Optional[str] = None
 
 
@@ -283,7 +284,7 @@ def setup(
     """
     app.state.wireup_container = container
     _expose_wireup_task(container)
-    if graph_endpoint is not None:
+    if graph_endpoint is not None and graph_endpoint.enabled:
         _setup_graph_routes(app, options=graph_endpoint)
     if middleware_mode:
         app.add_middleware(WireupAsgiMiddleware, include_websocket=False)

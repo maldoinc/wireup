@@ -59,5 +59,5 @@ setup(
     container,
     app,
     class_based_handlers=[DemoClassBasedHandler],
-    graph_endpoint=GraphEndpointOptions(base_module="graph_demo_app"),
+    graph_endpoint=GraphEndpointOptions(enabled=True, base_module="graph_demo_app"),
 )
