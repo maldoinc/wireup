@@ -132,7 +132,7 @@ db_url = container.config.get("database_url")
 ## Injecting The Container
 
 Wireup registers the root container itself as an injectable during container creation. This means other injectables can
-depend on `SyncContainer` or `AsyncContainer` directly.
+depend on `SyncContainer` or `AsyncContainer` directly depending on the container type.
 
 ```python
 from wireup import injectable
@@ -145,7 +145,7 @@ class NeedsContainer:
         self.container = container
 ```
 
-This is mainly useful for advanced integration code, task schedulers, and other framework glue where you need runtime
+This is mainly useful for advanced use cases where you need runtime
 access to the container. For a full example of wrapping callables dynamically, see
 [Function Injection: Dynamic Function Injection](function_injection.md#dynamic-function-injection).
 

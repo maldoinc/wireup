@@ -72,34 +72,7 @@ else:
 container = wireup.create_sync_container(injectables=injectables)
 ```
 
-## Single Dependency Swap: Mailer
 
-For one-off swaps, keep it simple and choose one injectable with a plain `if`:
+## Next Steps
 
-```python
-import os
-import wireup
-
-from my_app.services import UserService
-from my_app.mail.dev_mailer import ConsoleMailer
-from my_app.mail.prod_mailer import SesMailer
-
-env = os.getenv("APP_ENV", "dev")
-
-injectables = [UserService]
-
-if env == "prod":
-    injectables.append(SesMailer)
-else:
-    injectables.append(ConsoleMailer)
-
-container = wireup.create_sync_container(injectables=injectables)
-```
-
-## Why Do It This Way
-
-- No new DSL to learn.
-- Registration stays in plain Python.
-- The final graph is still validated at startup.
-
-For reusable sub-graphs with runtime parameters, see [Reusable Bundles](reusable_bundles.md).
+For cases where the same injectables need to be registered more than once with different settings, see [Reusable Bundles](reusable_bundles.md).

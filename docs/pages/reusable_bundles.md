@@ -38,7 +38,6 @@ def make_db_bundle(*, dsn: str, qualifier: str | None = None) -> list[object]:
 Then create your container with multiple bundles:
 
 ```python
-
 primary = make_db_bundle(dsn="postgresql://primary-db")
 analytics = make_db_bundle(
     dsn="postgresql://analytics-db",
@@ -48,7 +47,7 @@ analytics = make_db_bundle(
 container = wireup.create_sync_container(injectables=[*primary, *analytics])
 ```
 
-Use an unqualified default (`None`) for your primary bundle, then add qualifiers only where needed:
+Use an unqualified default (`qualifier=None`) for your primary bundle, then add qualifiers only where needed:
 
 ```python
 from typing import Annotated

@@ -43,38 +43,6 @@ from wireup import injectable
 class DbSession: ...
 ```
 
-## Existing Instances
-
-If you already have an object and want to make it injectable, use `wireup.instance(...)`.
-
-```python
-import wireup
-
-
-settings = AppSettings()
-
-container = wireup.create_sync_container(
-    injectables=[
-        wireup.instance(settings, as_type=AppSettings),
-    ]
-)
-```
-
-This is useful when an object is created by another library, built manually during startup, or should be shared as a
-prebuilt singleton.
-
-`wireup.instance(...)` also supports `qualifier` and `as_type`, so you can expose the object under an interface or
-register more than one instance of the same type.
-
-```python
-container = wireup.create_sync_container(
-    injectables=[
-        wireup.instance(primary_db, as_type=Database),
-        wireup.instance(analytics_db, as_type=Database, qualifier="analytics"),
-    ]
-)
-```
-
 ## Defining Dependencies
 
 Wireup resolves dependencies using **Type Hints**. It inspects the types you declare and automatically finds the
@@ -252,6 +220,39 @@ When you register a dependency this way, you should also request it as `Redis | 
 See [Factories: Optional Dependencies](factories.md#optional-dependencies) and
 [Interfaces: `as_type` with Optional Types](interfaces.md#as_type-with-optional-types).
 
+
+
+## Existing Instances
+
+If you already have an object and want to make it injectable, use `wireup.instance(...)`.
+
+```python
+import wireup
+
+
+settings = AppSettings()
+
+container = wireup.create_sync_container(
+    injectables=[
+        wireup.instance(settings, as_type=AppSettings),
+    ]
+)
+```
+
+This is useful when an object is created by another library, built manually during startup, or should be shared as a
+prebuilt singleton.
+
+`wireup.instance(...)` also supports `qualifier` and `as_type`, so you can expose the object under an interface or
+register more than one instance of the same type.
+
+```python
+container = wireup.create_sync_container(
+    injectables=[
+        wireup.instance(primary_db, as_type=Database),
+        wireup.instance(analytics_db, as_type=Database, qualifier="analytics"),
+    ]
+)
+```
 
 ## Next Steps
 
