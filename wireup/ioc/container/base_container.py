@@ -25,6 +25,7 @@ if TYPE_CHECKING:
         ExitStack,
         Qualifier,
     )
+    from wireup.renderer._consumers import ConsumerRecord
 
 T = TypeVar("T")
 
@@ -33,6 +34,7 @@ class BaseContainer:
     __slots__ = (
         "_compiler",
         "_concurrent_scoped_access",
+        "_consumers",
         "_current_scope_exit_stack",
         "_current_scope_objects",
         "_factories",
@@ -67,6 +69,7 @@ class BaseContainer:
         self._scoped_compiler = scoped_compiler
         self._concurrent_scoped_access = concurrent_scoped_access
         self._factories = self._compiler.factories
+        self._consumers: dict[str, ConsumerRecord] = {}
         self._locks: LockRegistry | None = LockRegistry() if concurrent_scoped_access else None
 
     @property
