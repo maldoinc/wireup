@@ -147,7 +147,7 @@ class NeedsContainer:
 
 This is mainly useful for advanced integration code, task schedulers, and other framework glue where you need runtime
 access to the container. For a full example of wrapping callables dynamically, see
-[Function Injection: Scheduling Runtime Tasks](function_injection.md#scheduling-runtime-tasks).
+[Function Injection: Dynamic Function Injection](function_injection.md#dynamic-function-injection).
 
 !!! important
 

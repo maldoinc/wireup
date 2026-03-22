@@ -71,18 +71,19 @@ inject = inject_from_container(container, scoped_container.get)
 def handle_request(service: Injected[RequestService]) -> None: ...
 ```
 
-### Scheduling Runtime Tasks
+### Dynamic Function Injection
 
 Sometimes the function you want to inject is only known at runtime, for example when scheduling background work on the
 event loop. In these cases, inject the root container into an infrastructure service and use it to wrap the callable
 before scheduling it.
 
+**Example: Scheduling Background Tasks**
+
 ```python
 import asyncio
 from functools import lru_cache
 
-from wireup import Injected, inject_from_container, injectable
-from wireup.ioc.container.async_container import AsyncContainer
+from wireup import AsyncContainer, Injected, inject_from_container, injectable
 from wireup.ioc.types import AnyCallable
 
 
@@ -106,7 +107,10 @@ class BackgroundTasks:
         return task
 
 
-async def send_email(user_id: str, email_service: Injected[EmailService]) -> None:
+async def send_email(
+    user_id: str,
+    email_service: Injected[EmailService],
+) -> None:
     await email_service.send_welcome_email(user_id)
 
 
