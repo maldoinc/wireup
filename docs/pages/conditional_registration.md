@@ -1,13 +1,11 @@
 # Conditional Registration
 
-Wireup does not own your registration strategy. It only consumes whatever you pass in `injectables=[...]`.
+Wireup does not use a special syntax for conditional registration. Build the `injectables` list in normal Python based
+on environment, feature flags, or deployment mode, then pass the final list to the container.
 
-That means you can build the list yourself based on environment, feature flags, or deployment mode, then hand the final
-list to Wireup.
+Wireup still validates the final graph when the container is created.
 
-Once the container is created, Wireup runs the same startup validation guarantees on the final graph.
-
-## Bundle + If Pattern
+## Bundle + If Statements
 
 Use small bundle functions (or constants) and compose them with normal Python `if` statements.
 
@@ -98,11 +96,10 @@ else:
 container = wireup.create_sync_container(injectables=injectables)
 ```
 
-## Why Use This Pattern
+## Why Do It This Way
 
-* No new DSL to learn. Registration composition stays pure Python.
-* Composition stays explicit and local to app bootstrap.
-* Wireup remains environment-agnostic.
-* Validation still happens at startup for the graph you actually run.
+- No new DSL to learn.
+- Registration stays in plain Python.
+- The final graph is still validated at startup.
 
-For reusable sub-graphs with runtime parameters, see [Factories: Reusable Factory Bundles](factories.md#reusable-factory-bundles).
+For reusable sub-graphs with runtime parameters, see [Reusable Bundles](reusable_bundles.md).

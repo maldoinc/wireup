@@ -9,16 +9,18 @@ nav:
       - Container: container.md
       - Injectables: injectables.md
       - Configuration: configuration.md
-    - Advanced Features:
+    - Features:
       - Lifetimes & Scopes: lifetimes_and_scopes.md
       - Factories: factories.md
       - Resource Management: resources.md
       - Interfaces: interfaces.md
-      - Generic Dependencies: generic_dependencies.md
       - Function Injection: function_injection.md
+    - Advanced Patterns:
+      - Reusable Bundles: reusable_bundles.md
+      - Conditional Registration: conditional_registration.md
+      - Generic Dependencies: generic_dependencies.md
     - Guides:
       - Testing: testing.md
-      - Conditional Registration: conditional_registration.md
       - Upgrading: upgrading.md
       - Versioning: versioning.md
 
