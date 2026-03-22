@@ -43,6 +43,38 @@ from wireup import injectable
 class DbSession: ...
 ```
 
+## Existing Instances
+
+If you already have an object and want to make it injectable, use `wireup.instance(...)`.
+
+```python
+import wireup
+
+
+settings = AppSettings()
+
+container = wireup.create_sync_container(
+    injectables=[
+        wireup.instance(settings, as_type=AppSettings),
+    ]
+)
+```
+
+This is useful when an object is created by another library, built manually during startup, or should be shared as a
+prebuilt singleton.
+
+`wireup.instance(...)` also supports `qualifier` and `as_type`, so you can expose the object under an interface or
+register more than one instance of the same type.
+
+```python
+container = wireup.create_sync_container(
+    injectables=[
+        wireup.instance(primary_db, as_type=Database),
+        wireup.instance(analytics_db, as_type=Database, qualifier="analytics"),
+    ]
+)
+```
+
 ## Defining Dependencies
 
 Wireup resolves dependencies using **Type Hints**. It inspects the types you declare and automatically finds the
@@ -220,26 +252,6 @@ When you register a dependency this way, you should also request it as `Redis | 
 See [Factories: Optional Dependencies](factories.md#optional-dependencies) and
 [Interfaces: `as_type` with Optional Types](interfaces.md#as_type-with-optional-types).
 
-### Optional Value vs Optional Registration
-
-These two cases are easy to confuse:
-
-- `client: Client | None = None`
-- `cache: Redis | None = None`
-  Wireup may ignore the parameter entirely and let Python use the default. No registration is required.
-- `cache: Redis | None`
-  Wireup must still be able to satisfy the parameter. Without a registered binding, container creation fails.
-
-If you want to make a dependency skippable without requiring any DI setup, use a default value. If you want the
-dependency to remain part of the dependency graph but sometimes resolve to `None`, register a factory that returns an
-optional type.
-
-### When to Use Which
-
-- Use a **default value** when the dependency is genuinely optional and your class has a sensible fallback behavior.
-- Use a **registered optional factory** when the dependency is part of the application graph but may be disabled by
-  configuration or runtime state.
-- Prefer a **Null Object** when consumers should not need repeated `if dep is not None` checks.
 
 ## Next Steps
 
