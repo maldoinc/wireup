@@ -177,3 +177,22 @@ def test_enter_scope_uses_provided_instances_with_qualified_helper() -> None:
 
     with c.enter_scope({wireup.qualified(int, "readonly"): seeded}) as scoped:
         assert scoped.get(int, qualifier="readonly") == seeded
+
+
+def test_enter_scope_uses_provided_instances_for_qualified_interface_registration() -> None:
+    class Cache:
+        def __init__(self, label: str) -> None:
+            self.label = label
+
+    @injectable(as_type=Cache, lifetime="scoped", qualifier="redis")
+    class RedisCache(Cache):
+        def __init__(self) -> None:
+            super().__init__("created-by-container")
+
+    c = wireup.create_sync_container(injectables=[RedisCache])
+    seeded = Cache("provided-by-user")
+
+    with c.enter_scope({wireup.qualified(Cache, "redis"): seeded}) as scoped:
+        resolved = scoped.get(Cache, qualifier="redis")
+
+    assert resolved is seeded
