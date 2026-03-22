@@ -261,7 +261,38 @@ async def main():
         await asyncio.gather(*tasks)
 ```
 
-Guidelines for what to share:
+### Abstractions and Qualifiers
+
+When using abstractions via `as_type` or qualifiers, the provided keys must match the registered dependency keys. For example, if you have:
+
+```python
+@injectable(as_type=Cache)
+class RedisCache(Cache): ...
+```
+
+Then you must provide the instance using the `Cache` key, not `RedisCache`:
+
+```python
+provided = {
+    Cache: RedisCache(...),  # Use the abstraction key, not the concrete class
+}
+```
+
+With qualifiers, you must also include the qualifier in the key:
+
+```python
+@injectable(as_type=Cache, qualifier="in_memory")
+class InMemoryCache(Cache): ...
+```
+Then the provided key must include the qualifier:
+
+```python
+provided = {
+    wireup.qualified(Cache, "in_memory"): InMemoryCache(...),
+}
+```
+
+### Guidelines for what to share
 
 - Good candidates: `RequestContext`, tenant/account context, auth claims, correlation/tracing metadata, immutable per-request flags.
 - Usually avoid sharing: DB transactions, unit-of-work objects.
