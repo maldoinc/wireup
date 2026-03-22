@@ -274,15 +274,10 @@ Guidelines for what to share:
     * **Validity**
         * Provided keys must be real dependencies already known to Wireup's graph (injectables/factories); otherwise those
         values will not be used for dependency resolution.
-        * Wireup does **not** type-check provided values. If you provide a wrong object for a key, resulting runtime failures are
-        your responsibility.
+        * Wireup does **not** type-check provided values. If you provide a wrong object for a key, resulting runtime failures are your responsibility.
     * **Ownership**
         * Ownership of provided instances remains with whoever created them. The new scope will not attempt to close or clean them up when it exits.
-        * Wireup may store additional scoped instances in the provided mapping for the lifetime of that scope. Pass a fresh
-        mapping to each scope and do not modify it after calling `enter_scope()`.
-        * Provided instances should remain valid for the lifetime of the scope they are provided to. Take special care when
-        reusing resources from a parent scope: if the parent closes first, lifecycle-managed resources such as yielding-factory
-        dependencies may already be closed while the child still references them.
+        * Provided instances should remain valid for the lifetime of the scope they are provided to. Take special care when reusing resources from a parent scope: if the parent closes first, lifecycle-managed resources such as yielding-factory dependencies may already be closed while the child still references them.
 
 ## Next Steps
 
