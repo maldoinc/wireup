@@ -1043,6 +1043,34 @@ You're not viewing the latest version.
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Sharing Context Across Scopes">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#abstractions-and-qualifiers" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Abstractions and Qualifiers
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#guidelines-for-what-to-share" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Guidelines for what to share
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
@@ -3884,6 +3912,34 @@ You're not viewing the latest version.
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Sharing Context Across Scopes">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#abstractions-and-qualifiers" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Abstractions and Qualifiers
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#guidelines-for-what-to-share" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Guidelines for what to share
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
@@ -4162,7 +4218,26 @@ isolated child scopes with explicit context sharing, which covers most practical
 
         <span class="k">await</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">gather</span><span class="p">(</span><span class="o">*</span><span class="n">tasks</span><span class="p">)</span>
 </code></pre></div>
-<p>Guidelines for what to share:</p>
+<h3 id="abstractions-and-qualifiers">Abstractions and Qualifiers<a class="headerlink" href="#abstractions-and-qualifiers" title="Permanent link">&para;</a></h3>
+<p>When using abstractions via <code>as_type</code> or qualifiers, the provided keys must match the registered dependency keys. For example, if you have:</p>
+<div class="highlight"><pre><span></span><code><span class="nd">@injectable</span><span class="p">(</span><span class="n">as_type</span><span class="o">=</span><span class="n">Cache</span><span class="p">)</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">RedisCache</span><span class="p">(</span><span class="n">Cache</span><span class="p">):</span> <span class="o">...</span>
+</code></pre></div>
+<p>Then you must provide the instance using the <code>Cache</code> key, not <code>RedisCache</code>:</p>
+<div class="highlight"><pre><span></span><code><span class="n">provided</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="n">Cache</span><span class="p">:</span> <span class="n">RedisCache</span><span class="p">(</span><span class="o">...</span><span class="p">),</span>  <span class="c1"># Use the abstraction key, not the concrete class</span>
+<span class="p">}</span>
+</code></pre></div>
+<p>With qualifiers, you must also include the qualifier in the key:</p>
+<p><div class="highlight"><pre><span></span><code><span class="nd">@injectable</span><span class="p">(</span><span class="n">as_type</span><span class="o">=</span><span class="n">Cache</span><span class="p">,</span> <span class="n">qualifier</span><span class="o">=</span><span class="s2">&quot;in_memory&quot;</span><span class="p">)</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">InMemoryCache</span><span class="p">(</span><span class="n">Cache</span><span class="p">):</span> <span class="o">...</span>
+</code></pre></div>
+Then the provided key must include the qualifier:</p>
+<div class="highlight"><pre><span></span><code><span class="n">provided</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="n">wireup</span><span class="o">.</span><span class="n">qualified</span><span class="p">(</span><span class="n">Cache</span><span class="p">,</span> <span class="s2">&quot;in_memory&quot;</span><span class="p">):</span> <span class="n">InMemoryCache</span><span class="p">(</span><span class="o">...</span><span class="p">),</span>
+<span class="p">}</span>
+</code></pre></div>
+<h3 id="guidelines-for-what-to-share">Guidelines for what to share<a class="headerlink" href="#guidelines-for-what-to-share" title="Permanent link">&para;</a></h3>
 <ul>
 <li>Good candidates: <code>RequestContext</code>, tenant/account context, auth claims, correlation/tracing metadata, immutable per-request flags.</li>
 <li>Usually avoid sharing: DB transactions, unit-of-work objects.</li>
