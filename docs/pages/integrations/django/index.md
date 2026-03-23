@@ -2,7 +2,7 @@
 description: Django dependency injection with Wireup: a type-safe DI container for Django, DRF, and Ninja with setup, request/app injection patterns, testing, and troubleshooting.
 ---
 
-# :simple-django: Django Integration
+# :simple-django:{.color-django} Django Integration 
 
 <div class="grid cards annotate" markdown>
 
