@@ -28,7 +28,7 @@ def setup(container: SyncContainer | AsyncContainer, app: Flask) -> None:
     raise NotImplementedError(msg)
 
 
-@setup.register(SyncContainer)
+@setup.register
 def setup_sync(container: SyncContainer, app: Flask) -> None:
     def _before_request() -> None:
         ctx = container.enter_scope()
@@ -46,7 +46,7 @@ def setup_sync(container: SyncContainer, app: Flask) -> None:
     app.wireup_container = container  # type: ignore[reportAttributeAccessIssue]
 
 
-@setup.register(AsyncContainer)
+@setup.register
 def setup_async(container: AsyncContainer, app: Flask) -> None:
     def _before_request() -> None:
         ctx = container.enter_scope()
