@@ -1,3 +1,5 @@
+## Manually Instantiating Classes
+
 The `@injectable` decorator doesn't modify your classes, so they can be instantiated and tested like any regular Python
 class. Pass dependencies manually in your tests.
 
@@ -20,6 +22,18 @@ def test_user_service_logic():
 ```
 
 To specify custom behavior for tests, provide a custom implementation or a subclass that returns test data.
+
+## Injecting Classes
+
+Use `container` to instantiate `@injectable` classes and their dependencies for testing.
+
+```python
+def test_user_service():
+    service = container.get(UserService)
+    result = service.get_user_count()
+    assert result == 10
+
+```
 
 ## Overriding
 
