@@ -28,11 +28,18 @@ To specify custom behavior for tests, provide a custom implementation or a subcl
 Use `container` to instantiate `@injectable` classes and their dependencies for testing.
 
 ```python
+from wireup import create_sync_container
+
+from user_service import UserService
+
+
+container = wireup.create_sync_container(injectables=[UserService])
+
+
 def test_user_service():
     service = container.get(UserService)
     result = service.get_user_count()
     assert result == 10
-
 ```
 
 ## Overriding
