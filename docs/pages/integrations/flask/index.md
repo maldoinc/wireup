@@ -18,6 +18,16 @@ Dependency injection for Flask is available in the `wireup.integration.flask` mo
 
 </div>
 
+!!! interactive-graph "Interactive Graph"
+
+    Turn your container into an interactive dependency graph. Explore routes, functions, services, factories,
+    configuration, and scopes in a live page with search, grouping, and dependency tracing.
+
+    Learn how it works and explore it on an demo pet store app:
+
+    [Documentation](interactive_graph.md){ .md-button target="_blank" }
+    [:octicons-arrow-right-24: Live Demo](wireup_graph/pet_store.html){ .md-button .md-button--primary target="_blank" }
+
 ### Initialize the integration
 
 First, [create a sync container](../../container.md) with your dependencies:
@@ -44,6 +54,18 @@ Then initialize the integration by calling `wireup.integration.flask.setup` afte
 # Initialize the integration.
 # Must be called after views and configuration have been added.
 wireup.integration.flask.setup(container, app)
+```
+
+To expose the interactive dependency graph page at `/_wireup`, enable the graph endpoint during setup:
+
+```python
+from wireup.integration.flask import GraphEndpointOptions
+
+wireup.integration.flask.setup(
+    container,
+    app,
+    add_graph_endpoint=True,
+)
 ```
 
 ### Inject in Flask Views

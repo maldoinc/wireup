@@ -15,6 +15,7 @@ nav:
       - Resource Management: resources.md
       - Interfaces: interfaces.md
       - Function Injection: function_injection.md
+      - Interactive Graph: interactive_graph.md
     - Advanced Patterns:
       - Reusable Bundles: reusable_bundles.md
       - Conditional Registration: conditional_registration.md
@@ -30,6 +31,7 @@ nav:
     - Web Frameworks:
       - Django: 
         - Django Integration: integrations/django/index.md
+        - Interactive Graph: integrations/django/interactive_graph.md
         - Setup and Installation: integrations/django/setup.md
         - Inject in Views: integrations/django/view_injection.md
         - Request-Time Injection: integrations/django/request_time_injection.md

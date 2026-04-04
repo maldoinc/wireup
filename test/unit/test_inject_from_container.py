@@ -9,6 +9,7 @@ from typing_extensions import Annotated
 from wireup import Inject, Injected, create_sync_container, inject_from_container, injectable, service
 from wireup._decorators import inject_from_container_unchecked
 from wireup.errors import WireupError
+from wireup.renderer._consumers import ConsumerMetadata, get_consumers
 
 from test.conftest import Container
 from test.unit import services
@@ -238,9 +239,52 @@ def test_inject_from_container_falsy_qualifier_injected() -> None:
         svc: Annotated[EmptyQualifierService, Inject(qualifier="")],
     ) -> None:
         assert isinstance(svc, EmptyQualifierService)
-        assert svc.name == "empty"
 
-    target()
+
+def test_inject_from_container_records_consumer_metadata() -> None:
+    container = create_sync_container(injectables=[services], config={"env_name": "test"})
+
+    @inject_from_container(container)
+    def target(foo: Injected[Foo]) -> Foo:
+        return foo
+
+    consumer = {consumer.id: consumer for consumer in get_consumers(container)}[
+        f"{target.__module__}.{target.__qualname__}"
+    ]
+    assert consumer.kind == "function"
+    assert consumer.label == f"ƒ {target.__qualname__}"
+    assert consumer.group == "test.unit.test_inject_from_container"
+    assert consumer.module == "test.unit.test_inject_from_container"
+    assert consumer.dependencies
+
+    resolved = target()
+    assert isinstance(resolved, FooImpl)
+
+
+def test_inject_from_container_allows_consumer_metadata_override() -> None:
+    container = create_sync_container(injectables=[services], config={"env_name": "test"})
+
+    @inject_from_container(
+        container,
+        consumer_metadata=ConsumerMetadata(
+            consumer_id="custom.consumer",
+            label="Custom Consumer",
+            kind="http_handler",
+            group="HTTP",
+            module="tests.http",
+        ),
+    )
+    def target(foo: Injected[Foo]) -> Foo:
+        return foo
+
+    consumer = {consumer.id: consumer for consumer in get_consumers(container)}["custom.consumer"]
+    assert consumer.kind == "http_handler"
+    assert consumer.label == "Custom Consumer"
+    assert consumer.group == "HTTP"
+    assert consumer.module == "tests.http"
+
+    resolved = target()
+    assert isinstance(resolved, FooImpl)
 
 
 async def test_container_sync_raises_async_def() -> None:

@@ -46,6 +46,16 @@ Wireup integrates with Django at both request scope and application scope. Use `
 `@inject_app` for non-request entry points, while keeping services as ordinary Python classes that are easy to test and
 reuse.
 
+!!! interactive-graph "Interactive Graph"
+
+    Turn your container into an interactive dependency graph. Explore routes, functions, services, factories,
+    configuration, and scopes in a live page with search, grouping, and dependency tracing.
+
+    Django can expose it with a small explicit view, and the same renderer is available for other apps too.
+
+    [Documentation](interactive_graph.md){ .md-button }
+    [:octicons-arrow-right-24: Live Demo](../../wireup_graph/pet_store.html){ .md-button .md-button--primary target="_blank" }
+
 ## Quick Start
 
 This is the shortest path to a working endpoint with explicit injection.
@@ -109,6 +119,7 @@ Run the app with `python manage.py runserver`, then open `http://127.0.0.1:8000/
 ## Detailed Guides
 
 - [Django Setup and Installation](setup.md): installation, middleware placement, and settings/config integration.
+- [Interactive Graph](interactive_graph.md): expose the graph page in Django and gate it by environment.
 - [Inject in Views](view_injection.md): core Django, DRF, Ninja, forms, and request-scoped patterns.
 - [Request-Time Injection](request_time_injection.md): reusable decorators, middleware entry points, and direct container access.
 - [App-Level Injection](app_injection.md): management commands, Django 6 background tasks, signals, checks, and scripts with `@inject_app`.
