@@ -3,6 +3,8 @@ from __future__ import annotations
 import inspect
 from typing import TYPE_CHECKING, Any, Callable, TypeVar
 
+from typing_extensions import ParamSpec
+
 import wireup
 import wireup.ioc
 import wireup.ioc.util
@@ -19,19 +21,29 @@ if TYPE_CHECKING:
     from wireup.ioc.container.sync_container import ScopedSyncContainer
     from wireup.ioc.types import AnnotatedParameter
 
+P = ParamSpec("P")
 R = TypeVar("R")
+
+
+def _ensure_sync_container_target_is_sync(target: Callable[..., object]) -> None:
+    if inspect.iscoroutinefunction(target) or inspect.isasyncgenfunction(target):
+        msg = (
+            "Sync container cannot perform injection on async targets. "
+            "Create an async container via wireup.create_async_container."
+        )
+        raise WireupError(msg)
 
 
 def inject_from_container_unchecked(
     scoped_container_supplier: Callable[[], ScopedSyncContainer | ScopedAsyncContainer],
     *,
     hide_annotated_names: bool = False,
-) -> Callable[[Callable[..., R]], Callable[..., R]]:
+) -> Callable[[Callable[P, R]], Callable[..., R]]:
     """Inject dependencies into the decorated function. The "unchecked" part of the name refers to the fact that
     this cannot perform validation on the parameters to inject on module import time due to the absence of a container
     instance."""
 
-    def _decorator(target: Callable[..., R]) -> Callable[..., R]:
+    def _decorator(target: Callable[P, R]) -> Callable[..., R]:
         return inject_from_container_util(
             target=target,
             names_to_inject=get_inject_annotated_parameters(target),
@@ -50,7 +62,7 @@ def inject_from_container(
     _context_creator: dict[Any, str] | None = None,
     *,
     hide_annotated_names: bool = False,
-) -> Callable[[Callable[..., R]], Callable[..., R]]:
+) -> Callable[[Callable[P, R]], Callable[..., R]]:
     """Inject dependencies into the decorated function based on annotations. Wireup containers will
     attempt to provide only parameters annotated with `Inject`.
 
@@ -66,15 +78,9 @@ def inject_from_container(
         signature of the decorated function.
     """
 
-    def _decorator(target: Callable[..., R]) -> Callable[..., R]:
-        if (inspect.iscoroutinefunction(target) or inspect.isasyncgenfunction(target)) and isinstance(
-            container, SyncContainer
-        ):
-            msg = (
-                "Sync container cannot perform injection on async targets. "
-                "Create an async container via wireup.create_async_container."
-            )
-            raise WireupError(msg)
+    def _decorator(target: Callable[P, R]) -> Callable[..., R]:
+        if isinstance(container, SyncContainer):
+            _ensure_sync_container_target_is_sync(target)
 
         return inject_from_container_util(
             target=target,
@@ -89,7 +95,7 @@ def inject_from_container(
 
 
 def inject_from_container_util(  # noqa: PLR0913
-    target: Callable[..., R],
+    target: Callable[P, R],
     names_to_inject: dict[str, AnnotatedParameter],
     container: SyncContainer | AsyncContainer | None,
     scoped_container_supplier: Callable[[], ScopedSyncContainer | ScopedAsyncContainer] | None = None,
