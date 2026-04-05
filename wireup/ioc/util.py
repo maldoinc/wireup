@@ -133,7 +133,7 @@ def _eval_type_native(
 
         return type(None) if res is None else res
 
-    return _eval_type(value, globalns, None)
+    return _eval_type(value, globalns, None, type_params=())
 
 
 def ensure_is_type(value: type[T] | str, globalns_supplier: Callable[[], dict[str, Any]]) -> type[T] | None:
