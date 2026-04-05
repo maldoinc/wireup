@@ -1,6 +1,7 @@
 import contextlib
 from contextvars import ContextVar
 from functools import lru_cache
+import types
 from typing import Any, AsyncIterator
 
 from starlette.applications import Starlette
@@ -121,7 +122,10 @@ class WireupTask:
         self._get_injected_wrapper = lru_cache(maxsize=128)(inject_from_container(self.container))
 
     def __call__(self, fn: AnyCallable) -> Any:
-        return self._get_injected_wrapper(fn)
+        should_cache = isinstance(fn, types.FunctionType) and "<locals>" not in fn.__qualname__
+        if should_cache:
+            return self._get_injected_wrapper(fn)
+        return inject_from_container(self.container)(fn)
 
 
 inject = inject_from_container_unchecked(get_request_container, hide_annotated_names=True)
