@@ -1,5 +1,6 @@
 import contextlib
 from contextvars import ContextVar
+from functools import lru_cache
 from typing import Any, AsyncIterator
 
 from starlette.applications import Starlette
@@ -12,8 +13,6 @@ from wireup._decorators import inject_from_container, inject_from_container_unch
 from wireup.errors import WireupError
 from wireup.ioc.container.async_container import AsyncContainer, ScopedAsyncContainer
 from wireup.ioc.types import AnyCallable
-
-from functools import lru_cache
 
 request_container: ContextVar[ScopedAsyncContainer] = ContextVar("wireup_scoped_container")
 
@@ -115,7 +114,7 @@ def get_request_container() -> ScopedAsyncContainer:
 
 
 class WireupTask:
-    __slots__ = ("container", "_get_injected_wrapper",)
+    __slots__ = ("_get_injected_wrapper", "container")
 
     def __init__(self, container: AsyncContainer) -> None:
         self.container = container
