@@ -2,7 +2,7 @@
 description: FastAPI dependency injection with Wireup: type-safe DI for routes, WebSockets, request-time injection, class-based handlers, and background tasks.
 ---
 
-# :simple-fastapi: FastAPI Integration
+# :simple-fastapi:{.color-fastapi} FastAPI Integration
 
 <div class="grid cards annotate" markdown>
 
