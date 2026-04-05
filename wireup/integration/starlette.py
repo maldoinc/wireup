@@ -13,6 +13,8 @@ from wireup.errors import WireupError
 from wireup.ioc.container.async_container import AsyncContainer, ScopedAsyncContainer
 from wireup.ioc.types import AnyCallable
 
+from functools import lru_cache
+
 request_container: ContextVar[ScopedAsyncContainer] = ContextVar("wireup_scoped_container")
 
 
@@ -113,13 +115,14 @@ def get_request_container() -> ScopedAsyncContainer:
 
 
 class WireupTask:
-    __slots__ = ("container",)
+    __slots__ = ("container", "_get_injected_wrapper",)
 
     def __init__(self, container: AsyncContainer) -> None:
         self.container = container
+        self._get_injected_wrapper = lru_cache(maxsize=128)(inject_from_container(self.container))
 
     def __call__(self, fn: AnyCallable) -> Any:
-        return inject_from_container(self.container)(fn)
+        return self._get_injected_wrapper(fn)
 
 
 inject = inject_from_container_unchecked(get_request_container, hide_annotated_names=True)
