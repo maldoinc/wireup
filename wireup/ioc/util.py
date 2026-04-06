@@ -128,7 +128,7 @@ def _eval_type_native(
 
     This function handles version-specific differences in typing._eval_type.
     """
-    if sys.version_info >= (3, 14):
+    if sys.version_info >= (3, 13):
         res = _eval_type(value, globalns, None, type_params=())
 
         return type(None) if res is None else res
