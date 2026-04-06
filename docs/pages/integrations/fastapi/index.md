@@ -86,6 +86,67 @@ Run the server with:
 fastapi dev main.py
 ```
 
+## Lifecycle
+
+Wireup integrates with FastAPI at two levels: once during application startup/shutdown, and once per incoming request.
+
+### App Lifecycle
+
+Container creation, route injection, and teardown.
+
+```mermaid
+sequenceDiagram
+    participant App as Application Code
+    participant Container as Wireup Container
+    participant Integration as wireup.integration.fastapi
+    participant FastAPI
+
+    App->>Container: wireup.create_async_container(injectables=[...])
+    App->>Integration: setup(container, app)
+    Integration->>FastAPI: Store container on app.state
+    Integration->>Integration: Update lifespan context
+    Integration->>FastAPI: Inject existing routes
+
+    Note over FastAPI: App startup
+    FastAPI->>Integration: Lifespan enter
+    Integration->>Integration: Instantiate class-based routes (if any)
+    Integration->>FastAPI: Inject routes (idempotent)
+    Integration-->>FastAPI: Yield to app lifespan
+
+    Note over FastAPI: App running, handling requests...
+
+    Note over FastAPI: App shutdown
+    FastAPI->>Integration: Lifespan exit
+    Integration->>Container: container.close()
+    Container-->>Integration: Resources cleaned up
+```
+
+### Per-Request Lifecycle
+
+Scope creation, dependency resolution, and cleanup for a single HTTP request.
+
+```mermaid
+sequenceDiagram
+    participant Client
+    participant FastAPI
+    participant Wireup as Injection Wrapper
+    participant Container as Scoped Container
+    participant Handler as Route Handler
+
+    Client->>FastAPI: HTTP Request
+    FastAPI->>Wireup: Route matched, call handler
+    Wireup->>Wireup: Extract Request from kwargs
+    Wireup->>Container: Create request scope
+    Container->>Container: Resolve Injected[T] parameters
+    Container-->>Wireup: Resolved dependencies
+    Wireup->>Handler: Call with resolved dependencies
+    Handler-->>Wireup: Response
+    Wireup->>Container: Exit request scope
+    Container->>Container: Clean up request-scoped resources
+    Wireup-->>FastAPI: Return response
+    FastAPI-->>Client: HTTP Response
+```
+
 ## Detailed Guides
 
 - [Inject in Routes](inject_in_routes.md): HTTP/WebSocket handler injection and config value injection in route signatures.
