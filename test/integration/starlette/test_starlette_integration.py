@@ -1,3 +1,4 @@
+import types
 from typing import Iterator
 from uuid import uuid4
 
@@ -278,3 +279,68 @@ def test_setup_allows_reusing_container_across_apps() -> None:
 
     wireup.integration.starlette.setup(container, app_one)
     wireup.integration.starlette.setup(container, app_two)
+
+
+def write_logs_a(greeter: Injected[GreeterService]) -> None:
+    pass
+
+
+def write_logs_b(greeter: Injected[GreeterService]) -> None:
+    pass
+
+
+def test_wireup_task_caches_regular_functions() -> None:
+    container = wireup.create_async_container(injectables=[shared_services, wireup.integration.starlette])
+    task = WireupTask(container)
+    task._get_injected_wrapper.cache_clear()
+
+    task(write_logs_a)
+    task(write_logs_a)  # should hit cache
+    task(write_logs_b)
+
+    info = task._get_injected_wrapper.cache_info()
+    assert info.hits == 1
+    assert info.misses == 2
+    assert info.currsize == 2
+
+
+def test_wireup_task_does_not_cache_closures() -> None:
+    def make_closure():
+        def write_logs(greeter: Injected[GreeterService]) -> None:
+            pass
+
+        return write_logs
+
+    closure_fn = make_closure()
+    assert "<locals>" in closure_fn.__qualname__
+
+    container = wireup.create_async_container(injectables=[shared_services, wireup.integration.starlette])
+    task = WireupTask(container)
+    task._get_injected_wrapper.cache_clear()
+
+    task(closure_fn)
+    task(closure_fn)
+
+    info = task._get_injected_wrapper.cache_info()
+    assert info.hits == 0
+    assert info.misses == 0
+
+
+def test_wireup_task_does_not_cache_callable_instances() -> None:
+    class CallableTask:
+        def __call__(self, greeter: Injected[GreeterService]) -> None:
+            pass
+
+    callable_instance = CallableTask()
+    assert not isinstance(callable_instance, types.FunctionType)
+
+    container = wireup.create_async_container(injectables=[shared_services, wireup.integration.starlette])
+    task = WireupTask(container)
+    task._get_injected_wrapper.cache_clear()
+
+    task(callable_instance)
+    task(callable_instance)
+
+    info = task._get_injected_wrapper.cache_info()
+    assert info.hits == 0
+    assert info.misses == 0
