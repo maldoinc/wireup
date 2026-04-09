@@ -3,6 +3,6 @@
 ::: wireup.integration.starlette
 
 !!! note
-    For best performance, use regular functions rather than callables or closures
-    as dependencies. Callables and closures are not hashable and cannot be cached
-    by the injection system.
+    For best performance with `WireupTask`, prefer regular top-level functions for background task callbacks.
+    Wireup creates cached injection wrappers for top-level functions, but callable objects and nested
+    functions/closures do not benefit from that caching.

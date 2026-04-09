@@ -1,7 +1,7 @@
 import contextlib
+import types
 from contextvars import ContextVar
 from functools import lru_cache
-import types
 from typing import Any, AsyncIterator
 
 from starlette.applications import Starlette
