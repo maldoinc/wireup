@@ -280,14 +280,12 @@ def test_setup_allows_reusing_container_across_apps() -> None:
     wireup.integration.starlette.setup(container, app_one)
     wireup.integration.starlette.setup(container, app_two)
 
+def write_logs_a(greeter: Injected[GreeterService]) -> None:
+        pass
+def write_logs_b(greeter: Injected[GreeterService]) -> None:
+        pass
 
 def test_wireup_task_caches_regular_functions() -> None:
-    def write_logs_a(greeter: Injected[GreeterService]) -> None:
-        pass
-
-    def write_logs_b(greeter: Injected[GreeterService]) -> None:
-        pass
-
     container = wireup.create_async_container(injectables=[shared_services, wireup.integration.starlette])
     task = WireupTask(container)
     task._get_injected_wrapper.cache_clear()
