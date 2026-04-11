@@ -236,6 +236,42 @@ def test_injects_background_async_tasks() -> None:
     assert task_result == ["Hello Async"]
 
 
+async def test_wireup_task_is_resolvable_from_integration_module_registration() -> None:
+    container = wireup.create_async_container(injectables=[shared_services, wireup.integration.starlette])
+
+    task = await container.get(WireupTask)
+
+    assert isinstance(task, WireupTask)
+    assert task.container is container
+
+
+def test_setup_still_exposes_wireup_task_without_integration_module_registration() -> None:
+    task_result: list[str] = []
+
+    def write_logs(name: str, greeter: Injected[GreeterService]) -> None:
+        task_result.append(greeter.greet(name))
+
+    @inject
+    async def hello_with_background_task(
+        _request: Request,
+        wireup_task: Injected[WireupTask],
+    ) -> PlainTextResponse:
+        return PlainTextResponse(
+            "ok",
+            background=BackgroundTask(wireup_task(write_logs), "Fallback"),
+        )
+
+    app = Starlette(routes=[Route("/hello_bg", hello_with_background_task, methods=["GET"])])
+    container = wireup.create_async_container(injectables=[shared_services])
+    wireup.integration.starlette.setup(container, app)
+
+    with TestClient(app) as client:
+        response = client.get("/hello_bg")
+
+    assert response.status_code == 200
+    assert task_result == ["Hello Fallback"]
+
+
 def test_background_task_uses_different_scope_than_request() -> None:
     ids: dict[str, str] = {}
 

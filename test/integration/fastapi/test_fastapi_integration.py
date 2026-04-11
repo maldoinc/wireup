@@ -600,6 +600,29 @@ def test_injects_background_tasks() -> None:
     assert task_result == ["fastapi:4"]
 
 
+def test_setup_still_exposes_wireup_task_without_integration_module_registration() -> None:
+    task_result: list[str] = []
+
+    def write_logs(name: str, random_service: Injected[RandomService]) -> None:
+        task_result.append(f"{name}:{random_service.get_random()}")
+
+    app = FastAPI()
+    container = wireup.create_async_container(injectables=[shared_services])
+
+    @app.get("/")
+    async def hello(tasks: BackgroundTasks, wireup_task: Injected[WireupTask]) -> Dict[str, Any]:
+        tasks.add_task(wireup_task(write_logs), "fallback")
+        return {}
+
+    wireup.integration.fastapi.setup(container, app)
+
+    with TestClient(app) as client:
+        response = client.get("/")
+
+    assert response.status_code == 200
+    assert task_result == ["fallback:4"]
+
+
 def test_background_task_uses_different_scope_than_request() -> None:
     ids: dict[str, str] = {}
 

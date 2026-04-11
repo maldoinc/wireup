@@ -114,6 +114,7 @@ def get_request_container() -> ScopedAsyncContainer:
         raise WireupError(msg) from e
 
 
+@injectable
 class WireupTask:
     __slots__ = ("_get_injected_wrapper", "container")
 
@@ -138,6 +139,10 @@ def _expose_wireup_task(container: AsyncContainer) -> None:
     if container._registry.is_type_with_qualifier_known(WireupTask, None):
         return
 
+    # Keep the old behavior for WireupTask where it was exposed
+    # without adding the integration in injectables.
+    # Cannot properly raise a deprecation notice here but this is deprecated
+    # and marked for removal.
     def wireup_task_factory() -> WireupTask:
         return WireupTask(container)
 
