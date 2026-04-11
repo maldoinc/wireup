@@ -129,30 +129,6 @@ db_url = container.config.get("database_url")
 
     Prefer `Inject(config="key")` in dependency constructors over accessing `container.config` directly.
 
-## Injecting The Container
-
-Wireup registers the root container itself as an injectable during container creation. This means other injectables can
-depend on `SyncContainer` or `AsyncContainer` directly depending on the container type.
-
-```python
-from wireup import injectable
-from wireup.ioc.container.sync_container import SyncContainer
-
-
-@injectable
-class NeedsContainer:
-    def __init__(self, container: SyncContainer) -> None:
-        self.container = container
-```
-
-This is mainly useful for advanced use cases where you need runtime
-access to the container. For a full example of wrapping callables dynamically, see
-[Function Injection: Dynamic Function Injection](function_injection.md#dynamic-function-injection).
-
-!!! important
-
-    Prefer regular constructor injection for application services. Inject the container only for advanced scenarios
-    where you truly need runtime access to it.
 
 ### `override`
 
@@ -164,6 +140,51 @@ with container.override.injectable(target=Database, new=mock_db):
 ```
 
 See [Testing](testing.md) for details.
+
+
+## Injecting The Container
+
+The container can inject itself just like any other dependency. This is an advanced feature for infrastructure code that needs runtime container access. This pattern is generally not recommended for regular injectables when you know the required dependencies ahead of time.
+
+Depend on the root container by type:
+
+- `SyncContainer`, `ScopedSyncContainer` when using a synchronous container created via `wireup.create_sync_container`
+- `AsyncContainer`, `ScopedAsyncContainer` when using an asynchronous container created via `wireup.create_async_container`
+
+Typical examples include:
+
+- Selecting a handler or implementation at runtime based on a qualifier or runtime data
+- Wrapping background tasks or callbacks so they run with Wireup injection
+- Coordinating fan-out work across child scopes while letting services inside each child scope access that child scope
+- Loading optional integrations only when a feature is enabled
+
+```python
+from wireup import SyncContainer, injectable
+
+
+@injectable
+class BackgroundTaskScheduler:
+    def __init__(self, container: SyncContainer) -> None:
+        self.container = container
+```
+
+If you need the active scope rather than the root container, depend on the scoped container type:
+
+```python
+from wireup import ScopedSyncContainer, injectable
+
+
+@injectable(lifetime="scoped")
+class JobDispatcher:
+    def __init__(self, scope: ScopedSyncContainer) -> None:
+        self.scope = scope
+```
+
+For a full example of wrapping callables dynamically, see
+[Function Injection: Dynamic Function Injection](function_injection.md#dynamic-function-injection). For examples of
+passing selected dependencies into child scopes, see
+[Lifetimes & Scopes: Sharing Context Across Scopes](lifetimes_and_scopes.md#sharing-context-across-scopes).
+
 
 ## Eager Initialization
 

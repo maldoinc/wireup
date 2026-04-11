@@ -8,9 +8,9 @@ from wireup._annotations import AbstractDeclaration, InjectableDeclaration
 from wireup._discovery import discover_wireup_registrations
 from wireup.errors import WireupError
 from wireup.ioc.configuration import ConfigStore
-from wireup.ioc.container.async_container import AsyncContainer
+from wireup.ioc.container.async_container import AsyncContainer, ScopedAsyncContainer
 from wireup.ioc.container.base_container import BaseContainer
-from wireup.ioc.container.sync_container import SyncContainer
+from wireup.ioc.container.sync_container import ScopedSyncContainer, SyncContainer
 from wireup.ioc.factory_compiler import FactoryCompiler
 from wireup.ioc.override_manager import OverrideManager
 from wireup.ioc.registry import ContainerRegistry
@@ -95,7 +95,18 @@ def _create_container(  # noqa: PLR0913
     def _container_factory() -> _ContainerT:
         return container  # type:ignore[return-value]
 
+    def _scoped_container_factory() -> _ContainerT:
+        msg = "Scoped Container Self Injection Failed. This should not happen"
+        raise WireupError(msg)
+
     impls.append(InjectableDeclaration(_container_factory, as_type=klass))
+    impls.append(
+        InjectableDeclaration(
+            _scoped_container_factory,
+            lifetime="scoped",
+            as_type=ScopedAsyncContainer if klass is AsyncContainer else ScopedSyncContainer,
+        )
+    )
 
     registry = ContainerRegistry(config=ConfigStore(parameters or config), abstracts=abstracts, impls=impls)
     # The container uses a dual-compiler optimization strategy:

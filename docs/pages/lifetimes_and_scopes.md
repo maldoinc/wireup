@@ -261,6 +261,21 @@ async def main():
         await asyncio.gather(*tasks)
 ```
 
+Services resolved inside a child scope can also depend on the active scoped container directly:
+
+```python
+from wireup import ScopedAsyncContainer, injectable
+
+
+@injectable(lifetime="scoped")
+class WorkerService:
+    def __init__(
+        self, scope: ScopedAsyncContainer, request_ctx: RequestContext
+    ) -> None:
+        self.scope = scope
+        self.request_ctx = request_ctx
+```
+
 ### Abstractions and Qualifiers
 
 When using abstractions via `as_type` or qualifiers, the provided keys must match the registered dependency keys. For example, if you have:
