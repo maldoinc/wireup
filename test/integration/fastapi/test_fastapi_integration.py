@@ -10,7 +10,7 @@ import pytest
 import wireup
 import wireup.integration
 import wireup.integration.fastapi
-from fastapi import BackgroundTasks, FastAPI, Request, WebSocket
+from fastapi import BackgroundTasks, FastAPI, HTTPException, Request, WebSocket
 from fastapi.routing import APIRoute
 from fastapi.testclient import TestClient
 from starlette.middleware.base import BaseHTTPMiddleware
@@ -132,6 +132,81 @@ def test_request_container_in_decorator(client: TestClient, *, expose_container_
     else:
         with pytest.raises(WireupError, match="middleware_mode=True"):
             client.get("/requires-request-id")
+
+
+def test_async_contextmanager_route_decorator_can_block_or_allow_requests() -> None:
+    @injectable(lifetime="scoped")
+    class AuthService:
+        def __init__(self, request: Request) -> None:
+            self.request = request
+
+        async def is_authenticated(self) -> bool:
+            return self.request.headers.get("X-Auth") == "allow"
+
+    app = FastAPI()
+    container = wireup.create_async_container(
+        injectables=[AuthService, shared_services, wireup.integration.fastapi],
+    )
+    wireup.integration.fastapi.setup(container, app, middleware_mode=True)
+
+    endpoint_calls = 0
+
+    @contextlib.asynccontextmanager
+    @wireup.integration.fastapi.inject
+    async def require_auth(auth: Injected[AuthService]) -> AsyncIterator[None]:
+        if not await auth.is_authenticated():
+            raise HTTPException(status_code=401, detail="Authentication required")
+
+        yield
+
+    @app.get("/guarded")
+    @require_auth()
+    async def guarded_route(random_service: Injected[RandomService]) -> Dict[str, int]:
+        nonlocal endpoint_calls
+        endpoint_calls += 1
+        return {"number": random_service.get_random()}
+
+    with TestClient(app) as client:
+        denied = client.get("/guarded")
+        allowed = client.get("/guarded", headers={"X-Auth": "allow"})
+
+    assert denied.status_code == 401
+    assert denied.json() == {"detail": "Authentication required"}
+    assert allowed.status_code == 200
+    assert allowed.json() == {"number": 4}
+    assert endpoint_calls == 1
+
+
+def test_async_contextmanager_route_decorator_requires_fastapi_middleware_mode() -> None:
+    @injectable(lifetime="scoped")
+    class AuthService:
+        def __init__(self, request: Request) -> None:
+            self.request = request
+
+        async def is_authenticated(self) -> bool:
+            return self.request.headers.get("X-Auth") == "allow"
+
+    app = FastAPI()
+    container = wireup.create_async_container(
+        injectables=[AuthService, shared_services, wireup.integration.fastapi],
+    )
+    wireup.integration.fastapi.setup(container, app, middleware_mode=False)
+
+    @contextlib.asynccontextmanager
+    @wireup.integration.fastapi.inject
+    async def require_auth(auth: Injected[AuthService]) -> AsyncIterator[None]:
+        if not await auth.is_authenticated():
+            raise HTTPException(status_code=401, detail="Authentication required")
+
+        yield
+
+    @app.get("/guarded")
+    @require_auth()
+    async def guarded_route(random_service: Injected[RandomService]) -> Dict[str, int]:
+        return {"number": random_service.get_random()}
+
+    with TestClient(app) as client, pytest.raises(WireupError, match="middleware_mode=True"):
+        client.get("/guarded", headers={"X-Auth": "allow"})
 
 
 @pytest.mark.parametrize("endpoint", ["/ws", "/ws/wireup_injected", "/ws_in_service", "/ws/no-websocket-in-signature"])
