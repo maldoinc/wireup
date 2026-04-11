@@ -86,6 +86,13 @@ Run the server with:
 fastapi dev main.py
 ```
 
+## Dependency Validation
+
+`wireup.integration.fastapi.setup(...)` validates route handlers up front.
+For regular route handlers, missing dependencies and config values fail during setup. For Class-based handlers, they fail during app startup.
+
+See [What Wireup Validates](../../what_wireup_validates.md) for the full rules.
+
 ## Detailed Guides
 
 - [Inject in Routes](inject_in_routes.md): HTTP/WebSocket handler injection and config value injection in route signatures.

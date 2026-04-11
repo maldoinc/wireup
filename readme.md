@@ -29,7 +29,7 @@ Reuse the same application code in APIs, CLIs, workers, and scripts without rewr
 </td>
 <td align="center" valign="top" width="33%">
 <h3>✅ Correct by Default</h3>
-If the container starts, your dependency graph is valid. Wireup checks for missing or misconfigured dependencies to avoid surprises at runtime.
+If the container starts, your dependency graph is valid. Wireup checks for missing or misconfigured dependencies to avoid surprises at runtime. See <a href="https://maldoinc.github.io/wireup/latest/what_wireup_validates/">What Wireup Validates</a>
 </td>
 <td align="center" valign="top" width="33%">
 <h3>🌐 Framework-Ready</h3>
@@ -273,7 +273,7 @@ class OrderProcessor:
 
 ### 🛡️ Startup Validation
 
-Wireup validates the dependency graph when the container is created.
+Wireup validates the dependency graph when the container is created. See <a href="https://maldoinc.github.io/wireup/latest/what_wireup_validates/">What Wireup Validates</a> for the full rules and limits.
 
 ```python
 # Missing dependencies: caught at startup, not at runtime

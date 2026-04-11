@@ -186,6 +186,13 @@ async def users_list(
     pass
 ```
 
+### Dependency Validation
+
+The aiohttp integration validates handlers during app startup.
+Missing dependencies and config values fail before requests are served.
+
+See [What Wireup Validates](../../what_wireup_validates.md) for the full rules.
+
 ### API Reference
 
 - [aiohttp_integration](../../class/aiohttp_integration.md)

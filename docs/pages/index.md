@@ -21,7 +21,7 @@ and designed to fail fast: **if the container starts, it works**.
     Wireup catches missing dependencies, circular references, lifetime mismatches, duplicate registrations, and missing
     config keys at startup. Shared dependencies are created in a thread-safe way.
 
-    [:octicons-arrow-right-24: Validation checks](#validation-checks)
+    [:octicons-arrow-right-24: What Wireup Validates](what_wireup_validates.md)
 
 - :material-share-variant:{ .lg .middle } __Define Once, Inject Anywhere__
 
@@ -237,50 +237,11 @@ pip install wireup
 
 ## Validation checks
 
-Wireup validates dependencies and configuration at startup.
+Wireup validates the dependency graph up front and applies the same checks to injection targets it can inspect during
+setup. That includes missing dependencies, missing config keys, circular dependencies, lifetime mismatches, and
+duplicate registrations.
 
-=== "Container creation"
-
-    ```python
-    @injectable
-    class Foo:
-        def __init__(self, oops: UnknownDep) -> None: ...
-
-
-    container = wireup.create_sync_container(injectables=[Foo])
-    # ❌ Parameter 'oops' of 'Foo' depends on an unknown injectable 'UnknownDep'.
-    ```
-
-=== "Function injection"
-
-    ```python
-    container = wireup.create_sync_container(injectables=[])
-
-
-    @inject_from_container(container)
-    def my_function(oops: Injected[UnknownDep]) -> None: ...
-
-
-    # ❌ Parameter 'oops' of 'my_function' depends on an unknown injectable 'UnknownDep'.
-    ```
-
-=== "Configuration"
-
-    ```python
-    @injectable
-    class Database:
-        def __init__(
-            self, url: Annotated[str, Inject(config="db_url")]
-        ) -> None: ...
-
-
-    container = wireup.create_sync_container(injectables=[Database], config={})
-    # ❌ Parameter 'url' of Type 'Database' depends on an unknown Wireup config key 'db_url'.
-    ```
-
-Additional checks include circular dependencies, lifetime mismatches, and duplicate registrations. See
-[Container](container.md), [Configuration](configuration.md), and [Function Injection](function_injection.md) for
-details.
+See [What Wireup Validates](what_wireup_validates.md) for a detailed explanation.
 
 ## Next Steps
 
