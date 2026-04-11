@@ -1,11 +1,15 @@
 from __future__ import annotations
 
 import inspect
+import sys
 import typing
 import warnings
 from collections import defaultdict
+from collections.abc import Sequence
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Callable, TypeVar, Union
+
+from typing_extensions import Annotated
 
 from wireup.errors import (
     AsTypeMismatchError,
@@ -27,6 +31,7 @@ from wireup.ioc.types import (
     CallableType,
     ContainerObjectIdentifier,
     InjectableLifetime,
+    InjectableQualifier,
     get_container_object_id,
 )
 from wireup.ioc.util import ensure_is_type, get_callable_type, get_globals
@@ -51,6 +56,7 @@ class InjectableFactory:
     is_async: bool
     is_optional_type: bool
     raw_type: type
+    is_synthetic: bool = False
 
 
 def _function_get_unwrapped_return_type(fn: Callable[..., T]) -> type[T] | None:
@@ -86,7 +92,7 @@ class ContainerRegistry:
     ) -> None:
         self.parameters = config or ConfigStore()
         self.interfaces: dict[type, dict[Qualifier, type]] = {}
-        self.impls: dict[type, set[Qualifier]] = defaultdict(set)
+        self.impls: dict[type, list[Qualifier | None]] = defaultdict(list)
         self.factories: dict[ContainerObjectIdentifier, InjectableFactory] = {}
         self.dependencies: dict[InjectionTarget, dict[str, AnnotatedParameter]] = defaultdict(dict)
         self.lifetime: dict[ContainerObjectIdentifier, InjectableLifetime] = {}
@@ -123,7 +129,6 @@ class ContainerRegistry:
                 from typing import Optional  # noqa: PLC0415
 
                 target_type = Optional[target_type]
-
             self._register(
                 klass=target_type if target_type is not None else klass,
                 factory_fn=obj,
@@ -132,6 +137,7 @@ class ContainerRegistry:
                 auto_discover_interfaces=impl.as_type is None,
             )
 
+        self._register_sequence_collections()
         validate_registry(self)
         self._update_factories_async_flag()
         if self.on_change:
@@ -169,6 +175,96 @@ class ContainerRegistry:
         if not is_compatible:
             raise AsTypeMismatchError(implementation=implementation_type, as_type=target_type)
 
+    @staticmethod
+    def _get_sequence_types(klass: Any) -> list[Any]:
+        aliases = [typing.Sequence[klass]]
+        if sys.version_info >= (3, 9):
+            aliases.append(Sequence[klass])
+        return aliases
+
+    @staticmethod
+    def _get_collection_lifetime(lifetimes: list[InjectableLifetime]) -> InjectableLifetime:
+        for lifetime in ("transient", "scoped"):
+            if lifetime in lifetimes:
+                return lifetime
+
+        return "singleton"
+
+    def _create_sequence_collection_factory(self, klass: Any, qualifiers: list[Qualifier | None]) -> Callable[..., Any]:
+        def _factory(**kwargs: Any) -> Any:
+            return tuple(kwargs.values())
+
+        signature_parameters = []
+        for idx, qualifier in enumerate(qualifiers):
+            annotation = klass if qualifier is None else Annotated[klass, InjectableQualifier(qualifier)]
+            signature_parameters.append(
+                inspect.Parameter(
+                    f"_wireup_item{idx}",
+                    kind=inspect.Parameter.POSITIONAL_OR_KEYWORD,
+                    annotation=annotation,
+                )
+            )
+
+        _factory.__signature__ = inspect.Signature(parameters=signature_parameters)  # type: ignore[attr-defined]
+        return _factory
+
+    def _has_user_defined_sequence_key(self, collection_keys: list[Any]) -> bool:
+        user_defined_collection_key = next(
+            (
+                collection_key
+                for collection_key in collection_keys
+                if (existing_factory := self.factories.get(get_container_object_id(collection_key, None)))
+                and not existing_factory.is_synthetic
+            ),
+            None,
+        )
+
+        if user_defined_collection_key is not None:
+            warnings.warn(
+                f"Wireup did not register collection injection for {user_defined_collection_key!r} "
+                "because the container already has an explicit registration for that key. "
+                "Sequence[T] is reserved for Wireup collection injection. "
+                "Migrate it to a NewType or another distinct collection type.",
+                FutureWarning,
+                stacklevel=4,
+            )
+            return True
+
+        return False
+
+    def _register_sequence_collections(self) -> None:
+        for klass, qualifiers in dict(self.impls).items():
+            # Only real registration keys should contribute to collection members.
+            # Synthetic aliases like raw optional-compat or Sequence[T] keys must not participate here.
+            real_qualifiers = [
+                qualifier
+                for qualifier in qualifiers
+                if not self.factories[get_container_object_id(klass, qualifier)].is_synthetic
+            ]
+
+            if not real_qualifiers:
+                continue
+
+            collection_keys = self._get_sequence_types(klass)
+
+            if self._has_user_defined_sequence_key(collection_keys):
+                continue
+
+            for collection_key in collection_keys:
+                existing_factory = self.factories.get(get_container_object_id(collection_key, None))
+                if existing_factory and existing_factory.is_synthetic:
+                    continue
+
+                self._register(
+                    klass=collection_key,
+                    factory_fn=self._create_sequence_collection_factory(klass, real_qualifiers),
+                    lifetime=self._get_collection_lifetime(
+                        [self.get_lifetime(klass, qual) for qual in real_qualifiers]
+                    ),
+                    auto_discover_interfaces=False,
+                    is_synthetic_factory=True,
+                )
+
     def _update_factories_async_flag(self) -> None:
         def _is_dependency_async(impl: type, qualifier: Qualifier | None) -> bool:
             factory = self.factories[get_container_object_id(self.get_implementation(impl, qualifier), qualifier)]
@@ -191,7 +287,7 @@ class ContainerRegistry:
 
                 factory.is_async = _is_dependency_async(impl, qualifier)
 
-    def _register(
+    def _register(  # noqa: PLR0913
         self,
         klass: type[Any],
         factory_fn: Callable[..., Any],
@@ -199,6 +295,7 @@ class ContainerRegistry:
         qualifier: Qualifier | None = None,
         *,
         auto_discover_interfaces: bool,
+        is_synthetic_factory: bool = False,
     ) -> None:
         type_analysis = analyze_type(klass)
         klass = type_analysis.normalized_type
@@ -235,8 +332,9 @@ class ContainerRegistry:
             is_async=callable_type in ASYNC_CALLABLE_TYPES,
             is_optional_type=type_analysis.is_optional,
             raw_type=type_analysis.raw_type,
+            is_synthetic=is_synthetic_factory,
         )
-        self.impls[klass].add(qualifier)
+        self.impls[klass].append(qualifier)
 
         if type_analysis.is_optional:
             # Backwards compatibility: In earlier versions when a factory returned T | None
@@ -271,6 +369,7 @@ class ContainerRegistry:
                 lifetime=lifetime,
                 qualifier=qualifier,
                 auto_discover_interfaces=True,
+                is_synthetic_factory=True,
             )
 
     def _register_abstract(self, klass: type) -> None:

@@ -177,6 +177,45 @@ def main(
 ): ...
 ```
 
+## Inject All Implementations
+
+When you register multiple implementations of the same type with `@injectable(as_type=...)`, you can request all of them at once with `Sequence[T]`.
+
+```python
+from dataclasses import dataclass
+from typing import Protocol, Sequence
+from wireup import create_sync_container, injectable
+
+
+class Cache(Protocol):
+    def source(self) -> str: ...
+
+
+@injectable(as_type=Cache)
+class InMemoryCache:
+    def source(self) -> str:
+        return "memory"
+
+
+@injectable(as_type=Cache, qualifier="redis")
+class RedisCache:
+    def source(self) -> str:
+        return "redis"
+
+
+@injectable
+@dataclass
+class CacheReporter:
+    caches: Sequence[Cache]
+```
+
+`Sequence[T]` includes the default implementation, if present, plus any qualified implementations in registration order.
+
+!!! note "Sequence Type"
+    On Python 3.8, use `typing.Sequence`. On Python 3.9 and newer, `typing.Sequence` and `collections.abc.Sequence`
+    are treated as equivalent.
+
+
 ## `as_type` with Optional Types
 
 When registering factory functions that return optional types (e.g. `Cache | None`), the binding is automatically

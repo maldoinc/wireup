@@ -46,7 +46,7 @@ def test_register_factory() -> None:
     registry = ContainerRegistry(impls=[InjectableDeclaration(obj=random_service_factory, lifetime="singleton")])
 
     assert RandomService in registry.factories
-    assert registry.impls[RandomService] == {None}
+    assert registry.impls[RandomService] == [None]
 
     def invalid_factory() -> None:
         pass

@@ -132,6 +132,7 @@ class FactoryCompiler:
         lifetime: str,
         *,
         is_interface: bool,
+        enable_factory_replacement: bool,
     ) -> GetFactoryResult:
         cg = Codegen()
 
@@ -179,7 +180,7 @@ class FactoryCompiler:
                 cg += "storage[OBJ_ID] = instance"
                 if is_interface:
                     cg += "storage[ORIGINAL_OBJ_ID] = instance"
-                if is_singleton:
+                if is_singleton and enable_factory_replacement:
                     cg += "factories[OBJ_FACTORY_KEY].factory = _create_singleton_instance_factory(instance)"
 
             cg += "return instance"
@@ -246,7 +247,12 @@ class FactoryCompiler:
             )
 
         obj_factory_key = get_container_object_id(impl, qualifier)
-        result = self._get_factory_code(factory, lifetime, is_interface=is_interface)
+        result = self._get_factory_code(
+            factory,
+            lifetime,
+            is_interface=is_interface,
+            enable_factory_replacement=not factory.is_synthetic,
+        )
 
         try:
             namespace: dict[str, Any] = {
