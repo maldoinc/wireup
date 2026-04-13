@@ -65,6 +65,48 @@ class GetFactoryResult:
     config_dependencies: dict[str, Any]
 
 
+def _emit_config_kwarg(
+    name: str,
+    dep: Any,
+    config_dependencies: dict[str, Any],
+    registry: ContainerRegistry,
+) -> str:
+    ns_key = f"_config_val_{name}"
+    config_dependencies[ns_key] = registry.parameters.get(dep.annotation.config_key)
+    return f"{name} = {ns_key}, "
+
+
+def _emit_collection_kwarg(
+    name: str,
+    dep: Any,
+    config_dependencies: dict[str, Any],
+    *,
+    consumer_is_async: bool,
+) -> str:
+    ns_inner_type_var = f"_collection_inner_{name}"
+    config_dependencies[ns_inner_type_var] = dep.annotation.inner_type
+    helper_name = "_resolve_collection_set_async" if consumer_is_async else "_resolve_collection_set"
+    collection_await = "await " if consumer_is_async else ""
+    return f"{name} = {collection_await}container.{helper_name}({ns_inner_type_var}), "
+
+
+def _emit_service_kwarg(
+    name: str,
+    dep: Any,
+    config_dependencies: dict[str, Any],
+    registry: ContainerRegistry,
+) -> str:
+    dep_class = registry.get_implementation(dep.klass, dep.qualifier_value)
+    dep_qualifier = dep.qualifier_value
+    dep_impl_obj_id = get_container_object_id(dep_class, dep_qualifier)
+    dep_obj_id = get_container_object_id(dep.klass, dep_qualifier)
+
+    maybe_await = "await " if registry.factories[dep_impl_obj_id].is_async else ""
+    dep_obj_id_var = f"_dep_obj_id_{name}"
+    config_dependencies[dep_obj_id_var] = dep_obj_id
+    return f"{name} = {maybe_await}factories[{dep_obj_id_var}].factory(container), "
+
+
 class FactoryCompiler:
     __slots__ = (
         "_concurrent_scoped_access",
@@ -147,28 +189,14 @@ class FactoryCompiler:
             kwargs = ""
             for name, dep in self._registry.dependencies[factory.factory].items():
                 if isinstance(dep.annotation, ConfigInjectionRequest):
-                    ns_key = f"_config_val_{name}"
-                    config_dependencies[ns_key] = self._registry.parameters.get(dep.annotation.config_key)
-                    kwargs += f"{name} = {ns_key}, "
+                    kwargs += _emit_config_kwarg(name, dep, config_dependencies, self._registry)
                     continue
 
                 if isinstance(dep.annotation, CollectionInjectionRequest):
-                    ns_inner_type_var = f"_collection_inner_{name}"
-                    config_dependencies[ns_inner_type_var] = dep.annotation.inner_type
-                    helper_name = "_resolve_collection_set_async" if factory.is_async else "_resolve_collection_set"
-                    collection_await = "await " if factory.is_async else ""
-                    kwargs += f"{name} = {collection_await}container.{helper_name}({ns_inner_type_var}), "
+                    kwargs += _emit_collection_kwarg(name, dep, config_dependencies, consumer_is_async=factory.is_async)
                     continue
 
-                dep_class = self._registry.get_implementation(dep.klass, dep.qualifier_value)
-                dep_qualifier = dep.qualifier_value
-                dep_impl_obj_id = get_container_object_id(dep_class, dep_qualifier)
-                dep_obj_id = get_container_object_id(dep.klass, dep_qualifier)
-
-                maybe_await = "await " if self._registry.factories[dep_impl_obj_id].is_async else ""
-                dep_obj_id_var = f"_dep_obj_id_{name}"
-                config_dependencies[dep_obj_id_var] = dep_obj_id
-                kwargs += f"{name} = {maybe_await}factories[{dep_obj_id_var}].factory(container), "
+                kwargs += _emit_service_kwarg(name, dep, config_dependencies, self._registry)
 
             maybe_await = "await " if factory.callable_type == CallableType.COROUTINE_FN else ""
 

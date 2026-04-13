@@ -117,7 +117,41 @@ def _build_context_argument(
     return "{" + ", ".join(created_context_items) + "}"
 
 
-def _generate_injection(  # noqa: C901, PLR0912
+def _emit_wrapper_config_kwarg(
+    gen: Codegen,
+    namespace: dict[str, Any],
+    name: str,
+    param: AnnotatedParameter,
+    container: BaseContainer | None,
+) -> None:
+    # If we have a container instance, inline the config value at compile time.
+    if container:
+        ns_config_val = f"_wireup_config_val_{name}"
+        namespace[ns_config_val] = container.config.get(param.annotation.config_key)  # type: ignore[union-attr]
+        gen += f"kwargs['{name}'] = {ns_config_val}"
+        return
+
+    namespace[f"_wireup_config_key_{name}"] = param.annotation.config_key  # type: ignore[union-attr]
+    gen += f"kwargs['{name}'] = scope.config.get(_wireup_config_key_{name})"
+
+
+def _emit_wrapper_collection_kwarg(
+    gen: Codegen,
+    namespace: dict[str, Any],
+    name: str,
+    param: AnnotatedParameter,
+    *,
+    is_target_async: bool,
+) -> None:
+    ns_inner_type_var = f"_wireup_collection_inner_{name}"
+    namespace[ns_inner_type_var] = param.annotation.inner_type  # type: ignore[union-attr]
+    if is_target_async:
+        gen += f"kwargs['{name}'] = await scope._resolve_collection_set_async({ns_inner_type_var})"
+        return
+    gen += f"kwargs['{name}'] = scope._resolve_collection_set({ns_inner_type_var})"
+
+
+def _generate_injection(  # noqa: C901
     gen: Codegen,
     names_to_inject: dict[str, AnnotatedParameter],
     target_type: CallableType,
@@ -134,23 +168,11 @@ def _generate_injection(  # noqa: C901, PLR0912
             continue
 
         if isinstance(param.annotation, ConfigInjectionRequest):
-            # If we have a container instance, inline the config value at compile time
-            if container:
-                ns_config_val = f"_wireup_config_val_{name}"
-                namespace[ns_config_val] = container.config.get(param.annotation.config_key)
-                gen += f"kwargs['{name}'] = {ns_config_val}"
-            else:
-                namespace[f"_wireup_config_key_{name}"] = param.annotation.config_key
-                gen += f"kwargs['{name}'] = scope.config.get(_wireup_config_key_{name})"
+            _emit_wrapper_config_kwarg(gen, namespace, name, param, container)
             continue
 
         if isinstance(param.annotation, CollectionInjectionRequest):
-            ns_inner_type_var = f"_wireup_collection_inner_{name}"
-            namespace[ns_inner_type_var] = param.annotation.inner_type
-            if is_target_async:
-                gen += f"kwargs['{name}'] = await scope._resolve_collection_set_async({ns_inner_type_var})"
-            else:
-                gen += f"kwargs['{name}'] = scope._resolve_collection_set({ns_inner_type_var})"
+            _emit_wrapper_collection_kwarg(gen, namespace, name, param, is_target_async=is_target_async)
             continue
 
         ns_klass_var = f"_wireup_obj_{name}_klass"
