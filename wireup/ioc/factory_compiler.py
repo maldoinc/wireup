@@ -11,6 +11,7 @@ from wireup.errors import WireupError
 from wireup.ioc.types import (
     GENERATOR_CALLABLE_TYPES,
     CallableType,
+    CollectionInjectionRequest,
     ConfigInjectionRequest,
     TemplatedString,
     get_container_object_id,
@@ -148,16 +149,27 @@ class FactoryCompiler:
                     ns_key = f"_config_val_{name}"
                     config_dependencies[ns_key] = self._registry.parameters.get(dep.annotation.config_key)
                     kwargs += f"{name} = {ns_key}, "
-                else:
-                    dep_class = self._registry.get_implementation(dep.klass, dep.qualifier_value)
-                    dep_qualifier = dep.qualifier_value
-                    dep_impl_obj_id = get_container_object_id(dep_class, dep_qualifier)
-                    dep_obj_id = get_container_object_id(dep.klass, dep_qualifier)
+                    continue
 
-                    maybe_await = "await " if self._registry.factories[dep_impl_obj_id].is_async else ""
-                    dep_obj_id_var = f"_dep_obj_id_{name}"
-                    config_dependencies[dep_obj_id_var] = dep_obj_id
-                    kwargs += f"{name} = {maybe_await}factories[{dep_obj_id_var}].factory(container), "
+                if isinstance(dep.annotation, CollectionInjectionRequest):
+                    ns_inner_type_var = f"_collection_inner_{name}"
+                    config_dependencies[ns_inner_type_var] = dep.annotation.inner_type
+                    helper_name = (
+                        "_resolve_collection_set_async" if factory.is_async else "_resolve_collection_set"
+                    )
+                    collection_await = "await " if factory.is_async else ""
+                    kwargs += f"{name} = {collection_await}container.{helper_name}({ns_inner_type_var}), "
+                    continue
+
+                dep_class = self._registry.get_implementation(dep.klass, dep.qualifier_value)
+                dep_qualifier = dep.qualifier_value
+                dep_impl_obj_id = get_container_object_id(dep_class, dep_qualifier)
+                dep_obj_id = get_container_object_id(dep.klass, dep_qualifier)
+
+                maybe_await = "await " if self._registry.factories[dep_impl_obj_id].is_async else ""
+                dep_obj_id_var = f"_dep_obj_id_{name}"
+                config_dependencies[dep_obj_id_var] = dep_obj_id
+                kwargs += f"{name} = {maybe_await}factories[{dep_obj_id_var}].factory(container), "
 
             maybe_await = "await " if factory.callable_type == CallableType.COROUTINE_FN else ""
 
@@ -273,7 +285,9 @@ class FactoryCompiler:
             compiled_code = compile(result.source, f"<{_WIREUP_GENERATED_FACTORY_NAME}_{obj_id}>", "exec")
             exec(compiled_code, namespace)  # noqa: S102
 
-            return CompiledFactory(factory=namespace[_WIREUP_GENERATED_FACTORY_NAME], is_async=result.is_async)
+            generated_function = namespace[_WIREUP_GENERATED_FACTORY_NAME]
+            generated_function.__wireup_generated_code__ = result.source
+            return CompiledFactory(factory=generated_function, is_async=result.is_async)
 
         except Exception as e:
             msg = f"Failed to compile generated factory {obj_id}: {e}"
