@@ -1,5 +1,5 @@
 import types
-from typing import Iterator
+from typing import Iterator, List, Set
 from uuid import uuid4
 
 import pytest
@@ -366,10 +366,10 @@ class _CollectionMemoryCache(_CollectionCache):
         return "memory"
 
 
-_collection_task_calls: list[set[str]] = []
+_collection_task_calls: List[Set[str]] = []
 
 
-def _collection_task(caches: Injected[set[_CollectionCache]]) -> None:
+def _collection_task(caches: Injected[Set[_CollectionCache]]) -> None:
     _collection_task_calls.append({cache.name() for cache in caches})
 
 
@@ -398,7 +398,7 @@ def test_wireup_task_injects_set_of_impls_into_local_function() -> None:
     task = WireupTask(container)
     task._get_injected_wrapper.cache_clear()
 
-    def local_task(caches: Injected[set[_CollectionCache]]) -> set[str]:
+    def local_task(caches: Injected[Set[_CollectionCache]]) -> Set[str]:
         return {cache.name() for cache in caches}
 
     assert "<locals>" in local_task.__qualname__

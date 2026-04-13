@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import inspect
 import re
+import typing
 from abc import ABC, abstractmethod
 
 import pytest
@@ -215,3 +216,164 @@ def test_inject_from_container_resolves_set_of_impls() -> None:
 
     result = handler()
     assert result == {"redis", "in_memory"}
+
+
+# ---- Edge cases ----
+
+
+class _EmptyCache(ABC):
+    @abstractmethod
+    def label(self) -> str: ...
+
+
+@injectable
+class _EmptyCacheConsumer:
+    def __init__(self, caches: Injected[set[_EmptyCache]]) -> None:
+        self.caches = caches
+
+
+def test_consumer_of_collection_with_no_impls_is_rejected_at_build_time() -> None:
+    # When the inner type has zero registered implementations, validation rejects the
+    # consumer with CollectionInterfaceUnknownError. Users who want an "empty collection
+    # is fine" semantic must register the type via at least one entry (even a placeholder).
+    with pytest.raises(CollectionInterfaceUnknownError):
+        wireup.create_sync_container(injectables=[_EmptyCacheConsumer])
+
+
+class _MixedCache(ABC):
+    @abstractmethod
+    def tag(self) -> str: ...
+
+
+@injectable(as_type=_MixedCache)
+class _MixedDefaultCache(_MixedCache):
+    def tag(self) -> str:
+        return "default"
+
+
+@injectable(as_type=_MixedCache, qualifier="left")
+class _MixedLeftCache(_MixedCache):
+    def tag(self) -> str:
+        return "left"
+
+
+@injectable(as_type=_MixedCache, qualifier="right")
+class _MixedRightCache(_MixedCache):
+    def tag(self) -> str:
+        return "right"
+
+
+@injectable
+class _MixedConsumer:
+    def __init__(self, caches: Injected[set[_MixedCache]]) -> None:
+        self.caches = caches
+
+
+def test_unqualified_and_qualified_impls_all_appear_in_set() -> None:
+    container = wireup.create_sync_container(
+        injectables=[_MixedDefaultCache, _MixedLeftCache, _MixedRightCache, _MixedConsumer],
+    )
+    consumer = container.get(_MixedConsumer)
+    tags = {cache.tag() for cache in consumer.caches}
+    assert tags == {"default", "left", "right"}
+
+
+def test_typing_set_alias_and_set_spelling_resolve_identically() -> None:
+    def target_lowercase(caches: Injected[set[Cache]]) -> None: ...
+    def target_typing(caches: Injected[typing.Set[Cache]]) -> None: ...  # noqa: UP006
+
+    lowercase_param = inspect.signature(target_lowercase).parameters["caches"]
+    typing_param = inspect.signature(target_typing).parameters["caches"]
+
+    lowercase_result = param_get_annotation(lowercase_param, globalns_supplier=lambda: globals())
+    typing_result = param_get_annotation(typing_param, globalns_supplier=lambda: globals())
+
+    assert lowercase_result is not None
+    assert typing_result is not None
+    assert isinstance(lowercase_result.annotation, CollectionInjectionRequest)
+    assert isinstance(typing_result.annotation, CollectionInjectionRequest)
+    assert lowercase_result.annotation.collection_type is set
+    assert typing_result.annotation.collection_type is set
+    assert lowercase_result.klass is Cache
+    assert typing_result.klass is Cache
+
+
+def test_top_level_container_get_on_parameterized_set_raises() -> None:
+    container = wireup.create_sync_container(injectables=[RedisCache, InMemoryCache])
+
+    with pytest.raises(Exception) as exc_info:
+        container.get(set[Cache])
+
+    # Error should surface something intelligible — not a KeyError inside the factory dict.
+    assert "set" in str(exc_info.value).lower() or "unknown" in str(exc_info.value).lower()
+
+
+# ---- Factory functions with heterogeneous deps (the downstream DeviceBuilder pattern) ----
+
+
+class _ProducerTransport:
+    def __init__(self) -> None:
+        self.tag = "producer"
+
+
+class _Logger:
+    def __init__(self) -> None:
+        self.tag = "logger"
+
+
+@injectable
+def _make_producer_transport() -> _ProducerTransport:
+    return _ProducerTransport()
+
+
+@injectable
+def _make_logger() -> _Logger:
+    return _Logger()
+
+
+class _DeviceBuilder:
+    def __init__(self, device_type: str, extra: str) -> None:
+        self.device_type = device_type
+        self.extra = extra
+
+
+@injectable(qualifier="apple_tv")
+def _apple_tv_builder(producer: _ProducerTransport) -> _DeviceBuilder:
+    return _DeviceBuilder("apple_tv", producer.tag)
+
+
+@injectable(qualifier="generic_player")
+def _generic_player_builder() -> _DeviceBuilder:
+    return _DeviceBuilder("generic_player", "none")
+
+
+@injectable(qualifier="logged_device")
+def _logged_device_builder(logger: _Logger) -> _DeviceBuilder:
+    return _DeviceBuilder("logged_device", logger.tag)
+
+
+@injectable
+class _DeviceLifecycleService:
+    def __init__(self, builders: Injected[set[_DeviceBuilder]]) -> None:
+        self.builders = builders
+
+
+def test_factory_functions_with_heterogeneous_deps_resolve_in_set() -> None:
+    container = wireup.create_sync_container(
+        injectables=[
+            _make_producer_transport,
+            _make_logger,
+            _apple_tv_builder,
+            _generic_player_builder,
+            _logged_device_builder,
+            _DeviceLifecycleService,
+        ],
+    )
+    service = container.get(_DeviceLifecycleService)
+
+    by_type = {builder.device_type: builder.extra for builder in service.builders}
+    assert by_type == {
+        "apple_tv": "producer",
+        "generic_player": "none",
+        "logged_device": "logger",
+    }

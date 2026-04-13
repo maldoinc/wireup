@@ -2,7 +2,7 @@ import asyncio
 import contextlib
 import uuid
 from threading import Barrier, Thread
-from typing import Any, AsyncIterator, Dict, Iterator
+from typing import Any, AsyncIterator, Dict, Iterator, Set
 from uuid import uuid4
 
 import anyio.to_thread
@@ -660,7 +660,7 @@ def test_fastapi_route_injects_set_of_impls() -> None:
     )
 
     @app.get("/caches")
-    async def list_caches(caches: Injected[set[_RouteCache]]) -> Dict[str, Any]:
+    async def list_caches(caches: Injected[Set[_RouteCache]]) -> Dict[str, Any]:
         return {"names": sorted(cache.name() for cache in caches)}
 
     wireup.integration.fastapi.setup(container, app)
