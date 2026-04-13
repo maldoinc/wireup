@@ -63,28 +63,27 @@ def _tightest_lifetime(lifetimes: list[InjectableLifetime]) -> InjectableLifetim
     return max(lifetimes, key=lambda lt: _LIFETIME_RESTRICTIVENESS[lt], default=default)
 
 
-def _build_set_collection_factory(inner_type: type, impl_count: int) -> Callable[..., Any]:
-    """Build a fresh sync factory that assembles a set from its keyword impls."""
-    param_names = [f"_impl_{i}" for i in range(impl_count)]
-    set_literal = "{" + ", ".join(param_names) + "}" if param_names else "set()"
-    source = f"def _collection_factory({', '.join(param_names)}):\n    return {set_literal}\n"
-    namespace: dict[str, Any] = {}
-    exec(source, namespace)  # noqa: S102
-    factory_fn: Callable[..., Any] = namespace["_collection_factory"]
-    factory_fn.__name__ = factory_fn.__qualname__ = f"_wireup_set_collection_{inner_type.__name__}"
-    return factory_fn
+def _build_collection_factory(
+    inner_type: type,
+    kind: CollectionKind,
+    qualifiers: list[Qualifier | None],
+) -> Callable[..., Any]:
+    """Build a fresh sync factory that assembles a collection from its keyword impls.
 
-
-def _build_map_collection_factory(inner_type: type, qualifiers: tuple[Qualifier, ...]) -> Callable[..., Any]:
-    """Build a fresh sync factory that assembles a dict keyed by impl qualifiers."""
+    Emits a set literal for CollectionKind.SET and a dict literal keyed by qualifier
+    for CollectionKind.MAP.
+    """
     param_names = [f"_impl_{i}" for i in range(len(qualifiers))]
-    pairs = ", ".join(f"{q!r}: {name}" for q, name in zip(qualifiers, param_names))
-    dict_literal = "{" + pairs + "}" if pairs else "{}"
-    source = f"def _collection_factory({', '.join(param_names)}):\n    return {dict_literal}\n"
+    if kind is CollectionKind.MAP:
+        pairs = ", ".join(f"{q!r}: {name}" for q, name in zip(qualifiers, param_names))
+        literal = "{" + pairs + "}" if pairs else "{}"
+    else:
+        literal = "{" + ", ".join(param_names) + "}" if param_names else "set()"
+    source = f"def _collection_factory({', '.join(param_names)}):\n    return {literal}\n"
     namespace: dict[str, Any] = {}
     exec(source, namespace)  # noqa: S102
     factory_fn: Callable[..., Any] = namespace["_collection_factory"]
-    factory_fn.__name__ = factory_fn.__qualname__ = f"_wireup_map_collection_{inner_type.__name__}"
+    factory_fn.__name__ = factory_fn.__qualname__ = f"_wireup_{kind.value}_collection_{inner_type.__name__}"
     return factory_fn
 
 
@@ -235,9 +234,7 @@ class ContainerRegistry:
         if kind is CollectionKind.MAP:
             # Unqualified impls have no key to index under when building a map, so they are dropped.
             impl_entries = [entry for entry in impl_entries if entry[0] is not None]
-            factory_fn = _build_map_collection_factory(inner_type, tuple(entry[0] for entry in impl_entries))
-        else:
-            factory_fn = _build_set_collection_factory(inner_type, len(impl_entries))
+        factory_fn = _build_collection_factory(inner_type, kind, [qualifier for qualifier, _ in impl_entries])
 
         dep_map: dict[str, AnnotatedParameter] = {}
         impl_lifetimes: list[InjectableLifetime] = []
