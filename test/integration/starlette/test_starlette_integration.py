@@ -344,3 +344,67 @@ def test_wireup_task_does_not_cache_callable_instances() -> None:
     info = task._get_injected_wrapper.cache_info()
     assert info.hits == 0
     assert info.misses == 0
+
+
+# ---- Set[T] collection injection through WireupTask ----
+
+
+class _CollectionCache:
+    def name(self) -> str:
+        return "base"
+
+
+@injectable(as_type=_CollectionCache, qualifier="redis")
+class _CollectionRedisCache(_CollectionCache):
+    def name(self) -> str:
+        return "redis"
+
+
+@injectable(as_type=_CollectionCache, qualifier="memory")
+class _CollectionMemoryCache(_CollectionCache):
+    def name(self) -> str:
+        return "memory"
+
+
+_collection_task_calls: list[set[str]] = []
+
+
+def _collection_task(caches: Injected[set[_CollectionCache]]) -> None:
+    _collection_task_calls.append({cache.name() for cache in caches})
+
+
+def test_wireup_task_injects_set_of_impls_into_cached_function() -> None:
+    _collection_task_calls.clear()
+    container = wireup.create_async_container(
+        injectables=[_CollectionRedisCache, _CollectionMemoryCache, wireup.integration.starlette],
+    )
+    task = WireupTask(container)
+    task._get_injected_wrapper.cache_clear()
+
+    task(_collection_task)()
+    task(_collection_task)()
+
+    assert _collection_task_calls == [{"redis", "memory"}, {"redis", "memory"}]
+
+    info = task._get_injected_wrapper.cache_info()
+    assert info.hits == 1  # second call hits the LRU cache
+    assert info.misses == 1
+
+
+def test_wireup_task_injects_set_of_impls_into_local_function() -> None:
+    container = wireup.create_async_container(
+        injectables=[_CollectionRedisCache, _CollectionMemoryCache, wireup.integration.starlette],
+    )
+    task = WireupTask(container)
+    task._get_injected_wrapper.cache_clear()
+
+    def local_task(caches: Injected[set[_CollectionCache]]) -> set[str]:
+        return {cache.name() for cache in caches}
+
+    assert "<locals>" in local_task.__qualname__
+    result = task(local_task)()
+
+    assert result == {"redis", "memory"}
+    # Closures bypass the LRU cache.
+    info = task._get_injected_wrapper.cache_info()
+    assert info.misses == 0
