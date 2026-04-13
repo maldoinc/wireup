@@ -39,24 +39,22 @@ def _collection_inner_type(kind: CollectionKind, raw_type: Any, parameter_name: 
     Set[T] yields T. Mapping[str, T] yields T and rejects non-str key types.
     """
     type_args = get_args(raw_type)
-    if kind is CollectionKind.SET:
-        if len(type_args) == 1:
-            return cast("type", type_args[0])
+
+    if kind is CollectionKind.SET and len(type_args) == 1:
+        return cast("type", type_args[0])
+
+    if kind is not CollectionKind.MAP or len(type_args) != _MAP_TYPE_ARGS_ARITY:
         return None
 
-    if kind is CollectionKind.MAP:
-        if len(type_args) != _MAP_TYPE_ARGS_ARITY:
-            return None
-        key_type, value_type = type_args
-        if key_type is not str:
-            msg = (
-                f"Parameter '{parameter_name}' uses Mapping[{key_type}, ...] but only "
-                "Mapping[str, T] is supported for collection injection."
-            )
-            raise WireupError(msg)
+    key_type, value_type = type_args
+    if key_type is str:
         return cast("type", value_type)
 
-    return None
+    msg = (
+        f"Parameter '{parameter_name}' uses Mapping[{key_type}, ...] but only "
+        "Mapping[str, T] is supported for collection injection."
+    )
+    raise WireupError(msg)
 
 
 T = TypeVar("T")
@@ -138,14 +136,14 @@ def param_get_annotation(
     # as qualified service deps using a CollectionKind sentinel so the registry can synthesize
     # a factory under (inner_type, kind) and the kwargs loop resolves them like any other dep.
     collection_kind = _COLLECTION_ORIGIN_TO_KIND.get(get_origin(type_analysis.raw_type))
-    if collection_kind is not None:
-        inner_type = _collection_inner_type(collection_kind, type_analysis.raw_type, parameter.name)
-        if inner_type is not None:
-            return AnnotatedParameter(
-                klass=inner_type,
-                annotation=InjectableQualifier(qualifier=collection_kind),
-                has_default_value=has_default_value,
-            )
+    if collection_kind is not None and (
+        inner_type := _collection_inner_type(collection_kind, type_analysis.raw_type, parameter.name)
+    ) is not None:
+        return AnnotatedParameter(
+            klass=inner_type,
+            annotation=InjectableQualifier(qualifier=collection_kind),
+            has_default_value=has_default_value,
+        )
 
     return AnnotatedParameter(
         klass=type_analysis.normalized_type,
