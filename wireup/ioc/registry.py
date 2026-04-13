@@ -55,13 +55,12 @@ class InjectableFactory:
     raw_type: type
 
 
-# Loosest-to-tightest: collection factories inherit their impls' loosest lifetime.
-_LIFETIME_RANK: dict[InjectableLifetime, int] = {"singleton": 0, "scoped": 1, "transient": 2}
+_LIFETIME_RESTRICTIVENESS: dict[InjectableLifetime, int] = {"singleton": 0, "scoped": 1, "transient": 2}
 
 
-def _loosest_lifetime(lifetimes: list[InjectableLifetime]) -> InjectableLifetime:
+def _tightest_lifetime(lifetimes: list[InjectableLifetime]) -> InjectableLifetime:
     default: InjectableLifetime = "singleton"
-    return max(lifetimes, key=lambda lt: _LIFETIME_RANK[lt], default=default)
+    return max(lifetimes, key=lambda lt: _LIFETIME_RESTRICTIVENESS[lt], default=default)
 
 
 def _build_set_collection_factory(inner_type: type, impl_count: int) -> Callable[..., Any]:
@@ -230,7 +229,7 @@ class ContainerRegistry:
             impl_lifetimes.append(self.lifetime[get_container_object_id(concrete, qualifier)])
 
         self.dependencies[factory_fn] = dep_map
-        self.lifetime[obj_id] = _loosest_lifetime(impl_lifetimes)
+        self.lifetime[obj_id] = _tightest_lifetime(impl_lifetimes)
         self.factories[obj_id] = InjectableFactory(
             factory=factory_fn,
             callable_type=CallableType.REGULAR,
