@@ -82,7 +82,7 @@ class _ScopedCacheImplB(_ScopedCache):
         return "scoped_two"
 
 
-@injectable  # default lifetime is singleton
+@injectable
 class _SingletonConsumerOfScopedCollection:
     def __init__(self, caches: Injected[set[_ScopedCache]]) -> None:
         self.caches = caches
@@ -443,9 +443,6 @@ def test_factory_functions_with_heterogeneous_deps_resolve_in_mapping() -> None:
     assert service.builders["logged_device"].extra == "logger"
 
 
-# ---- Mapping[str, T] injection (PR 2) ----
-
-
 @injectable
 class MappingCacheConsumer:
     def __init__(self, caches: Injected[typing.Mapping[str, Cache]]) -> None:
@@ -480,7 +477,7 @@ class _MappedCache(ABC):
     def tag(self) -> str: ...
 
 
-@injectable(as_type=_MappedCache)  # default, no qualifier
+@injectable(as_type=_MappedCache)
 class _MappedDefaultCache(_MappedCache):
     def tag(self) -> str:
         return "default"

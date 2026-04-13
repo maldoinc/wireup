@@ -384,7 +384,7 @@ def test_wireup_task_injects_set_of_impls_into_cached_function() -> None:
     assert _collection_task_calls == [{"redis", "memory"}, {"redis", "memory"}]
 
     info = task._get_injected_wrapper.cache_info()
-    assert info.hits == 1  # second call hits the LRU cache
+    assert info.hits == 1
     assert info.misses == 1
 
 
@@ -405,9 +405,6 @@ def test_wireup_task_injects_set_of_impls_into_local_function() -> None:
     # Closures bypass the LRU cache.
     info = task._get_injected_wrapper.cache_info()
     assert info.misses == 0
-
-
-# ---- Mapping[str, T] collection injection through WireupTask ----
 
 
 _map_task_calls: List[Mapping[str, str]] = []
