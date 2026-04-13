@@ -15,6 +15,7 @@ from wireup.errors import (
     InvalidAsTypeError,
     InvalidRegistrationTypeError,
     UnknownQualifiedServiceRequestedError,
+    WireupError,
 )
 from wireup.ioc.configuration import ConfigStore
 from wireup.ioc.dependency_introspection import injectable_get_dependencies
@@ -63,15 +64,27 @@ def _tightest_lifetime(lifetimes: list[InjectableLifetime]) -> InjectableLifetim
     return max(lifetimes, key=lambda lt: _LIFETIME_RESTRICTIVENESS[lt], default=default)
 
 
-def _build_set_collection_factory(inner_type: type, impl_count: int) -> Callable[..., Any]:
-    """Build a fresh sync factory that assembles a set from its keyword impls."""
-    param_names = [f"_impl_{i}" for i in range(impl_count)]
-    set_literal = "{" + ", ".join(param_names) + "}" if param_names else "set()"
-    source = f"def _collection_factory({', '.join(param_names)}):\n    return {set_literal}\n"
+def _build_collection_factory(
+    inner_type: type,
+    kind: CollectionKind,
+    qualifiers: list[Qualifier | None],
+) -> Callable[..., Any]:
+    """Build a fresh sync factory that assembles a collection from its keyword impls.
+
+    Emits a set literal for CollectionKind.SET. Future kinds (e.g. a dict literal for
+    Mapping[str, T]) slot in as additional branches.
+    """
+    param_names = [f"_impl_{i}" for i in range(len(qualifiers))]
+    if kind is CollectionKind.SET:
+        literal = "{" + ", ".join(param_names) + "}" if param_names else "set()"
+    else:
+        msg = f"Unsupported CollectionKind: {kind}"
+        raise WireupError(msg)
+    source = f"def _collection_factory({', '.join(param_names)}):\n    return {literal}\n"
     namespace: dict[str, Any] = {}
     exec(source, namespace)  # noqa: S102
     factory_fn: Callable[..., Any] = namespace["_collection_factory"]
-    factory_fn.__name__ = factory_fn.__qualname__ = f"_wireup_set_collection_{inner_type.__name__}"
+    factory_fn.__name__ = factory_fn.__qualname__ = f"_wireup_{kind.value}_collection_{inner_type.__name__}"
     return factory_fn
 
 
@@ -219,7 +232,7 @@ class ContainerRegistry:
             return False
 
         impl_entries = list(self._iter_impls_for_type(inner_type))
-        factory_fn = _build_set_collection_factory(inner_type, len(impl_entries))
+        factory_fn = _build_collection_factory(inner_type, kind, [qualifier for qualifier, _ in impl_entries])
 
         dep_map: dict[str, AnnotatedParameter] = {}
         impl_lifetimes: list[InjectableLifetime] = []
