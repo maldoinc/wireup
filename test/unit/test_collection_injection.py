@@ -1,11 +1,15 @@
 from __future__ import annotations
 
 import inspect
+import re
 from abc import ABC, abstractmethod
 from typing import Set
 
+import pytest
+
 import wireup
 from wireup import Injected, injectable
+from wireup.errors import CollectionInterfaceUnknownError, WireupError
 from wireup.ioc.types import CollectionInjectionRequest
 from wireup.ioc.util import param_get_annotation
 
@@ -67,3 +71,85 @@ def test_set_of_qualified_cache_impls_is_injected() -> None:
     assert len(consumer.caches) == 2
     names = {cache.name() for cache in consumer.caches}
     assert names == {"redis", "in_memory"}
+
+
+# ---- Validation rules ----
+
+class _UnknownInterface(ABC):
+    @abstractmethod
+    def name(self) -> str: ...
+
+
+def test_collection_of_unknown_type_raises_collection_interface_unknown_error() -> None:
+    @injectable
+    class UnknownConsumer:
+        def __init__(self, impls: Injected[Set[_UnknownInterface]]) -> None:
+            self.impls = impls
+
+    with pytest.raises(
+        CollectionInterfaceUnknownError,
+        match=re.escape("_UnknownInterface"),
+    ):
+        wireup.create_sync_container(injectables=[UnknownConsumer])
+
+
+class _ScopedCache(ABC):
+    @abstractmethod
+    def name(self) -> str: ...
+
+
+@injectable(as_type=_ScopedCache, qualifier="scoped_one", lifetime="scoped")
+class _ScopedCacheImplA(_ScopedCache):
+    def name(self) -> str:
+        return "scoped_one"
+
+
+@injectable(as_type=_ScopedCache, qualifier="scoped_two", lifetime="scoped")
+class _ScopedCacheImplB(_ScopedCache):
+    def name(self) -> str:
+        return "scoped_two"
+
+
+@injectable  # default lifetime is singleton
+class _SingletonConsumerOfScopedCollection:
+    def __init__(self, caches: Injected[Set[_ScopedCache]]) -> None:
+        self.caches = caches
+
+
+def test_singleton_consumer_of_non_singleton_collection_is_rejected() -> None:
+    with pytest.raises(
+        WireupError,
+        match=re.escape("Singletons can only depend on other singletons"),
+    ):
+        wireup.create_sync_container(
+            injectables=[
+                _ScopedCacheImplA,
+                _ScopedCacheImplB,
+                _SingletonConsumerOfScopedCollection,
+            ],
+        )
+
+
+class _CycleInterface(ABC):
+    @abstractmethod
+    def tag(self) -> str: ...
+
+
+@injectable(as_type=_CycleInterface, qualifier="cycle_a")
+class _CycleImplA(_CycleInterface):
+    def __init__(self, consumer: _CycleConsumer) -> None:  # type: ignore[name-defined]  # noqa: F821
+        self.consumer = consumer
+
+    def tag(self) -> str:
+        return "a"
+
+
+@injectable
+class _CycleConsumer:
+    def __init__(self, impls: Injected[Set[_CycleInterface]]) -> None:
+        self.impls = impls
+
+
+def test_cycle_through_collection_dep_is_rejected() -> None:
+    with pytest.raises(WireupError, match=re.escape("Circular dependency")):
+        wireup.create_sync_container(injectables=[_CycleImplA, _CycleConsumer])
