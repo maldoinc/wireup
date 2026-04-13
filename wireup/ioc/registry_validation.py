@@ -2,14 +2,18 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any
 
-from wireup.errors import UnknownParameterError, WireupError
+from wireup.errors import CollectionInterfaceUnknownError, UnknownParameterError, WireupError
 from wireup.ioc.type_analysis import analyze_type
-from wireup.ioc.types import AnnotatedParameter, ConfigInjectionRequest, get_container_object_id
+from wireup.ioc.types import (
+    AnnotatedParameter,
+    CollectionInjectionRequest,
+    ConfigInjectionRequest,
+    get_container_object_id,
+)
 from wireup.util import format_name, stringify_type
 
 if TYPE_CHECKING:
-    from wireup.ioc.registry import ContainerRegistry, InjectableFactory
-    from wireup.ioc.types import Qualifier
+    from wireup.ioc.registry import ContainerRegistry
 
 
 def validate_registry(registry: ContainerRegistry) -> None:
@@ -29,6 +33,7 @@ def validate_registry(registry: ContainerRegistry) -> None:
                     parameter=dependency,
                     target=impl,
                     name=name,
+                    registry=registry,
                 )
             except WireupError:
                 if dependency.has_default_value:
@@ -45,9 +50,7 @@ def validate_registry(registry: ContainerRegistry) -> None:
                 injectable_factory.factory,
             )
             assert_valid_resolution_path(
-                interfaces=registry.interfaces,
-                factories=registry.factories,
-                dependencies=registry.dependencies,
+                registry=registry,
                 dependency=dependency,
                 path=[],
             )
@@ -64,6 +67,20 @@ def assert_lifetime_valid(
     factory: Any,
 ) -> None:
     if dependency.is_parameter:
+        return
+
+    if isinstance(dependency.annotation, CollectionInjectionRequest):
+        if registry.lifetime[object_id] != "singleton":
+            return
+        for _, impl_obj_id in registry.iter_impls_for_type(dependency.annotation.inner_type):
+            impl_lifetime = registry.lifetime[impl_obj_id]
+            if impl_lifetime != "singleton":
+                msg = (
+                    f"Parameter '{parameter_name}' of {stringify_type(factory)} "
+                    f"depends on an injectable with a '{impl_lifetime}' lifetime which is not supported. "
+                    "Singletons can only depend on other singletons."
+                )
+                raise WireupError(msg)
         return
 
     dependency_lifetime = registry.get_lifetime(dependency.klass, dependency.qualifier_value)
@@ -84,6 +101,7 @@ def assert_dependency_exists(
     parameter: AnnotatedParameter,
     target: Any,
     name: str,
+    registry: ContainerRegistry | None = None,
 ) -> None:
     """Assert that a dependency exists in the container for the given annotated parameter."""
     if isinstance(parameter.annotation, ConfigInjectionRequest):
@@ -101,7 +119,15 @@ def assert_dependency_exists(
                 + "."
             )
             raise WireupError(msg) from e
-    elif not is_type_with_qualifier_known(parameter.klass, qualifier=parameter.qualifier_value):
+        return
+
+    if isinstance(parameter.annotation, CollectionInjectionRequest):
+        inner_type = parameter.annotation.inner_type
+        if registry is None or (inner_type not in registry.interfaces and inner_type not in registry.impls):
+            raise CollectionInterfaceUnknownError(inner_type, name, target)
+        return
+
+    if not is_type_with_qualifier_known(parameter.klass, qualifier=parameter.qualifier_value):
         type_str = format_name(analyze_type(parameter.klass).raw_type, parameter.qualifier_value)
         msg = f"Parameter '{name}' of {stringify_type(target)} has an unknown dependency on {type_str}."
         raise WireupError(msg)
@@ -109,17 +135,48 @@ def assert_dependency_exists(
 
 def assert_valid_resolution_path(
     *,
-    interfaces: dict[type, dict[Qualifier | None, type]],
-    factories: dict[Any, InjectableFactory],
-    dependencies: dict[Any, dict[str, AnnotatedParameter]],
+    registry: ContainerRegistry,
     dependency: AnnotatedParameter,
     path: list[tuple[AnnotatedParameter, Any]],
 ) -> None:
     """Assert that the resolution path for a dependency does not create a cycle."""
-    if dependency.klass in interfaces or dependency.is_parameter:
+    if dependency.is_parameter:
         return
-    dependency_injectable_factory = factories[get_container_object_id(dependency.klass, dependency.qualifier_value)]
-    new_path: list[tuple[AnnotatedParameter, Any]] = [*path, (dependency, dependency_injectable_factory)]
+
+    if isinstance(dependency.annotation, CollectionInjectionRequest):
+        # Recurse through each impl of the collection's inner type so cycles that pass
+        # through a Set[T] dep are still detected.
+        for _, impl_obj_id in registry.iter_impls_for_type(dependency.annotation.inner_type):
+            if isinstance(impl_obj_id, tuple):
+                impl_klass, impl_qualifier = impl_obj_id
+            else:
+                impl_klass, impl_qualifier = impl_obj_id, None
+            impl_factory = registry.factories[impl_obj_id]
+            synthetic_dependency = AnnotatedParameter(klass=impl_klass, annotation=None)
+            synthetic_dependency.qualifier_value = impl_qualifier
+            new_path: list[tuple[AnnotatedParameter, Any]] = [*path, (dependency, impl_factory)]
+            if any(
+                p.klass == impl_klass and p.qualifier_value == impl_qualifier
+                for p, _ in path
+            ):
+                raise WireupError(
+                    f"Circular dependency detected through collection dependency "
+                    f"{format_name(dependency.annotation.inner_type, None)}"
+                )
+            for next_dependency in registry.dependencies[impl_factory.factory].values():
+                assert_valid_resolution_path(
+                    registry=registry,
+                    dependency=next_dependency,
+                    path=new_path,
+                )
+        return
+
+    if dependency.klass in registry.interfaces:
+        return
+    dependency_injectable_factory = registry.factories[
+        get_container_object_id(dependency.klass, dependency.qualifier_value)
+    ]
+    new_path = [*path, (dependency, dependency_injectable_factory)]
 
     if any(p.klass == dependency.klass and p.qualifier_value == dependency.qualifier_value for p, _ in path):
 
@@ -136,11 +193,9 @@ def assert_valid_resolution_path(
         msg = f"Circular dependency detected for {cycle_path} ! Cycle here"
         raise WireupError(msg)
 
-    for next_dependency in dependencies[dependency_injectable_factory.factory].values():
+    for next_dependency in registry.dependencies[dependency_injectable_factory.factory].values():
         assert_valid_resolution_path(
-            interfaces=interfaces,
-            factories=factories,
-            dependencies=dependencies,
+            registry=registry,
             dependency=next_dependency,
             path=new_path,
         )

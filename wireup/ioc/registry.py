@@ -5,7 +5,7 @@ import typing
 import warnings
 from collections import defaultdict
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, Callable, TypeVar, Union
+from typing import TYPE_CHECKING, Any, Callable, Iterator, Tuple, TypeVar, Union
 
 from wireup.errors import (
     AsTypeMismatchError,
@@ -315,3 +315,27 @@ class ContainerRegistry:
 
     def get_lifetime(self, klass: type, qualifier: Qualifier | None) -> InjectableLifetime:
         return self.lifetime[get_container_object_id(self.get_implementation(klass, qualifier), qualifier)]
+
+    def iter_impls_for_type(
+        self, inner_type: type
+    ) -> Iterator[Tuple[Union[Qualifier, None], ContainerObjectIdentifier]]:
+        """Yield (qualifier, factories_key) for every registered impl of ``inner_type``.
+
+        Spans both registration paths wireup supports today:
+          * ``@abstract`` base class + ``@injectable`` concrete subclasses — entries live in
+            ``self.interfaces[inner_type]`` keyed ``qualifier -> concrete_class``.
+          * ``@injectable(as_type=inner_type)`` and factory functions returning ``inner_type`` —
+            entries live in ``self.impls[inner_type]`` as a set of qualifiers; the compiled
+            factory is keyed ``(inner_type, qualifier)`` directly.
+
+        The returned ``factories_key`` is usable against ``registry.factories`` and against the
+        post-compilation ``FactoryCompiler.factories`` dict in both paths.
+        """
+        if inner_type in self.interfaces:
+            for qualifier, concrete in self.interfaces[inner_type].items():
+                yield qualifier, get_container_object_id(concrete, qualifier)
+            return
+
+        if inner_type in self.impls:
+            for qualifier in self.impls[inner_type]:
+                yield qualifier, get_container_object_id(inner_type, qualifier)
