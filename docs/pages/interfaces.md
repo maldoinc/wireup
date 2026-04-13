@@ -211,6 +211,38 @@ through the normal container machinery before the set is assembled.
     matching how any singleton's state is frozen after first construction. Transient and scoped
     consumers see impls added via `container.extend()` on their next resolution.
 
+## Injecting Implementations by Qualifier
+
+Use `Mapping[str, T]` to receive qualifier → implementation pairs. Each qualified impl becomes
+a keyed entry in the injected dict.
+
+```python
+from typing import Mapping
+from wireup import Injected, inject_from_container, injectable
+
+
+@injectable(as_type=Cache, qualifier="redis")
+class RedisCache(Cache): ...
+
+
+@injectable(as_type=Cache, qualifier="memory")
+class InMemoryCache(Cache): ...
+
+
+@inject_from_container(container)
+def pick_cache(caches: Injected[Mapping[str, Cache]], name: str) -> Cache:
+    return caches[name]  # caches["redis"], caches["memory"], ...
+```
+
+Any of `Mapping[str, T]`, `dict[str, T]`, `typing.Mapping[str, T]`, and `typing.Dict[str, T]`
+resolve identically. Non-`str` key types (e.g. `Mapping[int, T]`) are rejected with a helpful
+error at container-build time.
+
+!!! note
+
+    Unqualified implementations are not included in the map — they have no key to index under.
+    Use `Set[T]` when you want every implementation regardless of whether it has a qualifier.
+
 ## `as_type` with Optional Types
 
 When registering factory functions that return optional types (e.g. `Cache | None`), the binding is automatically
