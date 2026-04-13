@@ -418,6 +418,31 @@ def test_factory_functions_with_heterogeneous_deps_resolve_in_set() -> None:
     }
 
 
+@injectable
+class _DeviceLifecycleServiceByType:
+    def __init__(self, builders: Injected[typing.Mapping[str, _DeviceBuilder]]) -> None:
+        self.builders = builders
+
+
+def test_factory_functions_with_heterogeneous_deps_resolve_in_mapping() -> None:
+    container = wireup.create_sync_container(
+        injectables=[
+            _make_producer_transport,
+            _make_logger,
+            _tv_player_builder,
+            _generic_player_builder,
+            _logged_device_builder,
+            _DeviceLifecycleServiceByType,
+        ],
+    )
+    service = container.get(_DeviceLifecycleServiceByType)
+
+    assert set(service.builders.keys()) == {"tv_player", "generic_player", "logged_device"}
+    assert service.builders["tv_player"].extra == "producer"
+    assert service.builders["generic_player"].extra == "none"
+    assert service.builders["logged_device"].extra == "logger"
+
+
 # ---- Mapping[str, T] injection (PR 2) ----
 
 
