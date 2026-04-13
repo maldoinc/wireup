@@ -155,9 +155,7 @@ class FactoryCompiler:
                 if isinstance(dep.annotation, CollectionInjectionRequest):
                     ns_inner_type_var = f"_collection_inner_{name}"
                     config_dependencies[ns_inner_type_var] = dep.annotation.inner_type
-                    helper_name = (
-                        "_resolve_collection_set_async" if factory.is_async else "_resolve_collection_set"
-                    )
+                    helper_name = "_resolve_collection_set_async" if factory.is_async else "_resolve_collection_set"
                     collection_await = "await " if factory.is_async else ""
                     kwargs += f"{name} = {collection_await}container.{helper_name}({ns_inner_type_var}), "
                     continue

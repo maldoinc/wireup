@@ -3,10 +3,8 @@ from __future__ import annotations
 import inspect
 import re
 from abc import ABC, abstractmethod
-from typing import Set
 
 import pytest
-
 import wireup
 from wireup import Injected, injectable
 from wireup.errors import CollectionInterfaceUnknownError, WireupError
@@ -33,12 +31,12 @@ class InMemoryCache(Cache):
 
 @injectable
 class CacheConsumer:
-    def __init__(self, caches: Injected[Set[Cache]]) -> None:
+    def __init__(self, caches: Injected[set[Cache]]) -> None:
         self.caches = caches
 
 
 def test_param_get_annotation_detects_set_of_interface() -> None:
-    def target(caches: Set[Cache]) -> None: ...
+    def target(caches: set[Cache]) -> None: ...
 
     parameter = inspect.signature(target).parameters["caches"]
     result = param_get_annotation(parameter, globalns_supplier=lambda: globals())
@@ -51,7 +49,7 @@ def test_param_get_annotation_detects_set_of_interface() -> None:
 
 
 def test_param_get_annotation_detects_injected_set_of_interface() -> None:
-    def target(caches: Injected[Set[Cache]]) -> None: ...
+    def target(caches: Injected[set[Cache]]) -> None: ...
 
     parameter = inspect.signature(target).parameters["caches"]
     result = param_get_annotation(parameter, globalns_supplier=lambda: globals())
@@ -75,6 +73,7 @@ def test_set_of_qualified_cache_impls_is_injected() -> None:
 
 # ---- Validation rules ----
 
+
 class _UnknownInterface(ABC):
     @abstractmethod
     def name(self) -> str: ...
@@ -83,7 +82,7 @@ class _UnknownInterface(ABC):
 def test_collection_of_unknown_type_raises_collection_interface_unknown_error() -> None:
     @injectable
     class UnknownConsumer:
-        def __init__(self, impls: Injected[Set[_UnknownInterface]]) -> None:
+        def __init__(self, impls: Injected[set[_UnknownInterface]]) -> None:
             self.impls = impls
 
     with pytest.raises(
@@ -112,7 +111,7 @@ class _ScopedCacheImplB(_ScopedCache):
 
 @injectable  # default lifetime is singleton
 class _SingletonConsumerOfScopedCollection:
-    def __init__(self, caches: Injected[Set[_ScopedCache]]) -> None:
+    def __init__(self, caches: Injected[set[_ScopedCache]]) -> None:
         self.caches = caches
 
 
@@ -137,7 +136,7 @@ class _CycleInterface(ABC):
 
 @injectable(as_type=_CycleInterface, qualifier="cycle_a")
 class _CycleImplA(_CycleInterface):
-    def __init__(self, consumer: _CycleConsumer) -> None:  # type: ignore[name-defined]  # noqa: F821
+    def __init__(self, consumer: _CycleConsumer) -> None:  # type: ignore[name-defined]
         self.consumer = consumer
 
     def tag(self) -> str:
@@ -146,7 +145,7 @@ class _CycleImplA(_CycleInterface):
 
 @injectable
 class _CycleConsumer:
-    def __init__(self, impls: Injected[Set[_CycleInterface]]) -> None:
+    def __init__(self, impls: Injected[set[_CycleInterface]]) -> None:
         self.impls = impls
 
 
@@ -156,6 +155,7 @@ def test_cycle_through_collection_dep_is_rejected() -> None:
 
 
 # ---- Async variant ----
+
 
 class _AsyncCache(ABC):
     @abstractmethod
@@ -184,7 +184,7 @@ async def _async_memory_factory() -> _AsyncMemoryCache:
 
 @injectable
 class _AsyncCacheConsumer:
-    def __init__(self, caches: Injected[Set[_AsyncCache]]) -> None:
+    def __init__(self, caches: Injected[set[_AsyncCache]]) -> None:
         self.caches = caches
 
 
@@ -210,7 +210,7 @@ def test_inject_from_container_resolves_set_of_impls() -> None:
     container = wireup.create_sync_container(injectables=[RedisCache, InMemoryCache])
 
     @wireup.inject_from_container(container)
-    def handler(caches: Injected[Set[Cache]]) -> set[str]:
+    def handler(caches: Injected[set[Cache]]) -> set[str]:
         return {cache.name() for cache in caches}
 
     result = handler()

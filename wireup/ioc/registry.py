@@ -5,7 +5,7 @@ import typing
 import warnings
 from collections import defaultdict
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, Callable, Iterator, Tuple, TypeVar, Union
+from typing import TYPE_CHECKING, Any, Callable, Iterator, TypeVar, Union
 
 from wireup.errors import (
     AsTypeMismatchError,
@@ -170,6 +170,9 @@ class ContainerRegistry:
         if not is_compatible:
             raise AsTypeMismatchError(implementation=implementation_type, as_type=target_type)
 
+    def _is_collection_dep_async(self, annotation: CollectionInjectionRequest) -> bool:
+        return any(self.factories[obj_id].is_async for _, obj_id in self.iter_impls_for_type(annotation.inner_type))
+
     def _update_factories_async_flag(self) -> None:
         def _is_dependency_async(impl: type, qualifier: Qualifier | None) -> bool:
             factory = self.factories[get_container_object_id(self.get_implementation(impl, qualifier), qualifier)]
@@ -183,9 +186,8 @@ class ContainerRegistry:
 
                 dep_annotation = dep.annotation
                 if isinstance(dep_annotation, CollectionInjectionRequest):
-                    for _, impl_obj_id in self.iter_impls_for_type(dep_annotation.inner_type):
-                        if self.factories[impl_obj_id].is_async:
-                            return True
+                    if self._is_collection_dep_async(dep_annotation):
+                        return True
                     continue
 
                 if _is_dependency_async(dep.klass, dep.qualifier_value):
@@ -324,9 +326,7 @@ class ContainerRegistry:
     def get_lifetime(self, klass: type, qualifier: Qualifier | None) -> InjectableLifetime:
         return self.lifetime[get_container_object_id(self.get_implementation(klass, qualifier), qualifier)]
 
-    def iter_impls_for_type(
-        self, inner_type: type
-    ) -> Iterator[Tuple[Union[Qualifier, None], ContainerObjectIdentifier]]:
+    def iter_impls_for_type(self, inner_type: type) -> Iterator[tuple[Qualifier | None, ContainerObjectIdentifier]]:
         """Yield (qualifier, factories_key) for every registered impl of ``inner_type``.
 
         Spans both registration paths wireup supports today:

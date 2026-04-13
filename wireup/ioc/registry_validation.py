@@ -94,7 +94,7 @@ def assert_lifetime_valid(
         raise WireupError(msg)
 
 
-def assert_dependency_exists(
+def assert_dependency_exists(  # noqa: PLR0913
     *,
     parameters: Any,
     is_type_with_qualifier_known: Any,
@@ -133,6 +133,33 @@ def assert_dependency_exists(
         raise WireupError(msg)
 
 
+def _assert_collection_resolution_path(
+    *,
+    registry: ContainerRegistry,
+    dependency: AnnotatedParameter,
+    annotation: CollectionInjectionRequest,
+    path: list[tuple[AnnotatedParameter, Any]],
+) -> None:
+    """Recurse through each impl of a collection dep so cycles passing through it are detected."""
+    for _, impl_obj_id in registry.iter_impls_for_type(annotation.inner_type):
+        if isinstance(impl_obj_id, tuple):
+            impl_klass, impl_qualifier = impl_obj_id
+        else:
+            impl_klass, impl_qualifier = impl_obj_id, None
+        impl_factory = registry.factories[impl_obj_id]
+        new_path: list[tuple[AnnotatedParameter, Any]] = [*path, (dependency, impl_factory)]
+        if any(p.klass == impl_klass and p.qualifier_value == impl_qualifier for p, _ in path):
+            inner_name = format_name(annotation.inner_type, None)
+            msg = f"Circular dependency detected through collection dependency {inner_name}"
+            raise WireupError(msg)
+        for next_dependency in registry.dependencies[impl_factory.factory].values():
+            assert_valid_resolution_path(
+                registry=registry,
+                dependency=next_dependency,
+                path=new_path,
+            )
+
+
 def assert_valid_resolution_path(
     *,
     registry: ContainerRegistry,
@@ -144,31 +171,12 @@ def assert_valid_resolution_path(
         return
 
     if isinstance(dependency.annotation, CollectionInjectionRequest):
-        # Recurse through each impl of the collection's inner type so cycles that pass
-        # through a Set[T] dep are still detected.
-        for _, impl_obj_id in registry.iter_impls_for_type(dependency.annotation.inner_type):
-            if isinstance(impl_obj_id, tuple):
-                impl_klass, impl_qualifier = impl_obj_id
-            else:
-                impl_klass, impl_qualifier = impl_obj_id, None
-            impl_factory = registry.factories[impl_obj_id]
-            synthetic_dependency = AnnotatedParameter(klass=impl_klass, annotation=None)
-            synthetic_dependency.qualifier_value = impl_qualifier
-            new_path: list[tuple[AnnotatedParameter, Any]] = [*path, (dependency, impl_factory)]
-            if any(
-                p.klass == impl_klass and p.qualifier_value == impl_qualifier
-                for p, _ in path
-            ):
-                raise WireupError(
-                    f"Circular dependency detected through collection dependency "
-                    f"{format_name(dependency.annotation.inner_type, None)}"
-                )
-            for next_dependency in registry.dependencies[impl_factory.factory].values():
-                assert_valid_resolution_path(
-                    registry=registry,
-                    dependency=next_dependency,
-                    path=new_path,
-                )
+        _assert_collection_resolution_path(
+            registry=registry,
+            dependency=dependency,
+            annotation=dependency.annotation,
+            path=path,
+        )
         return
 
     if dependency.klass in registry.interfaces:
