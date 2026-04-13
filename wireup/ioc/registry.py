@@ -15,6 +15,7 @@ from wireup.errors import (
     InvalidAsTypeError,
     InvalidRegistrationTypeError,
     UnknownQualifiedServiceRequestedError,
+    WireupError,
 )
 from wireup.ioc.configuration import ConfigStore
 from wireup.ioc.dependency_introspection import injectable_get_dependencies
@@ -74,11 +75,14 @@ def _build_collection_factory(
     for CollectionKind.MAP.
     """
     param_names = [f"_impl_{i}" for i in range(len(qualifiers))]
-    if kind is CollectionKind.MAP:
+    if kind is CollectionKind.SET:
+        literal = "{" + ", ".join(param_names) + "}" if param_names else "set()"
+    elif kind is CollectionKind.MAP:
         pairs = ", ".join(f"{q!r}: {name}" for q, name in zip(qualifiers, param_names))
         literal = "{" + pairs + "}" if pairs else "{}"
     else:
-        literal = "{" + ", ".join(param_names) + "}" if param_names else "set()"
+        msg = f"Unsupported CollectionKind: {kind}"
+        raise WireupError(msg)
     source = f"def _collection_factory({', '.join(param_names)}):\n    return {literal}\n"
     namespace: dict[str, Any] = {}
     exec(source, namespace)  # noqa: S102
