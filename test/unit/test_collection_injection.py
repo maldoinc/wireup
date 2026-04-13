@@ -81,7 +81,7 @@ class _ScopedCacheImplB(_ScopedCache):
         return "scoped_two"
 
 
-@injectable  # default lifetime is singleton
+@injectable
 class _SingletonConsumerOfScopedCollection:
     def __init__(self, caches: Injected[set[_ScopedCache]]) -> None:
         self.caches = caches
