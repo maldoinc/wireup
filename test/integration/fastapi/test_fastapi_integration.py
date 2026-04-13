@@ -631,3 +631,42 @@ def test_class_based_lifespan_dual_pass_does_not_double_wrap_routes() -> None:
     call_after_startup = _get_http_route_call(app, "/")
     assert res.status_code == 200
     assert _wireup_wrapper_count(call_after_startup) == 1
+
+
+# ---- Set[T] collection injection through a FastAPI route ----
+
+
+class _RouteCache:
+    def name(self) -> str:
+        return "base"
+
+
+@injectable(as_type=_RouteCache, qualifier="redis")
+class _RouteRedisCache(_RouteCache):
+    def name(self) -> str:
+        return "redis"
+
+
+@injectable(as_type=_RouteCache, qualifier="memory")
+class _RouteMemoryCache(_RouteCache):
+    def name(self) -> str:
+        return "memory"
+
+
+def test_fastapi_route_injects_set_of_impls() -> None:
+    app = FastAPI()
+    container = wireup.create_async_container(
+        injectables=[_RouteRedisCache, _RouteMemoryCache, wireup.integration.fastapi],
+    )
+
+    @app.get("/caches")
+    async def list_caches(caches: Injected[set[_RouteCache]]) -> Dict[str, Any]:
+        return {"names": sorted(cache.name() for cache in caches)}
+
+    wireup.integration.fastapi.setup(container, app)
+
+    with TestClient(app) as client:
+        res = client.get("/caches")
+
+    assert res.status_code == 200
+    assert res.json() == {"names": ["memory", "redis"]}
