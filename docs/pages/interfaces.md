@@ -213,8 +213,8 @@ before the set is assembled.
 
 ## Injecting Implementations by Qualifier
 
-Use `Mapping[str, T]` to receive qualifier → implementation pairs. Each qualified impl becomes
-a keyed entry in the injected dict.
+Use `Mapping[str, T]` to receive qualifier → implementation pairs. Each qualified impl becomes a keyed entry in
+the injected dict.
 
 ```python
 from typing import Mapping
@@ -231,17 +231,16 @@ class InMemoryCache(Cache): ...
 
 @inject_from_container(container)
 def pick_cache(caches: Injected[Mapping[str, Cache]], name: str) -> Cache:
-    return caches[name]  # caches["redis"], caches["memory"], ...
+    return caches[name]
 ```
 
-Any of `Mapping[str, T]`, `dict[str, T]`, `typing.Mapping[str, T]`, and `typing.Dict[str, T]`
-resolve identically. Non-`str` key types (e.g. `Mapping[int, T]`) are rejected with a helpful
-error at container-build time.
+Map resolution uses the same machinery as `Set[T]` — wireup iterates registered impls, resolves each via its
+compiled factory, and keys the result by qualifier.
 
-!!! note
+!!! note "Unqualified impls"
 
-    Unqualified implementations are not included in the map — they have no key to index under.
-    Use `Set[T]` when you want every implementation regardless of whether it has a qualifier.
+    Implementations registered without a qualifier have no key to index under, so they are not included in the
+    map. Use `Set[T]` when you want every implementation regardless.
 
 ## `as_type` with Optional Types
 
