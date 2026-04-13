@@ -8,7 +8,6 @@ from wireup.integration.fastapi import WireupRoute
 from wireup_benchmarks import services
 from wireup_benchmarks.services import A, B, C, D, E, F, G, H, I
 
-
 router = fastapi.APIRouter(route_class=WireupRoute)
 container = wireup.create_async_container(
     services=[
