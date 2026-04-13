@@ -6,7 +6,7 @@ from uuid import uuid4
 
 from wireup.codegen import Codegen
 from wireup.ioc.container.async_container import BareAsyncContainer, async_container_force_sync_scope
-from wireup.ioc.types import AnnotatedParameter, ConfigInjectionRequest
+from wireup.ioc.types import AnnotatedParameter, CollectionInjectionRequest, ConfigInjectionRequest
 
 if TYPE_CHECKING:
     from wireup.ioc.container.base_container import BaseContainer
@@ -142,41 +142,51 @@ def _generate_injection(  # noqa: C901, PLR0912
             else:
                 namespace[f"_wireup_config_key_{name}"] = param.annotation.config_key
                 gen += f"kwargs['{name}'] = scope.config.get(_wireup_config_key_{name})"
-        else:
-            ns_klass_var = f"_wireup_obj_{name}_klass"
-            namespace[ns_klass_var] = param.klass
-            ns_qualifier_var = f"_wireup_obj_{name}_qualifier"
-            namespace[ns_qualifier_var] = param.qualifier_value
+            continue
 
-            args_str = f"{ns_klass_var}, {ns_qualifier_var}" if param.qualifier_value is not None else ns_klass_var
-
-            # If we have a container instance, we can use that to skip the scope.get call entirely
-            # and just call the underlying factories directly.
-            if container:
-                lifetime = container._registry.get_lifetime(param.klass, param.qualifier_value)
-                factories_var = "_wireup_singleton_factories" if lifetime == "singleton" else "_wireup_scoped_factories"
-                dependency_obj_id = get_container_object_id(param.klass, param.qualifier_value)
-                ns_dependency_obj_id_var = f"_wireup_obj_{name}_obj_id"
-                namespace[ns_dependency_obj_id_var] = dependency_obj_id
-
-                # Apply only if:
-                #   Async container injecting into an async function
-                #   Sync container into a sync function.
-                # Avoid async container into sync function
-                # In this case the container.get call does a bunch of extra work on the unhappy path
-                # to inject cached or overridden instances. Let's skip this path
-                if (compiled := namespace[factories_var].get(dependency_obj_id)) and (
-                    compiled.is_async == is_target_async or (is_target_async and not compiled.is_async)
-                ):
-                    maybe_await = "await " if compiled.is_async else ""
-                    gen += f"kwargs['{name}'] = {maybe_await}{factories_var}[{ns_dependency_obj_id_var}].factory(scope)"
-
-                    continue
-
+        if isinstance(param.annotation, CollectionInjectionRequest):
+            ns_inner_type_var = f"_wireup_collection_inner_{name}"
+            namespace[ns_inner_type_var] = param.annotation.inner_type
             if is_target_async:
-                gen += f"kwargs['{name}'] = await scope.get({args_str})"
+                gen += f"kwargs['{name}'] = await scope._resolve_collection_set_async({ns_inner_type_var})"
             else:
-                gen += f"kwargs['{name}'] = scope._synchronous_get({args_str})"
+                gen += f"kwargs['{name}'] = scope._resolve_collection_set({ns_inner_type_var})"
+            continue
+
+        ns_klass_var = f"_wireup_obj_{name}_klass"
+        namespace[ns_klass_var] = param.klass
+        ns_qualifier_var = f"_wireup_obj_{name}_qualifier"
+        namespace[ns_qualifier_var] = param.qualifier_value
+
+        args_str = f"{ns_klass_var}, {ns_qualifier_var}" if param.qualifier_value is not None else ns_klass_var
+
+        # If we have a container instance, we can use that to skip the scope.get call entirely
+        # and just call the underlying factories directly.
+        if container:
+            lifetime = container._registry.get_lifetime(param.klass, param.qualifier_value)
+            factories_var = "_wireup_singleton_factories" if lifetime == "singleton" else "_wireup_scoped_factories"
+            dependency_obj_id = get_container_object_id(param.klass, param.qualifier_value)
+            ns_dependency_obj_id_var = f"_wireup_obj_{name}_obj_id"
+            namespace[ns_dependency_obj_id_var] = dependency_obj_id
+
+            # Apply only if:
+            #   Async container injecting into an async function
+            #   Sync container into a sync function.
+            # Avoid async container into sync function
+            # In this case the container.get call does a bunch of extra work on the unhappy path
+            # to inject cached or overridden instances. Let's skip this path
+            if (compiled := namespace[factories_var].get(dependency_obj_id)) and (
+                compiled.is_async == is_target_async or (is_target_async and not compiled.is_async)
+            ):
+                maybe_await = "await " if compiled.is_async else ""
+                gen += f"kwargs['{name}'] = {maybe_await}{factories_var}[{ns_dependency_obj_id_var}].factory(scope)"
+
+                continue
+
+        if is_target_async:
+            gen += f"kwargs['{name}'] = await scope.get({args_str})"
+        else:
+            gen += f"kwargs['{name}'] = scope._synchronous_get({args_str})"
 
     if target_type == CallableType.ASYNC_GENERATOR:
         gen += "async for item in _wireup_target(*args, **kwargs):"

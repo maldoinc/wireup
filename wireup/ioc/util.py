@@ -279,6 +279,7 @@ def get_valid_injection_annotated_parameters(
             parameter=parameter,
             target=target,
             name=name,
+            registry=container._registry,
         )
 
     return names_to_inject
@@ -288,6 +289,12 @@ def injection_requires_scope(names_to_inject: dict[str, AnnotatedParameter], con
     """Return True when any injected dependency requires entering a scope."""
     for param in names_to_inject.values():
         if isinstance(param.annotation, ConfigInjectionRequest):
+            continue
+
+        if isinstance(param.annotation, CollectionInjectionRequest):
+            for _, obj_id in container._registry.iter_impls_for_type(param.annotation.inner_type):
+                if container._registry.lifetime[obj_id] != "singleton":
+                    return True
             continue
 
         if container._registry.get_lifetime(param.klass, param.qualifier_value) != "singleton":
