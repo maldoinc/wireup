@@ -25,6 +25,7 @@ from wireup.ioc.types import (
     AnnotatedParameter,
     AnyCallable,
     CallableType,
+    CollectionInjectionRequest,
     ContainerObjectIdentifier,
     InjectableLifetime,
     get_container_object_id,
@@ -178,6 +179,13 @@ class ContainerRegistry:
 
             for dep in self.dependencies[factory.factory].values():
                 if dep.is_parameter:
+                    continue
+
+                dep_annotation = dep.annotation
+                if isinstance(dep_annotation, CollectionInjectionRequest):
+                    for _, impl_obj_id in self.iter_impls_for_type(dep_annotation.inner_type):
+                        if self.factories[impl_obj_id].is_async:
+                            return True
                     continue
 
                 if _is_dependency_async(dep.klass, dep.qualifier_value):
