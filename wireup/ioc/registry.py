@@ -55,8 +55,7 @@ class InjectableFactory:
     raw_type: type
 
 
-# Ordered loosest-to-tightest: a synthesized collection factory inherits its impls' loosest
-# lifetime so the existing singleton-depends-on-transient check rejects misuse automatically.
+# Loosest-to-tightest: collection factories inherit their impls' loosest lifetime.
 _LIFETIME_RANK: dict[InjectableLifetime, int] = {"singleton": 0, "scoped": 1, "transient": 2}
 
 

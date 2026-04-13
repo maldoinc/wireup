@@ -64,9 +64,6 @@ def test_set_of_qualified_cache_impls_is_injected() -> None:
     assert names == {"redis", "in_memory"}
 
 
-# ---- Validation rules ----
-
-
 class _ScopedCache(ABC):
     @abstractmethod
     def name(self) -> str: ...
@@ -129,9 +126,6 @@ def test_cycle_through_collection_dep_is_rejected() -> None:
         wireup.create_sync_container(injectables=[_CycleImplA, _CycleConsumer])
 
 
-# ---- Async variant ----
-
-
 class _AsyncCache(ABC):
     @abstractmethod
     def tag(self) -> str: ...
@@ -174,9 +168,6 @@ async def test_async_container_resolves_set_of_async_impls() -> None:
     assert tags == {"async_redis", "async_memory"}
 
 
-# ---- inject_from_container path ----
-
-
 def test_inject_from_container_resolves_set_of_impls() -> None:
     container = wireup.create_sync_container(injectables=[RedisCache, InMemoryCache])
 
@@ -186,9 +177,6 @@ def test_inject_from_container_resolves_set_of_impls() -> None:
 
     result = handler()
     assert result == {"redis", "in_memory"}
-
-
-# ---- Edge cases ----
 
 
 class _EmptyCache(ABC):
@@ -271,9 +259,6 @@ def test_top_level_container_get_on_parameterized_set_raises() -> None:
         container.get(set[Cache])
 
 
-# ---- Factory functions with heterogeneous deps (the downstream DeviceBuilder pattern) ----
-
-
 class _ProducerTransport:
     def __init__(self) -> None:
         self.tag = "producer"
@@ -321,9 +306,6 @@ class _DeviceLifecycleService:
         self.builders = builders
 
 
-# ---- Regression: _iter_impls_for_type via the @wireup.abstract interfaces path ----
-
-
 with warnings.catch_warnings():
     warnings.simplefilter("ignore", FutureWarning)
 
@@ -359,9 +341,6 @@ def test_set_of_impls_resolves_via_wireup_abstract_interface() -> None:
     consumer = container.get(_InheritConsumer)
     labels = {impl.label() for impl in consumer.impls}
     assert labels == {"alpha", "beta"}
-
-
-# ---- Regression: injection_requires_scope is pure after synthesis ----
 
 
 class _PureCheckCache(ABC):
