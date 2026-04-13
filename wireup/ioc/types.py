@@ -52,18 +52,17 @@ class ConfigInjectionRequest(InjectableType):
     config_key: ConfigurationReference
 
 
-@dataclass(frozen=True)
-class CollectionInjectionRequest(InjectableType):
-    """Flag indicating this parameter should receive every registered implementation of an interface.
+class CollectionKind(Enum):
+    """Sentinel qualifier values used to key synthesized collection factories.
 
-    Produced by ``param_get_annotation`` when it sees a parameter typed ``Set[T]`` / ``set[T]``
-    (and, in a follow-up PR, ``Mapping[str, T]`` / ``dict[str, T]``). The collection is resolved
-    at injection time by iterating every impl of ``inner_type`` known to the registry.
+    A parameter typed ``Set[T]`` is rewritten by ``param_get_annotation`` into a qualified
+    service dep with ``qualifier = CollectionKind.SET``. The registry then synthesizes an
+    ``InjectableFactory`` under ``(T, CollectionKind.SET)`` that builds the set at resolve
+    time. This keeps collection injection on the same codegen hot path as every other
+    qualified dep: a single ``factories[obj_id].factory(container)`` call.
     """
 
-    __slots__ = ("collection_type", "inner_type")
-    collection_type: type
-    inner_type: type
+    SET = "set"
 
 
 Qualifier = Hashable

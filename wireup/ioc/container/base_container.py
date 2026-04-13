@@ -127,43 +127,6 @@ class BaseContainer:
 
         raise UnknownServiceRequestedError(klass, qualifier)
 
-    def _resolve_collection_set(self, inner_type: type[T]) -> set[T]:
-        """Resolve every registered implementation of ``inner_type`` as a set.
-
-        Invoked from generated code for ``Injected[Set[T]]`` parameters on sync consumers.
-        Reads the live registry on each call so non-singleton consumers pick up
-        implementations added via ``container.extend()`` after compilation.
-        Raises ``WireupError`` if any implementation is async, matching the existing
-        sync-container-with-async-dep semantics above.
-        """
-        result: set[T] = set()
-        for _, obj_id in self._registry.iter_impls_for_type(inner_type):
-            factory = self._factories[obj_id]
-            if factory.is_async:
-                msg = (
-                    f"{inner_type.__name__} has async implementations; "
-                    f"cannot resolve Set[{inner_type.__name__}] in a synchronous context. "
-                    "Create and use an async container via wireup.create_async_container."
-                )
-                raise WireupError(msg)
-            result.add(factory.factory(self))
-        return result
-
-    async def _resolve_collection_set_async(self, inner_type: type[T]) -> set[T]:
-        """Resolve every registered implementation of ``inner_type`` as a set (async).
-
-        Invoked from generated code for ``Injected[Set[T]]`` parameters on async consumers.
-        Per-impl ``await`` is applied based on each compiled factory's ``is_async`` flag.
-        """
-        result: set[T] = set()
-        for _, obj_id in self._registry.iter_impls_for_type(inner_type):
-            factory = self._factories[obj_id]
-            value = factory.factory(self)
-            if factory.is_async:
-                value = await value
-            result.add(value)
-        return result
-
     def _recompile(self) -> None:
         """Update internal container state after registry changes"""
         self._compiler.compile()

@@ -9,7 +9,7 @@ import pytest
 import wireup
 from wireup import Injected, injectable
 from wireup.errors import CollectionInterfaceUnknownError, WireupError
-from wireup.ioc.types import CollectionInjectionRequest
+from wireup.ioc.types import CollectionKind, InjectableQualifier
 from wireup.ioc.util import param_get_annotation
 
 
@@ -44,9 +44,9 @@ def test_param_get_annotation_detects_set_of_interface() -> None:
 
     assert result is not None
     assert result.klass is Cache
-    assert isinstance(result.annotation, CollectionInjectionRequest)
-    assert result.annotation.collection_type is set
-    assert result.annotation.inner_type is Cache
+    assert isinstance(result.annotation, InjectableQualifier)
+    assert result.annotation.qualifier is CollectionKind.SET
+    assert result.qualifier_value is CollectionKind.SET
 
 
 def test_param_get_annotation_detects_injected_set_of_interface() -> None:
@@ -57,8 +57,7 @@ def test_param_get_annotation_detects_injected_set_of_interface() -> None:
 
     assert result is not None
     assert result.klass is Cache
-    assert isinstance(result.annotation, CollectionInjectionRequest)
-    assert result.annotation.inner_type is Cache
+    assert result.qualifier_value is CollectionKind.SET
 
 
 def test_set_of_qualified_cache_impls_is_injected() -> None:
@@ -199,9 +198,16 @@ async def test_async_container_resolves_set_of_async_impls() -> None:
     tags = {cache.tag() for cache in consumer.caches}
     assert tags == {"async_redis", "async_memory"}
 
-    compiled_factory = container._factories[_AsyncCacheConsumer]
-    assert "_resolve_collection_set_async" in compiled_factory.generated_source
-    assert "await container._resolve_collection_set_async" in compiled_factory.generated_source
+    # The synthesized collection factory is registered under (_AsyncCache, CollectionKind.SET)
+    # and async-flag propagation marks the consumer as async. The consumer's generated code
+    # resolves the collection through the standard service-branch dict lookup.
+    collection_obj_id = (_AsyncCache, CollectionKind.SET)
+    assert collection_obj_id in container._factories
+    assert container._factories[collection_obj_id].is_async
+
+    consumer_compiled = container._factories[_AsyncCacheConsumer]
+    assert "factories[" in consumer_compiled.generated_source
+    assert "await factories[" in consumer_compiled.generated_source
 
 
 # ---- inject_from_container path ----
@@ -290,10 +296,8 @@ def test_typing_set_alias_and_set_spelling_resolve_identically() -> None:
 
     assert lowercase_result is not None
     assert typing_result is not None
-    assert isinstance(lowercase_result.annotation, CollectionInjectionRequest)
-    assert isinstance(typing_result.annotation, CollectionInjectionRequest)
-    assert lowercase_result.annotation.collection_type is set
-    assert typing_result.annotation.collection_type is set
+    assert lowercase_result.qualifier_value is CollectionKind.SET
+    assert typing_result.qualifier_value is CollectionKind.SET
     assert lowercase_result.klass is Cache
     assert typing_result.klass is Cache
 

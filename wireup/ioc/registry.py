@@ -5,10 +5,11 @@ import typing
 import warnings
 from collections import defaultdict
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, Callable, Iterator, TypeVar, Union
+from typing import TYPE_CHECKING, Any, Callable, Iterator, TypeVar, Union, cast
 
 from wireup.errors import (
     AsTypeMismatchError,
+    CollectionInterfaceUnknownError,
     DuplicateQualifierForInterfaceError,
     DuplicateServiceRegistrationError,
     FactoryReturnTypeIsEmptyError,
@@ -25,9 +26,10 @@ from wireup.ioc.types import (
     AnnotatedParameter,
     AnyCallable,
     CallableType,
-    CollectionInjectionRequest,
+    CollectionKind,
     ContainerObjectIdentifier,
     InjectableLifetime,
+    InjectableQualifier,
     get_container_object_id,
 )
 from wireup.ioc.util import ensure_is_type, get_callable_type, get_globals
@@ -52,6 +54,40 @@ class InjectableFactory:
     is_async: bool
     is_optional_type: bool
     raw_type: type
+
+
+_LIFETIME_RANK: dict[InjectableLifetime, int] = {"singleton": 0, "scoped": 1, "transient": 2}
+
+
+def _loosest_lifetime(lifetimes: list[InjectableLifetime]) -> InjectableLifetime:
+    """Return the loosest lifetime among the given impls.
+
+    Loosest = most frequently rebuilt: transient > scoped > singleton. A synthesized collection
+    factory inherits its impls' loosest lifetime so existing ``assert_lifetime_valid`` checks
+    reject a singleton consumer that depends on a transient-impl collection, identically to how
+    they reject singletons depending on plain transient services.
+    """
+    return max(lifetimes, key=lambda lt: _LIFETIME_RANK[lt])
+
+
+def _build_set_collection_factory(inner_type: type, impl_count: int) -> Callable[..., Any]:
+    """Generate a specialized sync factory that builds a set from its keyword arguments.
+
+    Creates a fresh function object per call so each collection type has a distinct identity
+    in ``self.dependencies`` — wireup keys dep maps by function identity. The emitted source
+    uses positional parameters and a set literal for the tightest possible bytecode; the
+    factory compiler's kwargs loop then emits matching positional-by-name calls.
+    """
+    param_names = tuple(f"_impl_{i}" for i in range(impl_count))
+    params_signature = ", ".join(param_names)
+    set_literal = "{" + ", ".join(param_names) + "}" if param_names else "set()"
+    source = f"def _collection_factory({params_signature}):\n    return {set_literal}\n"
+    namespace: dict[str, Any] = {}
+    exec(source, namespace)  # noqa: S102
+    factory_fn = cast("Callable[..., Any]", namespace["_collection_factory"])
+    factory_fn.__name__ = f"_wireup_set_collection_{inner_type.__name__}"
+    factory_fn.__qualname__ = factory_fn.__name__
+    return factory_fn
 
 
 def _function_get_unwrapped_return_type(fn: Callable[..., T]) -> type[T] | None:
@@ -133,6 +169,7 @@ class ContainerRegistry:
                 auto_discover_interfaces=impl.as_type is None,
             )
 
+        self._synthesize_collection_factories()
         validate_registry(self)
         self._update_factories_async_flag()
         if self.on_change:
@@ -170,8 +207,91 @@ class ContainerRegistry:
         if not is_compatible:
             raise AsTypeMismatchError(implementation=implementation_type, as_type=target_type)
 
-    def _is_collection_dep_async(self, annotation: CollectionInjectionRequest) -> bool:
-        return any(self.factories[obj_id].is_async for _, obj_id in self.iter_impls_for_type(annotation.inner_type))
+    def _synthesize_collection_factories(self) -> None:
+        """Register one ``InjectableFactory`` per collection type referenced by a registered consumer.
+
+        Scans ``self.dependencies`` for parameters rewritten to qualified service deps with a
+        ``CollectionKind`` sentinel qualifier (produced by ``param_get_annotation`` for ``Set[T]``
+        parameters). For each distinct inner type, generates a specialized factory function via
+        ``exec`` whose body is a set literal over its impl-valued keyword arguments, and registers
+        it under ``(inner_type, CollectionKind.SET)``. Consumer codegen then resolves the set via
+        the standard ``factories[obj_id].factory(container)`` service-branch path — the singleton
+        cache swap (factory_compiler.py:222) applies automatically.
+
+        Idempotent: already-synthesized entries are skipped, so repeated ``extend()`` calls don't
+        rebuild existing collection factories (matching wireup's compile-once-lock-in semantics
+        for every other compiled entity).
+        """
+        for consumer_factory, deps in list(self.dependencies.items()):
+            for param_name, param in deps.items():
+                if isinstance(param.qualifier_value, CollectionKind):
+                    self._register_collection_factory(
+                        inner_type=param.klass,
+                        kind=param.qualifier_value,
+                        consumer_factory=consumer_factory,
+                        param_name=param_name,
+                    )
+
+    def ensure_collection_factories_for(self, params: dict[str, AnnotatedParameter], target: Any) -> bool:
+        """Synthesize any missing collection factories referenced by an external injection target.
+
+        Used by ``get_valid_injection_annotated_parameters`` for ``@inject_from_container``-decorated
+        functions, which aren't in ``self.dependencies`` but may still reference ``Set[T]`` deps.
+        Returns ``True`` if any new collection factory was created so the caller can trigger a
+        recompile pass.
+        """
+        created = False
+        for param_name, param in params.items():
+            if not isinstance(param.qualifier_value, CollectionKind):
+                continue
+            obj_id = get_container_object_id(param.klass, param.qualifier_value)
+            if obj_id in self.factories:
+                continue
+            self._register_collection_factory(
+                inner_type=param.klass,
+                kind=param.qualifier_value,
+                consumer_factory=target,
+                param_name=param_name,
+            )
+            created = True
+        return created
+
+    def _register_collection_factory(
+        self,
+        *,
+        inner_type: type,
+        kind: CollectionKind,
+        consumer_factory: Any,
+        param_name: str,
+    ) -> None:
+        obj_id = get_container_object_id(inner_type, kind)
+        if obj_id in self.factories:
+            return
+
+        impl_entries = list(self.iter_impls_for_type(inner_type))
+        if not impl_entries:
+            raise CollectionInterfaceUnknownError(inner_type, param_name, consumer_factory)
+
+        factory_fn = _build_set_collection_factory(inner_type, len(impl_entries))
+
+        dep_map: dict[str, AnnotatedParameter] = {}
+        impl_lifetimes: list[InjectableLifetime] = []
+        for i, (impl_qualifier, impl_obj_id) in enumerate(impl_entries):
+            impl_klass = impl_obj_id[0] if isinstance(impl_obj_id, tuple) else impl_obj_id
+            annotation = InjectableQualifier(qualifier=impl_qualifier) if impl_qualifier is not None else None
+            dep_map[f"_impl_{i}"] = AnnotatedParameter(klass=impl_klass, annotation=annotation)
+            impl_lifetimes.append(self.lifetime[impl_obj_id])
+
+        self.dependencies[factory_fn] = dep_map
+        self.lifetime[obj_id] = _loosest_lifetime(impl_lifetimes)
+        self.factories[obj_id] = InjectableFactory(
+            factory=factory_fn,
+            callable_type=CallableType.REGULAR,
+            is_async=False,
+            is_optional_type=False,
+            raw_type=inner_type,
+        )
+        self.impls[inner_type].add(kind)
 
     def _update_factories_async_flag(self) -> None:
         def _is_dependency_async(impl: type, qualifier: Qualifier | None) -> bool:
@@ -182,12 +302,6 @@ class ContainerRegistry:
 
             for dep in self.dependencies[factory.factory].values():
                 if dep.is_parameter:
-                    continue
-
-                dep_annotation = dep.annotation
-                if isinstance(dep_annotation, CollectionInjectionRequest):
-                    if self._is_collection_dep_async(dep_annotation):
-                        return True
                     continue
 
                 if _is_dependency_async(dep.klass, dep.qualifier_value):
@@ -318,6 +432,11 @@ class ContainerRegistry:
 
     def get_implementation(self, klass: type, qualifier: Qualifier | None) -> type:
         """Return the concrete implementation for a given class/interface and qualifier."""
+        # Collection sentinel qualifiers bypass interface→impl resolution: the synthesized
+        # collection factory is keyed under (klass, CollectionKind.X) directly.
+        if isinstance(qualifier, CollectionKind):
+            return klass
+
         if self.is_interface_known(klass):
             return self.interface_resolve_impl(klass, qualifier)
 

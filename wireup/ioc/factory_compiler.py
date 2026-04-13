@@ -11,7 +11,6 @@ from wireup.errors import WireupError
 from wireup.ioc.types import (
     GENERATOR_CALLABLE_TYPES,
     CallableType,
-    CollectionInjectionRequest,
     ConfigInjectionRequest,
     TemplatedString,
     get_container_object_id,
@@ -74,20 +73,6 @@ def _emit_config_kwarg(
     ns_key = f"_config_val_{name}"
     config_dependencies[ns_key] = registry.parameters.get(dep.annotation.config_key)
     return f"{name} = {ns_key}, "
-
-
-def _emit_collection_kwarg(
-    name: str,
-    dep: Any,
-    config_dependencies: dict[str, Any],
-    *,
-    consumer_is_async: bool,
-) -> str:
-    ns_inner_type_var = f"_collection_inner_{name}"
-    config_dependencies[ns_inner_type_var] = dep.annotation.inner_type
-    helper_name = "_resolve_collection_set_async" if consumer_is_async else "_resolve_collection_set"
-    collection_await = "await " if consumer_is_async else ""
-    return f"{name} = {collection_await}container.{helper_name}({ns_inner_type_var}), "
 
 
 def _emit_service_kwarg(
@@ -190,10 +175,6 @@ class FactoryCompiler:
             for name, dep in self._registry.dependencies[factory.factory].items():
                 if isinstance(dep.annotation, ConfigInjectionRequest):
                     kwargs += _emit_config_kwarg(name, dep, config_dependencies, self._registry)
-                    continue
-
-                if isinstance(dep.annotation, CollectionInjectionRequest):
-                    kwargs += _emit_collection_kwarg(name, dep, config_dependencies, consumer_is_async=factory.is_async)
                     continue
 
                 kwargs += _emit_service_kwarg(name, dep, config_dependencies, self._registry)

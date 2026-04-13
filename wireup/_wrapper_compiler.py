@@ -6,7 +6,7 @@ from uuid import uuid4
 
 from wireup.codegen import Codegen
 from wireup.ioc.container.async_container import BareAsyncContainer, async_container_force_sync_scope
-from wireup.ioc.types import AnnotatedParameter, CollectionInjectionRequest, ConfigInjectionRequest
+from wireup.ioc.types import AnnotatedParameter, ConfigInjectionRequest
 
 if TYPE_CHECKING:
     from wireup.ioc.container.base_container import BaseContainer
@@ -135,23 +135,7 @@ def _emit_wrapper_config_kwarg(
     gen += f"kwargs['{name}'] = scope.config.get(_wireup_config_key_{name})"
 
 
-def _emit_wrapper_collection_kwarg(
-    gen: Codegen,
-    namespace: dict[str, Any],
-    name: str,
-    param: AnnotatedParameter,
-    *,
-    is_target_async: bool,
-) -> None:
-    ns_inner_type_var = f"_wireup_collection_inner_{name}"
-    namespace[ns_inner_type_var] = param.annotation.inner_type  # type: ignore[union-attr]
-    if is_target_async:
-        gen += f"kwargs['{name}'] = await scope._resolve_collection_set_async({ns_inner_type_var})"
-        return
-    gen += f"kwargs['{name}'] = scope._resolve_collection_set({ns_inner_type_var})"
-
-
-def _generate_injection(  # noqa: C901
+def _generate_injection(
     gen: Codegen,
     names_to_inject: dict[str, AnnotatedParameter],
     target_type: CallableType,
@@ -169,10 +153,6 @@ def _generate_injection(  # noqa: C901
 
         if isinstance(param.annotation, ConfigInjectionRequest):
             _emit_wrapper_config_kwarg(gen, namespace, name, param, container)
-            continue
-
-        if isinstance(param.annotation, CollectionInjectionRequest):
-            _emit_wrapper_collection_kwarg(gen, namespace, name, param, is_target_async=is_target_async)
             continue
 
         ns_klass_var = f"_wireup_obj_{name}_klass"

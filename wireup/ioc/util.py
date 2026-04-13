@@ -17,13 +17,14 @@ from wireup.ioc.types import (
     AnnotatedParameter,
     AnyCallable,
     CallableType,
-    CollectionInjectionRequest,
+    CollectionKind,
     ConfigInjectionRequest,
+    InjectableQualifier,
     InjectableType,
 )
 
-_COLLECTION_ORIGIN_TO_TYPE: dict[Any, type] = {
-    set: set,
+_COLLECTION_ORIGIN_TO_KIND: dict[Any, CollectionKind] = {
+    set: CollectionKind.SET,
 }
 
 T = TypeVar("T")
@@ -102,19 +103,17 @@ def param_get_annotation(
     has_default_value = parameter.default is not Parameter.empty
 
     # Collection injection: detect Set[T] / set[T] / typing.Set[T] and rewrite the
-    # parameter so downstream code sees the inner type as the logical dependency while
-    # the new CollectionInjectionRequest annotation carries the collection shape.
-    collection_type = _COLLECTION_ORIGIN_TO_TYPE.get(get_origin(type_analysis.raw_type))
-    if collection_type is not None:
+    # parameter into a normal qualified service dep pointing at a private sentinel
+    # qualifier. The registry synthesizes a factory under (inner_type, CollectionKind.SET)
+    # so the codegen hot path is identical to every other qualified service dep.
+    collection_kind = _COLLECTION_ORIGIN_TO_KIND.get(get_origin(type_analysis.raw_type))
+    if collection_kind is not None:
         type_args = get_args(type_analysis.raw_type)
         if len(type_args) == 1:
             inner_type = type_args[0]
             return AnnotatedParameter(
                 klass=inner_type,
-                annotation=CollectionInjectionRequest(
-                    collection_type=collection_type,
-                    inner_type=inner_type,
-                ),
+                annotation=InjectableQualifier(qualifier=collection_kind),
                 has_default_value=has_default_value,
             )
 
@@ -267,10 +266,29 @@ def get_inject_annotated_parameters(target: AnyCallable) -> dict[str, AnnotatedP
     return res
 
 
+def _ensure_collection_factories_for_target(
+    container: BaseContainer, names_to_inject: dict[str, AnnotatedParameter], target: Any
+) -> None:
+    """Synthesize collection factories for params of an external injection target.
+
+    ``@inject_from_container``-decorated functions and framework integration route
+    handlers aren't stored in ``registry.dependencies``, so the synthesis pass in
+    ``extend()`` can't see their ``Set[T]`` deps. Trigger on-demand synthesis here so
+    downstream validation, scope detection, and compiled-factory lookup all succeed.
+    Idempotent: already-synthesized collection entries are skipped.
+    """
+    if container._registry.ensure_collection_factories_for(names_to_inject, target=target):
+        container._registry._update_factories_async_flag()
+        if container._registry.on_change:
+            container._registry.on_change()
+
+
 def get_valid_injection_annotated_parameters(
     container: BaseContainer, target: AnyCallable
 ) -> dict[str, AnnotatedParameter]:
     names_to_inject = get_inject_annotated_parameters(target)
+
+    _ensure_collection_factories_for_target(container, names_to_inject, target=target)
 
     for name, parameter in names_to_inject.items():
         assert_dependency_exists(
@@ -279,7 +297,6 @@ def get_valid_injection_annotated_parameters(
             parameter=parameter,
             target=target,
             name=name,
-            registry=container._registry,
         )
 
     return names_to_inject
@@ -287,14 +304,10 @@ def get_valid_injection_annotated_parameters(
 
 def injection_requires_scope(names_to_inject: dict[str, AnnotatedParameter], container: BaseContainer) -> bool:
     """Return True when any injected dependency requires entering a scope."""
+    _ensure_collection_factories_for_target(container, names_to_inject, target=None)
+
     for param in names_to_inject.values():
         if isinstance(param.annotation, ConfigInjectionRequest):
-            continue
-
-        if isinstance(param.annotation, CollectionInjectionRequest):
-            for _, obj_id in container._registry.iter_impls_for_type(param.annotation.inner_type):
-                if container._registry.lifetime[obj_id] != "singleton":
-                    return True
             continue
 
         if container._registry.get_lifetime(param.klass, param.qualifier_value) != "singleton":
