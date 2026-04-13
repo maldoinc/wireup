@@ -5,7 +5,7 @@ import typing
 import warnings
 from collections import defaultdict
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, Callable, Iterator, TypeVar, Union, cast
+from typing import TYPE_CHECKING, Any, Callable, Iterator, TypeVar, Union
 
 from wireup.errors import (
     AsTypeMismatchError,
@@ -60,22 +60,19 @@ _LIFETIME_RANK: dict[InjectableLifetime, int] = {"singleton": 0, "scoped": 1, "t
 
 
 def _loosest_lifetime(lifetimes: list[InjectableLifetime]) -> InjectableLifetime:
-    if not lifetimes:
-        return "singleton"
-    return max(lifetimes, key=lambda lt: _LIFETIME_RANK[lt])
+    default: InjectableLifetime = "singleton"
+    return max(lifetimes, key=lambda lt: _LIFETIME_RANK[lt], default=default)
 
 
 def _build_set_collection_factory(inner_type: type, impl_count: int) -> Callable[..., Any]:
     """Build a fresh sync factory that assembles a set from its keyword impls."""
-    param_names = tuple(f"_impl_{i}" for i in range(impl_count))
-    params_signature = ", ".join(param_names)
+    param_names = [f"_impl_{i}" for i in range(impl_count)]
     set_literal = "{" + ", ".join(param_names) + "}" if param_names else "set()"
-    source = f"def _collection_factory({params_signature}):\n    return {set_literal}\n"
+    source = f"def _collection_factory({', '.join(param_names)}):\n    return {set_literal}\n"
     namespace: dict[str, Any] = {}
     exec(source, namespace)  # noqa: S102
-    factory_fn = cast("Callable[..., Any]", namespace["_collection_factory"])
-    factory_fn.__name__ = f"_wireup_set_collection_{inner_type.__name__}"
-    factory_fn.__qualname__ = factory_fn.__name__
+    factory_fn: Callable[..., Any] = namespace["_collection_factory"]
+    factory_fn.__name__ = factory_fn.__qualname__ = f"_wireup_set_collection_{inner_type.__name__}"
     return factory_fn
 
 
@@ -207,12 +204,8 @@ class ContainerRegistry:
         """Synthesize any missing Set[T] collection factories and refresh compiled state."""
         created = False
         for param in params.values():
-            if not isinstance(param.qualifier_value, CollectionKind):
-                continue
-            if get_container_object_id(param.klass, param.qualifier_value) in self.factories:
-                continue
-            self._register_collection_factory(param.klass, param.qualifier_value)
-            created = True
+            if isinstance(param.qualifier_value, CollectionKind):
+                created |= self._register_collection_factory(param.klass, param.qualifier_value)
 
         if not created:
             return
@@ -221,21 +214,20 @@ class ContainerRegistry:
         if self.on_change:
             self.on_change()
 
-    def _register_collection_factory(self, inner_type: type, kind: CollectionKind) -> None:
+    def _register_collection_factory(self, inner_type: type, kind: CollectionKind) -> bool:
         obj_id = get_container_object_id(inner_type, kind)
         if obj_id in self.factories:
-            return
+            return False
 
         impl_entries = list(self._iter_impls_for_type(inner_type))
         factory_fn = _build_set_collection_factory(inner_type, len(impl_entries))
 
         dep_map: dict[str, AnnotatedParameter] = {}
         impl_lifetimes: list[InjectableLifetime] = []
-        for i, (impl_qualifier, impl_obj_id) in enumerate(impl_entries):
-            impl_klass = impl_obj_id[0] if isinstance(impl_obj_id, tuple) else impl_obj_id
-            annotation = InjectableQualifier(qualifier=impl_qualifier) if impl_qualifier is not None else None
-            dep_map[f"_impl_{i}"] = AnnotatedParameter(klass=impl_klass, annotation=annotation)
-            impl_lifetimes.append(self.lifetime[impl_obj_id])
+        for i, (qualifier, concrete) in enumerate(impl_entries):
+            annotation = InjectableQualifier(qualifier=qualifier) if qualifier is not None else None
+            dep_map[f"_impl_{i}"] = AnnotatedParameter(klass=concrete, annotation=annotation)
+            impl_lifetimes.append(self.lifetime[get_container_object_id(concrete, qualifier)])
 
         self.dependencies[factory_fn] = dep_map
         self.lifetime[obj_id] = _loosest_lifetime(impl_lifetimes)
@@ -247,6 +239,7 @@ class ContainerRegistry:
             raw_type=inner_type,
         )
         self.impls[inner_type].add(kind)
+        return True
 
     def _update_factories_async_flag(self) -> None:
         def _is_dependency_async(impl: type, qualifier: Qualifier | None) -> bool:
@@ -398,15 +391,14 @@ class ContainerRegistry:
     def get_lifetime(self, klass: type, qualifier: Qualifier | None) -> InjectableLifetime:
         return self.lifetime[get_container_object_id(self.get_implementation(klass, qualifier), qualifier)]
 
-    def _iter_impls_for_type(self, inner_type: type) -> Iterator[tuple[Qualifier | None, ContainerObjectIdentifier]]:
-        """Yield (qualifier, factories_key) for every registered impl of ``inner_type``."""
-        seen_qualifiers: set[Qualifier | None] = set()
+    def _iter_impls_for_type(self, inner_type: type) -> Iterator[tuple[Qualifier | None, type]]:
+        """Yield (qualifier, concrete_class) for every registered impl of ``inner_type``."""
+        seen: set[Qualifier | None] = set()
 
         for qualifier, concrete in self.interfaces.get(inner_type, {}).items():
-            seen_qualifiers.add(qualifier)
-            yield qualifier, get_container_object_id(concrete, qualifier)
+            seen.add(qualifier)
+            yield qualifier, concrete
 
         for qualifier in self.impls.get(inner_type, ()):
-            if isinstance(qualifier, CollectionKind) or qualifier in seen_qualifiers:
-                continue
-            yield qualifier, get_container_object_id(inner_type, qualifier)
+            if not isinstance(qualifier, CollectionKind) and qualifier not in seen:
+                yield qualifier, inner_type
