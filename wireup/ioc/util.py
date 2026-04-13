@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import collections.abc
 import functools
 import importlib
 import inspect
@@ -25,7 +26,38 @@ from wireup.ioc.types import (
 
 _COLLECTION_ORIGIN_TO_KIND: dict[Any, CollectionKind] = {
     set: CollectionKind.SET,
+    dict: CollectionKind.MAP,
+    collections.abc.Mapping: CollectionKind.MAP,
 }
+
+
+def _collection_inner_type(kind: CollectionKind, raw_type: Any, parameter_name: str) -> type | None:
+    """Extract the value type from a parameterized collection annotation.
+
+    ``Set[T]`` yields ``T``. ``Mapping[str, T]`` / ``dict[str, T]`` yields ``T`` and enforces
+    that the key type is ``str`` — we restrict map keys to ``str`` as an MVP; the issue #23
+    sketch mentioned ``Hashable`` but concrete qualifier types in wireup are nearly always
+    strings in practice.
+    """
+    type_args = get_args(raw_type)
+    if kind is CollectionKind.SET:
+        if len(type_args) == 1:
+            return cast("type", type_args[0])
+        return None
+
+    if kind is CollectionKind.MAP:
+        if len(type_args) != 2:
+            return None
+        key_type, value_type = type_args
+        if key_type is not str:
+            msg = (
+                f"Parameter '{parameter_name}' uses Mapping[{key_type}, ...] but only "
+                "Mapping[str, T] is supported for collection injection."
+            )
+            raise WireupError(msg)
+        return cast("type", value_type)
+
+    return None
 
 T = TypeVar("T")
 
@@ -102,15 +134,15 @@ def param_get_annotation(
     type_analysis = analyze_type(resolved_type)
     has_default_value = parameter.default is not Parameter.empty
 
-    # Collection injection: detect Set[T] / set[T] / typing.Set[T] and rewrite the
+    # Collection injection: detect Set[T] / set[T] / Mapping[str, T] / dict[str, T]
+    # (and their typing.Set / typing.Dict / typing.Mapping aliases) and rewrite the
     # parameter into a normal qualified service dep pointing at a private sentinel
-    # qualifier. The registry synthesizes a factory under (inner_type, CollectionKind.SET)
+    # qualifier. The registry synthesizes a factory under (inner_type, CollectionKind.<kind>)
     # so the codegen hot path is identical to every other qualified service dep.
     collection_kind = _COLLECTION_ORIGIN_TO_KIND.get(get_origin(type_analysis.raw_type))
     if collection_kind is not None:
-        type_args = get_args(type_analysis.raw_type)
-        if len(type_args) == 1:
-            inner_type = type_args[0]
+        inner_type = _collection_inner_type(collection_kind, type_analysis.raw_type, parameter.name)
+        if inner_type is not None:
             return AnnotatedParameter(
                 klass=inner_type,
                 annotation=InjectableQualifier(qualifier=collection_kind),

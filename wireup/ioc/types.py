@@ -55,14 +55,16 @@ class ConfigInjectionRequest(InjectableType):
 class CollectionKind(Enum):
     """Sentinel qualifier values used to key synthesized collection factories.
 
-    A parameter typed ``Set[T]`` is rewritten by ``param_get_annotation`` into a qualified
-    service dep with ``qualifier = CollectionKind.SET``. The registry then synthesizes an
-    ``InjectableFactory`` under ``(T, CollectionKind.SET)`` that builds the set at resolve
-    time. This keeps collection injection on the same codegen hot path as every other
-    qualified dep: a single ``factories[obj_id].factory(container)`` call.
+    A parameter typed ``Set[T]`` / ``Mapping[str, T]`` is rewritten by ``param_get_annotation``
+    into a qualified service dep with ``qualifier = CollectionKind.SET`` / ``CollectionKind.MAP``.
+    The registry then synthesizes an ``InjectableFactory`` under ``(T, CollectionKind.<kind>)``
+    that builds the collection at resolve time. This keeps collection injection on the same
+    codegen hot path as every other qualified dep: a single
+    ``factories[obj_id].factory(container)`` call.
     """
 
     SET = "set"
+    MAP = "map"
 
 
 Qualifier = Hashable
