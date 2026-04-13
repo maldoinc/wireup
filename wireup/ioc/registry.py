@@ -90,6 +90,27 @@ def _build_set_collection_factory(inner_type: type, impl_count: int) -> Callable
     return factory_fn
 
 
+def _build_map_collection_factory(inner_type: type, qualifiers: tuple[Qualifier, ...]) -> Callable[..., Any]:
+    """Generate a specialized sync factory that builds a dict keyed by impl qualifiers.
+
+    One parameter per qualified impl, emitted as ``{"qualifier_literal": _impl_i}``. Called
+    with the synthesized dep_map parameter names matching the kwargs loop's emission so the
+    factory compiler routes each impl's resolved instance to the correct dict slot. Mirrors
+    the set-literal shape for the tightest bytecode.
+    """
+    param_names = tuple(f"_impl_{i}" for i in range(len(qualifiers)))
+    params_signature = ", ".join(param_names)
+    pairs = ", ".join(f"{q!r}: {name}" for q, name in zip(qualifiers, param_names))
+    dict_literal = "{" + pairs + "}" if pairs else "{}"
+    source = f"def _collection_factory({params_signature}):\n    return {dict_literal}\n"
+    namespace: dict[str, Any] = {}
+    exec(source, namespace)  # noqa: S102
+    factory_fn = cast("Callable[..., Any]", namespace["_collection_factory"])
+    factory_fn.__name__ = f"_wireup_map_collection_{inner_type.__name__}"
+    factory_fn.__qualname__ = factory_fn.__name__
+    return factory_fn
+
+
 def _function_get_unwrapped_return_type(fn: Callable[..., T]) -> type[T] | None:
     if isinstance(fn, type):
         return fn
@@ -269,10 +290,18 @@ class ContainerRegistry:
             return
 
         impl_entries = list(self.iter_impls_for_type(inner_type))
+        # Map collections use qualifiers as dict keys, so unqualified impls are excluded
+        # — they have nothing to index under. Matches Spring's Map<String, T> semantics.
+        if kind is CollectionKind.MAP:
+            impl_entries = [entry for entry in impl_entries if entry[0] is not None]
         if not impl_entries:
             raise CollectionInterfaceUnknownError(inner_type, param_name, consumer_factory)
 
-        factory_fn = _build_set_collection_factory(inner_type, len(impl_entries))
+        if kind is CollectionKind.MAP:
+            map_qualifiers = tuple(entry[0] for entry in impl_entries)
+            factory_fn = _build_map_collection_factory(inner_type, map_qualifiers)
+        else:
+            factory_fn = _build_set_collection_factory(inner_type, len(impl_entries))
 
         dep_map: dict[str, AnnotatedParameter] = {}
         impl_lifetimes: list[InjectableLifetime] = []
