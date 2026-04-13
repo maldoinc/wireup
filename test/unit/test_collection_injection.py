@@ -201,3 +201,17 @@ async def test_async_container_resolves_set_of_async_impls() -> None:
     compiled_factory = container._factories[_AsyncCacheConsumer]
     assert "_resolve_collection_set_async" in compiled_factory.generated_source
     assert "await container._resolve_collection_set_async" in compiled_factory.generated_source
+
+
+# ---- inject_from_container path ----
+
+
+def test_inject_from_container_resolves_set_of_impls() -> None:
+    container = wireup.create_sync_container(injectables=[RedisCache, InMemoryCache])
+
+    @wireup.inject_from_container(container)
+    def handler(caches: Injected[Set[Cache]]) -> set[str]:
+        return {cache.name() for cache in caches}
+
+    result = handler()
+    assert result == {"redis", "in_memory"}
