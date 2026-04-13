@@ -53,7 +53,7 @@ def test_param_get_annotation_detects_set_of_interface() -> None:
     assert result.qualifier_value is CollectionKind.SET
 
 
-def test_set_of_qualified_cache_impls_is_injected() -> None:
+def test_injects_set_of_qualified_cache_impls() -> None:
     container = wireup.create_sync_container(
         injectables=[RedisCache, InMemoryCache, CacheConsumer],
     )
@@ -87,7 +87,7 @@ class _SingletonConsumerOfScopedCollection:
         self.caches = caches
 
 
-def test_singleton_consumer_of_non_singleton_collection_is_rejected() -> None:
+def test_rejects_singleton_consumer_of_non_singleton_collection() -> None:
     with pytest.raises(
         WireupError,
         match=re.escape("Singletons can only depend on other singletons"),
@@ -121,7 +121,7 @@ class _CycleImplA(_CycleInterface):
         return "a"
 
 
-def test_cycle_through_collection_dep_is_rejected() -> None:
+def test_rejects_cycle_through_collection_dep() -> None:
     with pytest.raises(WireupError, match=re.escape("Circular dependency")):
         wireup.create_sync_container(injectables=[_CycleImplA, _CycleConsumer])
 
@@ -225,7 +225,7 @@ class _MixedConsumer:
         self.caches = caches
 
 
-def test_unqualified_and_qualified_impls_all_appear_in_set() -> None:
+def test_injects_mix_of_qualified_and_unqualified_impls() -> None:
     container = wireup.create_sync_container(
         injectables=[_MixedDefaultCache, _MixedLeftCache, _MixedRightCache, _MixedConsumer],
     )
