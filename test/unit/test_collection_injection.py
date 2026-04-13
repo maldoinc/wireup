@@ -285,9 +285,9 @@ class _DeviceBuilder:
         self.extra = extra
 
 
-@injectable(qualifier="apple_tv")
-def _apple_tv_builder(producer: _ProducerTransport) -> _DeviceBuilder:
-    return _DeviceBuilder("apple_tv", producer.tag)
+@injectable(qualifier="tv_player")
+def _tv_player_builder(producer: _ProducerTransport) -> _DeviceBuilder:
+    return _DeviceBuilder("tv_player", producer.tag)
 
 
 @injectable(qualifier="generic_player")
@@ -401,7 +401,7 @@ def test_factory_functions_with_heterogeneous_deps_resolve_in_set() -> None:
         injectables=[
             _make_producer_transport,
             _make_logger,
-            _apple_tv_builder,
+            _tv_player_builder,
             _generic_player_builder,
             _logged_device_builder,
             _DeviceLifecycleService,
@@ -411,7 +411,7 @@ def test_factory_functions_with_heterogeneous_deps_resolve_in_set() -> None:
 
     by_type = {builder.device_type: builder.extra for builder in service.builders}
     assert by_type == {
-        "apple_tv": "producer",
+        "tv_player": "producer",
         "generic_player": "none",
         "logged_device": "logger",
     }
