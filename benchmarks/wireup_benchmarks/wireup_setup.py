@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Dict, Set
+from typing import Dict, Mapping, Set
 
 import fastapi
 import wireup
@@ -102,4 +102,11 @@ async def wireup_scoped(
 async def wireup_collection_set(plugins: Injected[Set[Plugin]]) -> Dict[str, str]:
     services.record_request("collection_set")
     assert len(plugins) == 4
+    return {}
+
+
+@router.get("/wireup/collection_map")
+async def wireup_collection_map(plugins: Injected[Mapping[str, Plugin]]) -> Dict[str, str]:
+    services.record_request("collection_map")
+    assert set(plugins.keys()) == {"red", "green", "blue", "alpha"}
     return {}
