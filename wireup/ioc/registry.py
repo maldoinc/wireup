@@ -167,7 +167,7 @@ class ContainerRegistry:
                 auto_discover_interfaces=impl.as_type is None,
             )
 
-        self._synthesize_collection_factories_from_dependencies()
+        self._register_collection_factories_from_dependencies()
         validate_registry(self)
         self._update_factories_async_flag()
         if self.on_change:
@@ -205,15 +205,15 @@ class ContainerRegistry:
         if not is_compatible:
             raise AsTypeMismatchError(implementation=implementation_type, as_type=target_type)
 
-    def _synthesize_collection_factories_from_dependencies(self) -> None:
-        """Sweep registered deps for Set[T] params and synthesize their collection factories."""
+    def _register_collection_factories_from_dependencies(self) -> None:
+        """Sweep registered deps for Set[T] params and register their collection factories."""
         for deps in list(self.dependencies.values()):
             for param in deps.values():
                 if isinstance(param.qualifier_value, CollectionKind):
                     self._register_collection_factory(param.klass, param.qualifier_value)
 
     def register_collection_factories_for(self, params: dict[str, AnnotatedParameter]) -> None:
-        """Synthesize any missing Set[T] collection factories and refresh compiled state."""
+        """Register any missing Set[T] collection factories and refresh compiled state."""
         created = False
         for param in params.values():
             if isinstance(param.qualifier_value, CollectionKind):

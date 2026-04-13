@@ -358,7 +358,7 @@ def _pure_check_target(caches: Injected[set[_PureCheckCache]]) -> set[str]:
     return {cache.tag() for cache in caches}
 
 
-def test_injection_requires_scope_does_not_mutate_after_synthesis() -> None:
+def test_injection_requires_scope_does_not_mutate_after_registration() -> None:
     container = wireup.create_sync_container(injectables=[_PureCheckCacheAlpha])
 
     names_to_inject = get_inject_annotated_parameters(_pure_check_target)
@@ -385,7 +385,7 @@ def test_injection_requires_scope_does_not_mutate_after_synthesis() -> None:
     assert container._registry.lifetime == lifetime_before
 
 
-def test_get_valid_injection_annotated_parameters_synthesizes_collection_factory() -> None:
+def test_get_valid_injection_annotated_parameters_registers_collection_factory() -> None:
     container = wireup.create_sync_container(injectables=[_PureCheckCacheAlpha])
 
     collection_obj_id = (_PureCheckCache, CollectionKind.SET)

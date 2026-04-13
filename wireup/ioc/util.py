@@ -104,7 +104,7 @@ def param_get_annotation(
 
     # Collection injection: detect Set[T] / set[T] / typing.Set[T] and rewrite the
     # parameter into a normal qualified service dep pointing at a private sentinel
-    # qualifier. The registry synthesizes a factory under (inner_type, CollectionKind.SET)
+    # qualifier. The registry registers a factory under (inner_type, CollectionKind.SET)
     # so the codegen hot path is identical to every other qualified service dep.
     collection_kind = _COLLECTION_ORIGIN_TO_KIND.get(get_origin(type_analysis.raw_type))
     if collection_kind is not None and len(type_args := get_args(type_analysis.raw_type)) == 1:
