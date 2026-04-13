@@ -133,7 +133,7 @@ def param_get_annotation(
     has_default_value = parameter.default is not Parameter.empty
 
     # Collection parameters (Set[T] / Mapping[str, T] and their typing aliases) are rewritten
-    # as qualified service deps using a CollectionKind sentinel so the registry can synthesize
+    # as qualified service deps using a CollectionKind sentinel so the registry registers
     # a factory under (inner_type, kind) and the kwargs loop resolves them like any other dep.
     collection_kind = _COLLECTION_ORIGIN_TO_KIND.get(get_origin(type_analysis.raw_type))
     if (

@@ -200,16 +200,16 @@ def warm_all(caches: Injected[Set[Cache]]) -> None:
         cache.warm()
 ```
 
-Wireup resolves the set at injection time by iterating every impl of the inner type. Factory
-functions with heterogeneous dependencies are supported: each impl's own deps are resolved
-through the normal container machinery before the set is assembled.
+Wireup resolves the set at injection time by iterating every impl of the inner type. Factory functions with
+heterogeneous dependencies are supported: each impl's own deps are resolved through the normal container machinery
+before the set is assembled.
 
-!!! note
+!!! note "Resolution timing"
 
-    The set reflects the registry state at the moment of resolution. Singleton consumers freeze
-    the set at first resolution — once the consumer is cached, the set is cached with it —
-    matching how any singleton's state is frozen after first construction. Transient and scoped
-    consumers see impls added via `container.extend()` on their next resolution.
+    The set reflects the registry state at the moment of resolution. Singleton consumers freeze the set at first
+    resolution — once the consumer is cached, the set is cached with it — matching how any singleton's state is
+    frozen after first construction. Transient and scoped consumers see impls added via `container.extend()` on
+    their next resolution.
 
 ## Injecting Implementations by Qualifier
 

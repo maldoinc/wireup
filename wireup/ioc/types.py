@@ -53,7 +53,7 @@ class ConfigInjectionRequest(InjectableType):
 
 
 class CollectionKind(Enum):
-    """Sentinel qualifiers that key synthesized collection factories (Set[T], Mapping[str, T])."""
+    """Sentinel qualifiers that key collection factories registered for ``Set[T]`` and ``Mapping[str, T]`` params."""
 
     SET = "set"
     MAP = "map"
