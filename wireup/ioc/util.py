@@ -8,10 +8,23 @@ import typing
 from inspect import Parameter
 from typing import Any, Sequence, TypeVar, cast
 
+from typing_extensions import get_args, get_origin
+
 from wireup.errors import PositionalOnlyParameterError, WireupError
 from wireup.ioc.registry_validation import assert_dependency_exists
 from wireup.ioc.type_analysis import analyze_type
-from wireup.ioc.types import AnnotatedParameter, AnyCallable, CallableType, ConfigInjectionRequest, InjectableType
+from wireup.ioc.types import (
+    AnnotatedParameter,
+    AnyCallable,
+    CallableType,
+    CollectionInjectionRequest,
+    ConfigInjectionRequest,
+    InjectableType,
+)
+
+_COLLECTION_ORIGIN_TO_TYPE: dict[Any, type] = {
+    set: set,
+}
 
 T = TypeVar("T")
 
@@ -86,11 +99,29 @@ def param_get_annotation(
         return None
 
     type_analysis = analyze_type(resolved_type)
+    has_default_value = parameter.default is not Parameter.empty
+
+    # Collection injection: detect Set[T] / set[T] / typing.Set[T] and rewrite the
+    # parameter so downstream code sees the inner type as the logical dependency while
+    # the new CollectionInjectionRequest annotation carries the collection shape.
+    collection_type = _COLLECTION_ORIGIN_TO_TYPE.get(get_origin(type_analysis.raw_type))
+    if collection_type is not None:
+        type_args = get_args(type_analysis.raw_type)
+        if len(type_args) == 1:
+            inner_type = type_args[0]
+            return AnnotatedParameter(
+                klass=inner_type,
+                annotation=CollectionInjectionRequest(
+                    collection_type=collection_type,
+                    inner_type=inner_type,
+                ),
+                has_default_value=has_default_value,
+            )
 
     return AnnotatedParameter(
         klass=type_analysis.normalized_type,
         annotation=_get_wireup_annotation(type_analysis.annotations),
-        has_default_value=parameter.default is not Parameter.empty,
+        has_default_value=has_default_value,
     )
 
 

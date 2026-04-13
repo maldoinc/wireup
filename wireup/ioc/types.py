@@ -52,6 +52,20 @@ class ConfigInjectionRequest(InjectableType):
     config_key: ConfigurationReference
 
 
+@dataclass(frozen=True)
+class CollectionInjectionRequest(InjectableType):
+    """Flag indicating this parameter should receive every registered implementation of an interface.
+
+    Produced by ``param_get_annotation`` when it sees a parameter typed ``Set[T]`` / ``set[T]``
+    (and, in a follow-up PR, ``Mapping[str, T]`` / ``dict[str, T]``). The collection is resolved
+    at injection time by iterating every impl of ``inner_type`` known to the registry.
+    """
+
+    __slots__ = ("collection_type", "inner_type")
+    collection_type: type
+    inner_type: type
+
+
 Qualifier = Hashable
 ContainerObjectIdentifier = Union[Type[Any], Tuple[Type[Any], Qualifier]]
 
