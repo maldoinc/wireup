@@ -381,3 +381,24 @@ def test_factory_functions_with_heterogeneous_deps_resolve_in_set() -> None:
         "generic_player": "none",
         "logged_device": "logger",
     }
+
+
+# ---- Mapping[str, T] injection (PR 2) ----
+
+
+@injectable
+class MappingCacheConsumer:
+    def __init__(self, caches: Injected[typing.Mapping[str, Cache]]) -> None:
+        self.caches = caches
+
+
+def test_mapping_of_qualified_cache_impls_is_injected() -> None:
+    container = wireup.create_sync_container(
+        injectables=[RedisCache, InMemoryCache, MappingCacheConsumer],
+    )
+    consumer = container.get(MappingCacheConsumer)
+
+    assert isinstance(consumer.caches, dict)
+    assert set(consumer.caches.keys()) == {"redis", "in_memory"}
+    assert consumer.caches["redis"].name() == "redis"
+    assert consumer.caches["in_memory"].name() == "in_memory"
