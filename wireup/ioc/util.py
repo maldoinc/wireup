@@ -107,15 +107,12 @@ def param_get_annotation(
     # qualifier. The registry synthesizes a factory under (inner_type, CollectionKind.SET)
     # so the codegen hot path is identical to every other qualified service dep.
     collection_kind = _COLLECTION_ORIGIN_TO_KIND.get(get_origin(type_analysis.raw_type))
-    if collection_kind is not None:
-        type_args = get_args(type_analysis.raw_type)
-        if len(type_args) == 1:
-            inner_type = type_args[0]
-            return AnnotatedParameter(
-                klass=inner_type,
-                annotation=InjectableQualifier(qualifier=collection_kind),
-                has_default_value=has_default_value,
-            )
+    if collection_kind is not None and len(type_args := get_args(type_analysis.raw_type)) == 1:
+        return AnnotatedParameter(
+            klass=type_args[0],
+            annotation=InjectableQualifier(qualifier=collection_kind),
+            has_default_value=has_default_value,
+        )
 
     return AnnotatedParameter(
         klass=type_analysis.normalized_type,
