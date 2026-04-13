@@ -30,16 +30,13 @@ _COLLECTION_ORIGIN_TO_KIND: dict[Any, CollectionKind] = {
     collections.abc.Mapping: CollectionKind.MAP,
 }
 
-_MAP_TYPE_ARGS_ARITY = 2  # Mapping[key, value]
+_MAP_TYPE_ARGS_ARITY = 2
 
 
 def _collection_inner_type(kind: CollectionKind, raw_type: Any, parameter_name: str) -> type | None:
     """Extract the value type from a parameterized collection annotation.
 
-    ``Set[T]`` yields ``T``. ``Mapping[str, T]`` / ``dict[str, T]`` yields ``T`` and enforces
-    that the key type is ``str`` — we restrict map keys to ``str`` as an MVP; the issue #23
-    sketch mentioned ``Hashable`` but concrete qualifier types in wireup are nearly always
-    strings in practice.
+    Set[T] yields T. Mapping[str, T] yields T and rejects non-str key types.
     """
     type_args = get_args(raw_type)
     if kind is CollectionKind.SET:
@@ -137,11 +134,9 @@ def param_get_annotation(
     type_analysis = analyze_type(resolved_type)
     has_default_value = parameter.default is not Parameter.empty
 
-    # Collection injection: detect Set[T] / set[T] / Mapping[str, T] / dict[str, T]
-    # (and their typing.Set / typing.Dict / typing.Mapping aliases) and rewrite the
-    # parameter into a normal qualified service dep pointing at a private sentinel
-    # qualifier. The registry synthesizes a factory under (inner_type, CollectionKind.<kind>)
-    # so the codegen hot path is identical to every other qualified service dep.
+    # Collection parameters (Set[T] / Mapping[str, T] and their typing aliases) are rewritten
+    # as qualified service deps using a CollectionKind sentinel so the registry can synthesize
+    # a factory under (inner_type, kind) and the kwargs loop resolves them like any other dep.
     collection_kind = _COLLECTION_ORIGIN_TO_KIND.get(get_origin(type_analysis.raw_type))
     if collection_kind is not None:
         inner_type = _collection_inner_type(collection_kind, type_analysis.raw_type, parameter.name)

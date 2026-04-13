@@ -232,12 +232,10 @@ class ContainerRegistry:
             return False
 
         impl_entries = list(self._iter_impls_for_type(inner_type))
-        # Map collections use qualifiers as dict keys, so unqualified impls have nothing to
-        # index under and are silently excluded — matches Spring's ``Map<String, T>`` semantic.
         if kind is CollectionKind.MAP:
+            # Unqualified impls have no key to index under when building a map, so they are dropped.
             impl_entries = [entry for entry in impl_entries if entry[0] is not None]
-            map_qualifiers = tuple(entry[0] for entry in impl_entries)
-            factory_fn = _build_map_collection_factory(inner_type, map_qualifiers)
+            factory_fn = _build_map_collection_factory(inner_type, tuple(entry[0] for entry in impl_entries))
         else:
             factory_fn = _build_set_collection_factory(inner_type, len(impl_entries))
 
@@ -411,12 +409,10 @@ class ContainerRegistry:
         return self.lifetime[get_container_object_id(self.get_implementation(klass, qualifier), qualifier)]
 
     def _iter_impls_for_type(self, inner_type: type) -> Iterator[tuple[Qualifier | None, type]]:
-        """Yield (qualifier, concrete_class) for every registered impl of ``inner_type``.
+        """Yield (qualifier, concrete_class) for every registered impl of inner_type.
 
-        ``CollectionKind`` sentinel qualifiers are skipped — they key synthesized collection
-        factories of the same inner type, not real implementations. Without this filter, a
-        ``Mapping[str, T]`` consumer built after a ``Set[T]`` consumer would pull the
-        ``CollectionKind.SET`` sentinel into its dict keys.
+        CollectionKind sentinel qualifiers are skipped since they key synthesized collection
+        factories of the same inner type, not real implementations.
         """
         seen: set[Qualifier | None] = set()
 

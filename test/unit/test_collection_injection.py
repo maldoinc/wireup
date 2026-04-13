@@ -5,7 +5,7 @@ import re
 import typing
 import warnings
 from abc import ABC, abstractmethod
-from collections import abc  # noqa: TC003  # used at runtime by stringified annotations
+from collections import abc  # noqa: TC003
 
 import pytest
 import wireup
@@ -480,8 +480,6 @@ class _MappedConsumer:
 
 
 def test_mapping_excludes_unqualified_impls() -> None:
-    # Only the qualified entries get dict keys; the default (unqualified) impl has no key
-    # to index under and is silently excluded. Matches Spring's Map<String, T> semantic.
     container = wireup.create_sync_container(
         injectables=[_MappedDefaultCache, _MappedAlphaCache, _MappedBetaCache, _MappedConsumer],
     )
@@ -493,8 +491,6 @@ def test_mapping_excludes_unqualified_impls() -> None:
 
 
 def test_mapping_all_four_spellings_resolve_identically() -> None:
-    # typing.Mapping[str, T], typing.Dict[str, T], dict[str, T], Mapping[str, T] must all
-    # produce a CollectionKind.MAP dep with the same inner type.
     def t1(caches: typing.Mapping[str, Cache]) -> None: ...
     def t2(caches: typing.Dict[str, Cache]) -> None: ...  # noqa: UP006
     def t3(caches: dict[str, Cache]) -> None: ...
@@ -542,11 +538,6 @@ class _SetAndMapConsumer:
 
 
 def test_injects_same_interface_as_both_set_and_mapping() -> None:
-    # Regression: synthesizing the Set collection factory added CollectionKind.SET to
-    # self.impls[Cache]. When the Mapping factory was then synthesized, iter_impls_for_type
-    # yielded the sentinel qualifier and tried to use it as a dict key — producing a
-    # SyntaxError in the generated source. iter_impls_for_type now filters CollectionKind
-    # sentinels, so both can coexist on the same interface.
     container = wireup.create_sync_container(
         injectables=[RedisCache, InMemoryCache, _SetAndMapConsumer],
     )
@@ -565,7 +556,6 @@ async def test_async_container_resolves_mapping_of_async_impls() -> None:
     assert isinstance(consumer.caches, dict)
     assert set(consumer.caches.keys()) == {"async_redis", "async_memory"}
 
-    # The synthesized map factory inherits its async flag from impl-walker propagation.
     collection_obj_id = (_AsyncCache, CollectionKind.MAP)
     assert collection_obj_id in container._factories
     assert container._factories[collection_obj_id].is_async
