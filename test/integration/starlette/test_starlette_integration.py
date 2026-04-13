@@ -346,9 +346,6 @@ def test_wireup_task_does_not_cache_callable_instances() -> None:
     assert info.misses == 0
 
 
-# ---- Set[T] collection injection through WireupTask ----
-
-
 class _CollectionCache:
     def name(self) -> str:
         return "base"

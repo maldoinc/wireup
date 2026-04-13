@@ -20,14 +20,13 @@ from wireup.util import format_name
 if TYPE_CHECKING:
     from wireup.ioc.container.base_container import BaseContainer
     from wireup.ioc.registry import ContainerRegistry, InjectableFactory
-    from wireup.ioc.types import ContainerObjectIdentifier, Qualifier
+    from wireup.ioc.types import AnnotatedParameter, ContainerObjectIdentifier, Qualifier
 
 
 @dataclass(**({"slots": True} if sys.version_info >= (3, 10) else {}))
 class CompiledFactory:
     factory: Callable[[BaseContainer], Any]
     is_async: bool
-    generated_source: str = ""
 
 
 _CONTAINER_SCOPE_ERROR_MSG = (
@@ -66,18 +65,18 @@ class GetFactoryResult:
 
 def _emit_config_kwarg(
     name: str,
-    dep: Any,
+    dep: AnnotatedParameter,
     config_dependencies: dict[str, Any],
     registry: ContainerRegistry,
 ) -> str:
     ns_key = f"_config_val_{name}"
-    config_dependencies[ns_key] = registry.parameters.get(dep.annotation.config_key)
+    config_dependencies[ns_key] = registry.parameters.get(dep.annotation.config_key)  # type: ignore[union-attr]
     return f"{name} = {ns_key}, "
 
 
 def _emit_service_kwarg(
     name: str,
-    dep: Any,
+    dep: AnnotatedParameter,
     config_dependencies: dict[str, Any],
     registry: ContainerRegistry,
 ) -> str:
@@ -296,7 +295,6 @@ class FactoryCompiler:
             return CompiledFactory(
                 factory=namespace[_WIREUP_GENERATED_FACTORY_NAME],
                 is_async=result.is_async,
-                generated_source=result.source,
             )
 
         except Exception as e:

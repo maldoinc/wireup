@@ -109,6 +109,8 @@ def _inject_routes(
         if not names_to_inject:
             continue
 
+        container._registry.register_collection_factories_for(names_to_inject)
+
         # When using the asgi middleware, the request context variable is set there.
         # and we can get the scoped container from the request.
         if isinstance(route, APIRoute) and is_using_asgi_middleware:

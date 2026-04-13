@@ -633,9 +633,6 @@ def test_class_based_lifespan_dual_pass_does_not_double_wrap_routes() -> None:
     assert _wireup_wrapper_count(call_after_startup) == 1
 
 
-# ---- Set[T] collection injection through a FastAPI route ----
-
-
 class _RouteCache:
     def name(self) -> str:
         return "base"
