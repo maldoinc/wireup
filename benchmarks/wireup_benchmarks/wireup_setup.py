@@ -1,4 +1,5 @@
-from typing import Dict
+from abc import ABC, abstractmethod
+from typing import Dict, Set
 
 import fastapi
 import wireup
@@ -7,6 +8,36 @@ from wireup.integration.fastapi import WireupRoute
 
 from wireup_benchmarks import services
 from wireup_benchmarks.services import A, B, C, D, E, F, G, H, I
+
+
+class Plugin(ABC):
+    @abstractmethod
+    def label(self) -> str: ...
+
+
+@wireup.injectable(as_type=Plugin, qualifier="red")
+class PluginRed(Plugin):
+    def label(self) -> str:
+        return "red"
+
+
+@wireup.injectable(as_type=Plugin, qualifier="green")
+class PluginGreen(Plugin):
+    def label(self) -> str:
+        return "green"
+
+
+@wireup.injectable(as_type=Plugin, qualifier="blue")
+class PluginBlue(Plugin):
+    def label(self) -> str:
+        return "blue"
+
+
+@wireup.injectable(as_type=Plugin, qualifier="alpha")
+class PluginAlpha(Plugin):
+    def label(self) -> str:
+        return "alpha"
+
 
 router = fastapi.APIRouter(route_class=WireupRoute)
 container = wireup.create_async_container(
@@ -21,6 +52,10 @@ container = wireup.create_async_container(
         wireup.service(services.G, lifetime="scoped"),
         wireup.service(services.make_h, lifetime="scoped"),
         wireup.service(services.make_i, lifetime="scoped"),
+        PluginRed,
+        PluginGreen,
+        PluginBlue,
+        PluginAlpha,
     ],
     parameters={"start": 10},
 )
@@ -60,4 +95,11 @@ async def wireup_scoped(
     assert isinstance(h, H)
     assert isinstance(i, I)
     assert d is dd
+    return {}
+
+
+@router.get("/wireup/collection_set")
+async def wireup_collection_set(plugins: Injected[Set[Plugin]]) -> Dict[str, str]:
+    services.record_request("collection_set")
+    assert len(plugins) == 4
     return {}
