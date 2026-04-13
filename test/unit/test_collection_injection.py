@@ -1,10 +1,10 @@
 from __future__ import annotations
 
-import collections.abc
 import inspect
 import re
 import typing
 from abc import ABC, abstractmethod
+from collections import abc  # noqa: TC003  # used at runtime by stringified annotations
 
 import pytest
 import wireup
@@ -464,7 +464,7 @@ def test_mapping_all_four_spellings_resolve_identically() -> None:
     def t1(caches: typing.Mapping[str, Cache]) -> None: ...
     def t2(caches: typing.Dict[str, Cache]) -> None: ...  # noqa: UP006
     def t3(caches: dict[str, Cache]) -> None: ...
-    def t4(caches: collections.abc.Mapping[str, Cache]) -> None: ...
+    def t4(caches: abc.Mapping[str, Cache]) -> None: ...
 
     results = [
         param_get_annotation(

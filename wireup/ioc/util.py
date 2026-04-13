@@ -30,6 +30,8 @@ _COLLECTION_ORIGIN_TO_KIND: dict[Any, CollectionKind] = {
     collections.abc.Mapping: CollectionKind.MAP,
 }
 
+_MAP_TYPE_ARGS_ARITY = 2  # Mapping[key, value]
+
 
 def _collection_inner_type(kind: CollectionKind, raw_type: Any, parameter_name: str) -> type | None:
     """Extract the value type from a parameterized collection annotation.
@@ -46,7 +48,7 @@ def _collection_inner_type(kind: CollectionKind, raw_type: Any, parameter_name: 
         return None
 
     if kind is CollectionKind.MAP:
-        if len(type_args) != 2:
+        if len(type_args) != _MAP_TYPE_ARGS_ARITY:
             return None
         key_type, value_type = type_args
         if key_type is not str:
@@ -58,6 +60,7 @@ def _collection_inner_type(kind: CollectionKind, raw_type: Any, parameter_name: 
         return cast("type", value_type)
 
     return None
+
 
 T = TypeVar("T")
 
