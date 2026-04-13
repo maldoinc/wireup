@@ -9,7 +9,6 @@ from typing import TYPE_CHECKING, Any, Callable, Iterator, TypeVar, Union, cast
 
 from wireup.errors import (
     AsTypeMismatchError,
-    CollectionInterfaceUnknownError,
     DuplicateQualifierForInterfaceError,
     DuplicateServiceRegistrationError,
     FactoryReturnTypeIsEmptyError,
@@ -56,28 +55,19 @@ class InjectableFactory:
     raw_type: type
 
 
+# Ordered loosest-to-tightest: a synthesized collection factory inherits its impls' loosest
+# lifetime so the existing singleton-depends-on-transient check rejects misuse automatically.
 _LIFETIME_RANK: dict[InjectableLifetime, int] = {"singleton": 0, "scoped": 1, "transient": 2}
 
 
 def _loosest_lifetime(lifetimes: list[InjectableLifetime]) -> InjectableLifetime:
-    """Return the loosest lifetime among the given impls.
-
-    Loosest = most frequently rebuilt: transient > scoped > singleton. A synthesized collection
-    factory inherits its impls' loosest lifetime so existing ``assert_lifetime_valid`` checks
-    reject a singleton consumer that depends on a transient-impl collection, identically to how
-    they reject singletons depending on plain transient services.
-    """
+    if not lifetimes:
+        return "singleton"
     return max(lifetimes, key=lambda lt: _LIFETIME_RANK[lt])
 
 
 def _build_set_collection_factory(inner_type: type, impl_count: int) -> Callable[..., Any]:
-    """Generate a specialized sync factory that builds a set from its keyword arguments.
-
-    Creates a fresh function object per call so each collection type has a distinct identity
-    in ``self.dependencies`` — wireup keys dep maps by function identity. The emitted source
-    uses positional parameters and a set literal for the tightest possible bytecode; the
-    factory compiler's kwargs loop then emits matching positional-by-name calls.
-    """
+    """Build a fresh sync factory that assembles a set from its keyword impls."""
     param_names = tuple(f"_impl_{i}" for i in range(impl_count))
     params_signature = ", ".join(param_names)
     set_literal = "{" + ", ".join(param_names) + "}" if param_names else "set()"
@@ -169,7 +159,7 @@ class ContainerRegistry:
                 auto_discover_interfaces=impl.as_type is None,
             )
 
-        self._synthesize_collection_factories()
+        self._synthesize_collection_factories_from_dependencies()
         validate_registry(self)
         self._update_factories_async_flag()
         if self.on_change:
@@ -207,71 +197,37 @@ class ContainerRegistry:
         if not is_compatible:
             raise AsTypeMismatchError(implementation=implementation_type, as_type=target_type)
 
-    def _synthesize_collection_factories(self) -> None:
-        """Register one ``InjectableFactory`` per collection type referenced by a registered consumer.
-
-        Scans ``self.dependencies`` for parameters rewritten to qualified service deps with a
-        ``CollectionKind`` sentinel qualifier (produced by ``param_get_annotation`` for ``Set[T]``
-        parameters). For each distinct inner type, generates a specialized factory function via
-        ``exec`` whose body is a set literal over its impl-valued keyword arguments, and registers
-        it under ``(inner_type, CollectionKind.SET)``. Consumer codegen then resolves the set via
-        the standard ``factories[obj_id].factory(container)`` service-branch path — the singleton
-        cache swap (factory_compiler.py:222) applies automatically.
-
-        Idempotent: already-synthesized entries are skipped, so repeated ``extend()`` calls don't
-        rebuild existing collection factories (matching wireup's compile-once-lock-in semantics
-        for every other compiled entity).
-        """
-        for consumer_factory, deps in list(self.dependencies.items()):
-            for param_name, param in deps.items():
+    def _synthesize_collection_factories_from_dependencies(self) -> None:
+        """Sweep registered deps for Set[T] params and synthesize their collection factories."""
+        for deps in list(self.dependencies.values()):
+            for param in deps.values():
                 if isinstance(param.qualifier_value, CollectionKind):
-                    self._register_collection_factory(
-                        inner_type=param.klass,
-                        kind=param.qualifier_value,
-                        consumer_factory=consumer_factory,
-                        param_name=param_name,
-                    )
+                    self._register_collection_factory(param.klass, param.qualifier_value)
 
-    def ensure_collection_factories_for(self, params: dict[str, AnnotatedParameter], target: Any) -> bool:
-        """Synthesize any missing collection factories referenced by an external injection target.
-
-        Used by ``get_valid_injection_annotated_parameters`` for ``@inject_from_container``-decorated
-        functions, which aren't in ``self.dependencies`` but may still reference ``Set[T]`` deps.
-        Returns ``True`` if any new collection factory was created so the caller can trigger a
-        recompile pass.
-        """
+    def register_collection_factories_for(self, params: dict[str, AnnotatedParameter]) -> None:
+        """Synthesize any missing Set[T] collection factories and refresh compiled state."""
         created = False
-        for param_name, param in params.items():
+        for param in params.values():
             if not isinstance(param.qualifier_value, CollectionKind):
                 continue
-            obj_id = get_container_object_id(param.klass, param.qualifier_value)
-            if obj_id in self.factories:
+            if get_container_object_id(param.klass, param.qualifier_value) in self.factories:
                 continue
-            self._register_collection_factory(
-                inner_type=param.klass,
-                kind=param.qualifier_value,
-                consumer_factory=target,
-                param_name=param_name,
-            )
+            self._register_collection_factory(param.klass, param.qualifier_value)
             created = True
-        return created
 
-    def _register_collection_factory(
-        self,
-        *,
-        inner_type: type,
-        kind: CollectionKind,
-        consumer_factory: Any,
-        param_name: str,
-    ) -> None:
+        if not created:
+            return
+
+        self._update_factories_async_flag()
+        if self.on_change:
+            self.on_change()
+
+    def _register_collection_factory(self, inner_type: type, kind: CollectionKind) -> None:
         obj_id = get_container_object_id(inner_type, kind)
         if obj_id in self.factories:
             return
 
-        impl_entries = list(self.iter_impls_for_type(inner_type))
-        if not impl_entries:
-            raise CollectionInterfaceUnknownError(inner_type, param_name, consumer_factory)
-
+        impl_entries = list(self._iter_impls_for_type(inner_type))
         factory_fn = _build_set_collection_factory(inner_type, len(impl_entries))
 
         dep_map: dict[str, AnnotatedParameter] = {}
@@ -432,8 +388,6 @@ class ContainerRegistry:
 
     def get_implementation(self, klass: type, qualifier: Qualifier | None) -> type:
         """Return the concrete implementation for a given class/interface and qualifier."""
-        # Collection sentinel qualifiers bypass interface→impl resolution: the synthesized
-        # collection factory is keyed under (klass, CollectionKind.X) directly.
         if isinstance(qualifier, CollectionKind):
             return klass
 
@@ -445,24 +399,15 @@ class ContainerRegistry:
     def get_lifetime(self, klass: type, qualifier: Qualifier | None) -> InjectableLifetime:
         return self.lifetime[get_container_object_id(self.get_implementation(klass, qualifier), qualifier)]
 
-    def iter_impls_for_type(self, inner_type: type) -> Iterator[tuple[Qualifier | None, ContainerObjectIdentifier]]:
-        """Yield (qualifier, factories_key) for every registered impl of ``inner_type``.
+    def _iter_impls_for_type(self, inner_type: type) -> Iterator[tuple[Qualifier | None, ContainerObjectIdentifier]]:
+        """Yield (qualifier, factories_key) for every registered impl of ``inner_type``."""
+        seen_qualifiers: set[Qualifier | None] = set()
 
-        Spans both registration paths wireup supports today:
-          * ``@abstract`` base class + ``@injectable`` concrete subclasses — entries live in
-            ``self.interfaces[inner_type]`` keyed ``qualifier -> concrete_class``.
-          * ``@injectable(as_type=inner_type)`` and factory functions returning ``inner_type`` —
-            entries live in ``self.impls[inner_type]`` as a set of qualifiers; the compiled
-            factory is keyed ``(inner_type, qualifier)`` directly.
+        for qualifier, concrete in self.interfaces.get(inner_type, {}).items():
+            seen_qualifiers.add(qualifier)
+            yield qualifier, get_container_object_id(concrete, qualifier)
 
-        The returned ``factories_key`` is usable against ``registry.factories`` and against the
-        post-compilation ``FactoryCompiler.factories`` dict in both paths.
-        """
-        if inner_type in self.interfaces:
-            for qualifier, concrete in self.interfaces[inner_type].items():
-                yield qualifier, get_container_object_id(concrete, qualifier)
-            return
-
-        if inner_type in self.impls:
-            for qualifier in self.impls[inner_type]:
-                yield qualifier, get_container_object_id(inner_type, qualifier)
+        for qualifier in self.impls.get(inner_type, ()):
+            if isinstance(qualifier, CollectionKind) or qualifier in seen_qualifiers:
+                continue
+            yield qualifier, get_container_object_id(inner_type, qualifier)

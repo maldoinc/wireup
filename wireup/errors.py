@@ -133,19 +133,6 @@ class PositionalOnlyParameterError(WireupError):
         super().__init__(msg)
 
 
-class CollectionInterfaceUnknownError(WireupError):
-    """Raised when a collection dependency names an inner type the registry does not know."""
-
-    def __init__(self, inner_type: type[Any], parameter_name: str, target: Any) -> None:
-        msg = (
-            f"Parameter '{parameter_name}' of {stringify_type(target)} requests "
-            f"a collection of {stringify_type(inner_type)}, but no implementations are registered. "
-            "Register at least one implementation via `@injectable(as_type=...)`, `@abstract`, "
-            "or a factory function returning the interface type."
-        )
-        super().__init__(msg)
-
-
 if sys.version_info >= (3, 11):
 
     class ContainerCloseError(ExceptionGroup, WireupError):  # noqa: F821

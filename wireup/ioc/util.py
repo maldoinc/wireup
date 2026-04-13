@@ -266,29 +266,12 @@ def get_inject_annotated_parameters(target: AnyCallable) -> dict[str, AnnotatedP
     return res
 
 
-def _ensure_collection_factories_for_target(
-    container: BaseContainer, names_to_inject: dict[str, AnnotatedParameter], target: Any
-) -> None:
-    """Synthesize collection factories for params of an external injection target.
-
-    ``@inject_from_container``-decorated functions and framework integration route
-    handlers aren't stored in ``registry.dependencies``, so the synthesis pass in
-    ``extend()`` can't see their ``Set[T]`` deps. Trigger on-demand synthesis here so
-    downstream validation, scope detection, and compiled-factory lookup all succeed.
-    Idempotent: already-synthesized collection entries are skipped.
-    """
-    if container._registry.ensure_collection_factories_for(names_to_inject, target=target):
-        container._registry._update_factories_async_flag()
-        if container._registry.on_change:
-            container._registry.on_change()
-
-
 def get_valid_injection_annotated_parameters(
     container: BaseContainer, target: AnyCallable
 ) -> dict[str, AnnotatedParameter]:
     names_to_inject = get_inject_annotated_parameters(target)
 
-    _ensure_collection_factories_for_target(container, names_to_inject, target=target)
+    container._registry.register_collection_factories_for(names_to_inject)
 
     for name, parameter in names_to_inject.items():
         assert_dependency_exists(
@@ -304,8 +287,6 @@ def get_valid_injection_annotated_parameters(
 
 def injection_requires_scope(names_to_inject: dict[str, AnnotatedParameter], container: BaseContainer) -> bool:
     """Return True when any injected dependency requires entering a scope."""
-    _ensure_collection_factories_for_target(container, names_to_inject, target=None)
-
     for param in names_to_inject.values():
         if isinstance(param.annotation, ConfigInjectionRequest):
             continue

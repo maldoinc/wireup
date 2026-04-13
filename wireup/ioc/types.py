@@ -52,15 +52,11 @@ class ConfigInjectionRequest(InjectableType):
     config_key: ConfigurationReference
 
 
+# Sentinel qualifier values for synthesized collection factories. A parameter typed
+# ``Set[T]`` is rewritten into a qualified service dep with ``qualifier = CollectionKind.SET``
+# so collection resolution reuses the standard qualified-service codegen path.
 class CollectionKind(Enum):
-    """Sentinel qualifier values used to key synthesized collection factories.
-
-    A parameter typed ``Set[T]`` is rewritten by ``param_get_annotation`` into a qualified
-    service dep with ``qualifier = CollectionKind.SET``. The registry then synthesizes an
-    ``InjectableFactory`` under ``(T, CollectionKind.SET)`` that builds the set at resolve
-    time. This keeps collection injection on the same codegen hot path as every other
-    qualified dep: a single ``factories[obj_id].factory(container)`` call.
-    """
+    """Sentinel qualifier values used to key synthesized collection factories."""
 
     SET = "set"
 

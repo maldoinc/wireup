@@ -3,14 +3,20 @@ from __future__ import annotations
 import inspect
 import re
 import typing
+import warnings
 from abc import ABC, abstractmethod
 
 import pytest
 import wireup
 from wireup import Injected, injectable
-from wireup.errors import CollectionInterfaceUnknownError, WireupError
-from wireup.ioc.types import CollectionKind, InjectableQualifier
-from wireup.ioc.util import param_get_annotation
+from wireup.errors import UnknownServiceRequestedError, WireupError
+from wireup.ioc.types import CollectionKind
+from wireup.ioc.util import (
+    get_inject_annotated_parameters,
+    get_valid_injection_annotated_parameters,
+    injection_requires_scope,
+    param_get_annotation,
+)
 
 
 class Cache(ABC):
@@ -44,19 +50,6 @@ def test_param_get_annotation_detects_set_of_interface() -> None:
 
     assert result is not None
     assert result.klass is Cache
-    assert isinstance(result.annotation, InjectableQualifier)
-    assert result.annotation.qualifier is CollectionKind.SET
-    assert result.qualifier_value is CollectionKind.SET
-
-
-def test_param_get_annotation_detects_injected_set_of_interface() -> None:
-    def target(caches: Injected[set[Cache]]) -> None: ...
-
-    parameter = inspect.signature(target).parameters["caches"]
-    result = param_get_annotation(parameter, globalns_supplier=lambda: globals())
-
-    assert result is not None
-    assert result.klass is Cache
     assert result.qualifier_value is CollectionKind.SET
 
 
@@ -72,24 +65,6 @@ def test_set_of_qualified_cache_impls_is_injected() -> None:
 
 
 # ---- Validation rules ----
-
-
-class _UnknownInterface(ABC):
-    @abstractmethod
-    def name(self) -> str: ...
-
-
-def test_collection_of_unknown_type_raises_collection_interface_unknown_error() -> None:
-    @injectable
-    class UnknownConsumer:
-        def __init__(self, impls: Injected[set[_UnknownInterface]]) -> None:
-            self.impls = impls
-
-    with pytest.raises(
-        CollectionInterfaceUnknownError,
-        match=re.escape("_UnknownInterface"),
-    ):
-        wireup.create_sync_container(injectables=[UnknownConsumer])
 
 
 class _ScopedCache(ABC):
@@ -134,19 +109,19 @@ class _CycleInterface(ABC):
     def tag(self) -> str: ...
 
 
-@injectable(as_type=_CycleInterface, qualifier="cycle_a")
-class _CycleImplA(_CycleInterface):
-    def __init__(self, consumer: _CycleConsumer) -> None:  # type: ignore[name-defined]
-        self.consumer = consumer
-
-    def tag(self) -> str:
-        return "a"
-
-
 @injectable
 class _CycleConsumer:
     def __init__(self, impls: Injected[set[_CycleInterface]]) -> None:
         self.impls = impls
+
+
+@injectable(as_type=_CycleInterface, qualifier="cycle_a")
+class _CycleImplA(_CycleInterface):
+    def __init__(self, consumer: _CycleConsumer) -> None:
+        self.consumer = consumer
+
+    def tag(self) -> str:
+        return "a"
 
 
 def test_cycle_through_collection_dep_is_rejected() -> None:
@@ -198,17 +173,6 @@ async def test_async_container_resolves_set_of_async_impls() -> None:
     tags = {cache.tag() for cache in consumer.caches}
     assert tags == {"async_redis", "async_memory"}
 
-    # The synthesized collection factory is registered under (_AsyncCache, CollectionKind.SET)
-    # and async-flag propagation marks the consumer as async. The consumer's generated code
-    # resolves the collection through the standard service-branch dict lookup.
-    collection_obj_id = (_AsyncCache, CollectionKind.SET)
-    assert collection_obj_id in container._factories
-    assert container._factories[collection_obj_id].is_async
-
-    consumer_compiled = container._factories[_AsyncCacheConsumer]
-    assert "factories[" in consumer_compiled.generated_source
-    assert "await factories[" in consumer_compiled.generated_source
-
 
 # ---- inject_from_container path ----
 
@@ -238,12 +202,10 @@ class _EmptyCacheConsumer:
         self.caches = caches
 
 
-def test_consumer_of_collection_with_no_impls_is_rejected_at_build_time() -> None:
-    # When the inner type has zero registered implementations, validation rejects the
-    # consumer with CollectionInterfaceUnknownError. Users who want an "empty collection
-    # is fine" semantic must register the type via at least one entry (even a placeholder).
-    with pytest.raises(CollectionInterfaceUnknownError):
-        wireup.create_sync_container(injectables=[_EmptyCacheConsumer])
+def test_consumer_of_collection_with_no_impls_receives_empty_set() -> None:
+    container = wireup.create_sync_container(injectables=[_EmptyCacheConsumer])
+    consumer = container.get(_EmptyCacheConsumer)
+    assert consumer.caches == set()
 
 
 class _MixedCache(ABC):
@@ -305,11 +267,8 @@ def test_typing_set_alias_and_set_spelling_resolve_identically() -> None:
 def test_top_level_container_get_on_parameterized_set_raises() -> None:
     container = wireup.create_sync_container(injectables=[RedisCache, InMemoryCache])
 
-    with pytest.raises(Exception) as exc_info:
+    with pytest.raises(UnknownServiceRequestedError):
         container.get(set[Cache])
-
-    # Error should surface something intelligible — not a KeyError inside the factory dict.
-    assert "set" in str(exc_info.value).lower() or "unknown" in str(exc_info.value).lower()
 
 
 # ---- Factory functions with heterogeneous deps (the downstream DeviceBuilder pattern) ----
@@ -360,6 +319,102 @@ def _logged_device_builder(logger: _Logger) -> _DeviceBuilder:
 class _DeviceLifecycleService:
     def __init__(self, builders: Injected[set[_DeviceBuilder]]) -> None:
         self.builders = builders
+
+
+# ---- Regression: _iter_impls_for_type via the @wireup.abstract interfaces path ----
+
+
+with warnings.catch_warnings():
+    warnings.simplefilter("ignore", FutureWarning)
+
+    @wireup.abstract
+    class _InheritBase(ABC):
+        @abstractmethod
+        def label(self) -> str: ...
+
+
+@wireup.injectable(qualifier="alpha")
+class _InheritAlpha(_InheritBase):
+    def label(self) -> str:
+        return "alpha"
+
+
+@wireup.injectable(qualifier="beta")
+class _InheritBeta(_InheritBase):
+    def label(self) -> str:
+        return "beta"
+
+
+@wireup.injectable
+class _InheritConsumer:
+    def __init__(self, impls: Injected[set[_InheritBase]]) -> None:
+        self.impls = impls
+
+
+def test_set_of_impls_resolves_via_wireup_abstract_interface() -> None:
+    container = wireup.create_sync_container(
+        injectables=[_InheritBase, _InheritAlpha, _InheritBeta, _InheritConsumer],
+    )
+
+    consumer = container.get(_InheritConsumer)
+    labels = {impl.label() for impl in consumer.impls}
+    assert labels == {"alpha", "beta"}
+
+
+# ---- Regression: injection_requires_scope is pure after synthesis ----
+
+
+class _PureCheckCache(ABC):
+    @abstractmethod
+    def tag(self) -> str: ...
+
+
+@injectable(as_type=_PureCheckCache, qualifier="alpha")
+class _PureCheckCacheAlpha(_PureCheckCache):
+    def tag(self) -> str:
+        return "alpha"
+
+
+def _pure_check_target(caches: Injected[set[_PureCheckCache]]) -> set[str]:
+    return {cache.tag() for cache in caches}
+
+
+def test_injection_requires_scope_does_not_mutate_after_synthesis() -> None:
+    container = wireup.create_sync_container(injectables=[_PureCheckCacheAlpha])
+
+    names_to_inject = get_inject_annotated_parameters(_pure_check_target)
+    container._registry.register_collection_factories_for(names_to_inject)
+
+    factories_before = dict(container._registry.factories)
+    dependencies_before = dict(container._registry.dependencies)
+    lifetime_before = dict(container._registry.lifetime)
+
+    on_change_calls = 0
+
+    def _count_calls() -> None:
+        nonlocal on_change_calls
+        on_change_calls += 1
+
+    container._registry.on_change = _count_calls
+
+    for _ in range(3):
+        injection_requires_scope(names_to_inject, container)
+
+    assert on_change_calls == 0
+    assert container._registry.factories == factories_before
+    assert container._registry.dependencies == dependencies_before
+    assert container._registry.lifetime == lifetime_before
+
+
+def test_get_valid_injection_annotated_parameters_synthesizes_collection_factory() -> None:
+    container = wireup.create_sync_container(injectables=[_PureCheckCacheAlpha])
+
+    collection_obj_id = (_PureCheckCache, CollectionKind.SET)
+    assert collection_obj_id not in container._registry.factories
+
+    get_valid_injection_annotated_parameters(container, _pure_check_target)
+
+    assert collection_obj_id in container._registry.factories
 
 
 def test_factory_functions_with_heterogeneous_deps_resolve_in_set() -> None:
