@@ -177,6 +177,40 @@ def main(
 ): ...
 ```
 
+## Injecting All Implementations
+
+When you need every registered implementation of an interface, inject them as a `Set[T]`.
+
+```python
+from typing import Set
+from wireup import Injected, inject_from_container, injectable
+
+
+@injectable(as_type=Cache, qualifier="redis")
+class RedisCache(Cache): ...
+
+
+@injectable(as_type=Cache, qualifier="memory")
+class InMemoryCache(Cache): ...
+
+
+@inject_from_container(container)
+def warm_all(caches: Injected[Set[Cache]]) -> None:
+    for cache in caches:
+        cache.warm()
+```
+
+Wireup resolves the set at injection time by iterating every impl of the inner type. Factory
+functions with heterogeneous dependencies are supported: each impl's own deps are resolved
+through the normal container machinery before the set is assembled.
+
+!!! note
+
+    The set reflects the registry state at the moment of resolution. Singleton consumers freeze
+    the set at first resolution — once the consumer is cached, the set is cached with it —
+    matching how any singleton's state is frozen after first construction. Transient and scoped
+    consumers see impls added via `container.extend()` on their next resolution.
+
 ## `as_type` with Optional Types
 
 When registering factory functions that return optional types (e.g. `Cache | None`), the binding is automatically
