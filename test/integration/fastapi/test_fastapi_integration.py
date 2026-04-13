@@ -2,7 +2,7 @@ import asyncio
 import contextlib
 import uuid
 from threading import Barrier, Thread
-from typing import Any, AsyncIterator, Dict, Iterator, Set
+from typing import Any, AsyncIterator, Dict, Iterator, Mapping, Set
 from uuid import uuid4
 
 import anyio.to_thread
@@ -670,3 +670,22 @@ def test_fastapi_route_injects_set_of_impls() -> None:
 
     assert res.status_code == 200
     assert res.json() == {"names": ["memory", "redis"]}
+
+
+def test_fastapi_route_injects_mapping_of_impls() -> None:
+    app = FastAPI()
+    container = wireup.create_async_container(
+        injectables=[_RouteRedisCache, _RouteMemoryCache, wireup.integration.fastapi],
+    )
+
+    @app.get("/caches/map")
+    async def list_cache_map(caches: Injected[Mapping[str, _RouteCache]]) -> Dict[str, Any]:
+        return {qualifier: cache.name() for qualifier, cache in caches.items()}
+
+    wireup.integration.fastapi.setup(container, app)
+
+    with TestClient(app) as client:
+        res = client.get("/caches/map")
+
+    assert res.status_code == 200
+    assert res.json() == {"redis": "redis", "memory": "memory"}

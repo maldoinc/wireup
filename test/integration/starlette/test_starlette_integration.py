@@ -1,5 +1,5 @@
 import types
-from typing import Iterator, List, Set
+from typing import Iterator, List, Mapping, Set
 from uuid import uuid4
 
 import pytest
@@ -408,3 +408,31 @@ def test_wireup_task_injects_set_of_impls_into_local_function() -> None:
     # Closures bypass the LRU cache.
     info = task._get_injected_wrapper.cache_info()
     assert info.misses == 0
+
+
+# ---- Mapping[str, T] collection injection through WireupTask ----
+
+
+_map_task_calls: List[Mapping[str, str]] = []
+
+
+def _map_task(caches: Injected[Mapping[str, _CollectionCache]]) -> None:
+    _map_task_calls.append({k: v.name() for k, v in caches.items()})
+
+
+def test_wireup_task_injects_mapping_of_impls_into_cached_function() -> None:
+    _map_task_calls.clear()
+    container = wireup.create_async_container(
+        injectables=[_CollectionRedisCache, _CollectionMemoryCache, wireup.integration.starlette],
+    )
+    task = WireupTask(container)
+    task._get_injected_wrapper.cache_clear()
+
+    task(_map_task)()
+    task(_map_task)()
+
+    assert _map_task_calls == [{"redis": "redis", "memory": "memory"}, {"redis": "redis", "memory": "memory"}]
+
+    info = task._get_injected_wrapper.cache_info()
+    assert info.hits == 1  # second call hits the LRU cache
+    assert info.misses == 1
