@@ -153,3 +153,51 @@ class _CycleConsumer:
 def test_cycle_through_collection_dep_is_rejected() -> None:
     with pytest.raises(WireupError, match=re.escape("Circular dependency")):
         wireup.create_sync_container(injectables=[_CycleImplA, _CycleConsumer])
+
+
+# ---- Async variant ----
+
+class _AsyncCache(ABC):
+    @abstractmethod
+    def tag(self) -> str: ...
+
+
+class _AsyncRedisCache(_AsyncCache):
+    def tag(self) -> str:
+        return "async_redis"
+
+
+class _AsyncMemoryCache(_AsyncCache):
+    def tag(self) -> str:
+        return "async_memory"
+
+
+@injectable(as_type=_AsyncCache, qualifier="async_redis")
+async def _async_redis_factory() -> _AsyncRedisCache:
+    return _AsyncRedisCache()
+
+
+@injectable(as_type=_AsyncCache, qualifier="async_memory")
+async def _async_memory_factory() -> _AsyncMemoryCache:
+    return _AsyncMemoryCache()
+
+
+@injectable
+class _AsyncCacheConsumer:
+    def __init__(self, caches: Injected[Set[_AsyncCache]]) -> None:
+        self.caches = caches
+
+
+async def test_async_container_resolves_set_of_async_impls() -> None:
+    container = wireup.create_async_container(
+        injectables=[_async_redis_factory, _async_memory_factory, _AsyncCacheConsumer],
+    )
+    consumer = await container.get(_AsyncCacheConsumer)
+
+    assert len(consumer.caches) == 2
+    tags = {cache.tag() for cache in consumer.caches}
+    assert tags == {"async_redis", "async_memory"}
+
+    compiled_factory = container._factories[_AsyncCacheConsumer]
+    assert "_resolve_collection_set_async" in compiled_factory.generated_source
+    assert "await container._resolve_collection_set_async" in compiled_factory.generated_source

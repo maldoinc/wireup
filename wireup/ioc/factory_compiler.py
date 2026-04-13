@@ -28,6 +28,7 @@ if TYPE_CHECKING:
 class CompiledFactory:
     factory: Callable[[BaseContainer], Any]
     is_async: bool
+    generated_source: str = ""
 
 
 _CONTAINER_SCOPE_ERROR_MSG = (
@@ -285,9 +286,11 @@ class FactoryCompiler:
             compiled_code = compile(result.source, f"<{_WIREUP_GENERATED_FACTORY_NAME}_{obj_id}>", "exec")
             exec(compiled_code, namespace)  # noqa: S102
 
-            generated_function = namespace[_WIREUP_GENERATED_FACTORY_NAME]
-            generated_function.__wireup_generated_code__ = result.source
-            return CompiledFactory(factory=generated_function, is_async=result.is_async)
+            return CompiledFactory(
+                factory=namespace[_WIREUP_GENERATED_FACTORY_NAME],
+                is_async=result.is_async,
+                generated_source=result.source,
+            )
 
         except Exception as e:
             msg = f"Failed to compile generated factory {obj_id}: {e}"
