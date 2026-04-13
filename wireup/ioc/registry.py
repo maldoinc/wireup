@@ -484,14 +484,23 @@ class ContainerRegistry:
             entries live in ``self.impls[inner_type]`` as a set of qualifiers; the compiled
             factory is keyed ``(inner_type, qualifier)`` directly.
 
+        ``CollectionKind`` sentinel qualifiers are skipped — they are synthesized markers for
+        collection factories of the same inner type, not real implementations. Without this
+        filter, building a Mapping collection for an interface that already has a synthesized
+        Set factory would attempt to treat the ``CollectionKind.SET`` marker as a dict key.
+
         The returned ``factories_key`` is usable against ``registry.factories`` and against the
         post-compilation ``FactoryCompiler.factories`` dict in both paths.
         """
         if inner_type in self.interfaces:
             for qualifier, concrete in self.interfaces[inner_type].items():
+                if isinstance(qualifier, CollectionKind):
+                    continue
                 yield qualifier, get_container_object_id(concrete, qualifier)
             return
 
         if inner_type in self.impls:
             for qualifier in self.impls[inner_type]:
+                if isinstance(qualifier, CollectionKind):
+                    continue
                 yield qualifier, get_container_object_id(inner_type, qualifier)

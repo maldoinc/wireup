@@ -496,6 +496,32 @@ class _AsyncMappingCacheConsumer:
         self.caches = caches
 
 
+@injectable
+class _SetAndMapConsumer:
+    def __init__(
+        self,
+        caches_set: Injected[set[Cache]],
+        caches_map: Injected[typing.Mapping[str, Cache]],
+    ) -> None:
+        self.caches_set = caches_set
+        self.caches_map = caches_map
+
+
+def test_same_interface_can_be_injected_as_both_set_and_mapping() -> None:
+    # Regression: synthesizing the Set collection factory added CollectionKind.SET to
+    # self.impls[Cache]. When the Mapping factory was then synthesized, iter_impls_for_type
+    # yielded the sentinel qualifier and tried to use it as a dict key — producing a
+    # SyntaxError in the generated source. iter_impls_for_type now filters CollectionKind
+    # sentinels, so both can coexist on the same interface.
+    container = wireup.create_sync_container(
+        injectables=[RedisCache, InMemoryCache, _SetAndMapConsumer],
+    )
+    consumer = container.get(_SetAndMapConsumer)
+
+    assert {c.name() for c in consumer.caches_set} == {"redis", "in_memory"}
+    assert set(consumer.caches_map.keys()) == {"redis", "in_memory"}
+
+
 async def test_async_container_resolves_mapping_of_async_impls() -> None:
     container = wireup.create_async_container(
         injectables=[_async_redis_factory, _async_memory_factory, _AsyncMappingCacheConsumer],
