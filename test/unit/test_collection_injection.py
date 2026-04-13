@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import collections.abc
 import inspect
 import re
 import typing
@@ -402,3 +403,109 @@ def test_mapping_of_qualified_cache_impls_is_injected() -> None:
     assert set(consumer.caches.keys()) == {"redis", "in_memory"}
     assert consumer.caches["redis"].name() == "redis"
     assert consumer.caches["in_memory"].name() == "in_memory"
+
+
+def test_param_get_annotation_detects_mapping_of_interface() -> None:
+    def target(caches: typing.Mapping[str, Cache]) -> None: ...
+
+    parameter = inspect.signature(target).parameters["caches"]
+    result = param_get_annotation(parameter, globalns_supplier=lambda: globals())
+
+    assert result is not None
+    assert result.klass is Cache
+    assert result.qualifier_value is CollectionKind.MAP
+
+
+class _MappedCache(ABC):
+    @abstractmethod
+    def tag(self) -> str: ...
+
+
+@injectable(as_type=_MappedCache)  # default, no qualifier
+class _MappedDefaultCache(_MappedCache):
+    def tag(self) -> str:
+        return "default"
+
+
+@injectable(as_type=_MappedCache, qualifier="alpha")
+class _MappedAlphaCache(_MappedCache):
+    def tag(self) -> str:
+        return "alpha"
+
+
+@injectable(as_type=_MappedCache, qualifier="beta")
+class _MappedBetaCache(_MappedCache):
+    def tag(self) -> str:
+        return "beta"
+
+
+@injectable
+class _MappedConsumer:
+    def __init__(self, caches: Injected[typing.Mapping[str, _MappedCache]]) -> None:
+        self.caches = caches
+
+
+def test_mapping_excludes_unqualified_impls() -> None:
+    # Only the qualified entries get dict keys; the default (unqualified) impl has no key
+    # to index under and is silently excluded. Matches Spring's Map<String, T> semantic.
+    container = wireup.create_sync_container(
+        injectables=[_MappedDefaultCache, _MappedAlphaCache, _MappedBetaCache, _MappedConsumer],
+    )
+    consumer = container.get(_MappedConsumer)
+
+    assert set(consumer.caches.keys()) == {"alpha", "beta"}
+    assert consumer.caches["alpha"].tag() == "alpha"
+    assert consumer.caches["beta"].tag() == "beta"
+
+
+def test_mapping_all_four_spellings_resolve_identically() -> None:
+    # typing.Mapping[str, T], typing.Dict[str, T], dict[str, T], Mapping[str, T] must all
+    # produce a CollectionKind.MAP dep with the same inner type.
+    def t1(caches: typing.Mapping[str, Cache]) -> None: ...
+    def t2(caches: typing.Dict[str, Cache]) -> None: ...  # noqa: UP006
+    def t3(caches: dict[str, Cache]) -> None: ...
+    def t4(caches: collections.abc.Mapping[str, Cache]) -> None: ...
+
+    results = [
+        param_get_annotation(
+            inspect.signature(fn).parameters["caches"],
+            globalns_supplier=lambda: globals(),
+        )
+        for fn in (t1, t2, t3, t4)
+    ]
+
+    for result in results:
+        assert result is not None
+        assert result.klass is Cache
+        assert result.qualifier_value is CollectionKind.MAP
+
+
+def test_mapping_with_non_str_key_is_rejected() -> None:
+    @injectable
+    class BadConsumer:
+        def __init__(self, caches: Injected[typing.Mapping[int, Cache]]) -> None:
+            self.caches = caches
+
+    with pytest.raises(WireupError, match=re.escape("only Mapping[str, T] is supported")):
+        wireup.create_sync_container(injectables=[RedisCache, InMemoryCache, BadConsumer])
+
+
+@injectable
+class _AsyncMappingCacheConsumer:
+    def __init__(self, caches: Injected[typing.Mapping[str, _AsyncCache]]) -> None:
+        self.caches = caches
+
+
+async def test_async_container_resolves_mapping_of_async_impls() -> None:
+    container = wireup.create_async_container(
+        injectables=[_async_redis_factory, _async_memory_factory, _AsyncMappingCacheConsumer],
+    )
+    consumer = await container.get(_AsyncMappingCacheConsumer)
+
+    assert isinstance(consumer.caches, dict)
+    assert set(consumer.caches.keys()) == {"async_redis", "async_memory"}
+
+    # The synthesized map factory inherits its async flag from impl-walker propagation.
+    collection_obj_id = (_AsyncCache, CollectionKind.MAP)
+    assert collection_obj_id in container._factories
+    assert container._factories[collection_obj_id].is_async
