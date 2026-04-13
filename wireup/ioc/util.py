@@ -136,9 +136,10 @@ def param_get_annotation(
     # as qualified service deps using a CollectionKind sentinel so the registry can synthesize
     # a factory under (inner_type, kind) and the kwargs loop resolves them like any other dep.
     collection_kind = _COLLECTION_ORIGIN_TO_KIND.get(get_origin(type_analysis.raw_type))
-    if collection_kind is not None and (
-        inner_type := _collection_inner_type(collection_kind, type_analysis.raw_type, parameter.name)
-    ) is not None:
+    if (
+        collection_kind is not None
+        and (inner_type := _collection_inner_type(collection_kind, type_analysis.raw_type, parameter.name)) is not None
+    ):
         return AnnotatedParameter(
             klass=inner_type,
             annotation=InjectableQualifier(qualifier=collection_kind),
