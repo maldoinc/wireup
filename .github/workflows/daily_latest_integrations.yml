@@ -1,0 +1,58 @@
+name: Daily integration tests (latest deps)
+
+on:
+  schedule:
+    # Run daily at 06:00 UTC
+    - cron: "0 6 * * *"
+  workflow_dispatch: # allow manual trigger
+
+jobs:
+  test-latest:
+    name: "${{ matrix.integration }} (latest)"
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - integration: flask
+            package: Flask
+            test: test/integration/flask/test_flask_integration.py
+          - integration: fastapi
+            package: fastapi httpx
+            test: test/integration/fastapi/
+          - integration: fastmcp
+            package: fastmcp
+            test: test/integration/fastmcp/
+          - integration: starlette
+            package: starlette httpx
+            test: test/integration/starlette/
+          - integration: django
+            package: Django
+            test: test/integration/django/
+          - integration: aiohttp
+            package: aiohttp
+            test: test/integration/aiohttp/
+          - integration: celery
+            package: celery
+            test: test/integration/celery/
+          - integration: click
+            package: click
+            test: test/integration/click/
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python 3.13
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+
+      - name: Install wireup + latest integration deps
+        run: |
+          uv pip install --system -e ".[dev]"
+          uv pip install --system --upgrade ${{ matrix.package }}
+
+      - name: Run integration tests
+        run: pytest ${{ matrix.test }} -v --tb=short
