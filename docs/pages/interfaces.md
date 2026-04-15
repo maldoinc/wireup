@@ -179,11 +179,12 @@ def main(
 
 ## Inject All Implementations
 
-When you register multiple implementations of the same type with `@injectable(as_type=...)`, you can request all of them at once with `Sequence[T]`.
+When you register multiple implementations of the same type with `@injectable(as_type=...)`, you can request all of them at once with `collection.abc.Sequence[T]`.
 
 ```python
+from collections.abc import Sequence
 from dataclasses import dataclass
-from typing import Protocol, Sequence
+from typing import Protocol
 from wireup import create_sync_container, injectable
 
 
@@ -210,10 +211,6 @@ class CacheReporter:
 ```
 
 `Sequence[T]` includes the default implementation, if present, plus any qualified implementations in registration order.
-
-!!! note "Sequence Type"
-    On Python 3.8, use `typing.Sequence`. On Python 3.9 and newer, `typing.Sequence` and `collections.abc.Sequence`
-    are treated as equivalent.
 
 
 ## `as_type` with Optional Types

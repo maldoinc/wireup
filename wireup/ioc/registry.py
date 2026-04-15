@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import inspect
-import sys
 import typing
 import warnings
 from collections import defaultdict
@@ -176,13 +175,6 @@ class ContainerRegistry:
             raise AsTypeMismatchError(implementation=implementation_type, as_type=target_type)
 
     @staticmethod
-    def _get_sequence_types(klass: Any) -> list[Any]:
-        aliases = [typing.Sequence[klass]]
-        if sys.version_info >= (3, 9):
-            aliases.append(Sequence[klass])
-        return aliases
-
-    @staticmethod
     def _get_collection_lifetime(lifetimes: list[InjectableLifetime]) -> InjectableLifetime:
         for lifetime in ("transient", "scoped"):
             if lifetime in lifetimes:
@@ -208,20 +200,11 @@ class ContainerRegistry:
         _factory.__signature__ = inspect.Signature(parameters=signature_parameters)  # type: ignore[attr-defined]
         return _factory
 
-    def _has_user_defined_sequence_key(self, collection_keys: list[Any]) -> bool:
-        user_defined_collection_key = next(
-            (
-                collection_key
-                for collection_key in collection_keys
-                if (existing_factory := self.factories.get(get_container_object_id(collection_key, None)))
-                and not existing_factory.is_synthetic
-            ),
-            None,
-        )
-
-        if user_defined_collection_key is not None:
+    def _has_user_defined_sequence_key(self, collection_key: Any) -> bool:
+        existing_factory = self.factories.get(get_container_object_id(collection_key, None))
+        if existing_factory and not existing_factory.is_synthetic:
             warnings.warn(
-                f"Wireup did not register collection injection for {user_defined_collection_key!r} "
+                f"Wireup did not register collection injection for {collection_key!r} "
                 "because the container already has an explicit registration for that key. "
                 "Sequence[T] is reserved for Wireup collection injection. "
                 "Migrate it to a NewType or another distinct collection type.",
@@ -245,25 +228,22 @@ class ContainerRegistry:
             if not real_qualifiers:
                 continue
 
-            collection_keys = self._get_sequence_types(klass)
+            collection_key = Sequence[klass]  # type:ignore[valid-type]
 
-            if self._has_user_defined_sequence_key(collection_keys):
+            if self._has_user_defined_sequence_key(collection_key):
                 continue
 
-            for collection_key in collection_keys:
-                existing_factory = self.factories.get(get_container_object_id(collection_key, None))
-                if existing_factory and existing_factory.is_synthetic:
-                    continue
+            existing_factory = self.factories.get(get_container_object_id(collection_key, None))
+            if existing_factory and existing_factory.is_synthetic:
+                continue
 
-                self._register(
-                    klass=collection_key,
-                    factory_fn=self._create_sequence_collection_factory(klass, real_qualifiers),
-                    lifetime=self._get_collection_lifetime(
-                        [self.get_lifetime(klass, qual) for qual in real_qualifiers]
-                    ),
-                    auto_discover_interfaces=False,
-                    is_synthetic_factory=True,
-                )
+            self._register(
+                klass=collection_key,
+                factory_fn=self._create_sequence_collection_factory(klass, real_qualifiers),
+                lifetime=self._get_collection_lifetime([self.get_lifetime(klass, qual) for qual in real_qualifiers]),
+                auto_discover_interfaces=False,
+                is_synthetic_factory=True,
+            )
 
     def _update_factories_async_flag(self) -> None:
         def _is_dependency_async(impl: type, qualifier: Qualifier | None) -> bool:

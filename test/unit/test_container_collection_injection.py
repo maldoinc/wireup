@@ -1,10 +1,9 @@
 from __future__ import annotations
 
-import sys
 import typing
-from collections.abc import Sequence as AbcSequence
+from collections.abc import Sequence
 from dataclasses import dataclass
-from typing import Optional, Protocol, Sequence
+from typing import Optional, Protocol
 
 import pytest
 from wireup import Injected, create_sync_container, inject_from_container, injectable
@@ -90,14 +89,16 @@ def test_can_override_collection_directly() -> None:
 
 
 def test_explicit_sequence_registration_takes_precedence_and_warns() -> None:
+    seq = [MemoryCache()]
+
     @injectable
     def make_custom_sequence() -> Sequence[Cache]:
-        return ("custom-sequence",)
+        return seq
 
     with pytest.warns(FutureWarning, match=r"Wireup did not register collection injection for .*Sequence"):
         container = create_sync_container(injectables=[MemoryCache, make_custom_sequence])
 
-    assert container.get(Sequence[Cache]) == ("custom-sequence",)
+    assert container.get(Sequence[Cache]) is seq
 
 
 def test_injects_collection_when_registration_key_comes_from_factory_return_type() -> None:
@@ -116,7 +117,6 @@ def test_injects_collection_when_registration_key_comes_from_factory_return_type
     assert [cache.source() for cache in res] == ["memory", "redis"]
 
 
-@pytest.mark.skipif(sys.version_info < (3, 9), reason="Avoid collection.abc subscripting in Py3.8")
 def test_internal_extend_does_not_create_nested_sequence_collections() -> None:
     registry = ContainerRegistry(impls=[InjectableDeclaration(obj=MemoryCache, lifetime="singleton")])
 
@@ -126,10 +126,7 @@ def test_internal_extend_does_not_create_nested_sequence_collections() -> None:
 
     registry.extend(impls=[InjectableDeclaration(obj=ExtraService, lifetime="singleton")])
 
-    assert typing.Sequence[typing.Sequence[MemoryCache]] not in registry.impls
-    assert AbcSequence[typing.Sequence[MemoryCache]] not in registry.impls
-    assert typing.Sequence[AbcSequence[MemoryCache]] not in registry.impls
-    assert AbcSequence[AbcSequence[MemoryCache]] not in registry.impls
+    assert Sequence[Sequence[MemoryCache]] not in registry.impls
 
 
 def test_optional_compat_alias_does_not_create_sequence_of_raw_type() -> None:
@@ -160,8 +157,8 @@ def test_mixed_real_and_optional_compat_registrations_only_include_real_members_
     assert container.get(Sequence[Optional[Cache]]) == (None,)
 
 
-@pytest.mark.skipif(sys.version_info < (3, 9), reason="collections.abc.Sequence is not subscriptable on Python 3.8")
-def test_typing_and_collections_sequence_aliases_are_equivalent() -> None:
+def test_typing_sequence_is_not_registered() -> None:
     container = create_sync_container(injectables=[MemoryCache, RedisCache])
 
-    assert container.get(typing.Sequence[Cache]) == container.get(AbcSequence[Cache])
+    with pytest.raises(UnknownServiceRequestedError):
+        container.get(typing.Sequence[Cache])
