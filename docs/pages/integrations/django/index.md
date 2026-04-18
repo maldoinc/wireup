@@ -116,6 +116,16 @@ urlpatterns = [
 
 Run the app with `python manage.py runserver`, then open `http://127.0.0.1:8000/greet/?name=World`.
 
+## Dependency Validation
+
+When `auto_inject_views=True`, Wireup validates Django views during app setup.
+Missing dependencies and config values fail before requests are served.
+
+When you use `@inject` or `@inject_app` explicitly, validation happens when those callables are invoked,
+not as part of the root Django startup guarantee.
+
+See [What Wireup Validates](../../what_wireup_validates.md) for the full rules.
+
 ## Detailed Guides
 
 - [Django Setup and Installation](setup.md): installation, middleware placement, and settings/config integration.

@@ -3,6 +3,8 @@ from typing import Iterator
 import pytest
 import wireup
 from wireup._annotations import injectable
+from wireup.ioc.container.async_container import ScopedAsyncContainer
+from wireup.ioc.container.sync_container import ScopedSyncContainer
 
 from test.unit.services.with_annotations.services import TransientService
 
@@ -196,3 +198,17 @@ def test_enter_scope_uses_provided_instances_for_qualified_interface_registratio
         resolved = scoped.get(Cache, qualifier="redis")
 
     assert resolved is seeded
+
+
+def test_scoped_container_gets_itself() -> None:
+    c = wireup.create_sync_container()
+
+    with c.enter_scope() as scoped:
+        assert scoped.get(ScopedSyncContainer) is scoped
+
+
+async def test_scoped_container_gets_itself_async() -> None:
+    c = wireup.create_async_container()
+
+    async with c.enter_scope() as scoped:
+        assert await scoped.get(ScopedAsyncContainer) is scoped

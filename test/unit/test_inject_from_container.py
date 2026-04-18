@@ -9,7 +9,8 @@ from typing_extensions import Annotated
 from wireup import Inject, Injected, create_sync_container, inject_from_container, injectable, service
 from wireup._decorators import inject_from_container_unchecked
 from wireup.errors import WireupError
-from wireup.renderer._consumers import ConsumerMetadata, get_consumers
+from wireup.ioc.container.async_container import ScopedAsyncContainer
+from wireup.ioc.container.sync_container import ScopedSyncContainer
 
 from test.conftest import Container
 from test.unit import services
@@ -224,6 +225,30 @@ async def test_injects_service_with_provided_async_scoped_container() -> None:
             assert isinstance(rand_service, RandomService)
 
         target()
+
+
+def test_injects_scoped_sync_container_from_scope() -> None:
+    container = create_sync_container()
+
+    with container.enter_scope() as scoped:
+
+        @inject_from_container(container, lambda: scoped)
+        def target(current_scope: Injected[ScopedSyncContainer]) -> ScopedSyncContainer:
+            return current_scope
+
+        assert target() is scoped
+
+
+async def test_injects_scoped_async_container_from_scope() -> None:
+    container = wireup.create_async_container()
+
+    async with container.enter_scope() as scoped:
+
+        @inject_from_container(container, lambda: scoped)
+        async def target(current_scope: Injected[ScopedAsyncContainer]) -> ScopedAsyncContainer:
+            return current_scope
+
+        assert await target() is scoped
 
 
 def test_inject_from_container_falsy_qualifier_injected() -> None:

@@ -126,6 +126,13 @@ See
 [Flask integration tests](https://github.com/maldoinc/wireup/blob/master/test/integration/flask/test_flask_integration.py)
 for more examples.
 
+### Dependency Validation
+
+`wireup.integration.flask.setup(...)` validates the views it wraps up front.
+Missing dependencies and config values fail during setup.
+
+See [What Wireup Validates](../../what_wireup_validates.md) for the full rules.
+
 ### API Reference
 
 - [flask_integration](../../class/flask_integration.md)

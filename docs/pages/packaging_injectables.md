@@ -13,9 +13,9 @@ Example:
 @injectable
 def database_session() -> DatabaseSession: ...
 
+
 @injectable
 class UserRepository: ...
-
 ```
 
 ```python title="app.py"
@@ -39,8 +39,10 @@ scanning.
 @injectable
 def database_session() -> DatabaseSession: ...
 
+
 @injectable
-class UserRepository: ..
+class UserRepository: ...
+
 
 INJECTABLES = [database_session, UserRepository]
 ```

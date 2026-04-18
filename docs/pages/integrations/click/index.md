@@ -100,6 +100,13 @@ def test_random_number_command():
         assert "Your lucky number is:" in result.output
 ```
 
+### Dependency Validation
+
+`wireup.integration.click.setup(...)` validates command callbacks during setup.
+Missing dependencies and config values fail before commands are invoked.
+
+See [What Wireup Validates](../../what_wireup_validates.md) for the full rules.
+
 ### API Reference
 
 Visit [API Reference](../../class/click_integration.md) for detailed information about the Click integration module.

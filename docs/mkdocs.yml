@@ -23,6 +23,7 @@ nav:
     - Guides:
       - Packaging Injectables: packaging_injectables.md
       - Testing: testing.md
+      - What Wireup Validates: what_wireup_validates.md
       - Upgrading: upgrading.md
       - Versioning: versioning.md
 

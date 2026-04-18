@@ -1,5 +1,7 @@
 import contextlib
+import types
 from contextvars import ContextVar
+from functools import lru_cache
 from typing import Any, AsyncIterator
 
 from starlette.applications import Starlette
@@ -112,13 +114,18 @@ def get_request_container() -> ScopedAsyncContainer:
         raise WireupError(msg) from e
 
 
+@injectable
 class WireupTask:
-    __slots__ = ("container",)
+    __slots__ = ("_get_injected_wrapper", "container")
 
     def __init__(self, container: AsyncContainer) -> None:
         self.container = container
+        self._get_injected_wrapper = lru_cache(maxsize=128)(inject_from_container(self.container))
 
     def __call__(self, fn: AnyCallable) -> Any:
+        should_cache = isinstance(fn, types.FunctionType) and "<locals>" not in fn.__qualname__
+        if should_cache:
+            return self._get_injected_wrapper(fn)
         return inject_from_container(self.container)(fn)
 
 
@@ -132,6 +139,10 @@ def _expose_wireup_task(container: AsyncContainer) -> None:
     if container._registry.is_type_with_qualifier_known(WireupTask, None):
         return
 
+    # Keep the old behavior for WireupTask where it was exposed
+    # without adding the integration in injectables.
+    # Cannot properly raise a deprecation notice here but this is deprecated
+    # and marked for removal.
     def wireup_task_factory() -> WireupTask:
         return WireupTask(container)
 
