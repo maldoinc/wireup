@@ -7,7 +7,6 @@
 
     Learn how it works and explore it on an demo pet store app:
 
-    [Documentation](interactive_graph.md){ .md-button target="_blank" }
     [:octicons-arrow-right-24: Live Demo](wireup_graph/pet_store.html){ .md-button .md-button--primary target="_blank" }
 
 Wireup can render your dependency graph as an interactive page, including:
