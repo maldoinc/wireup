@@ -71,6 +71,22 @@ Override dependencies with context managers, keep tests isolated, and restore th
     Full methodology and reproducibility: <a href="https://maldoinc.github.io/wireup/latest/benchmarks/">benchmarks</a>.</i>
 </p>
 
+## Interactive Graph
+
+Turn your container into an interactive dependency graph. Explore routes, functions, services, factories,
+configuration, and scopes in a live page with search, grouping, and dependency tracing.
+
+Learn how it works and explore it on an example pet store app:
+
+<p align="center">
+  <img alt="Wireup interactive dependency graph demo" src="docs/pages/img/pet_store_demo.gif">
+</p>
+
+<p align="center">
+  <a href="https://maldoinc.github.io/wireup/latest/interactive_graph/" target="_blank"><strong>Documentation</strong></a> &middot;
+  <a href="https://maldoinc.github.io/wireup/latest/wireup_graph/pet_store.html" target="_blank"><strong>Live Demo</strong></a>
+</p>
+
 ## Installation
 
 ```bash

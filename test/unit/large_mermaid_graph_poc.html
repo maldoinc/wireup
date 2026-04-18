@@ -1,0 +1,594 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Wireup Graph POC</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f3f1ea;
+      --panel: rgba(255, 252, 245, 0.92);
+      --ink: #1f2328;
+      --muted: #5d6470;
+      --line: #d3cdc1;
+      --accent: #b45309;
+      --accent-soft: #f6e3c4;
+      --service: #fff7ed;
+      --factory: #eef6ff;
+      --config: #f6f2ff;
+      --module: #fef3c7;
+      --shadow: 0 14px 40px rgba(60, 48, 24, 0.12);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: "IBM Plex Sans", "Segoe UI", sans-serif;
+      background:
+        radial-gradient(circle at top left, rgba(180, 83, 9, 0.10), transparent 28%),
+        radial-gradient(circle at right center, rgba(59, 130, 246, 0.08), transparent 24%),
+        linear-gradient(180deg, #f8f5ef 0%, var(--bg) 100%);
+      color: var(--ink);
+    }
+
+    .shell {
+      display: grid;
+      grid-template-columns: 320px 1fr;
+      min-height: 100vh;
+      gap: 20px;
+      padding: 20px;
+    }
+
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(14px);
+    }
+
+    .sidebar {
+      padding: 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .sidebar h1 {
+      margin: 0;
+      font-size: 1.4rem;
+    }
+
+    .sidebar p {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.45;
+    }
+
+    .field,
+    .group {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .field label,
+    .group .label {
+      font-size: 0.82rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--muted);
+    }
+
+    input[type="search"] {
+      width: 100%;
+      border: 1px solid var(--line);
+      background: #fff;
+      border-radius: 12px;
+      padding: 10px 12px;
+      font: inherit;
+      color: inherit;
+    }
+
+    .toggle-list {
+      display: grid;
+      gap: 8px;
+    }
+
+    .toggle {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 0.96rem;
+    }
+
+    .toggle input {
+      accent-color: var(--accent);
+    }
+
+    .pill-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .pill {
+      border: 1px solid var(--line);
+      background: #fff;
+      border-radius: 999px;
+      padding: 6px 10px;
+      font-size: 0.88rem;
+    }
+
+    .legend {
+      display: grid;
+      gap: 8px;
+      font-size: 0.9rem;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .swatch {
+      width: 14px;
+      height: 14px;
+      border-radius: 999px;
+      border: 1px solid rgba(0, 0, 0, 0.12);
+    }
+
+    .main {
+      display: grid;
+      grid-template-rows: auto 1fr;
+      gap: 16px;
+    }
+
+    .toolbar {
+      padding: 16px 18px;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .toolbar strong {
+      font-size: 1rem;
+    }
+
+    .toolbar span {
+      color: var(--muted);
+      font-size: 0.92rem;
+    }
+
+    .viewer {
+      position: relative;
+      overflow: hidden;
+      min-height: 700px;
+    }
+
+    #cy {
+      position: absolute;
+      inset: 0;
+    }
+
+    .details {
+      position: absolute;
+      right: 16px;
+      bottom: 16px;
+      width: min(320px, calc(100% - 32px));
+      padding: 14px;
+      border-radius: 14px;
+      border: 1px solid var(--line);
+      background: rgba(255, 255, 255, 0.94);
+      box-shadow: var(--shadow);
+    }
+
+    .details h2 {
+      margin: 0 0 8px;
+      font-size: 1rem;
+    }
+
+    .details dl {
+      margin: 0;
+      display: grid;
+      grid-template-columns: 88px 1fr;
+      gap: 8px 10px;
+      font-size: 0.9rem;
+    }
+
+    .details dt {
+      color: var(--muted);
+    }
+
+    .details dd {
+      margin: 0;
+    }
+
+    @media (max-width: 980px) {
+      .shell {
+        grid-template-columns: 1fr;
+      }
+
+      .viewer {
+        min-height: 70vh;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <aside class="panel sidebar">
+      <div>
+        <h1>Wireup Graph POC</h1>
+        <p>Mocked data only. This is a proof of interaction style, not a real container export.</p>
+      </div>
+
+      <div class="field">
+        <label for="search">Search</label>
+        <input id="search" type="search" placeholder="WeatherService, infra, make_http_client">
+      </div>
+
+      <div class="group">
+        <div class="label">Layers</div>
+        <div class="toggle-list">
+          <label class="toggle"><input id="toggle-config" type="checkbox" checked> Configuration</label>
+          <label class="toggle"><input id="toggle-factories" type="checkbox" checked> Factories</label>
+          <label class="toggle"><input id="toggle-services" type="checkbox" checked> Services</label>
+          <label class="toggle"><input id="toggle-modules" type="checkbox" checked> Module containers</label>
+        </div>
+      </div>
+
+      <div class="group">
+        <div class="label">Focus</div>
+        <div class="pill-row">
+          <button class="pill" data-focus="all" type="button">Whole graph</button>
+          <button class="pill" data-focus="weather" type="button">Weather path</button>
+          <button class="pill" data-focus="config" type="button">Config only</button>
+          <button class="pill" data-focus="modules" type="button">Modules only</button>
+        </div>
+      </div>
+
+      <div class="group">
+        <div class="label">Legend</div>
+        <div class="legend">
+          <div class="legend-item"><span class="swatch" style="background: var(--service);"></span> Service</div>
+          <div class="legend-item"><span class="swatch" style="background: var(--factory);"></span> Factory result</div>
+          <div class="legend-item"><span class="swatch" style="background: var(--config);"></span> Config root</div>
+          <div class="legend-item"><span class="swatch" style="background: var(--module);"></span> Module group</div>
+        </div>
+      </div>
+    </aside>
+
+    <main class="main">
+      <div class="panel toolbar">
+        <div>
+          <strong>Interactive container sketch</strong>
+          <span>Click a node to isolate its neighborhood.</span>
+        </div>
+        <span id="summary">Showing all mocked nodes</span>
+      </div>
+
+      <section class="panel viewer">
+        <div id="cy"></div>
+        <section class="details" id="details">
+          <h2>No node selected</h2>
+          <dl>
+            <dt>Type</dt><dd>Click a node to inspect it</dd>
+            <dt>Module</dt><dd>-</dd>
+            <dt>Depends on</dt><dd>-</dd>
+            <dt>Used by</dt><dd>-</dd>
+          </dl>
+        </section>
+      </section>
+    </main>
+  </div>
+
+  <script src="https://unpkg.com/cytoscape@3.30.2/dist/cytoscape.min.js"></script>
+  <script>
+    const elements = [
+      { data: { id: "module:factories", label: "factories", kind: "module", module: "factories" } },
+      { data: { id: "module:services.kv", label: "services.kv", kind: "module", module: "services.kv" } },
+      { data: { id: "module:services.audit", label: "services.audit", kind: "module", module: "services.audit" } },
+      { data: { id: "module:services.weather", label: "services.weather", kind: "module", module: "services.weather" } },
+      { data: { id: "module:config", label: "Configuration", kind: "module", module: "config" } },
+
+      { data: { id: "config:env", label: "⚙ env", kind: "config", module: "config", parent: "module:config" } },
+      { data: { id: "config:infra", label: "⚙ infra", kind: "config", module: "config", parent: "module:config" } },
+      { data: { id: "config:services", label: "⚙ services", kind: "config", module: "config", parent: "module:config" } },
+      { data: { id: "config:messaging", label: "⚙ messaging", kind: "config", module: "config", parent: "module:config" } },
+
+      { data: { id: "factory:http", label: "🏭 HttpClient\nvia make_http_client", kind: "factory", module: "factories", parent: "module:factories" } },
+
+      { data: { id: "service:redis", label: "🐍 RedisConnection", kind: "service", module: "services.kv", parent: "module:services.kv" } },
+      { data: { id: "service:metrics", label: "🐍 MetricsClient", kind: "service", module: "services.kv", parent: "module:services.kv" } },
+      { data: { id: "service:kv", label: "🐍 KeyValueStore", kind: "service", module: "services.kv", parent: "module:services.kv" } },
+      { data: { id: "service:audit", label: "🐍 AuditService", kind: "service", module: "services.audit", parent: "module:services.audit" } },
+      { data: { id: "service:weather", label: "🐍 WeatherService", kind: "service", module: "services.weather", parent: "module:services.weather" } },
+
+      { data: { id: "e1", source: "config:infra", target: "service:redis", label: "dsn" } },
+      { data: { id: "e2", source: "config:infra", target: "service:metrics", label: "endpoint" } },
+      { data: { id: "e3", source: "service:redis", target: "service:kv", label: "redis" } },
+      { data: { id: "e4", source: "service:metrics", target: "service:kv", label: "metrics" } },
+      { data: { id: "e5", source: "config:services", target: "factory:http", label: "weather_url" } },
+      { data: { id: "e6", source: "service:kv", target: "service:audit", label: "kv_store" } },
+      { data: { id: "e7", source: "config:messaging", target: "service:audit", label: "topic" } },
+      { data: { id: "e8", source: "config:env", target: "service:audit", label: "topic" } },
+      { data: { id: "e9", source: "config:services", target: "service:weather", label: "api_key" } },
+      { data: { id: "e10", source: "config:services", target: "service:weather", label: "cache_key" } },
+      { data: { id: "e11", source: "config:env", target: "service:weather", label: "cache_key" } },
+      { data: { id: "e12", source: "factory:http", target: "service:weather", label: "client" } },
+      { data: { id: "e13", source: "service:kv", target: "service:weather", label: "kv_store" } },
+      { data: { id: "e14", source: "service:audit", target: "service:weather", label: "audit" } }
+    ];
+
+    const cy = cytoscape({
+      container: document.getElementById("cy"),
+      elements,
+      layout: {
+        name: "breadthfirst",
+        directed: true,
+        padding: 24,
+        spacingFactor: 1.15
+      },
+      wheelSensitivity: 0.15,
+      style: [
+        {
+          selector: "node",
+          style: {
+            "label": "data(label)",
+            "text-wrap": "wrap",
+            "text-max-width": 150,
+            "font-family": "IBM Plex Sans, Segoe UI, sans-serif",
+            "font-size": 12,
+            "text-valign": "center",
+            "text-halign": "center",
+            "border-width": 1.2,
+            "border-color": "#a39c8f",
+            "color": "#1f2328"
+          }
+        },
+        {
+          selector: 'node[kind = "service"]',
+          style: {
+            "shape": "round-rectangle",
+            "width": 158,
+            "height": 54,
+            "background-color": "#fff7ed"
+          }
+        },
+        {
+          selector: 'node[kind = "factory"]',
+          style: {
+            "shape": "round-rectangle",
+            "width": 168,
+            "height": 60,
+            "background-color": "#eef6ff"
+          }
+        },
+        {
+          selector: 'node[kind = "config"]',
+          style: {
+            "shape": "round-rectangle",
+            "width": 110,
+            "height": 42,
+            "background-color": "#f6f2ff"
+          }
+        },
+        {
+          selector: 'node[kind = "module"]',
+          style: {
+            "shape": "round-rectangle",
+            "padding": "22px",
+            "font-weight": 700,
+            "font-size": 15,
+            "text-valign": "top",
+            "text-halign": "center",
+            "background-color": "#fef3c7",
+            "border-style": "dashed",
+            "border-color": "#c39b28"
+          }
+        },
+        {
+          selector: "$node > node",
+          style: {
+            "text-margin-y": -12
+          }
+        },
+        {
+          selector: "edge",
+          style: {
+            "curve-style": "bezier",
+            "width": 2,
+            "line-color": "#8b95a7",
+            "target-arrow-color": "#8b95a7",
+            "target-arrow-shape": "triangle",
+            "arrow-scale": 0.9,
+            "label": "data(label)",
+            "font-size": 10,
+            "text-background-color": "#fff",
+            "text-background-opacity": 0.9,
+            "text-background-padding": 2,
+            "color": "#4b5563"
+          }
+        },
+        {
+          selector: ".dimmed",
+          style: {
+            "opacity": 0.12
+          }
+        },
+        {
+          selector: ".highlighted",
+          style: {
+            "border-color": "#b45309",
+            "border-width": 3,
+            "line-color": "#b45309",
+            "target-arrow-color": "#b45309",
+            "opacity": 1
+          }
+        },
+        {
+          selector: ".hidden",
+          style: {
+            "display": "none"
+          }
+        }
+      ]
+    });
+
+    const summary = document.getElementById("summary");
+    const details = document.getElementById("details");
+    const search = document.getElementById("search");
+    const toggleConfig = document.getElementById("toggle-config");
+    const toggleFactories = document.getElementById("toggle-factories");
+    const toggleServices = document.getElementById("toggle-services");
+    const toggleModules = document.getElementById("toggle-modules");
+
+    function visibleBaseNodes() {
+      return cy.nodes().filter((node) => {
+        const kind = node.data("kind");
+        if (kind === "config") return toggleConfig.checked;
+        if (kind === "factory") return toggleFactories.checked;
+        if (kind === "service") return toggleServices.checked;
+        if (kind === "module") return toggleModules.checked;
+        return true;
+      });
+    }
+
+    function applyVisibility() {
+      cy.elements().removeClass("hidden");
+
+      cy.nodes().forEach((node) => {
+        const kind = node.data("kind");
+        const shouldHide =
+          (kind === "config" && !toggleConfig.checked) ||
+          (kind === "factory" && !toggleFactories.checked) ||
+          (kind === "service" && !toggleServices.checked) ||
+          (kind === "module" && !toggleModules.checked);
+
+        if (shouldHide) {
+          node.addClass("hidden");
+        }
+      });
+
+      cy.edges().forEach((edge) => {
+        if (edge.source().hasClass("hidden") || edge.target().hasClass("hidden")) {
+          edge.addClass("hidden");
+        }
+      });
+
+      const q = search.value.trim().toLowerCase();
+      cy.elements().removeClass("dimmed");
+
+      if (q) {
+        const hits = cy.nodes().filter((node) => {
+          return !node.hasClass("hidden") && (
+            node.data("label").toLowerCase().includes(q) ||
+            node.data("module").toLowerCase().includes(q)
+          );
+        });
+
+        cy.elements().addClass("dimmed");
+        hits.removeClass("dimmed");
+        hits.connectedEdges().removeClass("dimmed");
+        hits.connectedEdges().connectedNodes().removeClass("dimmed");
+        summary.textContent = hits.length ? `Search matched ${hits.length} node(s)` : "No matches";
+      } else {
+        const visibleNodes = cy.nodes().filter((node) => !node.hasClass("hidden") && node.data("kind") !== "module");
+        summary.textContent = `Showing ${visibleNodes.length} visible node(s)`;
+      }
+    }
+
+    function showNeighborhood(node) {
+      cy.elements().removeClass("dimmed highlighted");
+      cy.elements().addClass("dimmed");
+
+      const neighborhood = node.closedNeighborhood().union(node.predecessors()).union(node.successors());
+      neighborhood.removeClass("dimmed");
+      neighborhood.addClass("highlighted");
+
+      const dependsOn = node.incomers("node").map((n) => n.data("label")).join(", ") || "-";
+      const usedBy = node.outgoers("node").map((n) => n.data("label")).join(", ") || "-";
+
+      details.innerHTML = `
+        <h2>${node.data("label").replace(/\n/g, " ")}</h2>
+        <dl>
+          <dt>Type</dt><dd>${node.data("kind")}</dd>
+          <dt>Module</dt><dd>${node.data("module")}</dd>
+          <dt>Depends on</dt><dd>${dependsOn}</dd>
+          <dt>Used by</dt><dd>${usedBy}</dd>
+        </dl>
+      `;
+    }
+
+    function resetFocus() {
+      cy.elements().removeClass("dimmed highlighted");
+      applyVisibility();
+      details.innerHTML = `
+        <h2>No node selected</h2>
+        <dl>
+          <dt>Type</dt><dd>Click a node to inspect it</dd>
+          <dt>Module</dt><dd>-</dd>
+          <dt>Depends on</dt><dd>-</dd>
+          <dt>Used by</dt><dd>-</dd>
+        </dl>
+      `;
+    }
+
+    document.querySelectorAll("[data-focus]").forEach((button) => {
+      button.addEventListener("click", () => {
+        resetFocus();
+
+        const mode = button.getAttribute("data-focus");
+        if (mode === "all") return;
+
+        cy.elements().addClass("dimmed");
+
+        let selected;
+        if (mode === "weather") {
+          selected = cy.getElementById("service:weather").closedNeighborhood()
+            .union(cy.getElementById("service:weather").predecessors());
+        } else if (mode === "config") {
+          selected = cy.nodes('[kind = "config"]').union(cy.edges().filter((edge) => edge.source().data("kind") === "config"));
+        } else if (mode === "modules") {
+          selected = cy.nodes('[kind = "module"]');
+        }
+
+        if (selected) {
+          selected.removeClass("dimmed");
+          selected.addClass("highlighted");
+        }
+      });
+    });
+
+    [toggleConfig, toggleFactories, toggleServices, toggleModules].forEach((checkbox) => {
+      checkbox.addEventListener("change", applyVisibility);
+    });
+
+    search.addEventListener("input", applyVisibility);
+
+    cy.on("tap", "node", (event) => {
+      if (event.target.data("kind") === "module") {
+        return;
+      }
+      showNeighborhood(event.target);
+    });
+
+    cy.on("tap", (event) => {
+      if (event.target === cy) {
+        resetFocus();
+      }
+    });
+
+    applyVisibility();
+  </script>
+</body>
+</html>
