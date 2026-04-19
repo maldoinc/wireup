@@ -212,7 +212,6 @@ class CacheReporter:
 
 `Sequence[T]` includes the default implementation, if present, plus any qualified implementations in registration order.
 
-
 ## Inject Implementations by Qualifier
 
 When you want every qualified implementation keyed by its qualifier, request them at once with `collections.abc.Mapping[str, T]`.
@@ -276,7 +275,6 @@ class CacheRouter:
     ) -> CacheMap:
         return CacheMap({"memory": memory, "redis": redis})
     ```
-
 
 ## `as_type` with Optional Types
 
