@@ -319,7 +319,7 @@ def test_builtin_dict_is_not_registered() -> None:
 CacheMap = NewType("CacheMap", Mapping[str, Cache])
 
 
-def test_newtype_over_mapping_registers_as_branded_collection() -> None:
+def test_newtype_over_mapping_registers_as_distinct_collection() -> None:
     @injectable
     def make_cache_map(
         memory: Annotated[Cache, Inject(qualifier="memory")],

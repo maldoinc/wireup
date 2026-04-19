@@ -283,7 +283,8 @@ class ContainerRegistry:
 
     def _register_mapping_collections(self) -> None:
         for klass, qualifiers in dict(self.impls).items():
-            # Mapping members must be real (non-synthetic) and carry a qualifier to key under.
+            # Only real, qualified registration keys should contribute to mapping members.
+            # Synthetic aliases or unqualified impls (no key to index under) must not participate here.
             real_qualifier_keys = [
                 qualifier
                 for qualifier in qualifiers

@@ -92,12 +92,7 @@ class UnknownServiceRequestedError(WireupError):
 
 
 def _canonical_collection_hint(klass: Any) -> str | None:
-    """Suggest the canonical `collections.abc.Mapping[str, T]` form when a narrowed alias is requested.
-
-    Collection injection accepts only `collections.abc.Mapping[str, T]`. Users carrying
-    `typing.Mapping`, `typing.Dict`, or `dict[str, T]` from pre-PEP-585 imports hit the bare
-    unknown-dep error with no guidance — the hint points them at the canonical form.
-    """
+    """Suggest the supported `collections.abc.Mapping[str, T]` form for narrowed-alias requests."""
     from collections.abc import Mapping as CabcMapping  # noqa: PLC0415
     from typing import get_args, get_origin  # noqa: PLC0415
 
