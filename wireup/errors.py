@@ -86,7 +86,34 @@ class UnknownServiceRequestedError(WireupError):
             f"Cannot create unknown injectable {format_name(klass, qualifier)}. "
             "Make sure it is registered with the container."
         )
+        if hint := _canonical_collection_hint(klass):
+            msg = f"{msg} {hint}"
         super().__init__(msg)
+
+
+def _canonical_collection_hint(klass: Any) -> str | None:
+    """Suggest the canonical `collections.abc.Mapping[str, T]` form when a narrowed alias is requested.
+
+    Collection injection accepts only `collections.abc.Mapping[str, T]`. Users carrying
+    `typing.Mapping`, `typing.Dict`, or `dict[str, T]` from pre-PEP-585 imports hit the bare
+    unknown-dep error with no guidance — the hint points them at the canonical form.
+    """
+    from collections.abc import Mapping as CabcMapping  # noqa: PLC0415
+    from typing import get_args, get_origin  # noqa: PLC0415
+
+    origin = get_origin(klass)
+    if origin is None:
+        return None
+
+    if origin is CabcMapping or origin is dict:
+        args = get_args(klass)
+        if len(args) == 2 and args[0] is str:
+            canonical = CabcMapping[str, args[1]]
+            if klass != canonical:
+                inner_name = getattr(args[1], "__name__", repr(args[1]))
+                return f"Did you mean `collections.abc.Mapping[str, {inner_name}]`?"
+
+    return None
 
 
 class InvalidRegistrationTypeError(WireupError):

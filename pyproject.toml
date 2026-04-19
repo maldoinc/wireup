@@ -5,7 +5,7 @@ description = "Python Dependency Injection Library"
 authors = [{ name = "Aldo Mateli", email = "aldo.mateli@gmail.com" }]
 license = { text = "MIT" }
 readme = "readme.md"
-requires-python = ">=3.8"
+requires-python = ">=3.9"
 keywords = [
     "flask",
     "django",
@@ -26,7 +26,6 @@ classifiers = [
     "Framework :: aiohttp",
     "Operating System :: OS Independent",
     "Programming Language :: Python",
-    "Programming Language :: Python :: 3.8",
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
