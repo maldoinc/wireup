@@ -256,9 +256,10 @@ class CacheRouter:
 !!! note "Mapping Type"
 
     Only `collections.abc.Mapping[str, T]` is supported. Requesting `typing.Mapping`, `typing.Dict`, or `dict[str, T]`
-    raises `UnknownServiceRequestedError` with a hint pointing at the canonical form.
+    raises `UnknownServiceRequestedError` with a hint pointing at `collections.abc.Mapping[str, T]`.
 
-    If you need a named/branded mapping, wrap it in a `NewType` and register a factory:
+    If you want to register your own factory for a `Mapping[str, T]` (e.g., with custom keys or transformation logic),
+    wrap it in a `NewType`:
 
     ```python
     from collections.abc import Mapping
