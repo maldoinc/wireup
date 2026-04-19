@@ -102,18 +102,19 @@ def _canonical_collection_hint(klass: Any) -> str | None:
     from typing import get_args, get_origin  # noqa: PLC0415
 
     origin = get_origin(klass)
-    if origin is None:
+    if origin not in (CabcMapping, dict):
         return None
 
-    if origin is CabcMapping or origin is dict:
-        args = get_args(klass)
-        if len(args) == 2 and args[0] is str:
-            canonical = CabcMapping[str, args[1]]
-            if klass != canonical:
-                inner_name = getattr(args[1], "__name__", repr(args[1]))
-                return f"Did you mean `collections.abc.Mapping[str, {inner_name}]`?"
+    args = get_args(klass)
+    if len(args) != 2 or args[0] is not str:
+        return None
 
-    return None
+    canonical = CabcMapping[str, args[1]]
+    if klass == canonical:
+        return None
+
+    inner_name = getattr(args[1], "__name__", repr(args[1]))
+    return f"Did you mean `collections.abc.Mapping[str, {inner_name}]`?"
 
 
 class InvalidRegistrationTypeError(WireupError):
