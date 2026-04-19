@@ -86,7 +86,30 @@ class UnknownServiceRequestedError(WireupError):
             f"Cannot create unknown injectable {format_name(klass, qualifier)}. "
             "Make sure it is registered with the container."
         )
+        if hint := _canonical_collection_hint(klass):
+            msg = f"{msg} {hint}"
         super().__init__(msg)
+
+
+def _canonical_collection_hint(klass: Any) -> str | None:
+    """Suggest the supported `collections.abc.Mapping[str, T]` form for narrowed-alias requests."""
+    from collections.abc import Mapping as CabcMapping  # noqa: PLC0415
+    from typing import get_args, get_origin  # noqa: PLC0415
+
+    origin = get_origin(klass)
+    if origin not in (CabcMapping, dict):
+        return None
+
+    args = get_args(klass)
+    if len(args) != 2 or args[0] is not str:
+        return None
+
+    canonical = CabcMapping[str, args[1]]
+    if klass == canonical:
+        return None
+
+    inner_name = getattr(args[1], "__name__", repr(args[1]))
+    return f"Did you mean `collections.abc.Mapping[str, {inner_name}]`?"
 
 
 class InvalidRegistrationTypeError(WireupError):

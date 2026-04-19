@@ -4,7 +4,7 @@ import inspect
 import typing
 import warnings
 from collections import defaultdict
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Callable, TypeVar, Union
 
@@ -137,6 +137,7 @@ class ContainerRegistry:
             )
 
         self._register_sequence_collections()
+        self._register_mapping_collections()
         validate_registry(self)
         self._update_factories_async_flag()
         if self.on_change:
@@ -200,6 +201,26 @@ class ContainerRegistry:
         _factory.__signature__ = inspect.Signature(parameters=signature_parameters)  # type: ignore[attr-defined]
         return _factory
 
+    def _create_mapping_collection_factory(self, klass: Any, qualifiers: list[Qualifier]) -> Callable[..., Any]:
+        keys = [str(qualifier) for qualifier in qualifiers]
+
+        def _factory(**kwargs: Any) -> Any:
+            return dict(zip(keys, kwargs.values()))
+
+        signature_parameters = []
+        for idx, qualifier in enumerate(qualifiers):
+            annotation = Annotated[klass, InjectableQualifier(qualifier)]
+            signature_parameters.append(
+                inspect.Parameter(
+                    f"_wireup_item{idx}",
+                    kind=inspect.Parameter.POSITIONAL_OR_KEYWORD,
+                    annotation=annotation,
+                )
+            )
+
+        _factory.__signature__ = inspect.Signature(parameters=signature_parameters)  # type: ignore[attr-defined]
+        return _factory
+
     def _has_user_defined_sequence_key(self, collection_key: Any) -> bool:
         existing_factory = self.factories.get(get_container_object_id(collection_key, None))
         if existing_factory and not existing_factory.is_synthetic:
@@ -207,6 +228,21 @@ class ContainerRegistry:
                 f"Wireup did not register collection injection for {collection_key!r} "
                 "because the container already has an explicit registration for that key. "
                 "Sequence[T] is reserved for Wireup collection injection. "
+                "Migrate it to a NewType or another distinct collection type.",
+                FutureWarning,
+                stacklevel=4,
+            )
+            return True
+
+        return False
+
+    def _has_user_defined_mapping_key(self, collection_key: Any) -> bool:
+        existing_factory = self.factories.get(get_container_object_id(collection_key, None))
+        if existing_factory and not existing_factory.is_synthetic:
+            warnings.warn(
+                f"Wireup did not register collection injection for {collection_key!r} "
+                "because the container already has an explicit registration for that key. "
+                "Mapping[str, T] is reserved for Wireup collection injection. "
                 "Migrate it to a NewType or another distinct collection type.",
                 FutureWarning,
                 stacklevel=4,
@@ -241,6 +277,39 @@ class ContainerRegistry:
                 klass=collection_key,
                 factory_fn=self._create_sequence_collection_factory(klass, real_qualifiers),
                 lifetime=self._get_collection_lifetime([self.get_lifetime(klass, qual) for qual in real_qualifiers]),
+                auto_discover_interfaces=False,
+                is_synthetic_factory=True,
+            )
+
+    def _register_mapping_collections(self) -> None:
+        for klass, qualifiers in dict(self.impls).items():
+            # Only real, qualified registration keys should contribute to mapping members.
+            # Synthetic aliases or unqualified impls (no key to index under) must not participate here.
+            real_qualifier_keys = [
+                qualifier
+                for qualifier in qualifiers
+                if qualifier is not None
+                and not self.factories[get_container_object_id(klass, qualifier)].is_synthetic
+            ]
+
+            if not real_qualifier_keys:
+                continue
+
+            collection_key = Mapping[str, klass]  # type:ignore[valid-type]
+
+            if self._has_user_defined_mapping_key(collection_key):
+                continue
+
+            existing_factory = self.factories.get(get_container_object_id(collection_key, None))
+            if existing_factory and existing_factory.is_synthetic:
+                continue
+
+            self._register(
+                klass=collection_key,
+                factory_fn=self._create_mapping_collection_factory(klass, real_qualifier_keys),
+                lifetime=self._get_collection_lifetime(
+                    [self.get_lifetime(klass, qual) for qual in real_qualifier_keys]
+                ),
                 auto_discover_interfaces=False,
                 is_synthetic_factory=True,
             )

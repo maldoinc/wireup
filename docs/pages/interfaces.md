@@ -212,6 +212,69 @@ class CacheReporter:
 
 `Sequence[T]` includes the default implementation, if present, plus any qualified implementations in registration order.
 
+## Inject Implementations by Qualifier
+
+When you want every qualified implementation keyed by its qualifier, request them at once with `collections.abc.Mapping[str, T]`.
+
+```python
+from collections.abc import Mapping
+from dataclasses import dataclass
+from typing import Protocol
+from wireup import create_sync_container, injectable
+
+
+class Cache(Protocol):
+    def source(self) -> str: ...
+
+
+@injectable(as_type=Cache, qualifier="memory")
+class InMemoryCache:
+    def source(self) -> str:
+        return "memory"
+
+
+@injectable(as_type=Cache, qualifier="redis")
+class RedisCache:
+    def source(self) -> str:
+        return "redis"
+
+
+@injectable
+@dataclass
+class CacheRouter:
+    caches: Mapping[str, Cache]
+```
+
+`Mapping[str, Cache]` includes every qualified implementation, keyed by its qualifier.
+
+!!! note "Unqualified implementations are excluded"
+
+    Implementations registered without a qualifier have no key to index under, so they are excluded from the map.
+    Use `Sequence[T]` when you want every implementation regardless of qualifier.
+
+!!! note "Mapping Type"
+
+    Only `collections.abc.Mapping[str, T]` is supported. Requesting `typing.Mapping`, `typing.Dict`, or `dict[str, T]`
+    raises `UnknownServiceRequestedError` with a hint pointing at `collections.abc.Mapping[str, T]`.
+
+    If you want to register your own factory for a `Mapping[str, T]` (e.g., with custom keys or transformation logic),
+    wrap it in a `NewType`:
+
+    ```python
+    from collections.abc import Mapping
+    from typing import Annotated, NewType
+    from wireup import Inject, injectable
+
+    CacheMap = NewType("CacheMap", Mapping[str, Cache])
+
+
+    @injectable
+    def make_cache_map(
+        memory: Annotated[Cache, Inject(qualifier="memory")],
+        redis: Annotated[Cache, Inject(qualifier="redis")],
+    ) -> CacheMap:
+        return CacheMap({"memory": memory, "redis": redis})
+    ```
 
 ## `as_type` with Optional Types
 
