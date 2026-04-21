@@ -15,29 +15,29 @@ jobs:
       matrix:
         include:
           - integration: flask
-            package: Flask
-            test: test/integration/flask/test_flask_integration.py
+            tox_env: py313-flask3
+            packages: Flask
           - integration: fastapi
-            package: fastapi httpx
-            test: test/integration/fastapi/
+            tox_env: py313-fastapi
+            packages: fastapi httpx
           - integration: fastmcp
-            package: fastmcp
-            test: test/integration/fastmcp/
+            tox_env: py313-fastmcp
+            packages: fastapi starlette httpx fastmcp
           - integration: starlette
-            package: starlette httpx
-            test: test/integration/starlette/
+            tox_env: py313-starlette
+            packages: starlette httpx
           - integration: django
-            package: Django
-            test: test/integration/django/
+            tox_env: py313-django6
+            packages: Django djangorestframework django-ninja typing_extensions
           - integration: aiohttp
-            package: aiohttp
-            test: test/integration/aiohttp/
+            tox_env: py313-aiohttp3
+            packages: aiohttp pytest-aiohttp
           - integration: celery
-            package: celery
-            test: test/integration/celery/
+            tox_env: py313-celery
+            packages: celery
           - integration: click
-            package: click
-            test: test/integration/click/
+            tox_env: py313-click
+            packages: click
     steps:
       - uses: actions/checkout@v4
 
@@ -49,10 +49,14 @@ jobs:
       - name: Install uv
         uses: astral-sh/setup-uv@v5
 
-      - name: Install wireup + latest integration deps
-        run: |
-          uv pip install --system -e ".[dev]"
-          uv pip install --system --upgrade ${{ matrix.package }}
+      - name: Install dependencies
+        run: make install
+
+      - name: Set up tox env
+        run: uv run tox -e ${{ matrix.tox_env }} --notest
+
+      - name: Upgrade integration deps to latest
+        run: uv pip install --python .tox/${{ matrix.tox_env }} --upgrade ${{ matrix.packages }}
 
       - name: Run integration tests
-        run: pytest ${{ matrix.test }} -v --tb=short
+        run: uv run tox -e ${{ matrix.tox_env }} --skip-pkg-install
