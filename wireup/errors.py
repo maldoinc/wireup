@@ -1,12 +1,27 @@
 from __future__ import annotations
 
 import sys
+from collections.abc import Sequence as AbcSequence
 from typing import TYPE_CHECKING, Any
+
+from typing_extensions import get_args, get_origin
 
 from wireup.util import format_name, stringify_type
 
 if TYPE_CHECKING:
     from wireup.ioc.types import AnyCallable, Qualifier
+
+
+def try_get_wireup_sequence_replacement(type_hint: Any) -> Any | None:
+    """Return collection type replacement for typing.Sequence[T] if applicable."""
+    if getattr(type_hint, "__module__", None) != "typing":
+        return None
+
+    if get_origin(type_hint) is not AbcSequence:
+        return None
+
+    args = get_args(type_hint)
+    return AbcSequence[args] if args else AbcSequence  # type:ignore[valid-type]
 
 
 class WireupError(Exception):
@@ -82,6 +97,13 @@ class UnknownServiceRequestedError(WireupError):
     """Raised when requesting an unknown type."""
 
     def __init__(self, klass: Any, qualifier: Qualifier | None = None) -> None:
+        if suggested_replacement_type := try_get_wireup_sequence_replacement(klass):
+            super().__init__(
+                f"Cannot create unknown injectable {format_name(klass, qualifier)}. "
+                f"Wireup collection injection uses {suggested_replacement_type!r}, not {klass!r}."
+            )
+            return
+
         msg = (
             f"Cannot create unknown injectable {format_name(klass, qualifier)}. "
             "Make sure it is registered with the container."

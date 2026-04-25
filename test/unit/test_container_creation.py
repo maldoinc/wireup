@@ -1,5 +1,7 @@
 import re
+import typing
 from dataclasses import dataclass
+from typing import Protocol
 
 import pytest
 import wireup
@@ -56,6 +58,26 @@ def test_checks_dependencies_exist() -> None:
         ),
     ):
         wireup.create_sync_container(injectables=[Bar])
+
+
+def test_checks_typing_sequence_dependency_uses_helpful_error() -> None:
+    class Foo(Protocol): ...
+
+    @wireup.injectable(as_type=Foo)
+    class FooImpl:
+        pass
+
+    @wireup.injectable
+    @dataclass
+    class Bar:
+        foo: typing.Sequence[Foo]
+
+    with pytest.raises(
+        WireupError,
+        match=r"Parameter 'foo' of Type test\.unit\.test_container_creation\.Bar uses typing\.Sequence\[.*Foo.*\], "
+        r"but Wireup collection injection requires collections\.abc\.Sequence\[.*Foo.*\]\.",
+    ):
+        wireup.create_sync_container(injectables=[FooImpl, Bar])
 
 
 def test_lifetimes_match() -> None:
