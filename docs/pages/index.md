@@ -3,6 +3,7 @@
 Type-driven dependency injection for Python. Wireup is battle-tested in production, thread-safe, no-GIL (PEP 703) ready,
 and designed to fail fast: **if the container starts, it works**.
 
+
 ![Scoped Performance](img/benchmarks_scoped_light.svg#only-light)
 ![Scoped Performance](img/benchmarks_scoped_dark.svg#only-dark)
 
@@ -11,6 +12,20 @@ and designed to fail fast: **if the container starts, it works**.
 </i>
 </p>
 <p align="center"><i></i></p>
+
+---
+
+!!! interactive-graph "Interactive Graph"
+
+    Turn your container into an interactive dependency graph. Explore routes, functions, services, factories,
+    configuration, and scopes in a live page with search, grouping, and dependency tracing.
+
+    Learn how it works and explore it on an demo pet store app:
+
+    [Documentation](interactive_graph.md){ .md-button target="_blank" }
+    [:octicons-arrow-right-24: Live Demo](wireup_graph/pet_store.html){ .md-button .md-button--primary target="_blank" }
+
+---
 
 <div class="grid cards annotate index-cards" markdown>
 

@@ -38,12 +38,16 @@ description: FastAPI dependency injection with Wireup: type-safe DI for routes, 
 
 </div>
 
-!!! tip "Migrating from FastAPI Depends?"
+!!! interactive-graph "Interactive Graph"
 
-    Evaluating Wireup for your FastAPI project? Check out the migration page which includes common pain points with FastAPI Depends and how to solve them with Wireup as well
-    as a low-friction migration path:
+    Turn your container into an interactive dependency graph. Explore routes, functions, services, factories,
+    configuration, and scopes in a live page with search, grouping, and dependency tracing.
 
-    [Migrate from FastAPI Depends to Wireup](../../migrate_to_wireup/fastapi_depends.md).
+
+    Learn how it works and explore it on an demo pet store app:
+
+    [Documentation](interactive_graph.md){ .md-button target="_blank" }
+    [:octicons-arrow-right-24: Live Demo](../../wireup_graph/pet_store.html){ .md-button .md-button--primary target="_blank" }
 
 ## Quick Start
 
@@ -102,6 +106,14 @@ See [What Wireup Validates](../../what_wireup_validates.md) for the full rules.
 - [Background Tasks](background_tasks.md): inject dependencies into scheduled callbacks with `WireupTask`.
 - [FastAPI Testing](testing.md): `TestClient` lifespan usage, overrides, and request-lifecycle tests.
 - [Troubleshooting](troubleshooting.md): common setup/runtime errors and fast fixes.
+
+!!! tip "Migrating from FastAPI Depends?"
+
+    Evaluating Wireup for your FastAPI project? Check out the migration page which includes common pain points with FastAPI Depends and how to solve them with Wireup as well
+    as a low-friction migration path:
+
+    [Migrate from FastAPI Depends to Wireup](../../migrate_to_wireup/fastapi_depends.md).
+
 
 ## API Reference
 

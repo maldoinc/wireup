@@ -1,11 +1,12 @@
+from __future__ import annotations
+
 import functools
 import importlib
 import inspect
 import warnings
 from contextvars import ContextVar
 from dataclasses import dataclass
-from types import ModuleType
-from typing import TYPE_CHECKING, Any, Awaitable, Callable, List, Optional, Union
+from typing import TYPE_CHECKING, Any, Awaitable, Callable
 
 import django
 import django.urls
@@ -20,13 +21,15 @@ from wireup import injectable
 from wireup._decorators import inject_from_container
 from wireup.errors import WireupError
 from wireup.ioc.container.async_container import AsyncContainer, ScopedAsyncContainer, async_container_force_sync_scope
-from wireup.ioc.container.base_container import BaseContainer
-from wireup.ioc.container.sync_container import ScopedSyncContainer
 from wireup.ioc.types import ConfigInjectionRequest
 from wireup.ioc.util import get_valid_injection_annotated_parameters
 
 if TYPE_CHECKING:
+    from types import ModuleType
+
     from wireup.integration.django import WireupSettings
+    from wireup.ioc.container.base_container import BaseContainer
+    from wireup.ioc.container.sync_container import ScopedSyncContainer
 
 
 _request_container: ContextVar[BaseContainer] = ContextVar("_wireup_request_container")
@@ -35,7 +38,7 @@ _request_container: ContextVar[BaseContainer] = ContextVar("_wireup_request_cont
 @sync_and_async_middleware
 def wireup_middleware(
     get_response: Callable[[HttpRequest], HttpResponse],
-) -> Callable[[HttpRequest], Union[HttpResponse, Awaitable[HttpResponse]]]:
+) -> Callable[[HttpRequest], HttpResponse | Awaitable[HttpResponse]]:
     container = get_app_container()
 
     if inspect.iscoroutinefunction(get_response):
@@ -70,7 +73,7 @@ def _django_request_factory() -> HttpRequest:
     raise WireupError(msg)
 
 
-def get_request_container() -> Union[ScopedSyncContainer, ScopedAsyncContainer]:
+def get_request_container() -> ScopedSyncContainer | ScopedAsyncContainer:
     """When inside a request, returns the scoped container instance handling the current request."""
     try:
         return _request_container.get()  # type:ignore[reportReturnType]
@@ -176,10 +179,10 @@ class WireupConfig(AppConfig):
 class WireupSettings:
     """Class containing Wireup settings specific to Django."""
 
-    service_modules: Optional[List[Union[str, ModuleType]]] = None
+    service_modules: list[str | ModuleType] | None = None
     """List of modules containing wireup injectable registrations."""
 
-    injectables: Optional[List[Union[str, ModuleType]]] = None
+    injectables: list[str | ModuleType] | None = None
     """List of modules containing wireup injectable registrations."""
 
     auto_inject_views: bool = True
