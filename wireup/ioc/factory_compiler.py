@@ -4,14 +4,16 @@ import asyncio
 import sys
 import threading
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, Callable
+from typing import TYPE_CHECKING, Any, Callable, get_args, get_origin
 
 from wireup.codegen import Codegen
 from wireup.errors import WireupError
 from wireup.ioc.types import (
     GENERATOR_CALLABLE_TYPES,
+    AsyncProvider,
     CallableType,
     ConfigInjectionRequest,
+    Provider,
     TemplatedString,
     get_container_object_id,
 )
@@ -51,6 +53,25 @@ def _create_sync_singleton_instance_factory(value: Any) -> Callable[[BaseContain
 def _create_async_singleton_instance_factory(value: Any) -> Callable[[BaseContainer], Any]:
     async def _factory(_: BaseContainer) -> Any:
         return value
+
+    return _factory
+
+
+def _create_provider_factory(klass: Any, qualifier: Qualifier | None) -> Callable[[BaseContainer], Provider[Any]]:
+    def _factory(container: BaseContainer) -> Provider[Any]:
+        return Provider(lambda: container._synchronous_get(klass, qualifier))
+
+    return _factory
+
+
+def _create_async_provider_factory(
+    klass: Any, qualifier: Qualifier | None
+) -> Callable[[BaseContainer], AsyncProvider[Any]]:
+    async def _getter(container: BaseContainer) -> Any:
+        return await container.get(klass, qualifier)  # type: ignore[attr-defined]
+
+    def _factory(container: BaseContainer) -> AsyncProvider[Any]:
+        return AsyncProvider(lambda: _getter(container))
 
     return _factory
 
@@ -229,12 +250,38 @@ class FactoryCompiler:
             config_dependencies=config_dependencies,
         )
 
+    def _try_get_provider_factory(self, impl: type[Any], qualifier: Qualifier) -> CompiledFactory | None:
+        impl_origin = get_origin(impl)
+        if impl_origin not in {Provider, AsyncProvider}:
+            return None
+
+        target = get_args(impl)[0]
+        lifetime = self._registry.get_lifetime(impl, qualifier)
+        if lifetime != "singleton" and not self._is_scoped_container:
+            return CompiledFactory(
+                factory=FactoryCompiler._create_scope_mismatch_error_factory(impl, qualifier, lifetime),
+                is_async=False,
+            )
+
+        provider_factory = (
+            _create_async_provider_factory(target, qualifier)
+            if impl_origin is AsyncProvider
+            else _create_provider_factory(target, qualifier)
+        )
+        return CompiledFactory(factory=provider_factory, is_async=False)
+
     def _compile_and_create_function(
-        self, factory: InjectableFactory, impl: type, qualifier: Qualifier | None
+        self,
+        factory: InjectableFactory,
+        impl: type,
+        qualifier: Qualifier | None,
     ) -> CompiledFactory:
         obj_id = get_container_object_id(impl, qualifier)
         implementation = self._registry.get_implementation(impl, qualifier)
         resolved_obj_id = get_container_object_id(implementation, qualifier)
+
+        if res := self._try_get_provider_factory(impl, qualifier):
+            return res
 
         is_interface = self._registry.is_interface_known(impl)
         lifetime = self._registry.get_lifetime(impl, qualifier)

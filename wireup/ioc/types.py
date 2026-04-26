@@ -1,9 +1,9 @@
 from __future__ import annotations
 
-from collections.abc import Hashable
+from collections.abc import Awaitable, Hashable
 from dataclasses import dataclass
 from enum import Enum, auto
-from typing import Any, AsyncGenerator, Callable, Generator, List, Tuple, Type, Union
+from typing import Any, AsyncGenerator, Callable, Generator, Generic, List, Tuple, Type, TypeVar, Union
 
 from typing_extensions import Literal
 
@@ -12,6 +12,28 @@ from wireup.errors import WireupError
 AnyCallable = Callable[..., Any]
 ExitStackEntry = Tuple[Union[Generator[Any, Any, Any], AsyncGenerator[Any, Any]], bool]
 ExitStack = List[ExitStackEntry]
+
+T = TypeVar("T")
+
+
+class Provider(Generic[T]):
+    __slots__ = ("_getter",)
+
+    def __init__(self, getter: Callable[[], T]) -> None:
+        self._getter = getter
+
+    def __call__(self) -> T:
+        return self._getter()
+
+
+class AsyncProvider(Generic[T]):
+    __slots__ = ("_getter",)
+
+    def __init__(self, getter: Callable[[], Awaitable[T]]) -> None:
+        self._getter = getter
+
+    async def __call__(self) -> T:
+        return await self._getter()
 
 
 class InjectableType:

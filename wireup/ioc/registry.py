@@ -27,10 +27,12 @@ from wireup.ioc.types import (
     ASYNC_CALLABLE_TYPES,
     AnnotatedParameter,
     AnyCallable,
+    AsyncProvider,
     CallableType,
     ContainerObjectIdentifier,
     InjectableLifetime,
     InjectableQualifier,
+    Provider,
     get_container_object_id,
 )
 from wireup.ioc.util import ensure_is_type, get_callable_type, get_globals
@@ -306,15 +308,27 @@ class ContainerRegistry:
         self.dependencies[factory_fn] = injectable_get_dependencies(factory_fn)
         self.lifetime[object_id] = lifetime
         callable_type = get_callable_type(factory_fn)
+        is_async_factory = callable_type in ASYNC_CALLABLE_TYPES
         self.factories[object_id] = InjectableFactory(
             factory=factory_fn,
             callable_type=callable_type,
-            is_async=callable_type in ASYNC_CALLABLE_TYPES,
+            is_async=is_async_factory,
             is_optional_type=type_analysis.is_optional,
             raw_type=type_analysis.raw_type,
             is_synthetic=is_synthetic_factory,
         )
         self.impls[klass].append(qualifier)
+
+        if not is_synthetic_factory:
+            self._register(
+                klass=AsyncProvider[klass] if is_async_factory else Provider[klass],
+                # actual factory requires compiler assistance so it is created there. This is just a stub.
+                factory_fn=lambda: None,
+                lifetime=lifetime,
+                qualifier=qualifier,
+                auto_discover_interfaces=False,
+                is_synthetic_factory=True,
+            )
 
         if type_analysis.is_optional:
             # Backwards compatibility: In earlier versions when a factory returned T | None
