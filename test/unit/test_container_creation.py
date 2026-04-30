@@ -80,6 +80,26 @@ def test_checks_typing_sequence_dependency_uses_helpful_error() -> None:
         wireup.create_sync_container(injectables=[FooImpl, Bar])
 
 
+def test_checks_typing_mapping_dependency_uses_helpful_error() -> None:
+    class Foo(Protocol): ...
+
+    @wireup.injectable(as_type=Foo)
+    class FooImpl:
+        pass
+
+    @wireup.injectable
+    @dataclass
+    class Bar:
+        foo: typing.Mapping[str, Foo]
+
+    with pytest.raises(
+        WireupError,
+        match=r"Parameter 'foo' of Type test\.unit\.test_container_creation\.Bar uses typing\.Mapping\[.*Foo.*\], "
+        r"but Wireup collection injection requires collections\.abc\.Mapping\[.*Foo.*\]\.",
+    ):
+        wireup.create_sync_container(injectables=[FooImpl, Bar])
+
+
 def test_lifetimes_match() -> None:
     @wireup.injectable(lifetime="scoped")
     class ScopedService: ...

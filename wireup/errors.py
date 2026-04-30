@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import sys
+from collections.abc import Hashable
+from collections.abc import Mapping as AbcMapping
 from collections.abc import Sequence as AbcSequence
 from typing import TYPE_CHECKING, Any
 
@@ -22,6 +24,20 @@ def try_get_wireup_sequence_replacement(type_hint: Any) -> Any | None:
 
     args = get_args(type_hint)
     return AbcSequence[args] if args else AbcSequence  # type:ignore[valid-type]
+
+
+def try_get_wireup_mapping_replacement(type_hint: Any) -> Any | None:
+    """Return collection type replacement for typing.Mapping[K, V] if applicable."""
+    if getattr(type_hint, "__module__", None) != "typing":
+        return None
+
+    if get_origin(type_hint) is not AbcMapping:
+        return None
+
+    args = get_args(type_hint)
+    if not args:
+        return AbcMapping
+    return AbcMapping[Hashable, args[1]]  # type:ignore[valid-type]
 
 
 class WireupError(Exception):
@@ -98,6 +114,13 @@ class UnknownServiceRequestedError(WireupError):
 
     def __init__(self, klass: Any, qualifier: Qualifier | None = None) -> None:
         if suggested_replacement_type := try_get_wireup_sequence_replacement(klass):
+            super().__init__(
+                f"Cannot create unknown injectable {format_name(klass, qualifier)}. "
+                f"Wireup collection injection uses {suggested_replacement_type!r}, not {klass!r}."
+            )
+            return
+
+        if suggested_replacement_type := try_get_wireup_mapping_replacement(klass):
             super().__init__(
                 f"Cannot create unknown injectable {format_name(klass, qualifier)}. "
                 f"Wireup collection injection uses {suggested_replacement_type!r}, not {klass!r}."

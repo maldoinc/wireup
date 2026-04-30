@@ -2,7 +2,12 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any
 
-from wireup.errors import UnknownParameterError, WireupError, try_get_wireup_sequence_replacement
+from wireup.errors import (
+    UnknownParameterError,
+    WireupError,
+    try_get_wireup_mapping_replacement,
+    try_get_wireup_sequence_replacement,
+)
 from wireup.ioc.type_analysis import analyze_type
 from wireup.ioc.types import AnnotatedParameter, ConfigInjectionRequest, get_container_object_id
 from wireup.util import format_name, stringify_type
@@ -103,6 +108,13 @@ def assert_dependency_exists(
             raise WireupError(msg) from e
     elif not is_type_with_qualifier_known(parameter.klass, qualifier=parameter.qualifier_value):
         if suggested_replacement_type := try_get_wireup_sequence_replacement(parameter.klass):
+            msg = (
+                f"Parameter '{name}' of {stringify_type(target)} uses {parameter.klass!r}, "
+                f"but Wireup collection injection requires {suggested_replacement_type!r}."
+            )
+            raise WireupError(msg)
+
+        if suggested_replacement_type := try_get_wireup_mapping_replacement(parameter.klass):
             msg = (
                 f"Parameter '{name}' of {stringify_type(target)} uses {parameter.klass!r}, "
                 f"but Wireup collection injection requires {suggested_replacement_type!r}."

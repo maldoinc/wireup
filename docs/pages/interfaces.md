@@ -212,6 +212,67 @@ class CacheReporter:
 
 `Sequence[T]` includes the default implementation, if present, plus any qualified implementations in registration order.
 
+## Inject Implementations by Qualifier
+
+When you want every implementation keyed by its qualifier, request them at once with `collections.abc.Mapping[Hashable, T]`.
+
+```python
+from collections.abc import Hashable, Mapping
+from dataclasses import dataclass
+from typing import Protocol
+from wireup import create_sync_container, injectable
+
+
+class Cache(Protocol):
+    def source(self) -> str: ...
+
+
+@injectable(as_type=Cache)
+class InMemoryCache:
+    def source(self) -> str:
+        return "memory"
+
+
+@injectable(as_type=Cache, qualifier="redis")
+class RedisCache:
+    def source(self) -> str:
+        return "redis"
+
+
+@injectable
+@dataclass
+class CacheRouter:
+    caches: Mapping[Hashable, Cache]
+
+    def default(self) -> Cache:
+        return self.caches[None]
+```
+
+`Mapping[Hashable, Cache]` includes every implementation, keyed by its qualifier. The unqualified default is keyed under `None`.
+
+!!! note "Mapping Type"
+
+    Only `collections.abc.Mapping[Hashable, T]` is supported. Requesting `typing.Mapping[K, V]` raises
+    `UnknownServiceRequestedError` with a hint pointing at `collections.abc.Mapping[Hashable, T]`.
+
+    If you want to register your own factory for a `Mapping[Hashable, T]` (e.g., with custom keys or transformation
+    logic), wrap it in a `NewType`:
+
+    ```python
+    from collections.abc import Hashable, Mapping
+    from typing import Annotated, NewType
+    from wireup import Inject, injectable
+
+    CacheMap = NewType("CacheMap", Mapping[Hashable, Cache])
+
+
+    @injectable
+    def make_cache_map(
+        default: Cache,
+        redis: Annotated[Cache, Inject(qualifier="redis")],
+    ) -> CacheMap:
+        return CacheMap({None: default, "redis": redis})
+    ```
 
 ## `as_type` with Optional Types
 
