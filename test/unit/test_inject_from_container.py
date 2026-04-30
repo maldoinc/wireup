@@ -148,10 +148,9 @@ async def test_raises_on_unknown_service(container: Container, qualifier: str) -
     expected_qualifier_str = f" with qualifier '{qualifier}'" if qualifier else ""
     with pytest.raises(
         WireupError,
-        match=re.escape(
-            "Parameter 'not_managed_by_wireup' of Function test.unit.test_inject_from_container._ "
-            "has an unknown dependency on Type test.unit.test_inject_from_container.NotManagedByWireup"
-            f"{expected_qualifier_str}."
+        match=(
+            r"Parameter 'not_managed_by_wireup' of <function .*test_raises_on_unknown_service.*\._ at 0x[0-9a-f]+> "
+            + re.escape(f"has an unknown dependency on {NotManagedByWireup!r}{expected_qualifier_str}.")
         ),
     ):
 
@@ -164,9 +163,9 @@ async def test_raises_on_unknown_service(container: Container, qualifier: str) -
 async def test_raises_on_unknown_parameter(container: Container) -> None:
     with pytest.raises(
         WireupError,
-        match=re.escape(
-            "Parameter 'not_managed_by_wireup' of Function test.unit.test_inject_from_container._ "
-            "depends on an unknown Wireup config key 'invalid'."
+        match=(
+            r"Parameter 'not_managed_by_wireup' of <function .*test_raises_on_unknown_parameter.*\._ at 0x[0-9a-f]+> "
+            + re.escape("depends on an unknown Wireup config key 'invalid'.")
         ),
     ):
 
@@ -187,8 +186,7 @@ async def test_unknown_service_without_default_value() -> None:
     with pytest.raises(
         WireupError,
         match=re.escape(
-            "Parameter 'unknown_class' of Type test.unit.test_inject_from_container.BarWithoutDefaultValue "
-            "has an unknown dependency on Type test.unit.test_inject_from_container.UnknownClass."
+            f"Parameter 'unknown_class' of {BarWithoutDefaultValue!r} has an unknown dependency on {UnknownClass!r}."
         ),
     ):
         container = wireup.create_async_container(services=[BarWithoutDefaultValue])

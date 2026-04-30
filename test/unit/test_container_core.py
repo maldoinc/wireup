@@ -115,8 +115,7 @@ async def test_get_unknown_class(container: Container):
     with pytest.raises(
         UnknownServiceRequestedError,
         match=re.escape(
-            f"Cannot create unknown injectable Type {TestGetUnknown.__module__}.{TestGetUnknown.__name__}. "
-            "Make sure it is registered with the container."
+            f"Cannot create unknown injectable {TestGetUnknown!r}. Make sure it is registered with the container."
         ),
     ):
         await run(container.get(TestGetUnknown))
@@ -126,8 +125,7 @@ async def test_container_get_interface_without_impls_raises(container: Container
     with pytest.raises(
         WireupError,
         match=re.escape(
-            "Cannot create unknown injectable Abcmeta "
-            f"{InterfaceWithoutImpls.__module__}.{InterfaceWithoutImpls.__name__}. "
+            f"Cannot create unknown injectable {InterfaceWithoutImpls!r}. "
             "Make sure it is registered with the container."
         ),
     ):
@@ -138,7 +136,7 @@ async def test_container_get_interface_unknown_impl_errors_known_impls(container
     with pytest.raises(
         WireupError,
         match=re.escape(
-            f"Cannot create unknown injectable Abcmeta {Foo.__module__}.{Foo.__name__} "
+            f"Cannot create unknown injectable {Foo!r} "
             "with qualifier 'does-not-exist'. Make sure it is registered with the container."
         ),
     ):
@@ -181,7 +179,7 @@ async def test_container_raises_get_transient_scoped(container: Container) -> No
         WireupError,
         match=re.escape(
             "Scope mismatch: Cannot resolve transient injectable "
-            "Type test.unit.services.with_annotations.services.TransientService "
+            f"{TransientService!r} "
             "from the root container. Only Singleton injectables can be resolved without a scope. "
             "To resolve transient injectables, you must create a scope.\n"
             "See: https://maldoinc.github.io/wireup/latest/lifetimes_and_scopes/"
@@ -193,7 +191,7 @@ async def test_container_raises_get_transient_scoped(container: Container) -> No
         WireupError,
         match=re.escape(
             "Scope mismatch: Cannot resolve scoped injectable "
-            "Type test.unit.services.with_annotations.services.ScopedService "
+            f"{ScopedService!r} "
             "from the root container. Only Singleton injectables can be resolved without a scope. "
             "To resolve scoped injectables, you must create a scope.\n"
             "See: https://maldoinc.github.io/wireup/latest/lifetimes_and_scopes/"
@@ -261,7 +259,7 @@ def test_raises_multiple_definitions_for_different_providers():
 
     with pytest.raises(
         DuplicateServiceRegistrationError,
-        match=re.escape(f"Cannot register type Type {Multiple.__module__}.{Multiple.__name__} as it already exists."),
+        match=re.escape(f"Cannot register type {Multiple!r} as it already exists."),
     ):
         wireup.create_sync_container(injectables=[Multiple, make_multiple])
 
@@ -279,8 +277,7 @@ def test_register_same_qualifier_should_raise():
     with pytest.raises(
         DuplicateQualifierForInterfaceError,
         match=re.escape(
-            f"Cannot register implementation class Type {F11.__module__}.{F11.__name__} "
-            f"with qualifier 'f1' for {F1Base} as it already exists",
+            f"Cannot register implementation class {F11!r} with qualifier 'f1' for {F1Base} as it already exists",
         ),
     ):
         wireup.create_async_container(injectables=[F1Base, F1, F11])
@@ -321,7 +318,7 @@ def test_inject_qualifier_on_unknown_type():
     with pytest.raises(
         UnknownServiceRequestedError,
         match=re.escape(
-            f"Cannot create unknown injectable Type builtins.str with qualifier '{__name__}'. "
+            f"Cannot create unknown injectable {str!r} with qualifier '{__name__}'. "
             "Make sure it is registered with the container."
         ),
     ):

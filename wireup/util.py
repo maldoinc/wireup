@@ -7,10 +7,7 @@ if TYPE_CHECKING:
 
 
 def stringify_type(target: type | AnyCallable) -> str:
-    if hasattr(target, "__name__") and hasattr(target, "__module__"):
-        return f"{type(target).__name__.capitalize()} {target.__module__}.{target.__name__}"
-
-    return str(target)
+    return repr(target)
 
 
 def format_name(klass: type | AnyCallable, qualifier: Qualifier | None) -> str:
