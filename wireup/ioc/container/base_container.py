@@ -31,6 +31,7 @@ T = TypeVar("T")
 
 class BaseContainer:
     __slots__ = (
+        "__weakref__",
         "_compiler",
         "_concurrent_scoped_access",
         "_current_scope_exit_stack",

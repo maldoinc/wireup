@@ -6,7 +6,8 @@ import wireup.integration.flask
 from flask import Flask
 from flask.testing import FlaskClient
 from wireup._annotations import Injected, injectable
-from wireup.integration.flask import get_app_container
+from wireup.integration.flask import GraphEndpointOptions, get_app_container
+from wireup.renderer._consumers import get_consumers
 
 from test.integration.flask import services as flask_integration_services
 from test.integration.flask.bp import bp
@@ -107,3 +108,65 @@ def test_flask_err_cleanup() -> None:
 
     assert dep["created"] is True
     assert dep["cleanup"] is True
+
+
+def test_graph_endpoint_renders_flask_dependency_page() -> None:
+    app = Flask(__name__)
+    app.config["TESTING"] = True
+    app.register_blueprint(bp)
+
+    container = wireup.create_sync_container(
+        injectables=[shared_services, flask_integration_services],
+        config={**app.config, "custom_params": True},
+    )
+    wireup.integration.flask.setup(
+        container,
+        app,
+        add_graph_endpoint=True,
+        graph_endpoint_options=GraphEndpointOptions(base_module="test.integration.flask"),
+    )
+
+    client = app.test_client()
+    res = client.get("/_wireup")
+
+    assert res.status_code == 200
+    assert "text/html" in res.content_type
+    assert "Wireup Graph" in res.text
+    assert "test.integration.flask.bp" in res.text
+    assert "random" in res.text
+    assert "Flask" in res.text
+
+
+def test_flask_views_record_route_metadata() -> None:
+    app = Flask(__name__)
+    app.config["TESTING"] = True
+    app.register_blueprint(bp)
+
+    container = wireup.create_sync_container(
+        injectables=[shared_services, flask_integration_services],
+        config={**app.config, "custom_params": True},
+    )
+    wireup.integration.flask.setup(container, app)
+
+    consumers = {consumer.id: consumer for consumer in get_consumers(container)}
+
+    consumer = consumers["GET /random"]
+    assert consumer.kind == "flask_route"
+    assert consumer.label == "🌐 GET /random"
+    assert consumer.group == "Flask"
+    assert consumer.module == "test.integration.flask.bp"
+
+
+def test_graph_endpoint_setup_called_again_raises() -> None:
+    app = Flask(__name__)
+    app.config["TESTING"] = True
+    app.register_blueprint(bp)
+
+    container = wireup.create_sync_container(
+        injectables=[shared_services, flask_integration_services],
+        config={**app.config, "custom_params": True},
+    )
+
+    wireup.integration.flask.setup(container, app, add_graph_endpoint=True)
+    with pytest.raises(AssertionError):
+        wireup.integration.flask.setup(container, app, add_graph_endpoint=True)
