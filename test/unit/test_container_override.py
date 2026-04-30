@@ -1,4 +1,5 @@
 import re
+import typing
 import unittest
 from typing import Protocol
 from unittest.mock import MagicMock
@@ -261,6 +262,44 @@ async def test_raises_on_unknown_override(container: Container):
         match=re.escape("Cannot override unknown Type unittest.case.TestCase with qualifier 'foo'."),
     ):
         with container.override.injectable(target=unittest.TestCase, qualifier="foo", new=MagicMock()):
+            pass
+
+
+def test_typing_sequence_override_raises_helpful_error() -> None:
+    class Cache(Protocol):
+        def source(self) -> str: ...
+
+    @injectable(as_type=Cache)
+    class MemoryCache:
+        def source(self) -> str:
+            return "memory"
+
+    container = create_sync_container(injectables=[MemoryCache])
+
+    with pytest.raises(
+        UnknownOverrideRequestedError,
+        match=r"Wireup collection injection uses collections\.abc\.Sequence\[.*Cache.*\], not typing\.Sequence\[.*Cache.*\]",  # noqa: E501
+    ):
+        with container.override.injectable(target=typing.Sequence[Cache], new=()):
+            pass
+
+
+def test_typing_mapping_override_raises_helpful_error() -> None:
+    class Cache(Protocol):
+        def source(self) -> str: ...
+
+    @injectable(as_type=Cache)
+    class MemoryCache:
+        def source(self) -> str:
+            return "memory"
+
+    container = create_sync_container(injectables=[MemoryCache])
+
+    with pytest.raises(
+        UnknownOverrideRequestedError,
+        match=r"Wireup collection injection uses collections\.abc\.Mapping\[.*Cache.*\], not typing\.Mapping\[.*Cache.*\]",  # noqa: E501
+    ):
+        with container.override.injectable(target=typing.Mapping[str, Cache], new={}):
             pass
 
 
