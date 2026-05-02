@@ -2,10 +2,11 @@ import functools
 import importlib
 import inspect
 import warnings
+from collections.abc import Awaitable, Callable
 from contextvars import ContextVar
 from dataclasses import dataclass
 from types import ModuleType
-from typing import TYPE_CHECKING, Any, Awaitable, Callable, List, Optional, Union
+from typing import TYPE_CHECKING, Any
 
 import django
 import django.urls
@@ -35,7 +36,7 @@ _request_container: ContextVar[BaseContainer] = ContextVar("_wireup_request_cont
 @sync_and_async_middleware
 def wireup_middleware(
     get_response: Callable[[HttpRequest], HttpResponse],
-) -> Callable[[HttpRequest], Union[HttpResponse, Awaitable[HttpResponse]]]:
+) -> Callable[[HttpRequest], HttpResponse | Awaitable[HttpResponse]]:
     container = get_app_container()
 
     if inspect.iscoroutinefunction(get_response):
@@ -70,7 +71,7 @@ def _django_request_factory() -> HttpRequest:
     raise WireupError(msg)
 
 
-def get_request_container() -> Union[ScopedSyncContainer, ScopedAsyncContainer]:
+def get_request_container() -> ScopedSyncContainer | ScopedAsyncContainer:
     """When inside a request, returns the scoped container instance handling the current request."""
     try:
         return _request_container.get()  # type:ignore[reportReturnType]
@@ -176,10 +177,10 @@ class WireupConfig(AppConfig):
 class WireupSettings:
     """Class containing Wireup settings specific to Django."""
 
-    service_modules: Optional[List[Union[str, ModuleType]]] = None
+    service_modules: list[str | ModuleType] | None = None
     """List of modules containing wireup injectable registrations."""
 
-    injectables: Optional[List[Union[str, ModuleType]]] = None
+    injectables: list[str | ModuleType] | None = None
     """List of modules containing wireup injectable registrations."""
 
     auto_inject_views: bool = True

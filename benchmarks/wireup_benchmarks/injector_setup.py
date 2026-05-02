@@ -1,5 +1,3 @@
-from typing import Dict
-
 import fastapi
 from fastapi_injector import (
     Injected,
@@ -87,7 +85,7 @@ def setup_injector(app: fastapi.FastAPI) -> None:
 async def injector_singleton(
     a: A = Injected(A),
     b: B = Injected(B),
-) -> Dict[str, str]:
+) -> dict[str, str]:
     services.record_request("singleton")
     assert a.start == 10
     assert isinstance(a, A)
@@ -107,7 +105,7 @@ async def injector_scoped(
     g: G = Injected(G),
     h: H = Injected(H),
     i: I = Injected(I),
-) -> Dict[str, str]:
+) -> dict[str, str]:
     services.record_request("scoped")
     assert isinstance(c, C)
     assert c is cc

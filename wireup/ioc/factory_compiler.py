@@ -4,7 +4,7 @@ import asyncio
 import sys
 import threading
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, Callable
+from typing import TYPE_CHECKING, Any
 
 from wireup.codegen import Codegen
 from wireup.errors import WireupError
@@ -18,6 +18,8 @@ from wireup.ioc.types import (
 from wireup.util import format_name
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
     from wireup.ioc.container.base_container import BaseContainer
     from wireup.ioc.registry import ContainerRegistry, InjectableFactory
     from wireup.ioc.types import ContainerObjectIdentifier, Qualifier

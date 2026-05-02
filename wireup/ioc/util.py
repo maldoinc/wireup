@@ -6,7 +6,7 @@ import inspect
 import sys
 import typing
 from inspect import Parameter
-from typing import Any, Sequence, TypeVar, cast
+from typing import Any, TypeVar, cast
 
 from wireup.errors import PositionalOnlyParameterError, WireupError
 from wireup.ioc.registry_validation import assert_dependency_exists
@@ -32,7 +32,7 @@ def get_callable_type(fn: Callable[..., Any]) -> CallableType:
 _eval_type = cast("Callable[..., Any]", typing._eval_type)  # type: ignore[attr-defined]
 
 if typing.TYPE_CHECKING:
-    from collections.abc import Callable
+    from collections.abc import Callable, Sequence
 
     from wireup.ioc.container.base_container import BaseContainer
 

@@ -1,5 +1,4 @@
 from contextlib import asynccontextmanager
-from typing import Dict
 
 import fastapi
 import svcs
@@ -131,7 +130,7 @@ lifespan = svcs.fastapi.lifespan(_lifespan, registry=registry)
 
 
 @router.get("/svcs/singleton")
-async def svcs_singleton(container: DepContainer) -> Dict[str, str]:
+async def svcs_singleton(container: DepContainer) -> dict[str, str]:
     services.record_request("singleton")
     a = container.get(A)
     b = container.get(B)
@@ -143,7 +142,7 @@ async def svcs_singleton(container: DepContainer) -> Dict[str, str]:
 
 
 @router.get("/svcs/scoped")
-async def svcs_scoped(container: DepContainer) -> Dict[str, str]:
+async def svcs_scoped(container: DepContainer) -> dict[str, str]:
     services.record_request("scoped")
     c = container.get(C)
     cc = container.get(C)

@@ -1,5 +1,3 @@
-from typing import Dict
-
 import fastapi
 from wireup import Injected
 from wireup.integration.fastapi import WireupRoute
@@ -17,7 +15,7 @@ class WireupSingletonBenchController:
         self.b = b
 
     @router.get("/singleton")
-    async def wireup_singleton(self) -> Dict[str, str]:
+    async def wireup_singleton(self) -> dict[str, str]:
         services.record_request("singleton")
         assert self.a.start == 10
         assert isinstance(self.a, A)
@@ -41,7 +39,7 @@ class WireupScopedBenchController:
         g: Injected[G],
         h: Injected[H],
         i: Injected[I],
-    ) -> Dict[str, str]:
+    ) -> dict[str, str]:
         services.record_request("scoped")
         assert isinstance(c, C)
         assert c is cc

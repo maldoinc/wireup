@@ -1,8 +1,9 @@
+from typing import Annotated
+
 import click
 import pytest
 import wireup
 from click.testing import CliRunner
-from typing_extensions import Annotated
 from wireup import Inject, Injected, injectable
 from wireup.integration import click as wireup_click
 

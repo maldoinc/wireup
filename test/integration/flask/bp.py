@@ -1,7 +1,6 @@
-from typing import Any, Dict
+from typing import Annotated, Any
 
 import flask
-from typing_extensions import Annotated
 from wireup import Inject, Injected
 
 from test.integration.flask.services.is_test_service import IsTestService
@@ -29,7 +28,7 @@ def not_autowired():
 @bp.get("/scoped")
 def scoped(
     s1: Injected[ScopedService], s2: Injected[ScopedServiceDependency], s3: Injected[ScopedServiceDependency]
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     assert s1.other is s2
     assert s3 is s2
 

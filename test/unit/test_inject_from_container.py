@@ -1,11 +1,11 @@
 import contextlib
 import re
+from collections.abc import AsyncIterator, Iterator
 from dataclasses import dataclass
-from typing import AsyncIterator, Iterator, NewType, Optional, Tuple
+from typing import Annotated, NewType, Optional
 
 import pytest
 import wireup
-from typing_extensions import Annotated
 from wireup import Inject, Injected, create_sync_container, inject_from_container, injectable, service
 from wireup._decorators import inject_from_container_unchecked
 from wireup.errors import WireupError
@@ -124,7 +124,7 @@ async def test_inject_from_container_unchecked_with_async_scope_and_override() -
     async with container.enter_scope() as scoped:
 
         @inject_from_container_unchecked(lambda: scoped)
-        async def target(dep: Injected[Dep], consumer: Injected[Consumer]) -> Tuple[Dep, Consumer]:
+        async def target(dep: Injected[Dep], consumer: Injected[Consumer]) -> tuple[Dep, Consumer]:
             return dep, consumer
 
         class OverrideDep:
@@ -202,7 +202,7 @@ async def test_unknown_service_with_default_value() -> None:
 
     @service
     class BarWithDefaultValue:
-        def __init__(self, unknown_class: Optional[UnknownClass] = None) -> None:
+        def __init__(self, unknown_class: UnknownClass | None = None) -> None:
             self.unknown_class = unknown_class
 
     container = wireup.create_async_container(services=[BarWithDefaultValue])
@@ -339,12 +339,12 @@ def test_injects_ctor():
 def test_inject_from_container_handles_optionals() -> None:
     class MaybeThing: ...
 
-    def make_maybe_thing() -> Optional[MaybeThing]:
+    def make_maybe_thing() -> MaybeThing | None:
         return None
 
     class Thing: ...
 
-    def make_thing(_thing2: Optional[MaybeThing]) -> Thing:
+    def make_thing(_thing2: MaybeThing | None) -> Thing:
         return Thing()
 
     container = wireup.create_sync_container(
@@ -352,7 +352,7 @@ def test_inject_from_container_handles_optionals() -> None:
     )
 
     @wireup.inject_from_container(container)
-    def main(maybe_thing: Injected[Optional[MaybeThing]], thing: Injected[Thing]):
+    def main(maybe_thing: Injected[MaybeThing | None], thing: Injected[Thing]):
         assert maybe_thing is None
         assert isinstance(thing, Thing)
 
@@ -491,7 +491,7 @@ def test_mixed_lifetime_injection_optimizes_correctly_singleton_first() -> None:
     @inject_from_container(container)
     def target(
         s: Injected[SingletonService], sc: Injected[ScopedService], ss2: Injected[ScopedService2]
-    ) -> Tuple[SingletonService, ScopedService, ScopedService2]:
+    ) -> tuple[SingletonService, ScopedService, ScopedService2]:
         return s, sc, ss2
 
     s, sc, ss2 = target()
@@ -504,7 +504,7 @@ def test_mixed_lifetime_injection_optimizes_correctly_scoped_first() -> None:
     container = create_sync_container(injectables=[SingletonService, ScopedService])
 
     @inject_from_container(container)
-    def target(sc: Injected[ScopedService], s: Injected[SingletonService]) -> Tuple[SingletonService, ScopedService]:
+    def target(sc: Injected[ScopedService], s: Injected[SingletonService]) -> tuple[SingletonService, ScopedService]:
         return s, sc
 
     s, sc = target()

@@ -1,5 +1,3 @@
-from typing import Dict
-
 import fastapi
 from diwire import Container, Injected, Lifetime, Scope, resolver_context
 
@@ -24,7 +22,7 @@ router = fastapi.APIRouter()
 
 @router.get("/diwire/singleton")
 @resolver_context.inject(scope=Scope.REQUEST)
-async def diwire_singleton(a: Injected[A], b: Injected[B]) -> Dict[str, str]:
+async def diwire_singleton(a: Injected[A], b: Injected[B]) -> dict[str, str]:
     services.record_request("singleton")
     assert a.start == 10
     assert isinstance(a, A)
@@ -45,7 +43,7 @@ async def diwire_scoped(
     g: Injected[G],
     h: Injected[H],
     i: Injected[I],
-) -> Dict[str, str]:
+) -> dict[str, str]:
     services.record_request("scoped")
     assert isinstance(c, C)
     assert c is cc

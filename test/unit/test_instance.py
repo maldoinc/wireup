@@ -1,5 +1,6 @@
+from typing import Annotated
+
 import pytest
-from typing_extensions import Annotated
 from wireup import Inject, create_sync_container, injectable, instance
 from wireup.errors import AsTypeMismatchError, DuplicateServiceRegistrationError
 

@@ -1,9 +1,8 @@
 from dataclasses import dataclass
-from typing import Optional, Union
+from typing import Annotated, Optional, Union
 
 import pytest
 import wireup
-from typing_extensions import Annotated
 from wireup._annotations import Inject, Injected
 from wireup.errors import DuplicateServiceRegistrationError
 
@@ -13,14 +12,18 @@ class MaybeThing: ...
 
 @dataclass
 class Thing:
-    maybe_thing: Optional[MaybeThing] = None
+    maybe_thing: MaybeThing | None = None
+
+
+def optional_hint(tp: object) -> object:
+    return Optional.__getitem__(tp)
 
 
 def test_inject_from_container_handles_optionals() -> None:
-    def make_maybe_thing() -> Optional[MaybeThing]:
+    def make_maybe_thing() -> MaybeThing | None:
         return None
 
-    def make_thing(maybe_thing: Optional[MaybeThing]) -> Thing:
+    def make_thing(maybe_thing: MaybeThing | None) -> Thing:
         return Thing(maybe_thing=maybe_thing)
 
     container = wireup.create_sync_container(
@@ -29,11 +32,11 @@ def test_inject_from_container_handles_optionals() -> None:
 
     @wireup.inject_from_container(container)
     def main(
-        maybe_thing: Injected[Optional[MaybeThing]],
-        maybe_thing_annotated: Annotated[Optional[MaybeThing], Inject(qualifier=None)],
-        maybe_thing_annotated2: Optional[Annotated[MaybeThing, Inject(qualifier=None)]],
-        maybe_thing_annotated3: Union[Annotated[MaybeThing, Inject(qualifier=None)], None],
-        maybe_thing_annotated4: Annotated[Union[MaybeThing, None], Inject(qualifier=None)],
+        maybe_thing: Injected[MaybeThing | None],
+        maybe_thing_annotated: Annotated[MaybeThing | None, Inject(qualifier=None)],
+        maybe_thing_annotated2: Annotated[MaybeThing, Inject(qualifier=None)] | None,
+        maybe_thing_annotated3: Annotated[MaybeThing, Inject(qualifier=None)] | None,
+        maybe_thing_annotated4: Annotated[MaybeThing | None, Inject(qualifier=None)],
         thing: Injected[Thing],
     ):
         assert maybe_thing is None
@@ -53,7 +56,7 @@ def test_getting_optional_service_via_plain_type_emits_deprecation_warning() -> 
         pass
 
     @wireup.injectable
-    def make_foo() -> Optional[Foo]:
+    def make_foo() -> Foo | None:
         return Foo()
 
     container = wireup.create_sync_container(injectables=[make_foo])
@@ -64,7 +67,8 @@ def test_getting_optional_service_via_plain_type_emits_deprecation_warning() -> 
     assert len(record) == 1
     assert "registered as optional" in str(record[0].message)
 
-    assert inst is container.get(Optional[Foo])
+    assert inst is container.get(optional_hint(Foo))
+    assert inst is container.get(Foo | None)
 
 
 def test_registering_optional_and_plain_type_raises_duplicate() -> None:
@@ -73,7 +77,7 @@ def test_registering_optional_and_plain_type_raises_duplicate() -> None:
         pass
 
     @wireup.injectable
-    def make_optional() -> Optional[Foo]:
+    def make_optional() -> Foo | None:
         return None
 
     # Registering both an Optional[T] factory and a T factory together raises since

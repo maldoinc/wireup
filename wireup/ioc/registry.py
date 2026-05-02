@@ -4,11 +4,9 @@ import inspect
 import typing
 import warnings
 from collections import defaultdict
-from collections.abc import Hashable, Mapping, Sequence
+from collections.abc import Callable, Hashable, Mapping, Sequence
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, Callable, TypeVar, Union
-
-from typing_extensions import Annotated
+from typing import TYPE_CHECKING, Annotated, Any, TypeVar
 
 from wireup.errors import (
     AsTypeMismatchError,
@@ -44,7 +42,7 @@ if TYPE_CHECKING:
 
 
 T = TypeVar("T")
-InjectionTarget = Union[AnyCallable, type]
+InjectionTarget = AnyCallable | type
 """Represents valid dependency injection targets: Functions and Classes."""
 
 
@@ -125,9 +123,7 @@ class ContainerRegistry:
             target_type = impl.as_type
 
             if target_type is not None and type_analysis.is_optional:
-                from typing import Optional  # noqa: PLC0415
-
-                target_type = Optional[target_type]
+                target_type = target_type | None
             self._register(
                 klass=target_type if target_type is not None else klass,
                 factory_fn=obj,
@@ -203,7 +199,7 @@ class ContainerRegistry:
 
     def _create_mapping_collection_factory(self, klass: Any, qualifiers: list[Qualifier | None]) -> Callable[..., Any]:
         def _factory(**kwargs: Any) -> Any:
-            return dict(zip(qualifiers, kwargs.values()))
+            return dict(zip(qualifiers, kwargs.values(), strict=False))
 
         signature_parameters = []
         for idx, qualifier in enumerate(qualifiers):

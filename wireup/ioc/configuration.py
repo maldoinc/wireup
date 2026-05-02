@@ -1,8 +1,9 @@
 from __future__ import annotations
 
 import re
+from collections.abc import Mapping
 from re import Match
-from typing import Any, Mapping
+from typing import Any
 
 from wireup.errors import UnknownParameterError
 from wireup.ioc.types import ConfigurationReference, TemplatedString

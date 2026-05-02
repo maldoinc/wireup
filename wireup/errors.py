@@ -4,9 +4,7 @@ import sys
 from collections.abc import Hashable
 from collections.abc import Mapping as AbcMapping
 from collections.abc import Sequence as AbcSequence
-from typing import TYPE_CHECKING, Any
-
-from typing_extensions import get_args, get_origin
+from typing import TYPE_CHECKING, Any, get_args, get_origin
 
 from wireup.util import format_name, stringify_type
 

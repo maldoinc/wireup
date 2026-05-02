@@ -1,6 +1,6 @@
 from dataclasses import dataclass
+from typing import Annotated
 
-from typing_extensions import Annotated
 from wireup import Inject, injectable
 
 

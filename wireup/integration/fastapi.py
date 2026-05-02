@@ -1,14 +1,7 @@
 import contextlib
+from collections.abc import AsyncIterator, Callable, Iterable
 from typing import (
     Any,
-    AsyncIterator,
-    Callable,
-    Iterable,
-    List,
-    Optional,
-    Tuple,
-    Type,
-    Union,
 )
 
 import fastapi
@@ -65,7 +58,7 @@ def _inject_route_with_connection_context(
     *,
     container: AsyncContainer,
     target: AnyCallable,
-    http_connection_param_name: Optional[str],
+    http_connection_param_name: str | None,
     remove_http_connection_from_arguments: bool,
     is_websocket_route: bool,
 ) -> AnyCallable:
@@ -81,7 +74,7 @@ def _inject_route_with_connection_context(
     )(target)
 
 
-def _ensure_http_connection_param(route: Union[APIRoute, APIWebSocketRoute]) -> Tuple[str, bool]:
+def _ensure_http_connection_param(route: APIRoute | APIWebSocketRoute) -> tuple[str, bool]:
     """Ensure FastAPI will pass the active connection and return param name + remove flag."""
     has_connection_param_in_signature = route.dependant.http_connection_param_name is not None
     if not route.dependant.http_connection_param_name:
@@ -92,7 +85,7 @@ def _ensure_http_connection_param(route: Union[APIRoute, APIWebSocketRoute]) -> 
 
 def _inject_routes(
     container: AsyncContainer,
-    routes: List[BaseRoute],
+    routes: list[BaseRoute],
     *,
     is_using_asgi_middleware: bool,
 ) -> None:
@@ -135,7 +128,7 @@ def _inject_routes(
 async def _instantiate_class_based_route(
     app: FastAPI,
     container: AsyncContainer,
-    cls: Type[_ClassBasedHandlersProtocol],
+    cls: type[_ClassBasedHandlersProtocol],
 ) -> None:
     instance = await container.get(cls)
 
@@ -164,7 +157,7 @@ async def _instantiate_class_based_route(
 
 def _update_lifespan(
     app: FastAPI,
-    class_based_routes: Optional[Iterable[Type[_ClassBasedHandlersProtocol]]] = None,
+    class_based_routes: Iterable[type[_ClassBasedHandlersProtocol]] | None = None,
     *,
     is_using_asgi_middleware: bool,
 ) -> None:
@@ -198,7 +191,7 @@ def setup(
     container: AsyncContainer,
     app: FastAPI,
     *,
-    class_based_handlers: Optional[Iterable[Type[_ClassBasedHandlersProtocol]]] = None,
+    class_based_handlers: Iterable[type[_ClassBasedHandlersProtocol]] | None = None,
     middleware_mode: bool = False,
 ) -> None:
     """Integrate Wireup with FastAPI.

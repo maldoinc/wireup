@@ -1,4 +1,5 @@
-from typing import Iterator, NewType
+from collections.abc import Iterator
+from typing import NewType
 from unittest.mock import MagicMock
 
 import pytest

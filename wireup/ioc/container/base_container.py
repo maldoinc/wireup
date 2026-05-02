@@ -4,7 +4,6 @@ import warnings
 from typing import (
     TYPE_CHECKING,
     Any,
-    Callable,
     TypeVar,
     overload,
 )
@@ -16,6 +15,8 @@ from wireup.errors import (
 from wireup.ioc.container.lock_registry import LockRegistry
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
     from wireup.ioc.configuration import ConfigStore
     from wireup.ioc.factory_compiler import FactoryCompiler
     from wireup.ioc.override_manager import OverrideManager

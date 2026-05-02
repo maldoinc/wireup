@@ -4,9 +4,9 @@ import contextlib
 import importlib
 import warnings
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, TypeVar, cast, overload
+from typing import TYPE_CHECKING, Annotated, Any, TypeVar, cast, overload
 
-from typing_extensions import Annotated, ParamSpec
+from typing_extensions import ParamSpec
 
 from wireup.ioc.types import (
     ConfigInjectionRequest,

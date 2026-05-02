@@ -1,11 +1,13 @@
 from __future__ import annotations
 
 import inspect
-from typing import TYPE_CHECKING, Any, Callable, TypeVar
+from typing import TYPE_CHECKING, Any, TypeVar
 
 from wireup._annotations import injectable
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
     from wireup.ioc.types import Qualifier
 
 T = TypeVar("T")

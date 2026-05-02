@@ -8,9 +8,9 @@ to avoid code duplication.
 import os
 from dataclasses import dataclass
 from threading import Lock
-from typing import AsyncIterator, Dict, Iterator, Optional, Tuple
+from collections.abc import AsyncIterator, Iterator
 
-_COUNTERS: Dict[str, int] = {}
+_COUNTERS: dict[str, int] = {}
 _COUNTER_LOCK = Lock()
 _ASSERT_ENABLED = os.getenv("BENCH_ASSERT") == "1"
 
@@ -38,7 +38,7 @@ def record_exit(name: str) -> None:
     _inc(f"exit.{name}")
 
 
-def get_counters() -> Dict[str, int]:
+def get_counters() -> dict[str, int]:
     if not _ASSERT_ENABLED:
         return {}
     with _COUNTER_LOCK:
@@ -52,8 +52,8 @@ def reset_counters() -> None:
         _COUNTERS.clear()
 
 
-def _expected_counts(requests_singleton: int, requests_scoped: int) -> Dict[str, int]:
-    expected: Dict[str, int] = {}
+def _expected_counts(requests_singleton: int, requests_scoped: int) -> dict[str, int]:
+    expected: dict[str, int] = {}
     singleton_expected = 1 if requests_singleton > 0 else 0
     for name in ("Settings", "A", "B"):
         expected[f"create.{name}"] = singleton_expected
@@ -69,8 +69,8 @@ def _expected_counts(requests_singleton: int, requests_scoped: int) -> Dict[str,
 
 
 def assert_workload(
-    overrides: Optional[Dict[str, int]] = None,
-) -> Tuple[bool, Dict[str, int], Dict[str, int], Dict[str, int]]:
+    overrides: dict[str, int] | None = None,
+) -> tuple[bool, dict[str, int], dict[str, int], dict[str, int]]:
     if not _ASSERT_ENABLED:
         return True, {}, {}, {}
     counters = get_counters()
@@ -79,7 +79,7 @@ def assert_workload(
     expected = _expected_counts(requests_singleton, requests_scoped)
     if overrides:
         expected.update(overrides)
-    mismatches: Dict[str, int] = {}
+    mismatches: dict[str, int] = {}
     singleton_create_keys = {"create.Settings", "create.A", "create.B"}
     for key, expected_value in expected.items():
         actual_value = counters.get(key, 0)

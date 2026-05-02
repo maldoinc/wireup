@@ -139,7 +139,7 @@ def test_optional_compat_alias_does_not_create_sequence_of_raw_type() -> None:
     with pytest.raises(UnknownServiceRequestedError):
         container.get(Sequence[Cache])
 
-    assert container.get(Sequence[Optional[Cache]]) == (None,)
+    assert container.get(Sequence[Cache | None]) == (None,)
 
 
 def test_mixed_real_and_optional_compat_registrations_only_include_real_members_in_sequence() -> None:
@@ -154,7 +154,7 @@ def test_mixed_real_and_optional_compat_registrations_only_include_real_members_
     container = create_sync_container(injectables=[make_optional_default_cache, make_redis_cache])
 
     assert container.get(Sequence[Cache]) == (container.get(Cache, qualifier="redis"),)
-    assert container.get(Sequence[Optional[Cache]]) == (None,)
+    assert container.get(Sequence[Cache | None]) == (None,)
 
 
 def test_typing_sequence_is_not_registered() -> None:

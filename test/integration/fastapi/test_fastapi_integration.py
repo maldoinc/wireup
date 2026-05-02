@@ -1,8 +1,9 @@
 import asyncio
 import contextlib
 import uuid
+from collections.abc import AsyncIterator, Iterator
 from threading import Barrier, Thread
-from typing import Any, AsyncIterator, Dict, Iterator
+from typing import Any
 from uuid import uuid4
 
 import anyio.to_thread
@@ -161,7 +162,7 @@ def test_async_contextmanager_route_decorator_can_block_or_allow_requests() -> N
 
     @app.get("/guarded")
     @require_auth()
-    async def guarded_route(random_service: Injected[RandomService]) -> Dict[str, int]:
+    async def guarded_route(random_service: Injected[RandomService]) -> dict[str, int]:
         nonlocal endpoint_calls
         endpoint_calls += 1
         return {"number": random_service.get_random()}
@@ -202,7 +203,7 @@ def test_async_contextmanager_route_decorator_requires_fastapi_middleware_mode()
 
     @app.get("/guarded")
     @require_auth()
-    async def guarded_route(random_service: Injected[RandomService]) -> Dict[str, int]:
+    async def guarded_route(random_service: Injected[RandomService]) -> dict[str, int]:
         return {"number": random_service.get_random()}
 
     with TestClient(app) as client, pytest.raises(WireupError, match="middleware_mode=True"):
@@ -311,7 +312,7 @@ def test_http_middleware_before_setup_can_access_get_request_container() -> None
     container = wireup.create_async_container(injectables=[wireup.integration.fastapi])
 
     @app.get("/")
-    async def endpoint(request: Request) -> Dict[str, bool]:
+    async def endpoint(request: Request) -> dict[str, bool]:
         return {"probe_ok": request.state.probe}
 
     wireup.integration.fastapi.setup(container, app, middleware_mode=True)
@@ -338,7 +339,7 @@ def test_http_middleware_after_setup_hits_ordering_error() -> None:
     app.add_middleware(ProbeMiddleware)
 
     @app.get("/")
-    async def endpoint(request: Request) -> Dict[str, str]:
+    async def endpoint(request: Request) -> dict[str, str]:
         return {"error": request.state.err}
 
     with TestClient(app) as client:
@@ -493,7 +494,7 @@ async def test_closes_container_on_lifespan_close() -> None:
     container = wireup.create_async_container(injectables=[make_thing])
 
     @app.get("/")
-    async def _(thing: Injected[Thing]) -> Dict[str, Any]:
+    async def _(thing: Injected[Thing]) -> dict[str, Any]:
         assert isinstance(thing, Thing)
         return {}
 
@@ -534,7 +535,7 @@ async def test_middleware_disabled_does_not_add_middleware() -> None:
     container = wireup.create_async_container(injectables=[RandomService])
 
     @app.get("/")
-    async def _(random: Injected[RandomService]) -> Dict[str, Any]:
+    async def _(random: Injected[RandomService]) -> dict[str, Any]:
         return {"random": random.get_random()}
 
     wireup.integration.fastapi.setup(container, app, middleware_mode=False)
@@ -587,7 +588,7 @@ def test_injects_background_tasks() -> None:
     container = wireup.create_async_container(injectables=[shared_services, wireup.integration.fastapi])
 
     @app.get("/")
-    async def hello(tasks: BackgroundTasks, wireup_task: Injected[WireupTask]) -> Dict[str, Any]:
+    async def hello(tasks: BackgroundTasks, wireup_task: Injected[WireupTask]) -> dict[str, Any]:
         tasks.add_task(wireup_task(write_logs), "fastapi")
         return {}
 
@@ -610,7 +611,7 @@ def test_setup_still_exposes_wireup_task_without_integration_module_registration
     container = wireup.create_async_container(injectables=[shared_services])
 
     @app.get("/")
-    async def hello(tasks: BackgroundTasks, wireup_task: Injected[WireupTask]) -> Dict[str, Any]:
+    async def hello(tasks: BackgroundTasks, wireup_task: Injected[WireupTask]) -> dict[str, Any]:
         tasks.add_task(wireup_task(write_logs), "fallback")
         return {}
 
@@ -658,7 +659,7 @@ def test_missing_setup_raises_actionable_error_for_injected_route_parameter() ->
     app = FastAPI()
 
     @app.get("/")
-    async def endpoint(random_service: Injected[RandomService]) -> Dict[str, int]:
+    async def endpoint(random_service: Injected[RandomService]) -> dict[str, int]:
         return {"number": random_service.get_random()}
 
     with pytest.raises(WireupError, match="Injection is not set up correctly"):
@@ -672,7 +673,7 @@ def test_setup_called_before_adding_routes_injects_at_startup() -> None:
     wireup.integration.fastapi.setup(container, app)
 
     @app.get("/")
-    async def endpoint(random_service: Injected[RandomService]) -> Dict[str, int]:
+    async def endpoint(random_service: Injected[RandomService]) -> dict[str, int]:
         return {"number": random_service.get_random()}
 
     with TestClient(app) as client:
@@ -696,7 +697,7 @@ def test_lifespan_injection_pass_does_not_rewrap_routes_already_injected_at_setu
     container = wireup.create_async_container(injectables=[shared_services, wireup.integration.fastapi])
 
     @app.get("/")
-    async def endpoint(random_service: Injected[RandomService]) -> Dict[str, int]:
+    async def endpoint(random_service: Injected[RandomService]) -> dict[str, int]:
         return {"number": random_service.get_random()}
 
     wireup.integration.fastapi.setup(container, app)
@@ -718,7 +719,7 @@ def test_class_based_lifespan_dual_pass_does_not_double_wrap_routes() -> None:
     )
 
     @app.get("/")
-    async def endpoint(random_service: Injected[RandomService]) -> Dict[str, int]:
+    async def endpoint(random_service: Injected[RandomService]) -> dict[str, int]:
         return {"number": random_service.get_random()}
 
     wireup.integration.fastapi.setup(container, app, class_based_handlers=[cbr.MyClassBasedRoute])

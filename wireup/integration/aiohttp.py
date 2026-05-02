@@ -1,5 +1,6 @@
+from collections.abc import Awaitable, Callable, Iterable
 from contextvars import ContextVar
-from typing import Awaitable, Callable, Iterable, Optional, Protocol, Type
+from typing import Protocol
 
 from aiohttp import web
 
@@ -46,7 +47,7 @@ def _inject_routes(container: wireup.AsyncContainer, app: web.Application, *, mi
 async def _instantiate_class_based_handlers(
     container: wireup.AsyncContainer,
     app: web.Application,
-    handlers: Iterable[Type[_WireupHandler]],
+    handlers: Iterable[type[_WireupHandler]],
 ) -> None:
     for handler_type in handlers:
         instance = await container.get(handler_type)
@@ -59,7 +60,7 @@ async def _instantiate_class_based_handlers(
 
 def _get_startup_event(
     container: wireup.AsyncContainer,
-    handlers: Optional[Iterable[Type[_WireupHandler]]],
+    handlers: Iterable[type[_WireupHandler]] | None,
     *,
     middleware_mode: bool,
 ) -> Callable[[web.Application], Awaitable[None]]:
@@ -79,7 +80,7 @@ def _get_startup_event(
 def setup(
     container: wireup.AsyncContainer,
     app: web.Application,
-    handlers: Optional[Iterable[Type[_WireupHandler]]] = None,
+    handlers: Iterable[type[_WireupHandler]] | None = None,
     *,
     middleware_mode: bool = True,
 ) -> None:

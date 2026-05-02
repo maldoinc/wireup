@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import functools
-from typing import TYPE_CHECKING, Any, Callable
+from typing import TYPE_CHECKING, Any
 from uuid import uuid4
 
 from wireup.codegen import Codegen
@@ -9,6 +9,8 @@ from wireup.ioc.container.async_container import BareAsyncContainer, async_conta
 from wireup.ioc.types import AnnotatedParameter, ConfigInjectionRequest
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
     from wireup.ioc.container.base_container import BaseContainer
 
 

@@ -1,9 +1,9 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import Annotated
 
 import wireup
-from typing_extensions import Annotated
 from wireup import Inject, Injected
 
 

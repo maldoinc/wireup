@@ -1,12 +1,11 @@
 import re
 import typing
 import unittest
-from typing import Protocol
+from typing import Annotated, Protocol
 from unittest.mock import MagicMock
 
 import pytest
 import wireup
-from typing_extensions import Annotated
 from wireup import Inject, abstract, create_async_container, create_sync_container, inject_from_container, injectable
 from wireup._annotations import Injected
 from wireup.errors import UnknownOverrideRequestedError, WireupError

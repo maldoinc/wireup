@@ -4,11 +4,10 @@ from collections.abc import Hashable as AbcHashable
 from collections.abc import Mapping as AbcMapping
 from collections.abc import Sequence as AbcSequence
 from dataclasses import dataclass
-from typing import Protocol
+from typing import Annotated, Protocol
 
 import pytest
 import wireup
-from typing_extensions import Annotated
 from wireup._annotations import Inject, abstract, injectable
 from wireup.errors import WireupError
 

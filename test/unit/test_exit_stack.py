@@ -1,5 +1,5 @@
 import re
-from typing import AsyncGenerator, Generator
+from collections.abc import AsyncGenerator, Generator
 
 import pytest
 from wireup.errors import WireupError
