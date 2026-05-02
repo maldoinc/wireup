@@ -177,102 +177,184 @@ def main(
 ): ...
 ```
 
-## Inject All Implementations
+## Collection Injection
 
-When you register multiple implementations of the same type with `@injectable(as_type=...)`, you can request all of them at once with `collections.abc.Sequence[T]`.
-
-```python
-from collections.abc import Sequence
-from dataclasses import dataclass
-from typing import Protocol
-from wireup import create_sync_container, injectable
-
-
-class Cache(Protocol):
-    def source(self) -> str: ...
-
-
-@injectable(as_type=Cache)
-class InMemoryCache:
-    def source(self) -> str:
-        return "memory"
-
-
-@injectable(as_type=Cache, qualifier="redis")
-class RedisCache:
-    def source(self) -> str:
-        return "redis"
-
-
-@injectable
-@dataclass
-class CacheReporter:
-    caches: Sequence[Cache]
-```
-
-`Sequence[T]` includes the default implementation, if present, plus any qualified implementations in registration order.
-
-## Inject Implementations by Qualifier
-
-When you want every implementation keyed by its qualifier, request them at once with `collections.abc.Mapping[Hashable, T]`.
+When a type has one or more registrations, you can request all of them at once as a collection. Collection injection
+returns every registration for the requested type. If you used `as_type` to register under a different type, the collection includes the `as_type` target, not the original.
 
 ```python
 from collections.abc import Hashable, Mapping
-from dataclasses import dataclass
 from typing import Protocol
 from wireup import create_sync_container, injectable
 
 
 class Cache(Protocol):
-    def source(self) -> str: ...
+    def get(self, key: str) -> str: ...
 
 
 @injectable(as_type=Cache)
 class InMemoryCache:
-    def source(self) -> str:
-        return "memory"
+    def get(self, key: str) -> str:
+        return f"memory:{key}"
 
 
 @injectable(as_type=Cache, qualifier="redis")
 class RedisCache:
-    def source(self) -> str:
-        return "redis"
+    def get(self, key: str) -> str:
+        return f"redis:{key}"
+```
+
+### Supported Collection Types
+
+Collection injection only supports `collections.abc.Sequence[T]` and `collections.abc.Mapping[Hashable, T]`.
+Requesting `typing.Sequence[T]` or `typing.Mapping[K, V]` raises `UnknownServiceRequestedError` with a hint pointing
+at the corresponding `collections.abc` type.
+
+### `Sequence[T]`
+
+Use `collections.abc.Sequence[T]` to receive every registration for `T` in registration order.
+
+```python
+from collections.abc import Sequence
+from wireup import injectable
+
+
+@injectable
+class CacheReporter:
+    def __init__(self, caches: Sequence[Cache]) -> None:
+        self.caches = caches
+```
+
+`Sequence[T]` includes every registration for `T` in registration order, including the unqualified default, if
+present, plus any qualified implementations.
+
+### `Mapping[Hashable, T]`
+
+Use `collections.abc.Mapping[Hashable, T]` to receive every registration for `T` keyed by qualifier.
+
+```python
+from dataclasses import dataclass
+
+from wireup import injectable
 
 
 @injectable
 @dataclass
 class CacheRouter:
-    caches: Mapping[Hashable, Cache]
+    def __init__(self, caches: Mapping[Hashable, Cache]) -> None:
+        self.caches = caches
 
     def default(self) -> Cache:
         return self.caches[None]
 ```
 
-`Mapping[Hashable, Cache]` includes every implementation, keyed by its qualifier. The unqualified default is keyed under `None`.
+`Mapping[Hashable, T]` includes every registration for `T`, keyed by qualifier. The unqualified default is keyed
+under `None`.
 
-!!! note "Mapping Type"
+### Custom Collection Factories
 
-    Only `collections.abc.Mapping[Hashable, T]` is supported. Requesting `typing.Mapping[K, V]` raises
-    `UnknownServiceRequestedError` with a hint pointing at `collections.abc.Mapping[Hashable, T]`.
+Built-in collection injection covers `collections.abc.Sequence[T]` and `collections.abc.Mapping[Hashable, T]`.
+When you need a filtered, transformed, or domain-specific collection shape, create it with a regular factory.
 
-    If you want to register your own factory for a `Mapping[Hashable, T]` (e.g., with custom keys or transformation
-    logic), wrap it in a `NewType`:
+This is an advanced pattern. Most applications can inject `Sequence[T]` or `Mapping[Hashable, T]` directly.
 
-    ```python
-    from collections.abc import Hashable, Mapping
-    from typing import Annotated, NewType
-    from wireup import Inject, injectable
+Use a custom collection factory when you want to:
 
-    CacheMap = NewType("CacheMap", Mapping[Hashable, Cache])
+- filter out some implementations
+- reshape the built-in mapping into application-specific keys
+- expose a collection under a domain-specific type
+
+#### Filter a Collection
+
+You can build a derived collection by injecting the built-in `Mapping[Hashable, T]` and returning a new type.
+
+```python
+from collections.abc import Hashable, Mapping
+from typing import NewType, Protocol
+
+from wireup import injectable
 
 
-    @injectable
-    def make_cache_map(
-        default: Cache,
-        redis: Annotated[Cache, Inject(qualifier="redis")],
-    ) -> CacheMap:
-        return CacheMap({None: default, "redis": redis})
-    ```
+class Cache(Protocol):
+    def source(self) -> str: ...
+
+
+# Optionally NewType-annotate the result for better type safety and readability.
+FilteredCaches = NewType("FilteredCaches", list[Cache])
+
+
+@injectable(as_type=Cache)
+class MemoryCache:
+    def source(self) -> str:
+        return "memory"
+
+
+@injectable(as_type=Cache, qualifier="redis")
+class RedisCache:
+    def source(self) -> str:
+        return "redis"
+
+
+@injectable
+def filtered_caches(
+    caches: Mapping[Hashable, Cache],
+) -> FilteredCaches:
+    return FilteredCaches(
+        [cache for key, cache in caches.items() if key is not None]
+    )
+```
+
+`filtered_caches` receives the built-in qualifier mapping for `Cache`, removes the default entry under `None`, and
+registers the result as `FilteredCaches`.
+
+Consumers can then request the derived collection directly:
+
+```python
+from wireup import injectable
+
+
+@injectable
+class CacheReporter:
+    def __init__(self, caches: FilteredCaches) -> None:
+        self.caches = caches
+```
+
+#### Reshape a Mapping
+
+You can also build your own mapping type on top of `Mapping[Hashable, T]`.
+
+```python
+from collections.abc import Hashable, Mapping
+from typing import NewType
+
+from wireup import injectable
+
+CacheMap = NewType("CacheMap", dict[str, Cache])
+
+
+@injectable
+def cache_map(caches: Mapping[Hashable, Cache]) -> CacheMap:
+    return CacheMap(
+        {
+            "default": caches[None],
+            **{
+                str(key): value
+                for key, value in caches.items()
+                if key is not None
+            },
+        }
+    )
+```
+
+This lets you keep Wireup's built-in qualifier-based collection injection while exposing the result under the shape
+your application actually wants.
+
+Start with the built-in collection types when they already match your needs:
+
+- use `Sequence[T]` when order matters and qualifiers do not
+- use `Mapping[Hashable, T]` when you want qualifier-based access
+
+Reach for a custom factory only when you need additional filtering, transformation, or a distinct domain type.
 
 ## `as_type` with Optional Types
 
