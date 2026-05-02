@@ -1,12 +1,7 @@
-from __future__ import annotations
-
 import contextlib
-from typing import TYPE_CHECKING
+from collections.abc import Iterator
 
 from typing_extensions import Self
-
-if TYPE_CHECKING:
-    from collections.abc import Iterator
 
 
 class Codegen:

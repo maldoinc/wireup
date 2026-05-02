@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 from wireup._annotations import Inject, Injected, abstract, injectable, service
 from wireup._decorators import inject_from_container
 from wireup._instance import instance

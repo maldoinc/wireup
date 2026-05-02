@@ -1,14 +1,7 @@
-from __future__ import annotations
-
-from typing import TYPE_CHECKING
+from types import TracebackType
 
 from wireup.errors import ContainerCloseError, WireupError
-
-if TYPE_CHECKING:
-    from types import TracebackType
-
-    from wireup.ioc.types import ExitStack
-
+from wireup.ioc.types import ExitStack
 
 _CONTAINER_CLOSE_ERR = "The following exceptions were raised while closing of container"
 
