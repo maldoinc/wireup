@@ -1,7 +1,7 @@
 import re
 import typing
 import unittest
-from typing import Annotated, Protocol
+from typing import Annotated, Optional, Protocol
 from unittest.mock import MagicMock
 
 import pytest
@@ -438,6 +438,40 @@ def test_override_sync_dependency_with_sync_instance(injectable_lifetime: Inject
         consumer = resolve_consumer()
         assert isinstance(consumer.dep, SyncOverride)
         assert isinstance(get_consumer_via_inject().dep, SyncOverride)
+
+
+def test_override_optional_dependency_uses_same_key_for_t_none_and_optional() -> None:
+    @wireup.injectable
+    class OptionalDep:
+        pass
+
+    @wireup.injectable
+    def make_optional() -> OptionalDep | None:
+        return OptionalDep()
+
+    container = create_sync_container(injectables=[make_optional])
+    override = MagicMock(spec=OptionalDep)
+
+    with container.override.injectable(Optional[OptionalDep], new=override):  # noqa: UP045
+        assert container.get(OptionalDep | None) is override
+        assert container.get(Optional[OptionalDep]) is override  # noqa: UP045
+
+
+def test_override_optional_dependency_uses_same_key_for_optional_and_t_none() -> None:
+    @wireup.injectable
+    class OptionalDep:
+        pass
+
+    @wireup.injectable
+    def make_optional() -> Optional[OptionalDep]:  # noqa: UP045
+        return OptionalDep()
+
+    container = create_sync_container(injectables=[make_optional])
+    override = MagicMock(spec=OptionalDep)
+
+    with container.override.injectable(OptionalDep | None, new=override):
+        assert container.get(OptionalDep | None) is override
+        assert container.get(Optional[OptionalDep]) is override  # noqa: UP045
 
 
 @abstract

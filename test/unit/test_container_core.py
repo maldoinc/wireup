@@ -348,9 +348,6 @@ def test_container_properly_caches_none_result() -> None:
 def test_container_handles_optional_types_as_aliased() -> None:
     counter = 0
 
-    def optional_hint(tp: type[RandomService]) -> object:
-        return Optional.__getitem__(tp)
-
     @wireup.injectable
     def make_none() -> RandomService | None:
         nonlocal counter
@@ -359,7 +356,24 @@ def test_container_handles_optional_types_as_aliased() -> None:
         return None
 
     container = wireup.create_sync_container(injectables=[make_none])
-    assert container.get(RandomService | None) is container.get(optional_hint(RandomService))
+    assert container.get(RandomService | None) is container.get(Optional[RandomService])  # noqa: UP045
+    assert container.get(RandomService | None) is container.get(None | RandomService)
+    assert container.get(RandomService) is container.get(RandomService | None)
+    assert counter == 1
+
+
+def test_container_handles_optional_types_as_aliased_optional_t_factory() -> None:
+    counter = 0
+
+    @wireup.injectable
+    def make_none() -> Optional[RandomService]:  # noqa: UP045
+        nonlocal counter
+        counter += 1
+
+        return None
+
+    container = wireup.create_sync_container(injectables=[make_none])
+    assert container.get(RandomService | None) is container.get(Optional[RandomService])  # noqa: UP045
     assert container.get(RandomService | None) is container.get(None | RandomService)
     assert container.get(RandomService) is container.get(RandomService | None)
     assert counter == 1
