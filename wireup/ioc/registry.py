@@ -71,7 +71,7 @@ def _function_get_unwrapped_return_type(fn: Callable[..., T]) -> type[T] | None:
                 return None
             ret = args[0]  # Extract the yield type from the generator
 
-        return ret  # type: ignore[no-any-return]
+        return ret
 
     return None
 
