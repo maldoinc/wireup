@@ -45,7 +45,7 @@ Resolve singleton constructor dependencies once at startup in <a href="https://m
 <h3>🧩 Advanced Wiring</h3>
 Go beyond simple constructor injection with
 <a href="https://maldoinc.github.io/wireup/latest/reusable_bundles/">reusable bundles</a>,
-<a href="https://maldoinc.github.io/wireup/latest/lifetimes_and_scopes/">explicit scope context sharing</a>, <a href="https://maldoinc.github.io/wireup/latest/interfaces/#inject-all-implementations">collection injection</a>, and more using plain Python.
+<a href="https://maldoinc.github.io/wireup/latest/lifetimes_and_scopes/">explicit scope context sharing</a>, <a href="https://maldoinc.github.io/wireup/latest/interfaces/#collection-injection">collection injection</a>, and more using plain Python.
 </td>
 <td align="center" valign="top">
 <h3>🧪 Easy to test</h3>
