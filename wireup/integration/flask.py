@@ -1,5 +1,3 @@
-from typing import Optional
-
 from flask import Flask, g
 
 from wireup._decorators import inject_from_container
@@ -25,7 +23,7 @@ def setup(container: SyncContainer, app: Flask) -> None:
         g.wireup_container_ctx = ctx
         g.wireup_container = ctx.__enter__()
 
-    def _teardown_request(exc: Optional[BaseException] = None) -> None:
+    def _teardown_request(exc: BaseException | None = None) -> None:
         if ctx := getattr(g, "wireup_container_ctx", None):
             ctx.__exit__(type(exc) if exc else None, exc, exc.__traceback__ if exc else None)
 

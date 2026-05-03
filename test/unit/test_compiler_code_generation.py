@@ -3,11 +3,10 @@ from __future__ import annotations
 import re
 import textwrap
 from dataclasses import dataclass
-from typing import Any, AsyncGenerator, Iterator
+from typing import TYPE_CHECKING, Annotated, Any
 
 import pytest
 import wireup
-from typing_extensions import Annotated
 from wireup import (
     AsyncContainer,
     Injected,
@@ -20,6 +19,9 @@ from wireup import (
 from wireup._decorators import inject_from_container_unchecked
 from wireup.errors import WireupError
 from wireup.ioc.util import is_wireup_injected
+
+if TYPE_CHECKING:
+    from collections.abc import AsyncGenerator, Iterator
 
 
 @injectable

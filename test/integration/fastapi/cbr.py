@@ -1,4 +1,4 @@
-from typing import Any, Dict
+from typing import Any
 
 import fastapi
 from wireup._annotations import Injected
@@ -14,7 +14,7 @@ class MyClassBasedRoute:
         self.counter = 0
 
     @router.get("/")
-    def get_cbr(self, random_service: Injected[RandomService]) -> Dict[str, Any]:
+    def get_cbr(self, random_service: Injected[RandomService]) -> dict[str, Any]:
         assert random_service is self.rng
         self.counter += 1
 

@@ -1,11 +1,11 @@
 [project]
 name = "wireup"
-version = "2.9.0"
+version = "2.11.0"
 description = "Python Dependency Injection Library"
 authors = [{ name = "Aldo Mateli", email = "aldo.mateli@gmail.com" }]
 license = { text = "MIT" }
 readme = "readme.md"
-requires-python = ">=3.8"
+requires-python = ">=3.10"
 keywords = [
     "flask",
     "django",
@@ -55,7 +55,7 @@ dev = [
     "mkdocs-open-in-new-tab>=1.0.2",
     "mike>=2.1.3",
     "typing-extensions>=4.7.1",
-    "mypy==1.14.1",
+    "mypy==1.20.2",
     "coverage>=7.3.2",
     "tox>=4.14.2",
     "pytest>=8.3.3",
@@ -76,7 +76,7 @@ build-backend = "hatchling.build"
 packages = ["wireup"]
 
 [tool.ruff]
-target-version = "py38"
+target-version = "py310"
 line-length = 120
 src = ["wireup"]
 lint.fixable = ["ALL"]

@@ -109,7 +109,6 @@ the application would resolve at runtime.
 import pytest
 
 
-@pytest.mark.anyio
 async def test_user_service(container) -> None:
     user_service = await container.get(UserService)
 
@@ -124,7 +123,6 @@ The root container only resolves singletons. If the service under test is `scope
 import pytest
 
 
-@pytest.mark.anyio
 async def test_request_service(container) -> None:
     async with container.enter_scope() as scope:
         request_service = await scope.get(RequestService)
@@ -156,7 +154,6 @@ import pytest
 from unittest.mock import MagicMock
 
 
-@pytest.mark.anyio
 async def test_notification_service(container) -> None:
     fake_email_client = MagicMock(spec=EmailClient)
 
@@ -177,7 +174,6 @@ from unittest.mock import MagicMock
 from wireup import InjectableOverride
 
 
-@pytest.mark.anyio
 async def test_checkout(container) -> None:
     user_service_mock = MagicMock()
     order_service_mock = MagicMock()

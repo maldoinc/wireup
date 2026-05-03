@@ -1,15 +1,20 @@
 from __future__ import annotations
 
 import sys
+from collections.abc import Hashable
+from collections.abc import Mapping as AbcMapping
 from collections.abc import Sequence as AbcSequence
-from typing import TYPE_CHECKING, Any
-
-from typing_extensions import get_args, get_origin
+from typing import TYPE_CHECKING, Any, get_args, get_origin
 
 from wireup.util import format_name, stringify_type
 
 if TYPE_CHECKING:
     from wireup.ioc.types import AnyCallable, Qualifier
+
+
+def try_get_wireup_collection_replacement(type_hint: Any) -> Any | None:
+    """Return the Wireup collection type for unsupported aliases."""
+    return try_get_wireup_sequence_replacement(type_hint) or try_get_wireup_mapping_replacement(type_hint)
 
 
 def try_get_wireup_sequence_replacement(type_hint: Any) -> Any | None:
@@ -22,6 +27,35 @@ def try_get_wireup_sequence_replacement(type_hint: Any) -> Any | None:
 
     args = get_args(type_hint)
     return AbcSequence[args] if args else AbcSequence  # type:ignore[valid-type]
+
+
+def try_get_wireup_mapping_replacement(type_hint: Any) -> Any | None:
+    """Return collection type replacement for typing.Mapping[K, V] if applicable."""
+    if getattr(type_hint, "__module__", None) != "typing":
+        return None
+
+    if get_origin(type_hint) is not AbcMapping:
+        return None
+
+    args = get_args(type_hint)
+    if not args:
+        return AbcMapping
+    return AbcMapping[Hashable, args[1]]  # type:ignore[valid-type]
+
+
+def get_unknown_collection_message(
+    *,
+    action: str,
+    klass: Any,
+    qualifier: Qualifier | None = None,
+) -> str | None:
+    if suggested_replacement_type := try_get_wireup_collection_replacement(klass):
+        return (
+            f"Cannot {action} unknown injectable {format_name(klass, qualifier)}. "
+            f"Wireup collection injection uses {suggested_replacement_type!r}, not {klass!r}."
+        )
+
+    return None
 
 
 class WireupError(Exception):
@@ -97,11 +131,8 @@ class UnknownServiceRequestedError(WireupError):
     """Raised when requesting an unknown type."""
 
     def __init__(self, klass: Any, qualifier: Qualifier | None = None) -> None:
-        if suggested_replacement_type := try_get_wireup_sequence_replacement(klass):
-            super().__init__(
-                f"Cannot create unknown injectable {format_name(klass, qualifier)}. "
-                f"Wireup collection injection uses {suggested_replacement_type!r}, not {klass!r}."
-            )
+        if collection_message := get_unknown_collection_message(action="create", klass=klass, qualifier=qualifier):
+            super().__init__(collection_message)
             return
 
         msg = (
@@ -141,6 +172,10 @@ class UnknownOverrideRequestedError(WireupError):
     """Raised when attempting to override a injectable which does not exist."""
 
     def __init__(self, klass: type, qualifier: Qualifier | None) -> None:
+        if collection_message := get_unknown_collection_message(action="override", klass=klass, qualifier=qualifier):
+            super().__init__(collection_message)
+            return
+
         super().__init__(f"Cannot override unknown {format_name(klass, qualifier)}.")
 
 

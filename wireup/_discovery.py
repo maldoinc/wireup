@@ -4,9 +4,12 @@ import importlib
 import inspect
 from pathlib import Path
 from types import FunctionType, ModuleType
-from typing import Any, Callable, Iterable
+from typing import TYPE_CHECKING, Any
 
 from wireup._annotations import AbstractDeclaration, InjectableDeclaration
+
+if TYPE_CHECKING:
+    from collections.abc import Callable, Iterable
 
 
 def discover_wireup_registrations(

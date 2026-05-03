@@ -107,7 +107,7 @@ async def test_provider_respects_lifetime_rules() -> None:
 
     with pytest.raises(
         WireupError,
-        match=r"Parameter 'scoped_provider' of Type test.unit.test_provider.SingletonDep depends on an injectable with a 'scoped' lifetime which is not supported. Singletons can only depend on other singletons.",  # noqa: E501
+        match=rf"Parameter 'scoped_provider' of {SingletonDep!r} depends on an injectable with a 'scoped' lifetime which is not supported. Singletons can only depend on other singletons.",  # noqa: E501
     ):
         wireup.create_async_container(injectables=[SingletonDep, ScopedDep])
 

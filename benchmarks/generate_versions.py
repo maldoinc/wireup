@@ -1,18 +1,17 @@
 import re
 import os
-from typing import List
 
 # Configuration
 RUNNER_PATH = "benchmarks/bench_runner.py"
 DOCS_PATH = "docs/pages/benchmarks.md"
 
 
-def extract_versions() -> List[str]:
+def extract_versions() -> list[str]:
     with open(RUNNER_PATH, "r") as f:
         content = f.read()
 
     lines = content.splitlines()
-    dep_lines: List[str] = []
+    dep_lines: list[str] = []
     in_deps = False
 
     for line in lines:

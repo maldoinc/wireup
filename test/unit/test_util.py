@@ -1,11 +1,11 @@
 import functools
 import inspect
 import unittest
-from typing import Callable
+from collections.abc import Callable
+from typing import Annotated
 
 import pytest
 import wireup
-from typing_extensions import Annotated
 from wireup import Inject
 from wireup.errors import WireupError
 from wireup.ioc.types import (

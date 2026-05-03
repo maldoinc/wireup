@@ -7,7 +7,7 @@ import argparse
 import csv
 import os
 from collections import defaultdict
-from typing import DefaultDict, Dict, List, TypedDict
+from typing import TypedDict
 
 import matplotlib.pyplot as plt
 
@@ -23,9 +23,9 @@ class ChartItem(TypedDict):
     rps: float
 
 
-def load_data(csv_path: str) -> Dict[str, List[ChartItem]]:
+def load_data(csv_path: str) -> dict[str, list[ChartItem]]:
     """Loads CSV data and returns a dict grouped by test type."""
-    data_by_test: DefaultDict[str, List[ChartItem]] = defaultdict(list)
+    data_by_test: defaultdict[str, list[ChartItem]] = defaultdict(list)
 
     with open(csv_path, encoding="utf-8") as f:
         reader = csv.DictReader(f)
@@ -40,7 +40,7 @@ def load_data(csv_path: str) -> Dict[str, List[ChartItem]]:
     return data_by_test
 
 
-def create_chart(title: str, data: List[ChartItem], filename: str, text_color: str = "black") -> None:
+def create_chart(title: str, data: list[ChartItem], filename: str, text_color: str = "black") -> None:
     if not data:
         return
 
@@ -62,7 +62,7 @@ def create_chart(title: str, data: List[ChartItem], filename: str, text_color: s
     bars = ax.barh(names, rps_values, color=colors, height=0.6)  # Slightly thinner bars
 
     # Make "Manual Wiring (No DI)" visually distinct: outline + diagonal hatch.
-    for bar, item in zip(bars, data):
+    for bar, item in zip(bars, data, strict=False):
         if item["name"].lower().startswith("globals"):
             outline = "#cecece" if text_color == "black" else "#cecece"
             bar.set_facecolor("none")
@@ -88,7 +88,7 @@ def create_chart(title: str, data: List[ChartItem], filename: str, text_color: s
     ax.set_xlim(0, max_rps + label_pad * 8)
 
     # Add value labels
-    for bar, item in zip(bars, data):
+    for bar, item in zip(bars, data, strict=False):
         width = bar.get_width()
         is_wireup = "wireup" in item["name"].lower()
 

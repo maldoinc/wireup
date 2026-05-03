@@ -1,5 +1,6 @@
 import re
-from typing import AsyncIterator, Iterator, NewType
+from collections.abc import AsyncIterator, Iterator
+from typing import NewType
 
 import pytest
 import wireup

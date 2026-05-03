@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Callable, TypeVar, overload
+from typing import TYPE_CHECKING, Any, TypeVar, overload
 
 from typing_extensions import Self
 
@@ -10,6 +10,7 @@ from wireup.ioc.container.base_container import BaseContainer
 from wireup.ioc.container.sync_container import ScopedSyncContainer
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
     from types import TracebackType
 
     from wireup.ioc.types import ContainerObjectIdentifier, Qualifier

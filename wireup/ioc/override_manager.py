@@ -5,14 +5,14 @@ import warnings
 from collections import defaultdict
 from contextlib import contextmanager
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, Iterator
+from typing import TYPE_CHECKING, Any
 
 from wireup.errors import UnknownOverrideRequestedError
 from wireup.ioc.factory_compiler import CompiledFactory, FactoryCompiler
 from wireup.ioc.types import get_container_object_id
 
 if TYPE_CHECKING:
-    from collections.abc import Callable
+    from collections.abc import Callable, Iterator
 
     from wireup.ioc.types import ContainerObjectIdentifier, InjectableOverride, Qualifier
 

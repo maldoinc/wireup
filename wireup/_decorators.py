@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import inspect
-from typing import TYPE_CHECKING, Any, Callable, TypeVar
+from typing import TYPE_CHECKING, Any, TypeVar
 
 from typing_extensions import ParamSpec
 
@@ -17,6 +17,8 @@ from wireup.ioc.util import (
 )
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
     from wireup.ioc.container.async_container import AsyncContainer, ScopedAsyncContainer
     from wireup.ioc.container.sync_container import ScopedSyncContainer
     from wireup.ioc.types import AnnotatedParameter

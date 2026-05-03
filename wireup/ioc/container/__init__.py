@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import warnings
 from types import ModuleType
-from typing import Any, Iterable, TypeVar
+from typing import TYPE_CHECKING, Any, TypeVar
 
 from wireup._annotations import AbstractDeclaration, InjectableDeclaration
 from wireup._discovery import discover_wireup_registrations
@@ -14,6 +14,9 @@ from wireup.ioc.container.sync_container import ScopedSyncContainer, SyncContain
 from wireup.ioc.factory_compiler import FactoryCompiler
 from wireup.ioc.override_manager import OverrideManager
 from wireup.ioc.registry import ContainerRegistry
+
+if TYPE_CHECKING:
+    from collections.abc import Iterable
 
 _ContainerT = TypeVar("_ContainerT", bound=BaseContainer)
 

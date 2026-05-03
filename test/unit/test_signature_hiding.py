@@ -1,6 +1,6 @@
 import inspect
+from typing import Annotated
 
-from typing_extensions import Annotated
 from wireup import Injected, create_sync_container, inject_from_container, service
 from wireup._decorators import inject_from_container_unchecked
 

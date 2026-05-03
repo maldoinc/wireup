@@ -1,11 +1,11 @@
 import re
+import typing
 import unittest
-from typing import Protocol
+from typing import Annotated, Optional, Protocol
 from unittest.mock import MagicMock
 
 import pytest
 import wireup
-from typing_extensions import Annotated
 from wireup import Inject, abstract, create_async_container, create_sync_container, inject_from_container, injectable
 from wireup._annotations import Injected
 from wireup.errors import UnknownOverrideRequestedError, WireupError
@@ -258,9 +258,47 @@ async def test_container_override_many_with_qualifier(container: Container):
 async def test_raises_on_unknown_override(container: Container):
     with pytest.raises(
         UnknownOverrideRequestedError,
-        match=re.escape("Cannot override unknown Type unittest.case.TestCase with qualifier 'foo'."),
+        match=re.escape(f"Cannot override unknown {unittest.TestCase!r} with qualifier 'foo'."),
     ):
         with container.override.injectable(target=unittest.TestCase, qualifier="foo", new=MagicMock()):
+            pass
+
+
+def test_typing_sequence_override_raises_helpful_error() -> None:
+    class Cache(Protocol):
+        def source(self) -> str: ...
+
+    @injectable(as_type=Cache)
+    class MemoryCache:
+        def source(self) -> str:
+            return "memory"
+
+    container = create_sync_container(injectables=[MemoryCache])
+
+    with pytest.raises(
+        UnknownOverrideRequestedError,
+        match=r"Wireup collection injection uses collections\.abc\.Sequence\[.*Cache.*\], not typing\.Sequence\[.*Cache.*\]",  # noqa: E501
+    ):
+        with container.override.injectable(target=typing.Sequence[Cache], new=()):
+            pass
+
+
+def test_typing_mapping_override_raises_helpful_error() -> None:
+    class Cache(Protocol):
+        def source(self) -> str: ...
+
+    @injectable(as_type=Cache)
+    class MemoryCache:
+        def source(self) -> str:
+            return "memory"
+
+    container = create_sync_container(injectables=[MemoryCache])
+
+    with pytest.raises(
+        UnknownOverrideRequestedError,
+        match=r"Wireup collection injection uses collections\.abc\.Mapping\[.*Cache.*\], not typing\.Mapping\[.*Cache.*\]",  # noqa: E501
+    ):
+        with container.override.injectable(target=typing.Mapping[str, Cache], new={}):
             pass
 
 
@@ -400,6 +438,40 @@ def test_override_sync_dependency_with_sync_instance(injectable_lifetime: Inject
         consumer = resolve_consumer()
         assert isinstance(consumer.dep, SyncOverride)
         assert isinstance(get_consumer_via_inject().dep, SyncOverride)
+
+
+def test_override_optional_dependency_uses_same_key_for_t_none_and_optional() -> None:
+    @wireup.injectable
+    class OptionalDep:
+        pass
+
+    @wireup.injectable
+    def make_optional() -> OptionalDep | None:
+        return OptionalDep()
+
+    container = create_sync_container(injectables=[make_optional])
+    override = MagicMock(spec=OptionalDep)
+
+    with container.override.injectable(Optional[OptionalDep], new=override):  # noqa: UP045
+        assert container.get(OptionalDep | None) is override
+        assert container.get(Optional[OptionalDep]) is override  # noqa: UP045
+
+
+def test_override_optional_dependency_uses_same_key_for_optional_and_t_none() -> None:
+    @wireup.injectable
+    class OptionalDep:
+        pass
+
+    @wireup.injectable
+    def make_optional() -> Optional[OptionalDep]:  # noqa: UP045
+        return OptionalDep()
+
+    container = create_sync_container(injectables=[make_optional])
+    override = MagicMock(spec=OptionalDep)
+
+    with container.override.injectable(OptionalDep | None, new=override):
+        assert container.get(OptionalDep | None) is override
+        assert container.get(Optional[OptionalDep]) is override  # noqa: UP045
 
 
 @abstract

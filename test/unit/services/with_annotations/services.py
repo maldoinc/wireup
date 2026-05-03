@@ -1,6 +1,6 @@
 import abc
+from typing import Annotated
 
-from typing_extensions import Annotated
 from wireup import Inject, Injected, abstract, injectable
 
 from test.unit.services.no_annotations.random.random_service import RandomService

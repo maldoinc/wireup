@@ -4,10 +4,10 @@ import importlib
 import sys
 from collections.abc import Iterator  # noqa: TC003
 from dataclasses import dataclass
+from typing import Annotated
 
 import pytest
 import wireup
-from typing_extensions import Annotated
 from wireup import Injected, inject_from_container
 
 

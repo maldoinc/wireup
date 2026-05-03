@@ -4,11 +4,9 @@ import inspect
 import typing
 import warnings
 from collections import defaultdict
-from collections.abc import Sequence
+from collections.abc import Callable, Hashable, Mapping, Sequence
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, Callable, TypeVar, Union
-
-from typing_extensions import Annotated
+from typing import TYPE_CHECKING, Annotated, Any, TypeVar
 
 from wireup.errors import (
     AsTypeMismatchError,
@@ -46,7 +44,7 @@ if TYPE_CHECKING:
 
 
 T = TypeVar("T")
-InjectionTarget = Union[AnyCallable, type]
+InjectionTarget = AnyCallable | type
 """Represents valid dependency injection targets: Functions and Classes."""
 
 
@@ -75,7 +73,7 @@ def _function_get_unwrapped_return_type(fn: Callable[..., T]) -> type[T] | None:
                 return None
             ret = args[0]  # Extract the yield type from the generator
 
-        return ret  # type: ignore[no-any-return]
+        return ret
 
     return None
 
@@ -127,9 +125,7 @@ class ContainerRegistry:
             target_type = impl.as_type
 
             if target_type is not None and type_analysis.is_optional:
-                from typing import Optional  # noqa: PLC0415
-
-                target_type = Optional[target_type]
+                target_type = target_type | None
             self._register(
                 klass=target_type if target_type is not None else klass,
                 factory_fn=obj,
@@ -139,6 +135,7 @@ class ContainerRegistry:
             )
 
         self._register_sequence_collections()
+        self._register_mapping_collections()
         validate_registry(self)
         self._update_factories_async_flag()
         if self.on_change:
@@ -202,6 +199,24 @@ class ContainerRegistry:
         _factory.__signature__ = inspect.Signature(parameters=signature_parameters)  # type: ignore[attr-defined]
         return _factory
 
+    def _create_mapping_collection_factory(self, klass: Any, qualifiers: list[Qualifier | None]) -> Callable[..., Any]:
+        def _factory(**kwargs: Any) -> Any:
+            return dict(zip(qualifiers, kwargs.values(), strict=False))
+
+        signature_parameters = []
+        for idx, qualifier in enumerate(qualifiers):
+            annotation = klass if qualifier is None else Annotated[klass, InjectableQualifier(qualifier)]
+            signature_parameters.append(
+                inspect.Parameter(
+                    f"_wireup_item{idx}",
+                    kind=inspect.Parameter.POSITIONAL_OR_KEYWORD,
+                    annotation=annotation,
+                )
+            )
+
+        _factory.__signature__ = inspect.Signature(parameters=signature_parameters)  # type: ignore[attr-defined]
+        return _factory
+
     def _has_user_defined_sequence_key(self, collection_key: Any) -> bool:
         existing_factory = self.factories.get(get_container_object_id(collection_key, None))
         if existing_factory and not existing_factory.is_synthetic:
@@ -209,6 +224,21 @@ class ContainerRegistry:
                 f"Wireup did not register collection injection for {collection_key!r} "
                 "because the container already has an explicit registration for that key. "
                 "Sequence[T] is reserved for Wireup collection injection. "
+                "Migrate it to a NewType or another distinct collection type.",
+                FutureWarning,
+                stacklevel=4,
+            )
+            return True
+
+        return False
+
+    def _has_user_defined_mapping_key(self, collection_key: Any) -> bool:
+        existing_factory = self.factories.get(get_container_object_id(collection_key, None))
+        if existing_factory and not existing_factory.is_synthetic:
+            warnings.warn(
+                f"Wireup did not register collection injection for {collection_key!r} "
+                "because the container already has an explicit registration for that key. "
+                "Mapping[Hashable, T] is reserved for Wireup collection injection. "
                 "Migrate it to a NewType or another distinct collection type.",
                 FutureWarning,
                 stacklevel=4,
@@ -242,6 +272,36 @@ class ContainerRegistry:
             self._register(
                 klass=collection_key,
                 factory_fn=self._create_sequence_collection_factory(klass, real_qualifiers),
+                lifetime=self._get_collection_lifetime([self.get_lifetime(klass, qual) for qual in real_qualifiers]),
+                auto_discover_interfaces=False,
+                is_synthetic_factory=True,
+            )
+
+    def _register_mapping_collections(self) -> None:
+        for klass, qualifiers in dict(self.impls).items():
+            # Only real registration keys should contribute to collection members.
+            # Synthetic aliases like raw optional-compat or Mapping[Hashable, T] keys must not participate here.
+            real_qualifiers = [
+                qualifier
+                for qualifier in qualifiers
+                if not self.factories[get_container_object_id(klass, qualifier)].is_synthetic
+            ]
+
+            if not real_qualifiers:
+                continue
+
+            collection_key = Mapping[Hashable, klass]  # type:ignore[valid-type]
+
+            if self._has_user_defined_mapping_key(collection_key):
+                continue
+
+            existing_factory = self.factories.get(get_container_object_id(collection_key, None))
+            if existing_factory and existing_factory.is_synthetic:
+                continue
+
+            self._register(
+                klass=collection_key,
+                factory_fn=self._create_mapping_collection_factory(klass, real_qualifiers),
                 lifetime=self._get_collection_lifetime([self.get_lifetime(klass, qual) for qual in real_qualifiers]),
                 auto_discover_interfaces=False,
                 is_synthetic_factory=True,

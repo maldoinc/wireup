@@ -1,8 +1,8 @@
 from functools import lru_cache
-from typing import AsyncIterator, Dict, Iterator
+from collections.abc import AsyncIterator, Iterator
 
 import fastapi
-from typing_extensions import Annotated
+from typing import Annotated
 
 from wireup_benchmarks import services
 from wireup_benchmarks.services import A, B, C, D, E, F, G, H, I, Settings, make_h, make_i
@@ -74,7 +74,7 @@ router = fastapi.APIRouter()
 @router.get("/fastapi/singleton")
 async def fastapi_singleton(
     a: Annotated[A, fastapi.Depends(get_a)], b: Annotated[B, fastapi.Depends(get_b)]
-) -> Dict[str, str]:
+) -> dict[str, str]:
     services.record_request("singleton")
     assert a.start == 10
     assert isinstance(a, A)
@@ -94,7 +94,7 @@ async def fastapi_scoped(
     g: Annotated[G, fastapi.Depends(get_g)],
     h: Annotated[H, fastapi.Depends(get_h)],
     i: Annotated[I, fastapi.Depends(get_i)],
-) -> Dict[str, str]:
+) -> dict[str, str]:
     services.record_request("scoped")
     assert isinstance(c, C)
     assert c is cc
