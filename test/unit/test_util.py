@@ -155,6 +155,18 @@ def test_injection_requires_scope_scoped() -> None:
     assert injection_requires_scope(names_to_inject, container)
 
 
+def test_injectable_type_getattr_raises_wireup_error() -> None:
+    class MyInjectable(InjectableType): ...
+
+    instance = MyInjectable()
+
+    with pytest.raises(
+        WireupError,
+        match=r"You're trying to access the attribute 'foobar' of an unresolved Wireup injectable.",
+    ):
+        instance.foobar  # noqa: B018
+
+
 def test_injection_requires_scope_transient() -> None:
     @wireup.injectable(lifetime="transient")
     class TransientDep:
