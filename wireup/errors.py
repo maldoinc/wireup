@@ -12,6 +12,19 @@ if TYPE_CHECKING:
     from wireup.ioc.types import AnyCallable, Qualifier
 
 
+def try_get_wireup_provider_replacement(type_hint: Any) -> Any | None:
+    """Return the matching Provider/AsyncProvider counterpart if the user requested the wrong one."""
+    from wireup.ioc.types import AsyncProvider, Provider  # noqa: PLC0415
+
+    origin = get_origin(type_hint)
+    if origin not in {Provider, AsyncProvider}:
+        return None
+
+    args = get_args(type_hint)
+    inner = args[0] if args else Any
+    return AsyncProvider[inner] if origin is Provider else Provider[inner]  # type: ignore[valid-type]
+
+
 def try_get_wireup_collection_replacement(type_hint: Any) -> Any | None:
     """Return the Wireup collection type for unsupported aliases."""
     return try_get_wireup_sequence_replacement(type_hint) or try_get_wireup_mapping_replacement(type_hint)
@@ -135,9 +148,12 @@ class UnknownServiceRequestedError(WireupError):
             super().__init__(collection_message)
             return
 
+        provider_hint = ""
+        if suggested := try_get_wireup_provider_replacement(klass):
+            provider_hint = f" Did you mean to use {suggested!r} instead?"
         msg = (
-            f"Cannot create unknown injectable {format_name(klass, qualifier)}. "
-            "Make sure it is registered with the container."
+            f"Cannot create unknown injectable {format_name(klass, qualifier)}."
+            f"{provider_hint} Make sure it is registered with the container."
         )
         super().__init__(msg)
 

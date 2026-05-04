@@ -91,9 +91,28 @@ async def test_provider_returns_instance_async() -> None:
 async def test_provider_returns_instance_async_raises_when_requesting_wrong_provider() -> None:
     container = wireup.create_async_container(injectables=[make_async_dependency])
 
-    with pytest.raises(WireupError, match="unknown injectable"):
+    with pytest.raises(WireupError, match=r"unknown injectable.*Did you mean to use.*AsyncProvider\[.*AsyncDependency\]"):
         # This raises since AsyncDependency has an AsyncProvider, not the synchronous one.
         await run(container.get(Provider[AsyncDependency]))
+
+
+async def test_provider_wrong_provider_suggests_async_alternative_in_container_get() -> None:
+    """Requesting AsyncProvider for a sync factory should hint at Provider."""
+    container = wireup.create_async_container(injectables=[ScopedService])
+
+    with pytest.raises(WireupError, match=r"unknown injectable.*Did you mean to use.*Provider\[.*ScopedService\]"):
+        await run(container.get(AsyncProvider[ScopedService]))
+
+
+def test_provider_wrong_provider_suggests_alternative_in_dependency_check() -> None:
+    """Requesting wrong provider in a dependency should hint at the alternative."""
+
+    @injectable
+    def bar(p: AsyncProvider[Greeter]) -> str:
+        return "hello"
+
+    with pytest.raises(WireupError, match=r"unknown dependency.*Did you mean to use.*Provider\[.*Greeter\]"):
+        wireup.create_sync_container(injectables=[bar, Greeter])
 
 
 async def test_provider_respects_lifetime_rules() -> None:

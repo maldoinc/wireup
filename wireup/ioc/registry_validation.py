@@ -6,6 +6,7 @@ from wireup.errors import (
     UnknownParameterError,
     WireupError,
     try_get_wireup_collection_replacement,
+    try_get_wireup_provider_replacement,
 )
 from wireup.ioc.type_analysis import analyze_type
 from wireup.ioc.types import AnnotatedParameter, ConfigInjectionRequest, get_container_object_id
@@ -115,6 +116,8 @@ def assert_dependency_exists(
 
         type_str = format_name(analyze_type(parameter.klass).raw_type, parameter.qualifier_value)
         msg = f"Parameter '{name}' of {stringify_type(target)} has an unknown dependency on {type_str}."
+        if suggested := try_get_wireup_provider_replacement(parameter.klass):
+            msg += f" Did you mean to use {suggested!r} instead?"
         raise WireupError(msg)
 
 
