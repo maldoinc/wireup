@@ -70,11 +70,12 @@ def _create_provider_factory(klass: Any, qualifier: Qualifier | None) -> Callabl
 def _create_async_provider_factory(
     klass: Any, qualifier: Qualifier | None
 ) -> Callable[[BaseContainer], AsyncProvider[Any]]:
-    async def _getter(container: BaseContainer) -> Any:
-        return await container.get(klass, qualifier)  # type: ignore[attr-defined]
 
     def _factory(container: BaseContainer) -> AsyncProvider[Any]:
-        return AsyncProvider(lambda: _getter(container))
+        async def _getter() -> Any:
+            return await container.get(klass, qualifier)  # type: ignore[attr-defined]
+
+        return AsyncProvider(_getter)
 
     return _factory
 
