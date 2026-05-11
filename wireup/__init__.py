@@ -7,15 +7,17 @@ from wireup.ioc.container import (
 )
 from wireup.ioc.container.async_container import AsyncContainer, ScopedAsyncContainer
 from wireup.ioc.container.sync_container import ScopedSyncContainer, SyncContainer
-from wireup.ioc.types import InjectableOverride
+from wireup.ioc.types import AsyncProvider, InjectableOverride, Provider
 from wireup.ioc.types import InjectableOverride as ServiceOverride
 from wireup.util import qualified
 
 __all__ = [
     "AsyncContainer",
+    "AsyncProvider",
     "Inject",
     "InjectableOverride",
     "Injected",
+    "Provider",
     "ScopedAsyncContainer",
     "ScopedSyncContainer",
     "ServiceOverride",

@@ -2,10 +2,10 @@ from dataclasses import dataclass
 
 import pytest
 import wireup
+from wireup import AsyncProvider, Provider
 from wireup._annotations import Injected, injectable
 from wireup._decorators import inject_from_container
 from wireup.errors import WireupError
-from wireup.ioc.types import AsyncProvider, Provider
 
 from test.conftest import Container
 from test.unit.services import Greeter
@@ -91,7 +91,9 @@ async def test_provider_returns_instance_async() -> None:
 async def test_provider_returns_instance_async_raises_when_requesting_wrong_provider() -> None:
     container = wireup.create_async_container(injectables=[make_async_dependency])
 
-    with pytest.raises(WireupError, match=r"unknown injectable.*Did you mean to use.*AsyncProvider\[.*AsyncDependency\]"):
+    with pytest.raises(
+        WireupError, match=r"unknown injectable.*Did you mean to use.*AsyncProvider\[.*AsyncDependency\]"
+    ):
         # This raises since AsyncDependency has an AsyncProvider, not the synchronous one.
         await run(container.get(Provider[AsyncDependency]))
 
