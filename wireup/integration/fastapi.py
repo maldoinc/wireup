@@ -1,11 +1,10 @@
 import contextlib
 from collections.abc import AsyncIterator, Callable, Iterable
-from typing import (
-    Any,
-)
+from typing import Any
 
 import fastapi
 from fastapi import FastAPI, Request, WebSocket
+from fastapi.responses import HTMLResponse
 from fastapi.routing import APIRoute, APIWebSocketRoute
 from starlette.routing import BaseRoute
 from typing_extensions import Protocol
@@ -31,6 +30,9 @@ from wireup.ioc.util import (
     injection_requires_scope,
     is_wireup_injected,
 )
+from wireup.renderer._consumers import ConsumerMetadata, record_injected_consumer
+from wireup.renderer._dependencies import DependencyReference, ServiceDependencyReference
+from wireup.renderer.full_page import GraphOptions, render_graph_page
 
 __all__ = [
     "WireupRoute",
@@ -54,10 +56,11 @@ class WireupRoute(APIRoute):
         super().__init__(path=path, endpoint=endpoint, **kwargs)
 
 
-def _inject_route_with_connection_context(
+def _inject_route_with_connection_context(  # noqa: PLR0913
     *,
     container: AsyncContainer,
     target: AnyCallable,
+    consumer_metadata: ConsumerMetadata,
     http_connection_param_name: str | None,
     remove_http_connection_from_arguments: bool,
     is_websocket_route: bool,
@@ -71,6 +74,7 @@ def _inject_route_with_connection_context(
         }
         if http_connection_param_name
         else None,
+        consumer_metadata=consumer_metadata,
     )(target)
 
 
@@ -81,6 +85,32 @@ def _ensure_http_connection_param(route: APIRoute | APIWebSocketRoute) -> tuple[
         route.dependant.http_connection_param_name = "_fastapi_http_connection"
 
     return route.dependant.http_connection_param_name, not has_connection_param_in_signature
+
+
+def _get_consumer_metadata(route: APIRoute | APIWebSocketRoute) -> ConsumerMetadata:
+    methods = () if isinstance(route, APIWebSocketRoute) else tuple(sorted(route.methods or []))
+    method_label = "WS" if isinstance(route, APIWebSocketRoute) else "|".join(methods) if methods else "ROUTE"
+    consumer_id = f"{method_label} {route.path}"
+    extra_dependencies: tuple[DependencyReference, ...] = ()
+
+    bound_instance = getattr(route.dependant.call, "__self__", None)
+    if bound_instance is not None:
+        extra_dependencies = (
+            ServiceDependencyReference(
+                param_name="handler",
+                service_id=f"{bound_instance.__class__.__module__}.{bound_instance.__class__.__qualname__}",
+                qualifier=None,
+            ),
+        )
+
+    return ConsumerMetadata(
+        consumer_id=consumer_id,
+        kind="fastapi_websocket" if isinstance(route, APIWebSocketRoute) else "fastapi_route",
+        label=f"🌐 {consumer_id}",
+        group="FastAPI",
+        module=route.dependant.call.__module__,
+        extra_dependencies=extra_dependencies,
+    )
 
 
 def _inject_routes(
@@ -100,12 +130,27 @@ def _inject_routes(
 
         names_to_inject = get_inject_annotated_parameters(route.dependant.call)
         if not names_to_inject:
+            bound_instance = getattr(route.dependant.call, "__self__", None)
+            if bound_instance is not None:
+                consumer_metadata = _get_consumer_metadata(route)
+                record_injected_consumer(
+                    container,
+                    target=route.dependant.call,
+                    names_to_inject=names_to_inject,
+                    metadata=consumer_metadata,
+                )
             continue
+
+        consumer_metadata = _get_consumer_metadata(route)
 
         # When using the asgi middleware, the request context variable is set there.
         # and we can get the scoped container from the request.
         if isinstance(route, APIRoute) and is_using_asgi_middleware:
-            route.dependant.call = inject_from_container(container, get_request_container)(route.dependant.call)
+            route.dependant.call = inject_from_container(
+                container,
+                get_request_container,
+                consumer_metadata=consumer_metadata,
+            )(route.dependant.call)
             continue
 
         # We now are either in a websocket endpoint or HTTP without middleware_mode.
@@ -119,10 +164,24 @@ def _inject_routes(
         route.dependant.call = _inject_route_with_connection_context(
             container=container,
             target=route.dependant.call,
+            consumer_metadata=consumer_metadata,
             http_connection_param_name=http_connection_param_name,
             remove_http_connection_from_arguments=remove_http_connection_from_arguments,
             is_websocket_route=isinstance(route, APIWebSocketRoute),
         )
+
+
+def _setup_graph_routes(app: FastAPI, *, options: GraphOptions) -> None:
+    async def _wireup_graph_page(request: Request) -> HTMLResponse:
+        return HTMLResponse(
+            render_graph_page(
+                get_app_container(request.app),
+                title=f"{app.title} - Wireup Graph",
+                options=options,
+            )
+        )
+
+    app.add_api_route(options.graph_endpoint_path, _wireup_graph_page, methods=["GET"], response_class=HTMLResponse)
 
 
 async def _instantiate_class_based_route(
@@ -187,12 +246,14 @@ def _update_lifespan(
     app.router.lifespan_context = lifespan
 
 
-def setup(
+def setup(  # noqa: PLR0913
     container: AsyncContainer,
     app: FastAPI,
     *,
     class_based_handlers: Iterable[type[_ClassBasedHandlersProtocol]] | None = None,
     middleware_mode: bool = False,
+    add_graph_endpoint: bool = False,
+    graph_endpoint_options: GraphOptions | None = None,
 ) -> None:
     """Integrate Wireup with FastAPI.
 
@@ -209,11 +270,16 @@ def setup(
     Warning: Do not include these with fastapi directly.
     :param middleware_mode: If True, the container is exposed in fastapi middleware.
     Note, for this to work correctly, there should be no more middleware added after the call to this function.
+    :param add_graph_endpoint: If True, mount the `/_wireup` endpoint exposing
+        the Wireup graph viewer and raw graph JSON.
+    :param graph_endpoint_options: Optional graph endpoint configuration.
 
     For more details, visit: https://maldoinc.github.io/wireup/latest/integrations/fastapi/
     """
     app.state.wireup_container = container
     _expose_wireup_task(container)
+    if add_graph_endpoint:
+        _setup_graph_routes(app, options=graph_endpoint_options or GraphOptions())
     if middleware_mode:
         app.add_middleware(WireupAsgiMiddleware, include_websocket=False)
     _update_lifespan(

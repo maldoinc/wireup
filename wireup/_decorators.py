@@ -15,6 +15,7 @@ from wireup.ioc.util import (
     get_inject_annotated_parameters,
     get_valid_injection_annotated_parameters,
 )
+from wireup.renderer._consumers import ConsumerMetadata, record_injected_consumer
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -62,6 +63,7 @@ def inject_from_container(
     container: SyncContainer | AsyncContainer,
     scoped_container_supplier: Callable[[], ScopedSyncContainer | ScopedAsyncContainer] | None = None,
     _context_creator: dict[Any, str] | None = None,
+    consumer_metadata: ConsumerMetadata | None = None,
     *,
     hide_annotated_names: bool = False,
 ) -> Callable[[Callable[P, R]], Callable[..., R]]:
@@ -90,6 +92,7 @@ def inject_from_container(
             container=container,
             scoped_container_supplier=scoped_container_supplier,
             context_creator=_context_creator,
+            consumer_metadata=consumer_metadata,
             hide_annotated_names=hide_annotated_names,
         )
 
@@ -102,6 +105,7 @@ def inject_from_container_util(  # noqa: PLR0913
     container: SyncContainer | AsyncContainer | None,
     scoped_container_supplier: Callable[[], ScopedSyncContainer | ScopedAsyncContainer] | None = None,
     context_creator: dict[Any, str] | None = None,
+    consumer_metadata: ConsumerMetadata | None = None,
     *,
     hide_annotated_names: bool,
 ) -> Callable[..., R]:
@@ -111,6 +115,14 @@ def inject_from_container_util(  # noqa: PLR0913
 
     if not names_to_inject:
         return target
+
+    if container is not None:
+        record_injected_consumer(
+            container,
+            target=target,
+            names_to_inject=names_to_inject,
+            metadata=consumer_metadata,
+        )
 
     res = compile_injection_wrapper(
         target=target,

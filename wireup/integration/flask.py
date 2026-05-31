@@ -1,16 +1,68 @@
-from flask import Flask, g
+from flask import Flask, Response, g
 
 from wireup._decorators import inject_from_container
 from wireup.ioc.container.sync_container import ScopedSyncContainer, SyncContainer
+from wireup.renderer._consumers import ConsumerMetadata
+from wireup.renderer.full_page import GraphOptions, render_graph_page
+
+GraphEndpointOptions = GraphOptions  # backward-compat alias
+
+__all__ = [
+    "GraphEndpointOptions",
+    "get_app_container",
+    "get_request_container",
+    "setup",
+]
 
 
 def _inject_views(container: SyncContainer, app: Flask) -> None:
-    inject_scoped = inject_from_container(container, get_request_container)
+    app.view_functions = {
+        endpoint: inject_from_container(
+            container,
+            get_request_container,
+            consumer_metadata=_flask_consumer_metadata(app, endpoint, view),
+        )(view)
+        for endpoint, view in app.view_functions.items()
+    }
 
-    app.view_functions = {name: inject_scoped(view) for name, view in app.view_functions.items()}
+
+def _flask_consumer_metadata(app: Flask, endpoint: str, view: object) -> ConsumerMetadata:
+    rules = sorted((rule for rule in app.url_map.iter_rules() if rule.endpoint == endpoint), key=lambda item: item.rule)
+    paths = tuple(rule.rule for rule in rules)
+    methods = tuple(dict.fromkeys(method for rule in rules for method in sorted(rule.methods - {"HEAD", "OPTIONS"})))
+    method_label = "|".join(methods) if methods else "ROUTE"
+    path_label = ", ".join(paths) if paths else endpoint
+    consumer_id = f"{method_label} {path_label}"
+
+    return ConsumerMetadata(
+        consumer_id=consumer_id,
+        kind="flask_route",
+        label=f"🌐 {consumer_id}",
+        group="Flask",
+        module=getattr(view, "__module__", "unknown"),
+    )
 
 
-def setup(container: SyncContainer, app: Flask) -> None:
+def _setup_graph_route(app: Flask, *, options: GraphOptions) -> None:
+    @app.get(options.graph_endpoint_path)
+    def _wireup_graph_page() -> Response:
+        return Response(
+            render_graph_page(
+                get_app_container(app),
+                title=f"{app.name} - Wireup Graph",
+                options=options,
+            ),
+            mimetype="text/html",
+        )
+
+
+def setup(
+    container: SyncContainer,
+    app: Flask,
+    *,
+    add_graph_endpoint: bool = False,
+    graph_endpoint_options: GraphOptions | None = None,
+) -> None:
     """Integrate Wireup with Flask.
 
     Setup performs the following:
@@ -30,6 +82,8 @@ def setup(container: SyncContainer, app: Flask) -> None:
     app.before_request(_before_request)
     app.teardown_request(_teardown_request)
 
+    if add_graph_endpoint:
+        _setup_graph_route(app, options=graph_endpoint_options or GraphOptions())
     _inject_views(container, app)
     app.wireup_container = container  # type: ignore[reportAttributeAccessIssue]
 
