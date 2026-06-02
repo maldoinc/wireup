@@ -393,12 +393,17 @@ class ContainerRegistry:
 
                 return raw_type_instance
 
+            # The alias factory depends on the normalized Optional[T] instance. When the
+            # original factory was registered with a qualifier, carry it over so the
+            # dependency resolves to the qualified factory instead of an unqualified one.
+            raw_type_annotation = klass if qualifier is None else Annotated[klass, InjectableQualifier(qualifier)]
+
             compat_fn.__signature__ = inspect.Signature(  # type: ignore[attr-defined]
                 parameters=[
                     inspect.Parameter(
                         "raw_type_instance",
                         kind=inspect.Parameter.POSITIONAL_OR_KEYWORD,
-                        annotation=klass,
+                        annotation=raw_type_annotation,
                     )
                 ],
             )
