@@ -1,10 +1,9 @@
+import warnings
 from dataclasses import dataclass
-from typing import Annotated, Optional, Union
+from typing import Annotated, Optional
 
-import pytest
 import wireup
 from wireup._annotations import Inject, Injected
-from wireup.errors import DuplicateServiceRegistrationError
 
 
 class MaybeThing: ...
@@ -50,37 +49,75 @@ def test_inject_from_container_handles_optionals() -> None:
     main()
 
 
-def test_getting_optional_service_via_plain_type_emits_deprecation_warning() -> None:
-    @wireup.injectable
+def test_getting_optional_service_via_plain_type_resolves_silently() -> None:
     class Foo:
         pass
 
-    @wireup.injectable
+    def make_foo() -> Foo | None:
+        return Foo()
+
+    container = wireup.create_sync_container(injectables=[wireup.injectable(make_foo)])
+
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")
+        inst = container.get(Foo)
+
+    assert isinstance(inst, Foo)
+    assert inst is container.get(optional_hint(Foo))
+    assert inst is container.get(Foo | None)
+
+
+async def test_getting_optional_service_via_plain_type_resolves_silently_async() -> None:
+    class Foo:
+        pass
+
+    def make_foo() -> Foo | None:
+        return Foo()
+
+    container = wireup.create_async_container(injectables=[wireup.injectable(make_foo)])
+
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")
+        inst = await container.get(Foo)
+
+    assert isinstance(inst, Foo)
+    assert inst is await container.get(Foo | None)
+
+
+def test_getting_qualified_optional_service_via_plain_type_keeps_qualifier() -> None:
+    class Foo:
+        pass
+
+    @wireup.injectable(qualifier="primary")
     def make_foo() -> Foo | None:
         return Foo()
 
     container = wireup.create_sync_container(injectables=[make_foo])
 
-    with pytest.warns(DeprecationWarning) as record:
-        inst = container.get(Foo)
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")
+        inst = container.get(Foo, qualifier="primary")
 
-    assert len(record) == 1
-    assert "registered as optional" in str(record[0].message)
-
-    assert inst is container.get(optional_hint(Foo))
-    assert inst is container.get(Foo | None)
+    assert isinstance(inst, Foo)
+    assert inst is container.get(Foo | None, qualifier="primary")
 
 
-def test_registering_optional_and_plain_type_raises_duplicate() -> None:
-    @wireup.injectable
+def test_registering_optional_and_plain_type_are_distinct() -> None:
     class Foo:
         pass
 
-    @wireup.injectable
     def make_optional() -> Foo | None:
         return None
 
-    # Registering both an Optional[T] factory and a T factory together raises since
-    # wireup will add a backwards-compatible factory for T when registering it as optional.
-    with pytest.raises(DuplicateServiceRegistrationError):
-        wireup.create_sync_container(injectables=[make_optional, Foo])
+    def make_plain() -> Foo:
+        return Foo()
+
+    # The Optional[T] factory and a plain T factory are distinct registration keys:
+    # T | None and T no longer collide, so retrieving each returns its own instance
+    # and container.get(T) resolves the plain factory directly (not the optional fallback).
+    container = wireup.create_sync_container(
+        injectables=[wireup.injectable(make_optional), wireup.injectable(make_plain)]
+    )
+
+    assert container.get(Foo | None) is None
+    assert isinstance(container.get(Foo), Foo)
