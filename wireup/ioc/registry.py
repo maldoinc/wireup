@@ -7,6 +7,8 @@ from collections import defaultdict
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Callable, TypeVar, Union
 
+from typing_extensions import Annotated
+
 from wireup.errors import (
     AsTypeMismatchError,
     DuplicateQualifierForInterfaceError,
@@ -27,6 +29,7 @@ from wireup.ioc.types import (
     CallableType,
     ContainerObjectIdentifier,
     InjectableLifetime,
+    InjectableQualifier,
     get_container_object_id,
 )
 from wireup.ioc.util import ensure_is_type, get_callable_type, get_globals
@@ -260,7 +263,7 @@ class ContainerRegistry:
                     inspect.Parameter(
                         "raw_type_instance",
                         kind=inspect.Parameter.POSITIONAL_OR_KEYWORD,
-                        annotation=klass,
+                        annotation=Annotated[klass, InjectableQualifier(qualifier)],
                     )
                 ],
             )
