@@ -398,7 +398,7 @@ class ContainerRegistry:
                     inspect.Parameter(
                         "raw_type_instance",
                         kind=inspect.Parameter.POSITIONAL_OR_KEYWORD,
-                        annotation=klass,
+                        annotation=Annotated[klass, InjectableQualifier(qualifier)],
                     )
                 ],
             )
