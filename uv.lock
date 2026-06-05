@@ -1540,7 +1540,7 @@ wheels = [
 
 [[package]]
 name = "wireup"
-version = "2.11.0"
+version = "2.11.1"
 source = { editable = "." }
 dependencies = [
     { name = "typing-extensions" },
