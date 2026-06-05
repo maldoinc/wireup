@@ -71,6 +71,30 @@ def test_getting_optional_service_via_plain_type_emits_deprecation_warning() -> 
     assert inst is container.get(Foo | None)
 
 
+def test_optional_factory_with_qualifier() -> None:
+    # https://github.com/maldoinc/wireup/issues/138
+    # A factory returning Optional[T] with a qualifier must preserve the qualifier
+    # on the backwards-compatibility alias factory created for the raw type T.
+    @wireup.injectable
+    class AuthContext:
+        pass
+
+    @wireup.injectable
+    def require_authentication() -> AuthContext:
+        return AuthContext()
+
+    @wireup.injectable(qualifier="optional")
+    def maybe_get_authentication() -> AuthContext | None:
+        return None
+
+    container = wireup.create_sync_container(
+        injectables=[require_authentication, maybe_get_authentication],
+    )
+
+    assert isinstance(container.get(AuthContext), AuthContext)
+    assert container.get(AuthContext | None, qualifier="optional") is None
+
+
 def test_registering_optional_and_plain_type_raises_duplicate() -> None:
     @wireup.injectable
     class Foo:
