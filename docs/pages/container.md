@@ -146,6 +146,9 @@ See [Testing](testing.md) for details.
 
 The container can inject itself just like any other dependency. This is an advanced feature for infrastructure code that needs runtime container access. This pattern is generally not recommended for regular injectables when you know the required dependencies ahead of time.
 
+Because the container is injectable, you don't need to keep a global container variable or store the
+container in framework app state just to create scopes or wrap callables later.
+
 Depend on the root container by type:
 
 - `SyncContainer`, `ScopedSyncContainer` when using a synchronous container created via `wireup.create_sync_container`

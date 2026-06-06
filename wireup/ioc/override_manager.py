@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import sys
 import warnings
 from collections import defaultdict
 from contextlib import contextmanager
@@ -17,14 +16,14 @@ if TYPE_CHECKING:
     from wireup.ioc.types import ContainerObjectIdentifier, InjectableOverride, Qualifier
 
 
-@dataclass(**({"slots": True} if sys.version_info >= (3, 10) else {}))
+@dataclass(slots=True)
 class _OverrideFrame:
     new_value: Any
     original_factory: CompiledFactory
     original_scoped_factory: CompiledFactory
 
 
-@dataclass(**({"slots": True} if sys.version_info >= (3, 10) else {}))
+@dataclass(slots=True)
 class _GetActiveOverrideResult:
     found: bool
     value: Any

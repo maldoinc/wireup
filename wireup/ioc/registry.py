@@ -277,7 +277,7 @@ class ContainerRegistry:
     def _register_mapping_collections(self) -> None:
         for klass, qualifiers in dict(self.impls).items():
             # Only real registration keys should contribute to collection members.
-            # Synthetic keys such as Mapping[Hashable, T] must not participate here.
+            # Synthetic aliases like raw optional-compat or Mapping[Hashable, T] keys must not participate here.
             real_qualifiers = [
                 qualifier
                 for qualifier in qualifiers

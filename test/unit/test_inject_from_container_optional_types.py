@@ -85,6 +85,9 @@ async def test_getting_optional_service_via_plain_type_resolves_silently_async()
 
 
 def test_getting_qualified_optional_service_via_plain_type_keeps_qualifier() -> None:
+    # https://github.com/maldoinc/wireup/issues/138
+    # A qualified Optional[T] factory must keep its qualifier so container.get(T, qualifier=...)
+    # resolves it instead of failing with a spurious self-dependency error.
     class Foo:
         pass
 
