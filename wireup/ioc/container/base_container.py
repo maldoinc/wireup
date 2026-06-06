@@ -87,6 +87,22 @@ class BaseContainer:
         """Override registered container injectables with new values."""
         return self._override_mgr
 
+    def _optional_compat_klass(self, klass: Callable[..., T] | None, qualifier: Qualifier | None) -> Any:
+        """Backwards-compat fallback for ``container.get``.
+
+        A factory registered as ``Optional[T]`` is also retrievable via ``container.get(T)``.
+        Returns ``T | None`` when that registration exists (so the caller can resolve against it),
+        otherwise ``None``. Only applies to ``container.get``; injected dependencies resolve by
+        their actual annotated type.
+        """
+        try:
+            optional_klass = klass | None  # type: ignore[operator]
+        except TypeError:
+            return None
+
+        obj_id = optional_klass if qualifier is None else (optional_klass, qualifier)
+        return optional_klass if obj_id in self._factories else None
+
     @overload
     def _synchronous_get(self, klass: type[T], qualifier: Qualifier | None = None) -> T: ...
     @overload
@@ -125,6 +141,9 @@ class BaseContainer:
                 raise WireupError(msg)
 
             return compiled_factory.factory(self)  # type:ignore[no-any-return]
+
+        if (optional_klass := self._optional_compat_klass(klass, qualifier)) is not None:
+            return self._synchronous_get(optional_klass, qualifier)  # type: ignore[no-any-return]
 
         raise UnknownServiceRequestedError(klass, qualifier)
 
