@@ -6,7 +6,7 @@ from collections.abc import Awaitable, Callable
 from contextvars import ContextVar
 from dataclasses import dataclass
 from types import ModuleType
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
 import django
 import django.urls
@@ -25,10 +25,6 @@ from wireup.ioc.container.base_container import BaseContainer
 from wireup.ioc.container.sync_container import ScopedSyncContainer
 from wireup.ioc.types import ConfigInjectionRequest
 from wireup.ioc.util import get_valid_injection_annotated_parameters
-
-if TYPE_CHECKING:
-    from wireup.integration.django import WireupSettings
-
 
 _request_container: ContextVar[BaseContainer] = ContextVar("_wireup_request_container")
 
