@@ -41,3 +41,20 @@ async def ws(
 
 For injecting `fastapi.Request` and `fastapi.WebSocket` into scoped services, see
 [Request and WebSocket Context in Services](context_in_services.md).
+
+## Improve Injection Performance
+
+Use `WireupRoute` as the `route_class` for your FastAPI routers to improve injection performance.
+
+```python
+from wireup.integration.fastapi import WireupRoute
+
+router = fastapi.APIRouter(route_class=WireupRoute)
+```
+
+By default, FastAPI inspects every route parameter and will try to resolve even those meant only for Wireup.
+`WireupRoute` hides Wireup-specific parameter names (`Injected[...]`, `Annotated[..., Inject(...)]`)
+from FastAPI, avoiding duplicated processing.
+
+It is an optional optimization and not required for injection to work, but recommended for better performance.
+Set it on every router individually that uses Wireup injection.
