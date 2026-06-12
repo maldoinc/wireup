@@ -91,8 +91,9 @@ to bind a concrete class to a Protocol or an Abstract Base Class.
 
 ## Multiple Implementations
 
-When you have multiple implementations of the same type, use **qualifiers** to distinguish between them. This is useful
-for environment-specific behavior (e.g., in-memory cache in development, Redis in production) or feature flags.
+When you have multiple implementations of the same type in the same container, use
+**qualifiers** to distinguish between them. This is useful when you need both implementations
+at the same time (e.g., a primary and a replica database, or multiple cache backends).
 
 ```python
 from typing import Annotated
