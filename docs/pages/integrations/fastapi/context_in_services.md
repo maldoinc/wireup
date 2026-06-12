@@ -1,5 +1,5 @@
 ---
-description: Inject fastapi.Request and fastapi.WebSocket into Wireup scoped services for request and connection-aware service logic.
+description: Inject fastapi.Request and fastapi.WebSocket into Wireup scoped services for request, security, and connection-aware service logic.
 ---
 
 # Request and WebSocket Context in Services
@@ -51,17 +51,46 @@ class WebSocketSessionService:
         await self.websocket.send_text("connected")
 ```
 
-## Use Alongside Route Injection
 
-Route handlers still use `Injected[...]` as usual:
+## FastAPI Security and OAuth Scopes
+
+Keep OAuth, `Security(...)`, and OpenAPI scope declarations in FastAPI's security system. After the security dependency
+resolves the authenticated user, store the value on `request.state`; scoped Wireup services can then read it through the
+injected `fastapi.Request`.
 
 ```python
-from wireup import Injected
+from typing import Annotated, NewType
+
+from fastapi import Request, Security
+from fastapi.security import OAuth2PasswordBearer, SecurityScopes
+from wireup import Injected, injectable
+
+oauth2_scheme = OAuth2PasswordBearer(
+    tokenUrl="token",
+    scopes={"profile": "Read the current user's profile"},
+)
+
+CurrentUserId = NewType("CurrentUserId", str)
 
 
-@app.get("/me")
-async def me(auth: Injected[HttpAuthenticationService]):
-    return {"user_id": auth.current_user_id()}
+async def load_current_user(
+    request: Request,
+    security_scopes: SecurityScopes,
+    token: Annotated[str, Security(oauth2_scheme)],
+) -> None:
+    user_id = await verify_token(token, security_scopes.scopes)
+    request.state.current_user_id = user_id
+
+
+@injectable(lifetime="scoped")
+def current_user_id_factory(request: Request) -> CurrentUserId:
+    return CurrentUserId(request.state.current_user_id)
+
+
+@app.get("/me", dependencies=[Security(load_current_user, scopes=["profile"])])
+async def me(user_id: Injected[CurrentUserId]):
+    return {"user_id": user_id}
 ```
 
-For route signature patterns, see [Inject in Routes](inject_in_routes.md).
+This keeps FastAPI responsible for security dependencies and generated OpenAPI documentation, while Wireup remains
+responsible for service wiring after the request context has been established.

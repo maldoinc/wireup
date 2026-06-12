@@ -96,7 +96,7 @@ See [What Wireup Validates](../../what_wireup_validates.md) for the full rules.
 ## Detailed Guides
 
 - [Inject in Routes](inject_in_routes.md): HTTP/WebSocket handler injection and config value injection in route signatures.
-- [Request and WebSocket Context in Services](context_in_services.md): inject `fastapi.Request` and `fastapi.WebSocket` into Wireup services.
+- [Request and WebSocket Context in Services](context_in_services.md): inject `fastapi.Request` and `fastapi.WebSocket` into Wireup services, including FastAPI security/OAuth context.
 - [Class-Based Handlers](class_based_handlers.md): zero per-request constructor resolution and `WireupRoute` optimizations.
 - [Request-Time Injection](request_time_injection.md): injection in decorators, middleware, and other request-time call sites.
 - [Background Tasks](background_tasks.md): inject dependencies into scheduled callbacks with `WireupTask`.
