@@ -79,6 +79,8 @@ pip install wireup
 
 ## Quick Start
 
+Wireup works anywhere, in APIs, CLIs, workers, scripts. Here's what it looks like in FastAPI:
+
 ```python
 import fastapi
 import wireup
@@ -164,7 +166,8 @@ container = wireup.create_sync_container(injectables=[make_settings, make_databa
 
 **3. Package-level registration**
 
-No need to list every injectable manually. Provide entire modules or packages to register all at once.
+Provide entire modules or packages to register all at once, or export explicit injectable lists from each package when
+you want a more visible composition root in larger applications.
 
 ```python
 import app
@@ -181,6 +184,81 @@ container = wireup.create_sync_container(
 
 ## More Features
 
+
+### 🔑 The `@injectable` API
+
+Instead of separate registration APIs for services, factories, resources, and async resources, Wireup's `@injectable` API uses standard Python constructs to determine how a dependency behaves.
+
+```python
+# Class → dependency
+@injectable
+class UserService: ...
+
+# Dataclass → dependency (auto-generated __init__)
+@injectable
+@dataclass
+class OrderProcessor:
+    payment_gateway: PaymentGateway
+    inventory_service: InventoryService
+
+# Function → factory
+@injectable
+def make_client() -> Client:
+    return Client()
+
+# Generator → resource with cleanup
+@injectable
+def database() -> Iterator[Database]:
+    db = Database()
+    try:
+        yield db
+    finally:
+        db.close()
+
+# Async generator → async resource with cleanup
+@injectable
+async def database() -> AsyncIterator[Database]:
+    async with Database() as db:
+        yield db
+```
+
+These modifiers compose. A request-scoped async resource with cleanup is just:
+
+```python
+@injectable(lifetime="scoped") # Scoped lifetime.
+# async def → async dependency
+async def make_foo() -> AsyncIterator[Foo]:
+    async with Foo() as foo:
+        yield foo  # yield → cleanup
+```
+
+No separate provider type needed. Change the function signature and the registration evolves with it. Learn one API and use it everywhere.
+
+
+### 🧰 Advanced Wiring
+
+Wireup keeps the API small, but it is built for larger application graphs.
+
+| Need | Wireup |
+| --- | --- |
+| One shared instance | [`@injectable`](https://maldoinc.github.io/wireup/latest/injectables/) / `lifetime="singleton"` |
+| Per request, job, command, handler, or WebSocket | [`@injectable(lifetime="scoped")`](https://maldoinc.github.io/wireup/latest/lifetimes_and_scopes/) |
+| Fresh instance each resolution | [`@injectable(lifetime="transient")`](https://maldoinc.github.io/wireup/latest/lifetimes_and_scopes/) |
+| Setup and cleanup | [`yield` from a sync or async factory](https://maldoinc.github.io/wireup/latest/resources/) |
+| Configuration | Both [`Inject(config=...)`](https://maldoinc.github.io/wireup/latest/configuration/) values and injectable settings objects |
+| Register an already-created object | [`wireup.instance(...)`](https://maldoinc.github.io/wireup/latest/injectables/) |
+| Dynamic function injection and injectable lookup | Inject the [root or active scoped container](https://maldoinc.github.io/wireup/latest/container/#injecting-the-container) |
+| Interfaces and protocols | [`as_type=...`](https://maldoinc.github.io/wireup/latest/interfaces/) or factory return annotations |
+| Multiple implementations | [Qualifiers](https://maldoinc.github.io/wireup/latest/interfaces/) |
+| All implementations | [`Sequence[T]` or `Mapping[Hashable, T]`](https://maldoinc.github.io/wireup/latest/interfaces/#collection-injection) |
+| Isolated scopes with explicit context sharing (batch jobs, fan-out tasks, multi-tenant processing) | [`container.enter_scope({...})`](https://maldoinc.github.io/wireup/latest/lifetimes_and_scopes/#sharing-context-across-scopes) |
+| Environment-specific graph | [Conditional registration](https://maldoinc.github.io/wireup/latest/conditional_registration/) with normal Python |
+| Generic repositories/services | [Generic dependencies](https://maldoinc.github.io/wireup/latest/generic_dependencies/) |
+| Modular or parametrized registration | [Functions that return injectables](https://maldoinc.github.io/wireup/latest/reusable_bundles/) |
+| Optional or conditional dependencies | [Params with defaults are skipped when unregistered; factories can return `T \| None`](https://maldoinc.github.io/wireup/latest/injectables/#optional-dependencies-and-default-values) |
+
+
+
 ### 🎯 Function Injection
 
 Inject dependencies into CLI commands, background tasks, event handlers, or any standalone function that needs container access.
@@ -191,23 +269,6 @@ def migrate_database(db: Injected[Database], settings: Injected[Settings]) -> No
     ...
 ```
 
-### 📝 Interfaces & Abstractions
-
-Bind implementations to interfaces using Protocols or ABCs.
-
-```python
-class Notifier(Protocol):
-    def notify(self) -> None: ...
-
-@injectable(as_type=Notifier)
-class SlackNotifier:
-    def notify(self) -> None: ...
-
-# SlackNotifier is injected wherever Notifier is requested
-@app.post("/notify")
-def send_notification(notifier: Injected[Notifier]) -> None:
-    notifier.notify()
-```
 
 ### 🏭 Factories & Resources
 
@@ -244,7 +305,7 @@ async def weather_client_factory() -> AsyncIterator[WeatherClient]:
 
 ### 🔄 Lifetimes & Scopes
 
-Declare dependencies as `singleton`, `scoped`, or `transient` to control reuse explicitly.
+Wireup has three lifetimes: `singleton`, `scoped`, and `transient`, plus explicit scope forking from root for unit-of-work patterns like batch jobs, fan-out tasks, and multi-tenant request processing.
 
 ```python
 # Singleton: one instance per application (default)
@@ -252,13 +313,15 @@ Declare dependencies as `singleton`, `scoped`, or `transient` to control reuse e
 class Settings:
     pass
 
-# Async singleton with cleanup — no lru_cache, no app.state
+# Async singleton with cleanup
 @injectable
 async def database_factory(settings: Settings) -> AsyncIterator[AsyncConnection]:
     async with create_async_engine(settings.db_url).connect() as connection:
         yield connection
 
-# Scoped: one instance per request, shared within that request
+# Scoped: one instance for the duration of the current scope.
+# In a web request, that's the request. In a WebSocket, the connection.
+# In a CLI command, the command lifetime. In a worker job, the job.
 @injectable(lifetime="scoped")
 class RequestContext:
     def __init__(self) -> None:
@@ -269,6 +332,81 @@ class RequestContext:
 class OrderProcessor:
     pass
 ```
+
+Wireup enforces lifetime rules at startup to prevent scope leakage, such as an application-wide singleton accidentally
+holding request-scoped state.
+
+
+### 📝 Interfaces & Abstractions
+
+Bind implementations to interfaces using Protocols or ABCs.
+
+```python
+class Notifier(Protocol):
+    def notify(self) -> None: ...
+
+@injectable(as_type=Notifier)
+class SlackNotifier:
+    def notify(self) -> None: ...
+
+# SlackNotifier is injected wherever Notifier is requested
+@app.post("/notify")
+def send_notification(notifier: Injected[Notifier]) -> None:
+    notifier.notify()
+```
+
+When multiple implementations exist, distinguish them with qualifiers:
+
+```python
+@injectable()
+def primary_database(settings: Settings) -> Database:
+    return Database(url=settings.db.primary_dsn)
+
+@injectable(qualifier="readonly")
+def readonly_database(settings: Settings) -> Database:
+    return Database(url=settings.db.replica_dsn)
+
+# Primary (no qualifier) and replica (qualifier) in one service
+@injectable
+class ReportService:
+    def __init__(
+        self,
+        db: Database,
+        replica: Annotated[Database, Inject(qualifier="readonly")],
+    ) -> None:
+        self.db = db
+        self.replica = replica
+```
+
+See [Interfaces & Qualifiers](https://maldoinc.github.io/wireup/latest/interfaces/) for collection injection (`Sequence[T]`, `Mapping[K, T]`) and more.
+
+### 🔀 Fan-out & Isolated Worker Scopes
+
+Wireup uses **isolated scopes with explicit context sharing** rather than nested scope inheritance. Each worker scope gets exactly the context it needs without implicit leakage of the parent's full graph.
+
+The container is injectable too, so you never need a global reference or `app.state` to create child scopes.
+
+```python
+@app.post("/batch")
+async def process_batch(
+    doc_ids: list[str],
+    container: Injected[wireup.AsyncContainer],
+    ctx: Injected[TenantContext],
+) -> list[Result]:
+    # TenantContext is shared while everything else is isolated per worker.
+    async def process_one(doc_id: str) -> Result:
+        async with container.enter_scope({TenantContext: ctx}) as scope:
+            # DocumentService and all its dependencies (db connections, transactions, etc.)
+            # are isolated per worker
+            document_service = await scope.get(DocumentService)
+            return await process_document(document_service, doc_id)
+
+    return await asyncio.gather(*[process_one(doc_id) for doc_id in doc_ids])
+```
+
+Because child scopes don't silently inherit the parent graph, parallel workers can never accidentally share or corrupt each other's state.
+
+See [Lifetimes & Scopes](https://maldoinc.github.io/wireup/latest/lifetimes_and_scopes/) for the full model.
 
 ### 🛡️ Startup Validation
 
@@ -298,6 +436,7 @@ with container.override.injectable(target=Database, new=in_memory_database):
     # for the duration of this context manager
     response = client.get("/users")
 ```
+
 
 ## 📚 Documentation
 
