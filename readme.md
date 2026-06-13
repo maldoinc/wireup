@@ -404,7 +404,7 @@ async def process_batch(
     return await asyncio.gather(*[process_one(doc_id) for doc_id in doc_ids])
 ```
 
-Because child scopes don't silently inherit the parent graph, parallel workers can never accidentally share or corrupt each other's state.
+Because child scopes don't silently inherit the parent graph, parallel workers can't accidentally share state through the container.
 
 See [Lifetimes & Scopes](https://maldoinc.github.io/wireup/latest/lifetimes_and_scopes/) for the full model.
 
