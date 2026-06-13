@@ -245,10 +245,12 @@ async def process_batch(
 ) -> list[Result]:
     # RequestContext and TenantContext are shared while everything else is isolated per worker.
     async def process_one(doc_id: str) -> Result:
-        async with container.enter_scope({
-            RequestContext: request_ctx,
-            TenantContext: tenant_ctx,
-        }) as scope:
+        async with container.enter_scope(
+            {
+                RequestContext: request_ctx,
+                TenantContext: tenant_ctx,
+            }
+        ) as scope:
             # DocumentService and all its dependencies (db connections, transactions, etc.)
             # are isolated per worker
             document_service = await scope.get(DocumentService)
@@ -266,7 +268,8 @@ from wireup import ScopedAsyncContainer, injectable
 @injectable(lifetime="scoped")
 class WorkerService:
     def __init__(
-        self, scope: ScopedAsyncContainer, 
+        self,
+        scope: ScopedAsyncContainer,
         request_ctx: RequestContext,
     ) -> None:
         self.scope = scope

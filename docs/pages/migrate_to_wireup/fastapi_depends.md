@@ -225,7 +225,9 @@ returned object is mutable and the cache is not reset.
 
 
     @app.get("/weather")
-    async def weather(client: Annotated[aiohttp.ClientSession, Depends(get_http_client)]): ...
+    async def weather(
+        client: Annotated[aiohttp.ClientSession, Depends(get_http_client)],
+    ): ...
     ```
 
     This also means nothing that relies on `get_http_client` can be a singleton that is evaluated only once, any dependency
