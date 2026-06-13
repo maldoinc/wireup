@@ -254,7 +254,7 @@ Wireup keeps the API small, but it is built for larger application graphs.
 | Isolated scopes with explicit context sharing (batch jobs, fan-out tasks, multi-tenant processing) | [`container.enter_scope({...})`](https://maldoinc.github.io/wireup/latest/lifetimes_and_scopes/#sharing-context-across-scopes) |
 | Environment-specific graph | [Conditional registration](https://maldoinc.github.io/wireup/latest/conditional_registration/) with normal Python |
 | Generic repositories/services | [Generic dependencies](https://maldoinc.github.io/wireup/latest/generic_dependencies/) |
-| Modular or parametrized registration | [Functions that return injectables](https://maldoinc.github.io/wireup/latest/reusable_bundles/) |
+| Modular or parametrized registration | [Reusable bundles](https://maldoinc.github.io/wireup/latest/reusable_bundles/) |
 | Optional or conditional dependencies | [Params with defaults are skipped when unregistered; factories can return `T \| None`](https://maldoinc.github.io/wireup/latest/injectables/#optional-dependencies-and-default-values) |
 
 
@@ -305,7 +305,7 @@ async def weather_client_factory() -> AsyncIterator[WeatherClient]:
 
 ### 🔄 Lifetimes & Scopes
 
-Wireup has three lifetimes: `singleton`, `scoped`, and `transient`, plus explicit scope forking from root for unit-of-work patterns like batch jobs, fan-out tasks, and multi-tenant request processing.
+Wireup has three lifetimes: `singleton`, `scoped`, and `transient`, plus explicit scope forking from root for unit-of-work patterns like batch jobs or fan-out tasks.
 
 ```python
 # Singleton: one instance per application (default)
@@ -358,7 +358,7 @@ def send_notification(notifier: Injected[Notifier]) -> None:
 When multiple implementations exist, distinguish them with qualifiers:
 
 ```python
-@injectable()
+@injectable
 def primary_database(settings: Settings) -> Database:
     return Database(url=settings.db.primary_dsn)
 
@@ -404,7 +404,7 @@ async def process_batch(
     return await asyncio.gather(*[process_one(doc_id) for doc_id in doc_ids])
 ```
 
-Because child scopes don't silently inherit the parent graph, parallel workers can never accidentally share or corrupt each other's state.
+Because child scopes don't silently inherit the parent graph, parallel workers can't accidentally share state through the container.
 
 See [Lifetimes & Scopes](https://maldoinc.github.io/wireup/latest/lifetimes_and_scopes/) for the full model.
 
