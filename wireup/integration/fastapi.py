@@ -1,5 +1,6 @@
 import contextlib
 from collections.abc import AsyncIterator, Callable, Iterable
+from copy import deepcopy
 from typing import (
     Any,
 )
@@ -13,7 +14,6 @@ from typing_extensions import Protocol
 from wireup import inject_from_container
 from wireup._annotations import InjectableDeclaration
 from wireup._decorators import inject_from_container_unchecked
-from wireup.errors import WireupError
 from wireup.integration.starlette import (
     WireupAsgiMiddleware,
     WireupTask,
@@ -131,28 +131,15 @@ async def _instantiate_class_based_route(
     cls: type[_ClassBasedHandlersProtocol],
 ) -> None:
     instance = await container.get(cls)
+    cloned_router = deepcopy(cls.router)
 
-    for route in cls.router.routes:
+    for route in cloned_router.routes:
         if isinstance(route, (APIRoute, APIWebSocketRoute)):
             route_handler_name = route.endpoint.__name__
-            unbound_method = getattr(cls, route_handler_name)
+            route.endpoint = getattr(instance, route_handler_name)
+            route.dependant.call = route.endpoint
 
-            if route.endpoint is unbound_method:
-                route.endpoint = getattr(instance, route_handler_name)
-            else:
-                msg = (
-                    f"Method {route_handler_name} of {cls} has been modified, possibly by the router's APIRoute."
-                    "Class-Based Handlers require the endpoint be unmodified! "
-                    "If you want to decorate specific methods you need to place a decorator before the @router one."
-                )
-                raise WireupError(msg)
-
-    app.include_router(cls.router)
-    # Now that the router is included revert the endpoints to the original ones
-    # as fastapi will have made a copy of things.
-    for route in cls.router.routes:
-        if isinstance(route, (APIRoute, APIWebSocketRoute)):
-            route.endpoint = getattr(cls, route.endpoint.__name__)
+    app.include_router(cloned_router)
 
 
 def _update_lifespan(

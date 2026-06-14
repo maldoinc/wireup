@@ -479,6 +479,28 @@ def test_cbr(client: TestClient):
         assert response.json() == {"counter": i, "random": 4}
 
 
+def test_cbr_router_fastapi_dependency_works(*, expose_container_in_middleware: bool):
+    app = FastAPI()
+    container = wireup.create_async_container(
+        injectables=[shared_services, wireup.integration.fastapi],
+    )
+    wireup.integration.fastapi.setup(
+        container,
+        app,
+        class_based_handlers=[cbr.CbrWithRouterDependency],
+        middleware_mode=expose_container_in_middleware,
+    )
+
+    cbr._router_dep_called = False
+
+    with TestClient(app) as client:
+        response = client.get("/cbr-dep/")
+        assert response.status_code == 200
+        assert response.json() == {"ok": True}
+
+    assert cbr._router_dep_called
+
+
 async def test_closes_container_on_lifespan_close() -> None:
     cleanup_done = False
 
@@ -571,11 +593,19 @@ def test_class_based_handlers_work_across_lifespan_restarts() -> None:
     with TestClient(app) as client:
         second = client.get("/cbr").json()
 
-    cbr_routes = [route for route in app.routes if isinstance(route, APIRoute) and route.path == "/cbr/"]
+    def _count_cbr_routes(routes):
+        count = 0
+        for route in routes:
+            path = getattr(route, "path", None)
+            if path == "/cbr/" and hasattr(route, "dependant") and route.dependant and route.dependant.call:
+                count += 1
+            if hasattr(route, "effective_candidates"):
+                count += _count_cbr_routes(route.effective_candidates())
+        return count
 
     assert first == {"counter": 1, "random": 4}
     assert second == {"counter": 2, "random": 4}
-    assert len(cbr_routes) == 1
+    assert _count_cbr_routes(app.routes) == 1
 
 
 def test_injects_background_tasks() -> None:
