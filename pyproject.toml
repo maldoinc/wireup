@@ -4,7 +4,7 @@ version = "2.11.2"
 description = "Python Dependency Injection Library"
 authors = [{ name = "Aldo Mateli", email = "aldo.mateli@gmail.com" }]
 license = { text = "MIT" }
-readme = "readme.md"
+readme = "README.md"
 requires-python = ">=3.10"
 keywords = [
     "flask",
