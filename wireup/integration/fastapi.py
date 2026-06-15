@@ -74,7 +74,7 @@ def _inject_route_with_connection_context(
     )(target)
 
 
-def _ensure_http_connection_param(route: APIRoute | APIWebSocketRoute) -> tuple[str, bool]:
+def _ensure_http_connection_param(route: Any) -> tuple[str, bool]:
     """Ensure FastAPI will pass the active connection and return param name + remove flag."""
     has_connection_param_in_signature = route.dependant.http_connection_param_name is not None
     if not route.dependant.http_connection_param_name:
@@ -83,14 +83,35 @@ def _ensure_http_connection_param(route: APIRoute | APIWebSocketRoute) -> tuple[
     return route.dependant.http_connection_param_name, not has_connection_param_in_signature
 
 
+def _walk_routes(routes: list[BaseRoute]) -> Iterable[Any]:
+    for route in routes:
+        if isinstance(route, (APIRoute, APIWebSocketRoute)):
+            yield route
+        elif hasattr(route, "effective_candidates"):
+            # _IncludedRouter (FastAPI >= 0.137.0)
+            yield from _walk_routes(route.effective_candidates())
+        elif hasattr(route, "dependant") and route.dependant is not None:
+            # HTTP _EffectiveRouteContext (FastAPI >= 0.137.0)
+            yield route
+        elif hasattr(route, "starlette_route") and isinstance(route.starlette_route, (APIRoute, APIWebSocketRoute)):
+            # WebSocket _EffectiveRouteContext (FastAPI >= 0.137.0)
+            yield route.starlette_route
+
+
+def _get_original_route(route: Any) -> APIRoute | APIWebSocketRoute:
+    """For ``_EffectiveRouteContext`` objects return the wrapped ``APIRoute``."""
+    orr = getattr(route, "original_route", None)
+    return orr if isinstance(orr, (APIRoute, APIWebSocketRoute)) else route
+
+
 def _inject_routes(
     container: AsyncContainer,
     routes: list[BaseRoute],
     *,
     is_using_asgi_middleware: bool,
 ) -> None:
-    for route in routes:
-        if not (isinstance(route, (APIRoute, APIWebSocketRoute)) and route.dependant.call):
+    for route in _walk_routes(routes):
+        if not (route.dependant and route.dependant.call):
             continue
 
         # Injection wrappers compiled by Wireup set this marker.
@@ -102,9 +123,11 @@ def _inject_routes(
         if not names_to_inject:
             continue
 
+        original_route = _get_original_route(route)
+
         # When using the asgi middleware, the request context variable is set there.
         # and we can get the scoped container from the request.
-        if isinstance(route, APIRoute) and is_using_asgi_middleware:
+        if isinstance(original_route, APIRoute) and is_using_asgi_middleware:
             route.dependant.call = inject_from_container(container, get_request_container)(route.dependant.call)
             continue
 
@@ -121,7 +144,7 @@ def _inject_routes(
             target=route.dependant.call,
             http_connection_param_name=http_connection_param_name,
             remove_http_connection_from_arguments=remove_http_connection_from_arguments,
-            is_websocket_route=isinstance(route, APIWebSocketRoute),
+            is_websocket_route=isinstance(original_route, APIWebSocketRoute),
         )
 
 
@@ -133,7 +156,7 @@ async def _instantiate_class_based_route(
     instance = await container.get(cls)
     cloned_router = deepcopy(cls.router)
 
-    for route in cloned_router.routes:
+    for route in _walk_routes(cloned_router.routes):
         if isinstance(route, (APIRoute, APIWebSocketRoute)):
             route_handler_name = route.endpoint.__name__
             route.endpoint = getattr(instance, route_handler_name)
