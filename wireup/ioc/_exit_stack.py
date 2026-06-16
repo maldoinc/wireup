@@ -33,12 +33,20 @@ def clean_exit_stack(
         except Exception as e:  # noqa: BLE001
             if e is not exc_val:
                 errors.append(e)
+        except BaseException as e:
+            # CancelledError / KeyboardInterrupt / SystemExit are BaseException, not
+            # Exception. When the exception being unwound (exc_val) re-emerges from a
+            # generator's teardown, keep closing the remaining generators instead of
+            # letting it abort cleanup, which would skip exit_stack.clear() and leak
+            # every earlier-registered resource. A genuinely new one is propagated.
+            if e is not exc_val:
+                raise
 
     exit_stack.clear()
     maybe_raise_exc(exc_val=exc_val, exc_tb=exc_tb, container_close_errors=errors)
 
 
-async def async_clean_exit_stack(
+async def async_clean_exit_stack(  # noqa: C901
     exit_stack: ExitStack,
     exc_val: BaseException | None = None,
     exc_tb: TracebackType | None = None,
@@ -64,6 +72,14 @@ async def async_clean_exit_stack(
         except Exception as e:  # noqa: BLE001
             if e is not exc_val:
                 errors.append(e)
+        except BaseException as e:
+            # CancelledError / KeyboardInterrupt / SystemExit are BaseException, not
+            # Exception. When the exception being unwound (exc_val) re-emerges from a
+            # generator's teardown, keep closing the remaining generators instead of
+            # letting it abort cleanup, which would skip exit_stack.clear() and leak
+            # every earlier-registered resource. A genuinely new one is propagated.
+            if e is not exc_val:
+                raise
 
     exit_stack.clear()
     maybe_raise_exc(exc_val=exc_val, exc_tb=exc_tb, container_close_errors=errors)
