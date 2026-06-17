@@ -42,6 +42,9 @@ class BareAsyncContainer(BaseContainer):
 
             return await res if compiled_factory.is_async else res  # type:ignore[no-any-return]
 
+        if (optional_klass := self._optional_compat_klass(klass, qualifier)) is not None:
+            return await self.get(optional_klass, qualifier)
+
         raise UnknownServiceRequestedError(klass, qualifier)
 
     async def close(self) -> None:
