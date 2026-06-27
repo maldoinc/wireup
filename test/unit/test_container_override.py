@@ -6,7 +6,15 @@ from unittest.mock import MagicMock
 
 import pytest
 import wireup
-from wireup import Inject, abstract, create_async_container, create_sync_container, inject_from_container, injectable
+from wireup import (
+    Inject,
+    abstract,
+    create_async_container,
+    create_sync_container,
+    inject_from_container,
+    injectable,
+    qualified,
+)
 from wireup._annotations import Injected
 from wireup.errors import UnknownOverrideRequestedError, WireupError
 from wireup.ioc.types import InjectableLifetime, InjectableOverride, get_container_object_id
@@ -94,7 +102,7 @@ def test_getting_async_injectable_from_sync_container_should_raise(container: Co
 
     container = wireup.create_sync_container(injectables=[async_foo_factory])
 
-    with container.override.injectable(Foo, MagicMock(spec=Foo)):
+    with container.override({Foo: MagicMock(spec=Foo)}):
         pass
 
     with pytest.raises(
@@ -118,7 +126,7 @@ def test_getting_async_injectable_from_sync_container_returns_falsy_override(
 
     container = wireup.create_sync_container(injectables=[async_foo_factory])
 
-    with container.override.injectable(Foo, falsy_override):
+    with container.override({Foo: falsy_override}):
         assert container.get(Foo) is falsy_override
 
 
@@ -132,10 +140,10 @@ def test_clear_active_overrides(container: Container):
     outer = MagicMock(spec=Foo)
     inner = MagicMock(spec=Foo)
 
-    with container.override.injectable(Foo, new=outer):
+    with container.override({Foo: outer}):
         assert container.get(Foo) is outer
 
-        with container.override.injectable(Foo, new=inner):
+        with container.override({Foo: inner}):
             assert container.get(Foo) is inner
 
         assert container.get(Foo) is outer
@@ -143,10 +151,92 @@ def test_clear_active_overrides(container: Container):
 
 def test_clear_on_empty_stack_should_not_raise(container: Container):
     container = wireup.create_sync_container(injectables=[FooImpl])
-    with container.override.injectable(FooImpl, new=MagicMock()):
+    with container.override({FooImpl: MagicMock()}):
         pass
 
     container.override.clear()
+
+
+def test_injectable_override_warns_and_still_works(container: Container):
+    container = wireup.create_sync_container(injectables=[Foo, FooImpl])
+    override = MagicMock(spec=Foo)
+
+    with pytest.warns(DeprecationWarning, match=r"container\.override\.injectable\(\)/service\(\) is deprecated"):
+        with container.override.injectable(Foo, new=override):
+            assert container.get(Foo) is override
+
+
+def test_injectables_override_warns_and_still_works(container: Container):
+    container = wireup.create_sync_container(injectables=[Foo, FooImpl])
+    override = MagicMock(spec=Foo)
+    overrides = [InjectableOverride(target=Foo, new=override)]
+
+    with pytest.warns(DeprecationWarning, match=r"container\.override\.injectables\(\)/services\(\) is deprecated"):
+        with container.override.injectables(overrides):
+            assert container.get(Foo) is override
+
+
+def test_service_override_warns_and_still_works(container: Container):
+    container = wireup.create_sync_container(injectables=[Foo, FooImpl])
+    override = MagicMock(spec=Foo)
+
+    with pytest.warns(DeprecationWarning, match=r"container\.override\.injectable\(\)/service\(\) is deprecated"):
+        with container.override.service(Foo, new=override):
+            assert container.get(Foo) is override
+
+
+def test_services_override_warns_and_still_works(container: Container):
+    container = wireup.create_sync_container(injectables=[Foo, FooImpl])
+    override = MagicMock(spec=Foo)
+    overrides = [InjectableOverride(target=Foo, new=override)]
+
+    with pytest.warns(DeprecationWarning, match=r"container\.override\.injectables\(\)/services\(\) is deprecated"):
+        with container.override.services(overrides):
+            assert container.get(Foo) is override
+
+
+def test_deprecated_injectable_override_supports_qualifier(container: Container):
+    container = wireup.create_sync_container(injectables=[random_service_factory])
+    override = MagicMock(spec=RandomService)
+    override.get_random.return_value = 99
+
+    with pytest.warns(DeprecationWarning, match=r"container\.override\.injectable\(\)/service\(\) is deprecated"):
+        with container.override.injectable(RandomService, new=override, qualifier="foo"):
+            assert container.get(RandomService, qualifier="foo") is override
+            assert container.get(RandomService, qualifier="foo").get_random() == 99
+
+    assert container.get(RandomService, qualifier="foo").get_random() == 4
+
+
+def test_deprecated_injectables_override_multiple_with_qualifier(container: Container):
+    container = wireup.create_sync_container(injectables=[Foo, FooImpl, random_service_factory])
+    foo_override = MagicMock(spec=Foo)
+    random_override = MagicMock(spec=RandomService)
+    overrides = [
+        InjectableOverride(target=Foo, new=foo_override),
+        InjectableOverride(target=RandomService, new=random_override, qualifier="foo"),
+    ]
+
+    with pytest.warns(DeprecationWarning, match=r"container\.override\.injectables\(\)/services\(\) is deprecated"):
+        with container.override.injectables(overrides):
+            assert container.get(Foo) is foo_override
+            assert container.get(RandomService, qualifier="foo") is random_override
+
+    assert container.get(Foo).get_foo() == "foo"
+    assert container.get(RandomService, qualifier="foo").get_random() == 4
+
+
+def test_deprecated_override_restores_after_exception(container: Container):
+    container = wireup.create_sync_container(injectables=[Foo, FooImpl])
+    override = MagicMock(spec=Foo)
+
+    with pytest.raises(RuntimeError, match="boom"):
+        with pytest.warns(DeprecationWarning, match=r"container\.override\.injectable\(\)/service\(\) is deprecated"):
+            with container.override.service(Foo, new=override):
+                assert container.get(Foo) is override
+                raise RuntimeError("boom")
+
+    assert container.get(Foo).get_foo() == "foo"
 
 
 def test_clear_actually_clears_overrides(container: Container):
@@ -175,19 +265,19 @@ def test_nested_injectable_overrides(container: Container):
     mock1 = MagicMock()
     mock1.get_foo.return_value = "foo mocked 1"
 
-    with container.override.injectable(Foo, new=mock1):
+    with container.override({Foo: mock1}):
         assert container.get(Foo).get_foo() == "foo mocked 1"
 
         mock2 = MagicMock()
         mock2.get_foo.return_value = "foo mocked 2"
 
-        with container.override.injectable(Foo, new=mock2):
+        with container.override({Foo: mock2}):
             assert container.get(Foo).get_foo() == "foo mocked 2"
 
             mock3 = MagicMock()
             mock3.get_foo.return_value = "foo mocked 3"
 
-            with container.override.injectable(Foo, new=mock3):
+            with container.override({Foo: mock3}):
                 assert container.get(Foo).get_foo() == "foo mocked 3"
 
             assert container.get(Foo).get_foo() == "foo mocked 2"
@@ -207,7 +297,7 @@ def test_container_overrides_deps_service_locator(container: Container):
     def get_random_via_inject(svc: Annotated[RandomService, Inject(qualifier="foo")]) -> int:
         return svc.get_random()
 
-    with container.override.injectable(target=RandomService, qualifier="foo", new=random_mock):
+    with container.override({qualified(RandomService, "foo"): random_mock}):
         svc = container.get(RandomService, qualifier="foo")
         assert svc.get_random() == 5
         assert get_random_via_inject() == 5
@@ -227,7 +317,7 @@ async def test_container_overrides_deps_service_locator_interface():
     def get_foo_via_inject(svc: Injected[Foo]) -> str:
         return svc.get_foo()
 
-    with container.override.injectable(target=Foo, new=foo_mock):
+    with container.override({Foo: foo_mock}):
         svc = await run(container.get(Foo))
         assert svc.get_foo() == "mock"
         assert get_foo_via_inject() == "mock"
@@ -241,17 +331,12 @@ async def test_container_override_many_with_qualifier(container: Container):
     rand1_mock = MagicMock()
     rand2_mock = MagicMock()
 
-    overrides = [
-        InjectableOverride(target=ScopedService, new=rand1_mock),
-        InjectableOverride(target=TransientService, new=rand2_mock),
-    ]
-
     @wireup.inject_from_container(container)
     def target(scoped: Injected[ScopedService], transient: Injected[TransientService]) -> None:
         assert scoped is rand1_mock
         assert transient is rand2_mock
 
-    with container.override.injectables(overrides=overrides):
+    with container.override({ScopedService: rand1_mock, TransientService: rand2_mock}):
         target()
 
 
@@ -260,7 +345,7 @@ async def test_raises_on_unknown_override(container: Container):
         UnknownOverrideRequestedError,
         match=re.escape(f"Cannot override unknown {unittest.TestCase!r} with qualifier 'foo'."),
     ):
-        with container.override.injectable(target=unittest.TestCase, qualifier="foo", new=MagicMock()):
+        with container.override({qualified(unittest.TestCase, "foo"): MagicMock()}):
             pass
 
 
@@ -279,7 +364,7 @@ def test_typing_sequence_override_raises_helpful_error() -> None:
         UnknownOverrideRequestedError,
         match=r"Wireup collection injection uses collections\.abc\.Sequence\[.*Cache.*\], not typing\.Sequence\[.*Cache.*\]",  # noqa: E501
     ):
-        with container.override.injectable(target=typing.Sequence[Cache], new=()):
+        with container.override({typing.Sequence[Cache]: ()}):
             pass
 
 
@@ -298,7 +383,7 @@ def test_typing_mapping_override_raises_helpful_error() -> None:
         UnknownOverrideRequestedError,
         match=r"Wireup collection injection uses collections\.abc\.Mapping\[.*Cache.*\], not typing\.Mapping\[.*Cache.*\]",  # noqa: E501
     ):
-        with container.override.injectable(target=typing.Mapping[str, Cache], new={}):
+        with container.override({typing.Mapping[str, Cache]: {}}):
             pass
 
 
@@ -323,7 +408,7 @@ async def test_overrides_async_dependency(injectable_lifetime: InjectableLifetim
     foo_mock = MagicMock()
     foo_mock.foo = "mock"
 
-    with container.override.injectable(target=FooBar, new=foo_mock):
+    with container.override({FooBar: foo_mock}):
         svc = await resolve_foo()
         assert svc.foo == "mock"
         assert await get_foobar_via_inject() == "mock"
@@ -355,7 +440,7 @@ async def test_override_async_transitive_dependency_with_sync_instance():
     async def get_bar_via_inject(bar: Injected[BarDep]) -> BarDep:
         return bar
 
-    with container.override.injectable(FooDep, FooOverride()):
+    with container.override({FooDep: FooOverride()}):
         bar = await container.get(BarDep)
         assert isinstance(bar.foo, FooOverride)
         bar_via_inject = await get_bar_via_inject()
@@ -392,7 +477,7 @@ async def test_override_async_dependency_with_sync_instance(injectable_lifetime:
         async with container.enter_scope() as scope:
             return await scope.get(AsyncOverrideConsumer)
 
-    with container.override.injectable(AsyncOverrideDep, AsyncOverride()):
+    with container.override({AsyncOverrideDep: AsyncOverride()}):
         foo = await resolve_foo()
         assert isinstance(foo, AsyncOverride)
         assert isinstance(await get_foo_via_inject(), AsyncOverride)
@@ -431,7 +516,7 @@ def test_override_sync_dependency_with_sync_instance(injectable_lifetime: Inject
         with container.enter_scope() as scope:
             return scope.get(SyncOverrideConsumer)
 
-    with container.override.injectable(SyncOverrideDep, SyncOverride()):
+    with container.override({SyncOverrideDep: SyncOverride()}):
         foo = resolve_foo()
         assert isinstance(foo, SyncOverride)
         assert isinstance(get_foo_via_inject(), SyncOverride)
@@ -452,7 +537,7 @@ def test_override_optional_dependency_uses_same_key_for_t_none_and_optional() ->
     container = create_sync_container(injectables=[make_optional])
     override = MagicMock(spec=OptionalDep)
 
-    with container.override.injectable(Optional[OptionalDep], new=override):  # noqa: UP045
+    with container.override({Optional[OptionalDep]: override}):  # noqa: UP045
         assert container.get(OptionalDep | None) is override
         assert container.get(Optional[OptionalDep]) is override  # noqa: UP045
 
@@ -469,7 +554,7 @@ def test_override_optional_dependency_uses_same_key_for_optional_and_t_none() ->
     container = create_sync_container(injectables=[make_optional])
     override = MagicMock(spec=OptionalDep)
 
-    with container.override.injectable(OptionalDep | None, new=override):
+    with container.override({OptionalDep | None: override}):
         assert container.get(OptionalDep | None) is override
         assert container.get(Optional[OptionalDep]) is override  # noqa: UP045
 
@@ -515,7 +600,7 @@ def test_override_abstract_direct():
     def get_abstract_via_inject(svc: Injected[AbstractBase]) -> AbstractBase:
         return svc
 
-    with container.override.injectable(target=AbstractBase, new=mock_obj):
+    with container.override({AbstractBase: mock_obj}):
         assert container.get(AbstractBase) is mock_obj
         assert get_abstract_via_inject() is mock_obj
 
@@ -532,7 +617,7 @@ def test_override_abstract_indirect():
     def get_svc_via_inject(svc: Injected[ServiceDependsOnAbstract]) -> ServiceDependsOnAbstract:
         return svc
 
-    with container.override.injectable(target=AbstractBase, new=mock_obj):
+    with container.override({AbstractBase: mock_obj}):
         with container.enter_scope() as scope:
             svc = scope.get(ServiceDependsOnAbstract)
             assert svc.dep is mock_obj
@@ -553,7 +638,7 @@ async def test_override_abstract_indirect_async():
     async def get_svc_via_inject(svc: Injected[ServiceDependsOnAbstract]) -> ServiceDependsOnAbstract:
         return svc
 
-    with container.override.injectable(target=AbstractBase, new=mock_obj):
+    with container.override({AbstractBase: mock_obj}):
         async with container.enter_scope() as scope:
             svc = await scope.get(ServiceDependsOnAbstract)
             assert svc.dep is mock_obj
@@ -574,7 +659,7 @@ def test_override_as_type_direct():
     def get_proto_via_inject(svc: Injected[Proto]) -> Proto:
         return svc
 
-    with container.override.injectable(target=Proto, new=mock_obj):
+    with container.override({Proto: mock_obj}):
         assert container.get(Proto) is mock_obj
         assert get_proto_via_inject() is mock_obj
 
@@ -591,7 +676,7 @@ def test_override_as_type_indirect():
     def get_svc_via_inject(svc: Injected[ServiceDependsOnProto]) -> ServiceDependsOnProto:
         return svc
 
-    with container.override.injectable(target=Proto, new=mock_obj):
+    with container.override({Proto: mock_obj}):
         with container.enter_scope() as scope:
             svc = scope.get(ServiceDependsOnProto)
             assert svc.dep is mock_obj
@@ -612,7 +697,7 @@ async def test_override_as_type_indirect_async():
     async def get_svc_via_inject(svc: Injected[ServiceDependsOnProto]) -> ServiceDependsOnProto:
         return svc
 
-    with container.override.injectable(target=Proto, new=mock_obj):
+    with container.override({Proto: mock_obj}):
         async with container.enter_scope() as scope:
             svc = await scope.get(ServiceDependsOnProto)
             assert svc.dep is mock_obj
@@ -632,7 +717,7 @@ def test_override_restores_singleton_rebound_factory_sync():
     rebound_factory = container._compiler.factories[obj_id].factory
 
     mock_obj = MagicMock(spec=Foo)
-    with container.override.injectable(target=Foo, new=mock_obj):
+    with container.override({Foo: mock_obj}):
         assert container.get(Foo) is mock_obj
         assert container._compiler.factories[obj_id].factory is not rebound_factory
 
@@ -652,7 +737,7 @@ async def test_override_restores_singleton_rebound_factory_async():
     rebound_factory = container._compiler.factories[obj_id].factory
 
     mock_obj = MagicMock()
-    with container.override.injectable(target=FooBar, new=mock_obj):
+    with container.override({FooBar: mock_obj}):
         assert await container.get(FooBar) is mock_obj
         assert container._compiler.factories[obj_id].factory is not rebound_factory
 
@@ -673,9 +758,9 @@ def test_override_restores_singleton_rebound_factory_sync_with_qualifier():
 
     outer = MagicMock(spec=QualifiedSingleton)
     inner = MagicMock(spec=QualifiedSingleton)
-    with container.override.injectable(target=QualifiedSingleton, qualifier=0, new=outer):
+    with container.override({qualified(QualifiedSingleton, 0): outer}):
         assert container.get(QualifiedSingleton, qualifier=0) is outer
-        with container.override.injectable(target=QualifiedSingleton, qualifier=0, new=inner):
+        with container.override({qualified(QualifiedSingleton, 0): inner}):
             assert container.get(QualifiedSingleton, qualifier=0) is inner
         assert container.get(QualifiedSingleton, qualifier=0) is outer
         assert container._compiler.factories[obj_id].factory is not rebound_factory

@@ -432,7 +432,7 @@ Wireup decorators only collect metadata. Injectables are plain classes and funct
 Swap dependencies during tests with `container.override`:
 
 ```python
-with container.override.injectable(target=Database, new=in_memory_database):
+with container.override({Database: in_memory_database}):
     # Injectables that depend on Database will receive in_memory_database
     # for the duration of this context manager
     response = client.get("/users")

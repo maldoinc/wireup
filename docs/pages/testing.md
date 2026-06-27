@@ -93,7 +93,7 @@ class TestGreeter(GreeterService):
 
 
 def test_greet_with_override(container, client: TestClient) -> None:
-    with container.override.injectable(GreeterService, new=TestGreeter()):
+    with container.override({GreeterService: TestGreeter()}):
         response = client.get("/greet", params={"name": "World"})
 
     assert response.status_code == 200
@@ -132,7 +132,7 @@ See [Lifetimes & Scopes](lifetimes_and_scopes.md) for the lifetime rules behind 
 
 ## Override Dependencies
 
-Use overrides when the app/container should stay real, but one dependency should be replaced for the test.
+Use overrides when the app/container should stay real, but one or more dependencies should be replaced for the test.
 If you want to choose different registrations before the container is created, see
 [Conditional Registration](conditional_registration.md).
 
@@ -144,48 +144,46 @@ applies to objects already created in the current scope.
 Apply overrides before the first resolution of the object you want to affect. If your integration resolves objects at
 startup, apply overrides before creating the test client or starting the app.
 
-When using `as_type`, override the `as_type` target, not the concrete implementation. When overriding a qualified
-dependency, include the qualifier in the override target.
-
-### Override One Dependency
+Pass a mapping of dependency targets to replacement values to `container.override(...)`. Use the same API for one
+override, several overrides, and qualified dependencies.
 
 ```python
-import pytest
 from unittest.mock import MagicMock
+
+from wireup import qualified
 
 
 async def test_notification_service(container) -> None:
     fake_email_client = MagicMock(spec=EmailClient)
 
-    with container.override.injectable(EmailClient, new=fake_email_client):
+    with container.override({EmailClient: fake_email_client}):
         notifier = await container.get(NotificationService)
         notifier.send_welcome_email("alice@example.com")
 
     fake_email_client.send.assert_called_once()
-```
-
-### Override Multiple Dependencies
-
-When several injected dependencies should be replaced together, use `container.override.injectables(...)`.
-
-```python
-import pytest
-from unittest.mock import MagicMock
-from wireup import InjectableOverride
 
 
 async def test_checkout(container) -> None:
     user_service_mock = MagicMock()
     order_service_mock = MagicMock()
+    overrides = {
+        UserService: user_service_mock,
+        OrderService: order_service_mock,
+    }
 
-    overrides = [
-        InjectableOverride(target=UserService, new=user_service_mock),
-        InjectableOverride(target=OrderService, new=order_service_mock),
-    ]
-
-    with container.override.injectables(overrides=overrides):
+    with container.override(overrides):
         checkout_service = await container.get(CheckoutService)
+
+
+async def test_cache_refresh(container) -> None:
+    fake_cache = MagicMock(spec=Cache)
+
+    with container.override({qualified(Cache, "redis"): fake_cache}):
+        cache_refresher = await container.get(CacheRefresher)
 ```
+
+When using `as_type`, override the `as_type` target, not the concrete implementation. When overriding a qualified
+dependency, build the override key with `qualified(TargetType, qualifier)`.
 
 ## Global Overrides with Fixtures
 
@@ -208,20 +206,19 @@ class AllowAllAuth(AuthService):
 @pytest.fixture
 def app(request):
     app = create_app()
-    overrides = getattr(request, "param", [])
+    overrides = getattr(request, "param", {})
 
     if not overrides:
         yield app
         return
 
     container = get_app_container(app)
-    with container.override.injectables(overrides=overrides):
+    with container.override(overrides):
         yield app
 ```
 
 ```python title="test_admin.py"
 import pytest
-from wireup import InjectableOverride
 
 from myapp.auth import AllowAllAuth, AuthenticatedUser, AuthService
 
@@ -229,13 +226,10 @@ from myapp.auth import AllowAllAuth, AuthenticatedUser, AuthService
 @pytest.mark.parametrize(
     "app",
     [
-        [
-            InjectableOverride(target=AuthService, new=AllowAllAuth()),
-            InjectableOverride(
-                target=AuthenticatedUser,
-                new=AuthenticatedUser(id="test-user", is_admin=True),
-            ),
-        ]
+        {
+            AuthService: AllowAllAuth(),
+            AuthenticatedUser: AuthenticatedUser(id="test-user", is_admin=True),
+        }
     ],
     indirect=True,
 )
@@ -245,7 +239,7 @@ def test_admin_dashboard(client) -> None:
     assert response.status_code == 200
 ```
 
-If most tests in a module need the same setup, you can apply the same override list from a shared fixture instead of
+If most tests in a module need the same setup, you can apply the same override mapping from a shared fixture instead of
 repeating it in every test.
 
 ## Next Steps

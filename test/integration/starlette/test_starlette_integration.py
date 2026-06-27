@@ -119,7 +119,7 @@ def test_override(app: Starlette, client: TestClient):
         def greet(self, name: str) -> str:
             return super().greet(name).upper()
 
-    with get_app_container(app).override.injectable(GreeterService, new=UppercaseGreeter()):
+    with get_app_container(app).override({GreeterService: UppercaseGreeter()}):
         response = client.get("/hello", params={"name": "Test"})
 
     assert response.text == "HELLO TEST"

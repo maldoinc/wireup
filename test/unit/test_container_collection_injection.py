@@ -82,7 +82,7 @@ def test_can_override_collection_directly() -> None:
     override_caches = (OverrideCache(), RedisCache())
 
     assert [cache.source() for cache in container.get(Sequence[Cache])] == ["memory", "redis"]
-    with container.override.injectable(Sequence[Cache], new=override_caches):
+    with container.override({Sequence[Cache]: override_caches}):
         assert [cache.source() for cache in container.get(Sequence[Cache])] == ["override", "redis"]
 
     assert [cache.source() for cache in container.get(Sequence[Cache])] == ["memory", "redis"]
@@ -266,7 +266,7 @@ def test_can_override_mapping_directly() -> None:
     override_map = {"override": RedisCache()}
 
     assert set(container.get(Mapping[Hashable, Cache]).keys()) == {None, "redis"}
-    with container.override.injectable(Mapping[Hashable, Cache], new=override_map):
+    with container.override({Mapping[Hashable, Cache]: override_map}):
         assert container.get(Mapping[Hashable, Cache]) is override_map
     assert set(container.get(Mapping[Hashable, Cache]).keys()) == {None, "redis"}
 

@@ -105,7 +105,7 @@ def test_override(app: FastAPI, client: TestClient):
         def get_random(self) -> int:
             return super().get_random() ** 2
 
-    with get_app_container(app).override.injectable(RandomService, new=RealRandom()):
+    with get_app_container(app).override({RandomService: RealRandom()}):
         response = client.get("/rng")
     assert response.status_code == 200
     assert response.json() == {"number": 16}
@@ -577,7 +577,7 @@ async def test_overrides_in_class_based_handlers() -> None:
 
     new_instance = FakeRandomService()
 
-    with get_app_container(app).override.injectable(RandomService, new=new_instance), TestClient(app) as client:
+    with get_app_container(app).override({RandomService: new_instance}), TestClient(app) as client:
         res = client.get("/cbr")
         assert res.json() == {"counter": 1, "random": 100}
 

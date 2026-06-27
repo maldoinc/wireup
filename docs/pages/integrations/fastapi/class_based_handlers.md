@@ -122,9 +122,9 @@ from wireup.integration.fastapi import get_app_container
 
 
 def test_user_handler(app):
-    with get_app_container(app).override.injectable(
-        UserProfileService, new=MockUserService()
-    ):
+    container = get_app_container(app)
+
+    with container.override({UserProfileService: MockUserService()}):
         # Start the client INSIDE the override block
         # The handler is initialized with the mock during startup
         with TestClient(app) as client:
@@ -133,11 +133,11 @@ def test_user_handler(app):
 
 ```python title="Don't"
 def test_user_handler_wrong(app):
+    container = get_app_container(app)
+
     # Handler has already been instantiated at startup.
     with TestClient(app) as client:
-        with get_app_container(app).override.injectable(
-            UserProfileService, new=MockUserService()
-        ):
+        with container.override({UserProfileService: MockUserService()}):
             client.get("/users/")
 ```
 

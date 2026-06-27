@@ -1,10 +1,13 @@
+import warnings
 from collections.abc import Iterator
+from unittest.mock import MagicMock
 
 import pytest
 import wireup
-from wireup._annotations import injectable
+from wireup import create_sync_container, injectable
 from wireup.ioc.container.async_container import ScopedAsyncContainer
 from wireup.ioc.container.sync_container import ScopedSyncContainer
+from wireup.util import qualified
 
 from test.unit.services.with_annotations.services import TransientService
 
@@ -101,6 +104,57 @@ def test_scoped_container_cleansup_container_get() -> None:
         assert scoped.get(SomeService)
 
     assert done
+
+
+@injectable
+class Database:
+    def __init__(self) -> None:
+        self.name = "default_db"
+
+
+@injectable
+class UserService:
+    def __init__(self, db: Database) -> None:
+        self.db = db
+
+    def get_db_name(self) -> str:
+        return self.db.name
+
+
+def test_override_dict():
+    @injectable(qualifier="cache")
+    def cache_db_factory() -> Database:
+        db = Database()
+        db.name = "cache"
+        return db
+
+    container = create_sync_container(injectables=[Database, UserService, cache_db_factory])
+
+    mock_db = MagicMock()
+    mock_cache = MagicMock()
+
+    with container.override({Database: mock_db, qualified(Database, "cache"): mock_cache}):
+        assert container.get(Database) is mock_db
+        assert container.get(Database, qualifier="cache") is mock_cache
+
+
+def test_empty_dict_override():
+    container = create_sync_container(injectables=[Database, UserService])
+
+    with container.override({}):
+        service = container.get(UserService)
+        assert service.get_db_name() == "default_db"
+
+
+def test_dict_override_does_not_warn():
+    container = create_sync_container(injectables=[Database, UserService])
+
+    with warnings.catch_warnings(record=True) as recorded:
+        warnings.simplefilter("always")
+        with container.override({Database: MagicMock()}):
+            pass
+
+    assert recorded == []
 
 
 def test_scoped_qualifiers_do_not_collide_on_hash() -> None:

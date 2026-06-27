@@ -254,7 +254,7 @@ To substitute dependencies on targets such as views in a web application you can
 the fly.
 
 ```python
-with container.override.injectable(WeatherService, new=test_weather_service):
+with container.override({WeatherService: test_weather_service}):
     response = client.get("/weather/forecast")
 ```
 

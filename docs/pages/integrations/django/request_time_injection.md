@@ -101,4 +101,4 @@ Prefer `@inject` for request-time functions and `@inject_app` for non-request en
 See [Django Testing](testing.md) for endpoint tests and dependency overrides. These patterns are tested the same way:
 
 - call endpoints with `Client` or `AsyncClient`
-- use `get_app_container().override.injectable(...)` to inject fakes
+- use `get_app_container().override({...})` to inject fakes

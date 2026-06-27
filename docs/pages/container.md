@@ -135,7 +135,7 @@ db_url = container.config.get("database_url")
 Substitute dependencies for testing. Access via `container.override`.
 
 ```python
-with container.override.injectable(target=Database, new=mock_db):
+with container.override({Database: mock_db}):
     ...  # All injections of Database use mock_db
 ```
 

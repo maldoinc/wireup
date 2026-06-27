@@ -768,9 +768,7 @@ You still test FastAPI with
 
 
     def test_get_user(app: FastAPI):
-        with get_app_container(app).override.injectable(
-            UserService, new=FakeUserService()
-        ):
+        with get_app_container(app).override({UserService: FakeUserService()}):
             with TestClient(app) as client:
                 response = client.get("/users/123")
 
