@@ -60,7 +60,8 @@ Override dependencies with context managers, keep tests isolated, and restore th
     <picture>
     <source media="(prefers-color-scheme: dark)" srcset="docs/pages/img/benchmarks_scoped_dark.svg">
     <source media="(prefers-color-scheme: light)" srcset="docs/pages/img/benchmarks_scoped_light.svg">
-    <img alt="Scoped Dependency Injection Performance" src="docs/pages/img/benchmarks_scoped_light.svg" height="300">
+    <img alt="<img
+  alt="Bar chart comparing FastAPI dependency injection throughput (100k requests). Requests/sec: Manual wiring 11,044; Wireup 11,030; Wireup Class-Based 10,976; Dishka 8,538; Svcs 8,394; Aioinject 8,177; diwire 7,390; That Depends 4,892; FastAPI Depends 3,950; Injector 3,192; Dependency Injector 2,576; Lagom 898. Libraries marked † use simplified benchmark implementations and represent upper-bound performance."" src="docs/pages/img/benchmarks_scoped_light.svg" height="300">
     </picture>
 </p>
 
@@ -251,7 +252,7 @@ Wireup keeps the API small, but it is built for larger application graphs.
 | Interfaces and protocols | [`as_type=...`](https://maldoinc.github.io/wireup/latest/interfaces/) or factory return annotations |
 | Multiple implementations | [Qualifiers](https://maldoinc.github.io/wireup/latest/interfaces/) |
 | All implementations | [`Sequence[T]` or `Mapping[Hashable, T]`](https://maldoinc.github.io/wireup/latest/interfaces/#collection-injection) |
-| Isolated scopes with explicit context sharing (batch jobs, fan-out tasks, multi-tenant processing) | [`container.enter_scope({...})`](https://maldoinc.github.io/wireup/latest/lifetimes_and_scopes/#sharing-context-across-scopes) |
+| Isolated scopes with explicit context sharing (batch jobs, fan-out tasks) | [`container.enter_scope({...})`](https://maldoinc.github.io/wireup/latest/lifetimes_and_scopes/#sharing-context-across-scopes) |
 | Environment-specific graph | [Conditional registration](https://maldoinc.github.io/wireup/latest/conditional_registration/) with normal Python |
 | Generic repositories/services | [Generic dependencies](https://maldoinc.github.io/wireup/latest/generic_dependencies/) |
 | Modular or parametrized registration | [Reusable bundles](https://maldoinc.github.io/wireup/latest/reusable_bundles/) |
