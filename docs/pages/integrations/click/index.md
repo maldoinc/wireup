@@ -92,7 +92,7 @@ def test_random_number_command():
             return 4
 
     # Create test container with mocked service
-    with container.override.injectable(RandomService, new=MockRandomService()):
+    with container.override({RandomService: MockRandomService()}):
         runner = CliRunner()
         result = runner.invoke(cli, ["random-number"])
 

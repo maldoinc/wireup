@@ -108,7 +108,7 @@ async def test_webview(client: TestClient) -> None:
 
 
 async def test_override(client: TestClient, app: web.Application) -> None:
-    with get_app_container(app).override.injectable(GreeterService, new=CustomGreeter()):
+    with get_app_container(app).override({GreeterService: CustomGreeter()}):
         res = await client.get("/webview")
         body = await res.json()
         assert body == {"greeting": "Hoi, webview"}
@@ -128,7 +128,7 @@ async def test_handler_override(aiohttp_client: Callable[[web.Application], Awai
     app = _create_app(middleware_mode=True)
     container = get_app_container(app)
 
-    with container.override.injectable(GreeterService, new=CustomGreeter()):
+    with container.override({GreeterService: CustomGreeter()}):
         client = await aiohttp_client(app())
 
         res = await client.get("/handler/greet?name=Handler")

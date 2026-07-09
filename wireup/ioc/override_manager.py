@@ -8,12 +8,12 @@ from typing import TYPE_CHECKING, Any
 
 from wireup.errors import UnknownOverrideRequestedError
 from wireup.ioc.factory_compiler import CompiledFactory, FactoryCompiler
-from wireup.ioc.types import get_container_object_id
+from wireup.ioc.types import InjectableOverride, Qualifier, get_container_object_id
 
 if TYPE_CHECKING:
-    from collections.abc import Callable, Iterator
+    from collections.abc import Callable, Iterator, Mapping
 
-    from wireup.ioc.types import ContainerObjectIdentifier, InjectableOverride, Qualifier
+    from wireup.ioc.types import ContainerObjectIdentifier
 
 
 @dataclass(slots=True)
@@ -42,6 +42,24 @@ class OverrideManager:
         self._factory_compiler = factory_compiler
         self._scoped_factory_compiler = scoped_factory_compiler
         self._original_factories: dict[ContainerObjectIdentifier, list[_OverrideFrame]] = defaultdict(list)
+
+    @contextmanager
+    def __call__(self, overrides: Mapping[Any, Any]) -> Iterator[None]:
+        parsed_overrides: list[tuple[type[Any], Qualifier | None, Any]] = []
+        for key, new in overrides.items():
+            if isinstance(key, tuple):
+                target, qualifier = key  # pyright: ignore[reportUnknownVariableType]
+            else:
+                target, qualifier = key, None
+
+            parsed_overrides.append((target, qualifier, new))  # pyright: ignore[reportUnknownArgumentType]
+        try:
+            for target, qualifier, new in parsed_overrides:
+                self.set(target, new, qualifier)
+            yield
+        finally:
+            for target, qualifier, _ in parsed_overrides:
+                self.delete(target, qualifier)
 
     def _compiler_override_obj_id(
         self,
@@ -163,56 +181,36 @@ class OverrideManager:
     def injectable(self, target: type, new: Any, qualifier: Qualifier | None = None) -> Iterator[None]:
         """Override the `target` injectable with `new` for the duration of the context manager.
 
-        Future requests to inject `target` will result in `new` being injected.
+        Deprecated: Use `container.override` instead.
 
         :param target: The target injectable to override.
         :param qualifier: The qualifier of the injectable to override. Set this if injectable is registered
         with the qualifier parameter set to a value.
         :param new: The new object to be injected instead of `target`.
         """
-        try:
-            self.set(target, new, qualifier)
+        warnings.warn(
+            "container.override.injectable()/service() is deprecated. Use container.override() instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        with self({get_container_object_id(target, qualifier): new}):
             yield
-        finally:
-            self.delete(target, qualifier)
 
     @contextmanager
     def injectables(self, overrides: list[InjectableOverride]) -> Iterator[None]:
-        """Override a number of injectables with new for the duration of the context manager."""
-        try:
-            for override in overrides:
-                self.set(override.target, override.new, override.qualifier)
-            yield
-        finally:
-            for override in overrides:
-                self.delete(override.target, override.qualifier)
+        """Override a number of injectables with new for the duration of the context manager.
 
-    @contextmanager
-    def service(self, target: type, new: Any, qualifier: Qualifier | None = None) -> Iterator[None]:
-        """Override the `target` injectable with `new` for the duration of the context manager.
-
-        Future requests to inject `target` will result in `new` being injected.
-
-        :param target: The target injectable to override.
-        :param qualifier: The qualifier of the injectable to override. Set this if injectable is registered
-        with the qualifier parameter set to a value.
-        :param new: The new object to be injected instead of `target`.
+        Deprecated: Use `container.override` instead.
         """
         warnings.warn(
-            "Services are now called Injectables. Use container.override.injectable() instead.",
-            FutureWarning,
+            "container.override.injectables()/services() is deprecated. Use container.override() instead.",
+            DeprecationWarning,
             stacklevel=2,
         )
-        with self.injectable(target, new, qualifier):
+        with self(
+            {get_container_object_id(override.target, override.qualifier): override.new for override in overrides}
+        ):
             yield
 
-    @contextmanager
-    def services(self, overrides: list[InjectableOverride]) -> Iterator[None]:
-        """Override a number of injectables with new for the duration of the context manager."""
-        warnings.warn(
-            "Services are now called Injectables. Use container.override.injectables() instead.",
-            FutureWarning,
-            stacklevel=2,
-        )
-        with self.injectables(overrides):
-            yield
+    service = injectable
+    services = injectables

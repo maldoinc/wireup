@@ -173,11 +173,11 @@ def test_require_auth_denied():
 
 
 def test_require_auth_allowed():
+    container = get_app_container(app)
+
     with TestClient(app) as client:
         # Override AuthService to return True
-        with get_app_container(app).override.injectable(
-            AuthService, new=MockAuthService(allow=True)
-        ):
+        with container.override({AuthService: MockAuthService(allow=True)}):
             response = client.get("/users")
             assert response.status_code == 200
 ```
@@ -193,8 +193,7 @@ def test_request_middleware_runs():
 
 !!! tip
 
-    Use `get_app_container(app).override.injectable()` to inject mocks and fakes during tests. This works for both route
-    decorators and middleware.
+    Use `get_app_container(app).override()` to inject mocks and fakes during tests. This works for both route decorators and middleware.
 
 ## Direct Container Access
 

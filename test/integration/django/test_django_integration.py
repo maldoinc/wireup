@@ -133,7 +133,7 @@ def test_override(client: Client):
         def greet(self, name: str) -> str:
             return f"Bad day to you, {name}"
 
-    with get_app_container().override.injectable(GreeterService, new=RudeGreeter()):
+    with get_app_container().override({GreeterService: RudeGreeter()}):
         res = client.get("/classbased?name=Test")
 
     assert res.status_code == 200
@@ -303,7 +303,7 @@ def test_inject_app_django_management_command_override():
             return f"Guten Tag, {name}!"
 
     stdout = StringIO()
-    with get_app_container().override.injectable(GreeterService, new=GermanGreeter()):
+    with get_app_container().override({GreeterService: GermanGreeter()}):
         call_command("wireup_greet", "--name=Django", stdout=stdout)
 
     assert stdout.getvalue().strip() == "Guten Tag, Django!"
@@ -387,7 +387,7 @@ def test_ninja_override_injected_service(client: Client):
             return f"Go away, {name}"
 
     # WHEN using override context manager
-    with get_app_container().override.injectable(GreeterService, new=RudeGreeter()):
+    with get_app_container().override({GreeterService: RudeGreeter()}):
         res = client.get("/ninja/greet?name=Bob")
 
     # THEN the overridden service is used

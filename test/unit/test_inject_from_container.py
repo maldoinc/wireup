@@ -131,7 +131,7 @@ async def test_inject_from_container_unchecked_with_async_scope_and_override() -
             pass
 
         override = OverrideDep()
-        with container.override.injectable(Dep, override):
+        with container.override({Dep: override}):
             dep, consumer = await target()
             assert dep is override
             assert consumer.dep is override
@@ -461,7 +461,7 @@ async def test_async_injects_sync_reuses_async_dependency_in_sync_context() -> N
 
 def test_async_override_with_sync_value_in_sync_context(container: Container) -> None:
     fake_b = AsyncDependency()
-    with container.override.injectable(AsyncDependency, fake_b):
+    with container.override({AsyncDependency: fake_b}):
 
         @inject_from_container(container)
         def sync_func_override(b: Injected[AsyncDependency]) -> AsyncDependency:

@@ -84,7 +84,43 @@ class BaseContainer:
 
     @property
     def override(self) -> OverrideManager:
-        """Override registered container injectables with new values."""
+        """Override injectables at runtime, typically for testing.
+
+        Accepts a mapping from injectable types to replacement values:
+
+        ```python
+        with container.override({Database: mock_db}):
+            ...  # All injections of Database use mock_db
+        ```
+
+        Override multiple at once:
+
+        ```python
+        with container.override({
+            UserService: mock_user_service,
+            EmailClient: mock_email_client,
+        }):
+            ...
+        ```
+
+        For qualified injectables, build the key with ``qualified()``:
+
+        ```python
+        from wireup import qualified
+
+        with container.override({qualified(Database, "cache"): mock_cache_db}):
+            ...
+        ```
+
+        Also provides ``.set()``, ``.delete()``, and ``.clear()`` methods
+        for manual control outside a context manager.
+
+        Overrides only affect *future* injection requests. Already-created singletons or scoped
+        objects are not rebuilt when their dependencies are overridden.
+        Apply overrides before the first resolution of the object you want to affect.
+
+        See: https://maldoinc.github.io/wireup/latest/testing/
+        """
         return self._override_mgr
 
     @overload
