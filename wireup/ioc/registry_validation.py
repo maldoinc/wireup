@@ -13,11 +13,16 @@ from wireup.util import format_name, stringify_type
 
 if TYPE_CHECKING:
     from wireup.ioc.registry import ContainerRegistry, InjectableFactory
-    from wireup.ioc.types import Qualifier
+    from wireup.ioc.types import ContainerObjectIdentifier, Qualifier
 
 
 def validate_registry(registry: ContainerRegistry) -> None:
     """Assert that all required dependencies exist for this registry instance."""
+    # Dependencies are shared between injectables, so the same subtree is reachable via many paths.
+    # Remember the ones already known to be cycle-free to avoid walking them again.
+    # Only valid for this run as a different registry describes a different graph.
+    cleared: set[ContainerObjectIdentifier] = set()
+
     for obj_id, injectable_factory in registry.factories.items():
         if isinstance(obj_id, tuple):
             impl, impl_qualifier = obj_id
@@ -54,6 +59,7 @@ def validate_registry(registry: ContainerRegistry) -> None:
                 dependencies=registry.dependencies,
                 dependency=dependency,
                 path=[],
+                cleared=cleared,
             )
 
         for name in unknown_dependencies_with_default:
@@ -118,18 +124,26 @@ def assert_dependency_exists(
         raise WireupError(msg)
 
 
-def assert_valid_resolution_path(
+def assert_valid_resolution_path(  # noqa: PLR0913
     *,
     interfaces: dict[type, dict[Qualifier | None, type]],
     factories: dict[Any, InjectableFactory],
     dependencies: dict[Any, dict[str, AnnotatedParameter]],
     dependency: AnnotatedParameter,
     path: list[tuple[AnnotatedParameter, Any]],
+    cleared: set[ContainerObjectIdentifier],
 ) -> None:
     """Assert that the resolution path for a dependency does not create a cycle."""
     if dependency.klass in interfaces or dependency.is_parameter:
         return
-    dependency_injectable_factory = factories[get_container_object_id(dependency.klass, dependency.qualifier_value)]
+    object_id = get_container_object_id(dependency.klass, dependency.qualifier_value)
+
+    # A dependency whose subtree came back clean cannot lead to a cycle. Were it part of one,
+    # the walk would have come back to it while it was still on the current path.
+    if object_id in cleared:
+        return
+
+    dependency_injectable_factory = factories[object_id]
     new_path: list[tuple[AnnotatedParameter, Any]] = [*path, (dependency, dependency_injectable_factory)]
 
     if any(p.klass == dependency.klass and p.qualifier_value == dependency.qualifier_value for p, _ in path):
@@ -154,4 +168,7 @@ def assert_valid_resolution_path(
             dependencies=dependencies,
             dependency=next_dependency,
             path=new_path,
+            cleared=cleared,
         )
+
+    cleared.add(object_id)
