@@ -21,7 +21,7 @@ def validate_registry(registry: ContainerRegistry) -> None:
     # Dependencies are shared between injectables, so the same subtree is reachable via many paths.
     # Remember the ones already known to be cycle-free to avoid walking them again.
     # Only valid for this run as a different registry describes a different graph.
-    cleared: set[ContainerObjectIdentifier] = set()
+    known_cycle_free_objects: set[ContainerObjectIdentifier] = set()
 
     for obj_id, injectable_factory in registry.factories.items():
         if isinstance(obj_id, tuple):
@@ -59,7 +59,7 @@ def validate_registry(registry: ContainerRegistry) -> None:
                 dependencies=registry.dependencies,
                 dependency=dependency,
                 path=[],
-                cleared=cleared,
+                known_cycle_free_objects=known_cycle_free_objects,
             )
 
         for name in unknown_dependencies_with_default:
@@ -131,7 +131,7 @@ def assert_valid_resolution_path(  # noqa: PLR0913
     dependencies: dict[Any, dict[str, AnnotatedParameter]],
     dependency: AnnotatedParameter,
     path: list[tuple[AnnotatedParameter, Any]],
-    cleared: set[ContainerObjectIdentifier],
+    known_cycle_free_objects: set[ContainerObjectIdentifier],
 ) -> None:
     """Assert that the resolution path for a dependency does not create a cycle."""
     if dependency.klass in interfaces or dependency.is_parameter:
@@ -140,7 +140,7 @@ def assert_valid_resolution_path(  # noqa: PLR0913
 
     # A dependency whose subtree came back clean cannot lead to a cycle. Were it part of one,
     # the walk would have come back to it while it was still on the current path.
-    if object_id in cleared:
+    if object_id in known_cycle_free_objects:
         return
 
     dependency_injectable_factory = factories[object_id]
@@ -168,7 +168,7 @@ def assert_valid_resolution_path(  # noqa: PLR0913
             dependencies=dependencies,
             dependency=next_dependency,
             path=new_path,
-            cleared=cleared,
+            known_cycle_free_objects=known_cycle_free_objects,
         )
 
-    cleared.add(object_id)
+    known_cycle_free_objects.add(object_id)

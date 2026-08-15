@@ -243,8 +243,9 @@ def test_validates_container_walks_shared_dependencies_once(monkeypatch: pytest.
     def recording_walk(**kwargs) -> None:
         dependency = kwargs["dependency"]
         reached.append(dependency.klass)
+        object_id = get_container_object_id(dependency.klass, dependency.qualifier_value)
         # Dependencies known to be cycle-free return immediately, only record the rest.
-        if get_container_object_id(dependency.klass, dependency.qualifier_value) not in kwargs["cleared"]:
+        if object_id not in kwargs["known_cycle_free_objects"]:
             descended.append(dependency.klass)
         walk(**kwargs)
 
@@ -311,7 +312,7 @@ def test_validates_container_does_not_reuse_walked_dependencies_between_containe
     def make_baz(foo: Foo) -> Baz:
         return Baz(foo)
 
-    # Foo is walked and cleared here, which says nothing about the graph of another container.
+    # Foo is walked and recorded cycle-free here, which says nothing about another container's graph.
     wireup.create_sync_container(injectables=[make_foo, make_baz])
 
     @wireup.injectable
