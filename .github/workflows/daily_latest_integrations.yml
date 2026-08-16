@@ -38,6 +38,9 @@ jobs:
           - integration: click
             tox_env: py313-click
             packages: click
+          - integration: typer
+            tox_env: py313-typer
+            packages: typer
     steps:
       - uses: actions/checkout@v4
 
