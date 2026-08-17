@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import functools
 import inspect
 from typing import TYPE_CHECKING, Any, TypeVar
 
@@ -25,6 +26,45 @@ if TYPE_CHECKING:
 
 P = ParamSpec("P")
 R = TypeVar("R")
+
+
+def wrap_with_dependencies(target: Callable[..., R]) -> Callable[[Callable[..., Any]], Callable[..., Any]]:
+    def _decorator(wrapper: Callable[..., Any]) -> Callable[..., Any]:
+        wrapper_sig = inspect.signature(wrapper)
+        target_sig = inspect.signature(target)
+
+        wrapper_params = list(wrapper_sig.parameters.values())
+        extra_params = [
+            param
+            for param in wrapper_params
+            if param.kind not in (inspect.Parameter.VAR_POSITIONAL, inspect.Parameter.VAR_KEYWORD)
+        ]
+
+        target_param_names = set(target_sig.parameters)
+        collisions = sorted(param.name for param in extra_params if param.name in target_param_names)
+        if collisions:
+            msg = (
+                "wrap_with_dependencies wrapper parameters must not shadow the wrapped callable's signature. "
+                f"Conflicting parameter names: {', '.join(collisions)}"
+            )
+            raise WireupError(msg)
+
+        wrapped = functools.wraps(target)(wrapper)
+        wrapped.__signature__ = inspect.Signature(  # type: ignore[attr-defined]
+            parameters=[*target_sig.parameters.values(), *extra_params],
+            return_annotation=target_sig.return_annotation,
+        )
+        wrapped.__annotations__ = {
+            **getattr(target, "__annotations__", {}),
+            **getattr(wrapper, "__annotations__", {}),
+        }
+        wrapped.__wireup_globals__ = {  # type: ignore[attr-defined]
+            **wireup.ioc.util.get_globals(target),
+            **wrapper.__globals__,
+        }
+        return wrapped
+
+    return _decorator
 
 
 def _ensure_sync_container_target_is_sync(target: Callable[..., object]) -> None:

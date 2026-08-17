@@ -117,6 +117,9 @@ def get_globals(obj: type[Any] | Callable[..., Any]) -> dict[str, Any]:
     while isinstance(obj, functools.partial):
         obj = obj.func
 
+    if hasattr(obj, "__wireup_globals__"):
+        return obj.__wireup_globals__  # type: ignore[no-any-return]
+
     return obj.__globals__
 
 

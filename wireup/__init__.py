@@ -1,5 +1,5 @@
 from wireup._annotations import Inject, Injected, abstract, injectable, service
-from wireup._decorators import inject_from_container
+from wireup._decorators import inject_from_container, wrap_with_dependencies
 from wireup._instance import instance
 from wireup.ioc.container import (
     create_async_container,
@@ -28,4 +28,5 @@ __all__ = [
     "instance",
     "qualified",
     "service",
+    "wrap_with_dependencies",
 ]
