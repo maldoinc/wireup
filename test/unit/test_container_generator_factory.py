@@ -12,6 +12,21 @@ from wireup.ioc.types import InjectableLifetime
 from test.conftest import Container
 
 
+class AsyncContextManagerResource:
+    def __init__(self, cleanup_events: list[str]) -> None:
+        self.cleanup_events = cleanup_events
+        self.entered = False
+        self.exited = False
+
+    async def __aenter__(self) -> "AsyncContextManagerResource":
+        self.entered = True
+        return self
+
+    async def __aexit__(self, *_: object) -> None:
+        self.exited = True
+        self.cleanup_events.append("resource")
+
+
 def test_cleans_up_on_exit(container: Container) -> None:
     _cleanup_performed = False
     Something = NewType("Something", str)
@@ -48,6 +63,26 @@ async def test_async_cleans_up_on_exit() -> None:
     await target()
     await container.close()
     assert _cleanup_performed
+
+
+async def test_async_generator_factory_closes_async_context_manager_on_container_close() -> None:
+    cleanup_events: list[str] = []
+
+    @injectable
+    async def some_factory() -> AsyncIterator[AsyncContextManagerResource]:
+        async with AsyncContextManagerResource(cleanup_events) as resource:
+            yield resource
+
+    container = wireup.create_async_container(injectables=[some_factory])
+    resource = await container.get(AsyncContextManagerResource)
+
+    assert resource.entered
+    assert not resource.exited
+
+    await container.close()
+
+    assert resource.exited
+    assert cleanup_events == ["resource"]
 
 
 def test_injects_transient() -> None:
@@ -101,6 +136,28 @@ async def test_async_injects_transient_sync_depends_on_async_result() -> None:
     async with container.enter_scope() as scoped:
         await scoped.get(SomethingElse)
     assert _cleanups == ["f2", "f1"]
+
+
+@pytest.mark.parametrize("lifetime", ["scoped", "transient"])
+async def test_async_generator_factory_closes_async_context_manager_on_scope_exit(
+    lifetime: InjectableLifetime,
+) -> None:
+    cleanup_events: list[str] = []
+
+    @injectable(lifetime=lifetime)
+    async def some_factory() -> AsyncIterator[AsyncContextManagerResource]:
+        async with AsyncContextManagerResource(cleanup_events) as resource:
+            yield resource
+
+    container = wireup.create_async_container(injectables=[some_factory])
+
+    async with container.enter_scope() as scoped:
+        resource = await scoped.get(AsyncContextManagerResource)
+        assert resource.entered
+        assert not resource.exited
+
+    assert resource.exited
+    assert cleanup_events == ["resource"]
 
 
 def test_cleans_up_in_order() -> None:
