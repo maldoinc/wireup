@@ -18,6 +18,9 @@ from test.unit.services.async_reg import AsyncDependency, make_async_dependency
 from test.unit.services.no_annotations.random.random_service import RandomService
 from test.unit.services.with_annotations.services import Foo, FooImpl, OtherFooImpl, random_service_factory
 
+# CPython renders id() as uppercase hex on Windows and lowercase elsewhere.
+HEX_ADDR = r"0x[0-9a-fA-F]+"
+
 
 async def test_injects_targets(container: Container) -> None:
     class NotManagedByWireup: ...
@@ -149,7 +152,7 @@ async def test_raises_on_unknown_service(container: Container, qualifier: str) -
     with pytest.raises(
         WireupError,
         match=(
-            r"Parameter 'not_managed_by_wireup' of <function .*test_raises_on_unknown_service.*\._ at 0x[0-9a-f]+> "
+            rf"Parameter 'not_managed_by_wireup' of <function .*test_raises_on_unknown_service.*\._ at {HEX_ADDR}> "
             + re.escape(f"has an unknown dependency on {NotManagedByWireup!r}{expected_qualifier_str}.")
         ),
     ):
@@ -164,7 +167,7 @@ async def test_raises_on_unknown_parameter(container: Container) -> None:
     with pytest.raises(
         WireupError,
         match=(
-            r"Parameter 'not_managed_by_wireup' of <function .*test_raises_on_unknown_parameter.*\._ at 0x[0-9a-f]+> "
+            rf"Parameter 'not_managed_by_wireup' of <function .*test_raises_on_unknown_parameter.*\._ at {HEX_ADDR}> "
             + re.escape("depends on an unknown Wireup config key 'invalid'.")
         ),
     ):
