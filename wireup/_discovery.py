@@ -24,9 +24,9 @@ def discover_wireup_registrations(
         # "from flask import g" would cause a hasattr call to g outside of app context.
         return (isinstance(obj, FunctionType) or inspect.isclass(obj)) and hasattr(obj, "__wireup_registration__")
 
-    all_targets = {
-        m for module in injectable_modules for m in _find_objects_in_module(module, predicate=_is_valid_wireup_target)
-    }
+    all_targets: dict[type, None] = {}
+    for module in injectable_modules:
+        all_targets.update(dict.fromkeys(_find_objects_in_module(module, predicate=_is_valid_wireup_target)))
 
     for cls in all_targets:
         reg = getattr(cls, "__wireup_registration__", None)
@@ -39,14 +39,19 @@ def discover_wireup_registrations(
     return abstract_registrations, injectable_registrations
 
 
-def _find_objects_in_module(module: ModuleType, predicate: Callable[[Any], bool]) -> set[type]:
-    classes: set[type[Any]] = set()
+def _find_objects_in_module(module: ModuleType, predicate: Callable[[Any], bool]) -> list[type]:
+    classes: dict[type[Any], None] = {}
 
-    def _module_get_objects(m: ModuleType) -> set[type]:
-        return {obj for _, obj in inspect.getmembers(m) if predicate(obj)}
+    def _module_get_objects(m: ModuleType) -> list[type]:
+        # inspect.getmembers sorts by name (via dir()), which reads as an
+        # arbitrary reshuffle once "seen order" is the contract this file
+        # exists to keep. A module's own __dict__ is insertion-ordered by
+        # the interpreter as it executes the file top to bottom, so this
+        # is declaration order for free, with no separate tracking needed.
+        return [obj for obj in vars(m).values() if predicate(obj)]
 
     def _find_in_path(path: Path, parent_module_name: str) -> None:
-        for file in path.iterdir():
+        for file in sorted(path.iterdir()):
             if file.name == "__pycache__":
                 continue
 
@@ -60,12 +65,12 @@ def _find_objects_in_module(module: ModuleType, predicate: Callable[[Any], bool]
                     parent_module_name if file.name == "__init__.py" else f"{parent_module_name}.{file.name[:-3]}"
                 )
                 sub_module = importlib.import_module(full_module_name)
-                classes.update(_module_get_objects(sub_module))
+                classes.update(dict.fromkeys(_module_get_objects(sub_module)))
 
     if f := module.__file__:
         if f.endswith("__init__.py"):
             _find_in_path(Path(f).parent, module.__name__)
         else:
-            classes.update(_module_get_objects(module))
+            classes.update(dict.fromkeys(_module_get_objects(module)))
 
-    return classes
+    return list(classes)
