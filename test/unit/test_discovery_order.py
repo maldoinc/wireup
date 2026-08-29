@@ -11,7 +11,7 @@ class DiscoveryOrderTest(unittest.TestCase):
         container = wireup.create_sync_container(injectables=[greeters])
         result = [g.hi() for g in container.get(Sequence[greeters.Greeter])]
 
-        self.assertEqual(["alpha", "beta", "delta", "gamma"], result)
+        self.assertEqual(["delta", "beta", "alpha", "gamma"], result)
 
     def test_module_scan_discovery_order_is_stable_across_repeated_scans(self):
         first = [g.hi() for g in wireup.create_sync_container(injectables=[greeters]).get(Sequence[greeters.Greeter])]

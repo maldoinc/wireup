@@ -43,7 +43,12 @@ def _find_objects_in_module(module: ModuleType, predicate: Callable[[Any], bool]
     classes: dict[type[Any], None] = {}
 
     def _module_get_objects(m: ModuleType) -> list[type]:
-        return [obj for _, obj in inspect.getmembers(m) if predicate(obj)]
+        # inspect.getmembers sorts by name (via dir()), which reads as an
+        # arbitrary reshuffle once "seen order" is the contract this file
+        # exists to keep. A module's own __dict__ is insertion-ordered by
+        # the interpreter as it executes the file top to bottom, so this
+        # is declaration order for free, with no separate tracking needed.
+        return [obj for obj in vars(m).values() if predicate(obj)]
 
     def _find_in_path(path: Path, parent_module_name: str) -> None:
         for file in sorted(path.iterdir()):
