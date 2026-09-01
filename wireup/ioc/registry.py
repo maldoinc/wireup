@@ -32,7 +32,6 @@ from wireup.ioc.types import (
     get_container_object_id,
 )
 from wireup.ioc.util import ensure_is_type, get_callable_type, get_globals
-from wireup.util import stringify_type
 
 if TYPE_CHECKING:
     from wireup._annotations import AbstractDeclaration, InjectableDeclaration
@@ -248,7 +247,7 @@ class ContainerRegistry:
     def _register_sequence_collections(self) -> None:
         for klass, qualifiers in dict(self.impls).items():
             # Only real registration keys should contribute to collection members.
-            # Synthetic aliases like raw optional-compat or Sequence[T] keys must not participate here.
+            # Synthetic keys such as Sequence[T] must not participate here.
             real_qualifiers = [
                 qualifier
                 for qualifier in qualifiers
@@ -375,42 +374,6 @@ class ContainerRegistry:
             is_synthetic=is_synthetic_factory,
         )
         self.impls[klass].append(qualifier)
-
-        if type_analysis.is_optional:
-            # Backwards compatibility: In earlier versions when a factory returned T | None
-            # you could do container.get(T). Alias that type to the normalized T | None factory.
-            # Create a fake factory that warns and returns the original instance.
-            # https://github.com/maldoinc/wireup/commit/00590dc741035a4c7042c5b6fc434ed08e27f5c0
-            def compat_fn(raw_type_instance: Any) -> Any:
-                type_name = type_analysis.raw_type.__name__
-                deprecated_msg = (
-                    f"Deprecated: {stringify_type(type_analysis.raw_type)} was registered as optional "
-                    f"and retrieving it via container.get({type_name}) is deprecated. "
-                    f"Please use container.get({type_name} | None) or container.get(Optional[{type_name}]) instead."
-                )
-
-                warnings.warn(deprecated_msg, DeprecationWarning, stacklevel=4)
-
-                return raw_type_instance
-
-            compat_fn.__signature__ = inspect.Signature(  # type: ignore[attr-defined]
-                parameters=[
-                    inspect.Parameter(
-                        "raw_type_instance",
-                        kind=inspect.Parameter.POSITIONAL_OR_KEYWORD,
-                        annotation=Annotated[klass, InjectableQualifier(qualifier)],
-                    )
-                ],
-            )
-
-            self._register(
-                type_analysis.raw_type,
-                factory_fn=compat_fn,
-                lifetime=lifetime,
-                qualifier=qualifier,
-                auto_discover_interfaces=True,
-                is_synthetic_factory=True,
-            )
 
     def _register_abstract(self, klass: type) -> None:
         self.interfaces[klass] = {}
