@@ -117,6 +117,8 @@ def get_globals(obj: type[Any] | Callable[..., Any]) -> dict[str, Any]:
     while isinstance(obj, functools.partial):
         obj = obj.func
 
+    obj = inspect.unwrap(obj)
+
     return obj.__globals__
 
 
