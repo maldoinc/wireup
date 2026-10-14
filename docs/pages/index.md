@@ -217,9 +217,9 @@ pip install wireup
 
 - :material-function-variant:{ .lg .middle } __Function Injection__
 
-    Inject into scripts, jobs, handlers, and framework callbacks.
+    Inject into scripts, jobs, handlers, and framework callbacks. Handle cross-cutting concerns with reusable decorators.
 
-    [Function Injection](function_injection.md)
+    [Function Injection](function_injection.md) • [Decorators with Dependencies](decorators_with_dependencies.md)
 
 </div>
 

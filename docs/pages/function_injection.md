@@ -41,6 +41,11 @@ async def process_data(service: Injected[DataService]):
 
 ## Advanced Usage
 
+### Decorators with Dependencies
+
+Use [`@wrap_with_dependencies`](decorators_with_dependencies.md) to write reusable decorators that declare their own
+injected dependencies. The decorator and wrapped function receive dependencies through the same injection site and scope.
+
 ### Using an Existing Scope
 
 If a scope already exists (e.g., created by middleware), pass a callable that returns it as the second argument. The
