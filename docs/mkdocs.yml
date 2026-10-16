@@ -16,6 +16,7 @@ nav:
       - Interfaces: interfaces.md
       - Function Injection: function_injection.md
     - Advanced Patterns:
+      - Cross-cutting Concerns: cross_cutting_concerns.md
       - Reusable Bundles: reusable_bundles.md
       - Conditional Registration: conditional_registration.md
       - Generic Dependencies: generic_dependencies.md

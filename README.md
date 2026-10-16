@@ -60,8 +60,7 @@ Override dependencies with context managers, keep tests isolated, and restore th
     <picture>
     <source media="(prefers-color-scheme: dark)" srcset="docs/pages/img/benchmarks_scoped_dark.svg">
     <source media="(prefers-color-scheme: light)" srcset="docs/pages/img/benchmarks_scoped_light.svg">
-    <img alt="<img
-  alt="Bar chart comparing FastAPI dependency injection throughput (100k requests). Requests/sec: Manual wiring 11,044; Wireup 11,030; Wireup Class-Based 10,976; Dishka 8,538; Svcs 8,394; Aioinject 8,177; diwire 7,390; That Depends 4,892; FastAPI Depends 3,950; Injector 3,192; Dependency Injector 2,576; Lagom 898. Libraries marked † use simplified benchmark implementations and represent upper-bound performance."" src="docs/pages/img/benchmarks_scoped_light.svg" height="300">
+    <img alt="Bar chart comparing FastAPI dependency injection throughput (100k requests). Requests/sec: Manual wiring 11,044; Wireup 11,030; Wireup Class-Based 10,976; Dishka 8,538; Svcs 8,394; Aioinject 8,177; diwire 7,390; That Depends 4,892; FastAPI Depends 3,950; Injector 3,192; Dependency Injector 2,576; Lagom 898. Libraries marked † use simplified benchmark implementations and represent upper-bound performance."" src="docs/pages/img/benchmarks_scoped_light.svg" height="300">
     </picture>
 </p>
 
@@ -249,6 +248,7 @@ Wireup keeps the API small, but it is built for larger application graphs.
 | Configuration | Both [`Inject(config=...)`](https://maldoinc.github.io/wireup/latest/configuration/) values and injectable settings objects |
 | Register an already-created object | [`wireup.instance(...)`](https://maldoinc.github.io/wireup/latest/injectables/) |
 | Dynamic function injection and injectable lookup | Inject the [root or active scoped container](https://maldoinc.github.io/wireup/latest/container/#injecting-the-container) |
+| Cross-cutting concerns | [`@wrap_with_dependencies`](https://maldoinc.github.io/wireup/latest/cross_cutting_concerns/) lets reusable decorators declare their own injected dependencies |
 | Interfaces and protocols | [`as_type=...`](https://maldoinc.github.io/wireup/latest/interfaces/) or factory return annotations |
 | Multiple implementations | [Qualifiers](https://maldoinc.github.io/wireup/latest/interfaces/) |
 | All implementations | [`Sequence[T]` or `Mapping[Hashable, T]`](https://maldoinc.github.io/wireup/latest/interfaces/#collection-injection) |

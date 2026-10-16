@@ -117,6 +117,9 @@ def get_globals(obj: type[Any] | Callable[..., Any]) -> dict[str, Any]:
     while isinstance(obj, functools.partial):
         obj = obj.func
 
+    if hasattr(obj, "__wireup_globals__"):
+        return obj.__wireup_globals__  # type: ignore[no-any-return]
+
     obj = inspect.unwrap(obj)
 
     return obj.__globals__
@@ -130,12 +133,14 @@ def _eval_type_native(
 
     This function handles version-specific differences in typing._eval_type.
     """
+    # Distinct locals force cached ForwardRefs to be re-evaluated in the supplied globals.
+    localns: dict[str, Any] = {}
     if sys.version_info >= (3, 13):
-        res = _eval_type(value, globalns, None, type_params=())
+        res = _eval_type(value, globalns, localns, type_params=())
 
         return type(None) if res is None else res
 
-    return _eval_type(value, globalns, None)
+    return _eval_type(value, globalns, localns)
 
 
 def ensure_is_type(value: type[T] | str, globalns_supplier: Callable[[], dict[str, Any]]) -> type[T] | None:
