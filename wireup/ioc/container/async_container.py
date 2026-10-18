@@ -19,6 +19,8 @@ T = TypeVar("T")
 
 
 class BareAsyncContainer(BaseContainer):
+    __slots__ = ()
+
     @overload
     async def get(self, klass: type[T], qualifier: Qualifier | None = None) -> T: ...
     @overload
@@ -50,6 +52,8 @@ class BareAsyncContainer(BaseContainer):
 
 
 class ScopedAsyncContainer(BareAsyncContainer):
+    __slots__ = ()
+
     async def __aenter__(self) -> Self:
         return self
 
@@ -64,6 +68,8 @@ class ScopedAsyncContainer(BareAsyncContainer):
 
 
 class AsyncContainer(BareAsyncContainer):
+    __slots__ = ()
+
     def enter_scope(self, provided: dict[ContainerObjectIdentifier, Any] | None = None, /) -> ScopedAsyncContainer:
         """Enter a new scope.
 

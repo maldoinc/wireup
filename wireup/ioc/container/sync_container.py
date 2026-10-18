@@ -14,6 +14,8 @@ if TYPE_CHECKING:
 
 
 class BareSyncContainer(BaseContainer):
+    __slots__ = ()
+
     get = BaseContainer._synchronous_get
 
     def close(self) -> None:
@@ -22,6 +24,8 @@ class BareSyncContainer(BaseContainer):
 
 
 class ScopedSyncContainer(BareSyncContainer):
+    __slots__ = ()
+
     def __enter__(self) -> Self:
         return self
 
@@ -36,6 +40,8 @@ class ScopedSyncContainer(BareSyncContainer):
 
 
 class SyncContainer(BareSyncContainer):
+    __slots__ = ()
+
     def enter_scope(self, provided: dict[ContainerObjectIdentifier, Any] | None = None, /) -> ScopedSyncContainer:
         """Enter a new scope.
 
