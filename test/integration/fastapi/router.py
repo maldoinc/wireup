@@ -1,9 +1,8 @@
 import functools
-from typing import Any, Dict
+from typing import Annotated, Any
 
 import fastapi
 from fastapi import APIRouter, Depends, Request, WebSocket
-from typing_extensions import Annotated
 from wireup import Inject, Injected
 from wireup.integration.fastapi import get_request_container
 from wireup.ioc.types import AnyCallable
@@ -41,7 +40,7 @@ async def rng_route(random_service: Injected[RandomService]):
 @router.get("/rng/depends")
 async def inject_via_depends(
     random_service: Annotated[RandomService, Depends(RandomService)],
-) -> Dict[str, int]:
+) -> dict[str, int]:
     return {"number": random_service.get_random()}
 
 
@@ -53,7 +52,7 @@ async def params_route(
 
 
 @router.get("/current-request")
-async def curr_request(_request: Request, req: Injected[ServiceUsingFastapiRequest]) -> Dict[str, Any]:
+async def curr_request(_request: Request, req: Injected[ServiceUsingFastapiRequest]) -> dict[str, Any]:
     return {"foo": req.req.query_params["foo"], "request_id": req.req.headers["X-Request-Id"]}
 
 
@@ -125,7 +124,7 @@ def scoped_sync_route(
     scoped_service: Injected[ScopedService],
     scoped_service2: Injected[ScopedService],
     scoped_service_dependency: Injected[ScopedServiceDependency],
-) -> Dict[str, str]:
+) -> dict[str, str]:
     assert scoped_service is scoped_service2
     assert scoped_service.other is scoped_service_dependency
     return {"status": "ok"}

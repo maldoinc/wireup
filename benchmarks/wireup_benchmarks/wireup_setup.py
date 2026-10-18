@@ -1,5 +1,3 @@
-from typing import Dict
-
 import fastapi
 import wireup
 from wireup import Injected
@@ -27,7 +25,7 @@ container = wireup.create_async_container(
 
 
 @router.get("/wireup/singleton")
-async def wireup_singleton(a: Injected[A], b: Injected[B]) -> Dict[str, str]:
+async def wireup_singleton(a: Injected[A], b: Injected[B]) -> dict[str, str]:
     services.record_request("singleton")
     assert a.start == 10
     assert isinstance(a, A)
@@ -47,7 +45,7 @@ async def wireup_scoped(
     g: Injected[G],
     h: Injected[H],
     i: Injected[I],
-) -> Dict[str, str]:
+) -> dict[str, str]:
     services.record_request("scoped")
     assert isinstance(c, C)
     assert c is cc

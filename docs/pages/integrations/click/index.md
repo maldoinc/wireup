@@ -92,13 +92,20 @@ def test_random_number_command():
             return 4
 
     # Create test container with mocked service
-    with container.override.injectable(RandomService, new=MockRandomService()):
+    with container.override({RandomService: MockRandomService()}):
         runner = CliRunner()
         result = runner.invoke(cli, ["random-number"])
 
         assert result.exit_code == 0
         assert "Your lucky number is:" in result.output
 ```
+
+### Dependency Validation
+
+`wireup.integration.click.setup(...)` validates command callbacks during setup.
+Missing dependencies and config values fail before commands are invoked.
+
+See [What Wireup Validates](../../what_wireup_validates.md) for the full rules.
 
 ### API Reference
 

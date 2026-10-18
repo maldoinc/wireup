@@ -1,10 +1,10 @@
-from typing import Any, Dict
+from typing import Any
 
 import fastapi
 from dependency_injector import containers, providers
 from dependency_injector.wiring import Provide, inject
 from fastapi import Depends
-from typing_extensions import Annotated
+from typing import Annotated
 
 from wireup_benchmarks import services
 
@@ -34,7 +34,7 @@ router = fastapi.APIRouter()
 async def dependency_injector_singleton(
     a: Annotated[services.A, Depends(Provide[Container.a])],
     b: Annotated[services.B, Depends(Provide[Container.b])],
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     services.record_request("singleton")
     assert a.start == 10
     assert isinstance(a, services.A)
@@ -55,7 +55,7 @@ async def dependency_injector_scoped(
     g: Annotated[services.G, Depends(Provide[Container.g])],
     h: Annotated[services.H, Depends(Provide[Container.h])],
     i: Annotated[services.I, Depends(Provide[Container.i])],
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     services.record_request("scoped")
     assert isinstance(c, services.C)
     assert c is cc

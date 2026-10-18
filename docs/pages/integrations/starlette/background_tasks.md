@@ -4,6 +4,7 @@ Use `WireupTask` when you want Wireup to resolve dependencies inside a Starlette
 
 ## Usage
 
+1. Add `wireup.integration.starlette` to your Wireup injectables.
 1. Define your task function with `Injected[...]` parameters for any Wireup dependencies
 1. Inject `WireupTask` in your route handler: `wireup_task: Injected[WireupTask]`
 1. Wrap the task function before scheduling: `wireup_task(write_greeting)`

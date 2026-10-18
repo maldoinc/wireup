@@ -63,8 +63,8 @@ profile ./profile_tests $(num_runs):
 format: format-docs
 	uv run ruff format .
 
-fix:
-	uv run ruff wireup --fix
+fix: format
+	uv run ruff check wireup test benchmarks --fix
 
 format-docs:
 	find docs -name "*.md" -not -path "docs/pages/class/*" | xargs uv run --python 3.14 blacken-docs -l 80 || true

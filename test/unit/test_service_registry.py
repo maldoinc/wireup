@@ -1,9 +1,8 @@
 import sys
 import warnings
-from typing import Any, NewType, Optional
+from typing import Annotated, Any, NewType, Optional
 
 import pytest
-from typing_extensions import Annotated
 from wireup import Inject, service
 from wireup._annotations import AbstractDeclaration, InjectableDeclaration
 from wireup.errors import (
@@ -46,7 +45,7 @@ def test_register_factory() -> None:
     registry = ContainerRegistry(impls=[InjectableDeclaration(obj=random_service_factory, lifetime="singleton")])
 
     assert RandomService in registry.factories
-    assert registry.impls[RandomService] == {None}
+    assert registry.impls[RandomService] == [None]
 
     def invalid_factory() -> None:
         pass
@@ -212,7 +211,7 @@ def test_register_service_with_untyped_defaults_and_varargs() -> None:
         def __init__(
             self,
             x=1,
-            some_config: Annotated[Optional[str], Inject(param="test_config")] = None,
+            some_config: Annotated[str | None, Inject(param="test_config")] = None,
             *args: Any,
             **kwargs: Any,
         ) -> None:

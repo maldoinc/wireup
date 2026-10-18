@@ -1,20 +1,25 @@
 import contextlib
 import re
+from collections.abc import AsyncIterator, Iterator
 from dataclasses import dataclass
-from typing import AsyncIterator, Iterator, NewType, Optional, Tuple
+from typing import Annotated, NewType, Optional
 
 import pytest
 import wireup
-from typing_extensions import Annotated
 from wireup import Inject, Injected, create_sync_container, inject_from_container, injectable, service
 from wireup._decorators import inject_from_container_unchecked
 from wireup.errors import WireupError
+from wireup.ioc.container.async_container import ScopedAsyncContainer
+from wireup.ioc.container.sync_container import ScopedSyncContainer
 
 from test.conftest import Container
 from test.unit import services
 from test.unit.services.async_reg import AsyncDependency, make_async_dependency
 from test.unit.services.no_annotations.random.random_service import RandomService
 from test.unit.services.with_annotations.services import Foo, FooImpl, OtherFooImpl, random_service_factory
+
+# CPython renders id() as uppercase hex on Windows and lowercase elsewhere.
+HEX_ADDR = r"0x[0-9a-fA-F]+"
 
 
 async def test_injects_targets(container: Container) -> None:
@@ -122,14 +127,14 @@ async def test_inject_from_container_unchecked_with_async_scope_and_override() -
     async with container.enter_scope() as scoped:
 
         @inject_from_container_unchecked(lambda: scoped)
-        async def target(dep: Injected[Dep], consumer: Injected[Consumer]) -> Tuple[Dep, Consumer]:
+        async def target(dep: Injected[Dep], consumer: Injected[Consumer]) -> tuple[Dep, Consumer]:
             return dep, consumer
 
         class OverrideDep:
             pass
 
         override = OverrideDep()
-        with container.override.injectable(Dep, override):
+        with container.override({Dep: override}):
             dep, consumer = await target()
             assert dep is override
             assert consumer.dep is override
@@ -146,10 +151,9 @@ async def test_raises_on_unknown_service(container: Container, qualifier: str) -
     expected_qualifier_str = f" with qualifier '{qualifier}'" if qualifier else ""
     with pytest.raises(
         WireupError,
-        match=re.escape(
-            "Parameter 'not_managed_by_wireup' of Function test.unit.test_inject_from_container._ "
-            "has an unknown dependency on Type test.unit.test_inject_from_container.NotManagedByWireup"
-            f"{expected_qualifier_str}."
+        match=(
+            rf"Parameter 'not_managed_by_wireup' of <function .*test_raises_on_unknown_service.*\._ at {HEX_ADDR}> "
+            + re.escape(f"has an unknown dependency on {NotManagedByWireup!r}{expected_qualifier_str}.")
         ),
     ):
 
@@ -162,9 +166,9 @@ async def test_raises_on_unknown_service(container: Container, qualifier: str) -
 async def test_raises_on_unknown_parameter(container: Container) -> None:
     with pytest.raises(
         WireupError,
-        match=re.escape(
-            "Parameter 'not_managed_by_wireup' of Function test.unit.test_inject_from_container._ "
-            "depends on an unknown Wireup config key 'invalid'."
+        match=(
+            rf"Parameter 'not_managed_by_wireup' of <function .*test_raises_on_unknown_parameter.*\._ at {HEX_ADDR}> "
+            + re.escape("depends on an unknown Wireup config key 'invalid'.")
         ),
     ):
 
@@ -185,8 +189,7 @@ async def test_unknown_service_without_default_value() -> None:
     with pytest.raises(
         WireupError,
         match=re.escape(
-            "Parameter 'unknown_class' of Type test.unit.test_inject_from_container.BarWithoutDefaultValue "
-            "has an unknown dependency on Type test.unit.test_inject_from_container.UnknownClass."
+            f"Parameter 'unknown_class' of {BarWithoutDefaultValue!r} has an unknown dependency on {UnknownClass!r}."
         ),
     ):
         container = wireup.create_async_container(services=[BarWithoutDefaultValue])
@@ -202,7 +205,7 @@ async def test_unknown_service_with_default_value() -> None:
 
     @service
     class BarWithDefaultValue:
-        def __init__(self, unknown_class: Optional[UnknownClass] = None) -> None:
+        def __init__(self, unknown_class: UnknownClass | None = None) -> None:
             self.unknown_class = unknown_class
 
     container = wireup.create_async_container(services=[BarWithDefaultValue])
@@ -223,6 +226,30 @@ async def test_injects_service_with_provided_async_scoped_container() -> None:
             assert isinstance(rand_service, RandomService)
 
         target()
+
+
+def test_injects_scoped_sync_container_from_scope() -> None:
+    container = create_sync_container()
+
+    with container.enter_scope() as scoped:
+
+        @inject_from_container(container, lambda: scoped)
+        def target(current_scope: Injected[ScopedSyncContainer]) -> ScopedSyncContainer:
+            return current_scope
+
+        assert target() is scoped
+
+
+async def test_injects_scoped_async_container_from_scope() -> None:
+    container = wireup.create_async_container()
+
+    async with container.enter_scope() as scoped:
+
+        @inject_from_container(container, lambda: scoped)
+        async def target(current_scope: Injected[ScopedAsyncContainer]) -> ScopedAsyncContainer:
+            return current_scope
+
+        assert await target() is scoped
 
 
 def test_inject_from_container_falsy_qualifier_injected() -> None:
@@ -315,12 +342,12 @@ def test_injects_ctor():
 def test_inject_from_container_handles_optionals() -> None:
     class MaybeThing: ...
 
-    def make_maybe_thing() -> Optional[MaybeThing]:
+    def make_maybe_thing() -> MaybeThing | None:
         return None
 
     class Thing: ...
 
-    def make_thing(_thing2: Optional[MaybeThing]) -> Thing:
+    def make_thing(_thing2: MaybeThing | None) -> Thing:
         return Thing()
 
     container = wireup.create_sync_container(
@@ -328,7 +355,7 @@ def test_inject_from_container_handles_optionals() -> None:
     )
 
     @wireup.inject_from_container(container)
-    def main(maybe_thing: Injected[Optional[MaybeThing]], thing: Injected[Thing]):
+    def main(maybe_thing: Injected[MaybeThing | None], thing: Injected[Thing]):
         assert maybe_thing is None
         assert isinstance(thing, Thing)
 
@@ -437,7 +464,7 @@ async def test_async_injects_sync_reuses_async_dependency_in_sync_context() -> N
 
 def test_async_override_with_sync_value_in_sync_context(container: Container) -> None:
     fake_b = AsyncDependency()
-    with container.override.injectable(AsyncDependency, fake_b):
+    with container.override({AsyncDependency: fake_b}):
 
         @inject_from_container(container)
         def sync_func_override(b: Injected[AsyncDependency]) -> AsyncDependency:
@@ -467,7 +494,7 @@ def test_mixed_lifetime_injection_optimizes_correctly_singleton_first() -> None:
     @inject_from_container(container)
     def target(
         s: Injected[SingletonService], sc: Injected[ScopedService], ss2: Injected[ScopedService2]
-    ) -> Tuple[SingletonService, ScopedService, ScopedService2]:
+    ) -> tuple[SingletonService, ScopedService, ScopedService2]:
         return s, sc, ss2
 
     s, sc, ss2 = target()
@@ -480,7 +507,7 @@ def test_mixed_lifetime_injection_optimizes_correctly_scoped_first() -> None:
     container = create_sync_container(injectables=[SingletonService, ScopedService])
 
     @inject_from_container(container)
-    def target(sc: Injected[ScopedService], s: Injected[SingletonService]) -> Tuple[SingletonService, ScopedService]:
+    def target(sc: Injected[ScopedService], s: Injected[SingletonService]) -> tuple[SingletonService, ScopedService]:
         return s, sc
 
     s, sc = target()

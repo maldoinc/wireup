@@ -1,4 +1,4 @@
-from typing_extensions import Annotated
+from typing import Annotated
 
 from fastapi import APIRouter, Depends
 from that_depends import BaseContainer, providers

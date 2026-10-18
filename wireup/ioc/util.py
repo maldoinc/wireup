@@ -6,7 +6,7 @@ import inspect
 import sys
 import typing
 from inspect import Parameter
-from typing import Any, Sequence, TypeVar, cast
+from typing import Any, TypeVar, cast
 
 from wireup.errors import PositionalOnlyParameterError, WireupError
 from wireup.ioc.registry_validation import assert_dependency_exists
@@ -32,7 +32,7 @@ def get_callable_type(fn: Callable[..., Any]) -> CallableType:
 _eval_type = cast("Callable[..., Any]", typing._eval_type)  # type: ignore[attr-defined]
 
 if typing.TYPE_CHECKING:
-    from collections.abc import Callable
+    from collections.abc import Callable, Sequence
 
     from wireup.ioc.container.base_container import BaseContainer
 
@@ -117,6 +117,11 @@ def get_globals(obj: type[Any] | Callable[..., Any]) -> dict[str, Any]:
     while isinstance(obj, functools.partial):
         obj = obj.func
 
+    if hasattr(obj, "__wireup_globals__"):
+        return obj.__wireup_globals__  # type: ignore[no-any-return]
+
+    obj = inspect.unwrap(obj)
+
     return obj.__globals__
 
 
@@ -128,12 +133,14 @@ def _eval_type_native(
 
     This function handles version-specific differences in typing._eval_type.
     """
-    if sys.version_info >= (3, 14):
-        res = _eval_type(value, globalns, None, type_params=())
+    # Distinct locals force cached ForwardRefs to be re-evaluated in the supplied globals.
+    localns: dict[str, Any] = {}
+    if sys.version_info >= (3, 13):
+        res = _eval_type(value, globalns, localns, type_params=())
 
         return type(None) if res is None else res
 
-    return _eval_type(value, globalns, None)
+    return _eval_type(value, globalns, localns)
 
 
 def ensure_is_type(value: type[T] | str, globalns_supplier: Callable[[], dict[str, Any]]) -> type[T] | None:

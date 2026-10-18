@@ -4,9 +4,9 @@ import contextlib
 import importlib
 import warnings
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, TypeVar, cast, overload
+from typing import TYPE_CHECKING, Annotated, Any, TypeVar, overload
 
-from typing_extensions import Annotated, ParamSpec
+from typing_extensions import ParamSpec
 
 from wireup.ioc.types import (
     ConfigInjectionRequest,
@@ -59,7 +59,7 @@ def Inject(  # noqa: N802
     elif expr:
         res = ConfigInjectionRequest(TemplatedString(expr))
     elif qualifier is not _UNSET:
-        res = InjectableQualifier(cast("Qualifier | None", qualifier))
+        res = InjectableQualifier(qualifier)
     else:
         res = EmptyContainerInjectionRequest()
 

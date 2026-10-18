@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Callable, TypeVar, overload
+from typing import TYPE_CHECKING, Any, TypeVar, overload
 
 from typing_extensions import Self
 
@@ -10,6 +10,7 @@ from wireup.ioc.container.base_container import BaseContainer
 from wireup.ioc.container.sync_container import ScopedSyncContainer
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
     from types import TracebackType
 
     from wireup.ioc.types import ContainerObjectIdentifier, Qualifier
@@ -18,6 +19,8 @@ T = TypeVar("T")
 
 
 class BareAsyncContainer(BaseContainer):
+    __slots__ = ()
+
     @overload
     async def get(self, klass: type[T], qualifier: Qualifier | None = None) -> T: ...
     @overload
@@ -49,6 +52,8 @@ class BareAsyncContainer(BaseContainer):
 
 
 class ScopedAsyncContainer(BareAsyncContainer):
+    __slots__ = ()
+
     async def __aenter__(self) -> Self:
         return self
 
@@ -63,6 +68,8 @@ class ScopedAsyncContainer(BareAsyncContainer):
 
 
 class AsyncContainer(BareAsyncContainer):
+    __slots__ = ()
+
     def enter_scope(self, provided: dict[ContainerObjectIdentifier, Any] | None = None, /) -> ScopedAsyncContainer:
         """Enter a new scope.
 
@@ -75,17 +82,20 @@ class AsyncContainer(BareAsyncContainer):
         See the documentation for more details:
         https://maldoinc.github.io/wireup/latest/lifetimes_and_scopes/#working-with-scopes
         """
-        return ScopedAsyncContainer(
+        current_scope_objects = dict(provided) if provided else {}
+        scoped = ScopedAsyncContainer(
             registry=self._registry,
             override_manager=self._override_mgr,
             global_scope_objects=self._global_scope_objects,
             global_scope_exit_stack=self._global_scope_exit_stack,
-            current_scope_objects=dict(provided) if provided else {},
+            current_scope_objects=current_scope_objects,
             current_scope_exit_stack=[],
             factory_compiler=self._scoped_compiler,
             scoped_compiler=self._scoped_compiler,
             concurrent_scoped_access=self._concurrent_scoped_access,
         )
+        current_scope_objects[ScopedAsyncContainer] = scoped
+        return scoped
 
 
 def async_container_force_sync_scope(
@@ -98,14 +108,17 @@ def async_container_force_sync_scope(
     This can be useful when you need to inject synchronous functions
     in an environment that supports both sync and async.
     """
-    return ScopedSyncContainer(
+    current_scope_objects = dict(provided) if provided else {}
+    scoped = ScopedSyncContainer(
         registry=container._registry,
         override_manager=container._override_mgr,
         global_scope_objects=container._global_scope_objects,
         global_scope_exit_stack=container._global_scope_exit_stack,
-        current_scope_objects=dict(provided) if provided else {},
+        current_scope_objects=current_scope_objects,
         current_scope_exit_stack=[],
         factory_compiler=container._scoped_compiler,
         scoped_compiler=container._scoped_compiler,
         concurrent_scoped_access=container._concurrent_scoped_access,
     )
+    current_scope_objects[ScopedSyncContainer] = scoped
+    return scoped

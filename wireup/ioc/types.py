@@ -1,17 +1,15 @@
 from __future__ import annotations
 
-from collections.abc import Hashable
+from collections.abc import AsyncGenerator, Callable, Generator, Hashable
 from dataclasses import dataclass
 from enum import Enum, auto
-from typing import Any, AsyncGenerator, Callable, Generator, List, Tuple, Type, Union
-
-from typing_extensions import Literal
+from typing import Any, Literal
 
 from wireup.errors import WireupError
 
 AnyCallable = Callable[..., Any]
-ExitStackEntry = Tuple[Union[Generator[Any, Any, Any], AsyncGenerator[Any, Any]], bool]
-ExitStack = List[ExitStackEntry]
+ExitStackEntry = tuple[Generator[Any, Any, Any] | AsyncGenerator[Any, Any], bool]
+ExitStack = list[ExitStackEntry]
 
 
 class InjectableType:
@@ -41,7 +39,7 @@ class TemplatedString:
     value: str
 
 
-ConfigurationReference = Union[str, TemplatedString]
+ConfigurationReference = str | TemplatedString
 
 
 @dataclass(frozen=True)
@@ -53,7 +51,7 @@ class ConfigInjectionRequest(InjectableType):
 
 
 Qualifier = Hashable
-ContainerObjectIdentifier = Union[Type[Any], Tuple[Type[Any], Qualifier]]
+ContainerObjectIdentifier = type[Any] | tuple[type[Any], Qualifier]
 
 
 def get_container_object_id(klass: type[Any], qualifier: Qualifier | None) -> ContainerObjectIdentifier:

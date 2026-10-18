@@ -1,5 +1,6 @@
 import functools
-from typing import Any, Callable, TypeVar
+from collections.abc import Callable
+from typing import Any, TypeVar
 
 from wireup._decorators import inject_from_container, inject_from_container_unchecked
 from wireup.errors import WireupError

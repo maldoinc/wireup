@@ -1,5 +1,3 @@
-from typing import Dict
-
 import dishka
 import fastapi
 from dishka.integrations.fastapi import FromDishka, inject
@@ -24,7 +22,7 @@ router = fastapi.APIRouter()
 
 @router.get("/dishka/singleton")
 @inject
-async def dishka_singleton(a: FromDishka[A], b: FromDishka[B]) -> Dict[str, str]:
+async def dishka_singleton(a: FromDishka[A], b: FromDishka[B]) -> dict[str, str]:
     services.record_request("singleton")
     assert a.start == 10
     assert isinstance(a, A)
@@ -45,7 +43,7 @@ async def dishka_scoped(
     g: FromDishka[G],
     h: FromDishka[H],
     i: FromDishka[I],
-) -> Dict[str, str]:
+) -> dict[str, str]:
     services.record_request("scoped")
     assert isinstance(c, C)
     assert c is cc

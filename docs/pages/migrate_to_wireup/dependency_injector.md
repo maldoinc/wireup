@@ -841,7 +841,7 @@ Both libraries support context-manager based overrides in tests.
 
     service_mock = MagicMock(spec=UserService)
 
-    with container.override.injectable(UserService, new=service_mock):
+    with container.override({UserService: service_mock}):
         assert container.get(UserService) is service_mock
     # UserService is back to normal after the block.
     ```

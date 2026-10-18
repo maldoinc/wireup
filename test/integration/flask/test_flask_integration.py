@@ -1,4 +1,5 @@
-from typing import Iterator, NewType
+from collections.abc import Iterator
+from typing import NewType
 from unittest.mock import MagicMock
 
 import pytest
@@ -71,7 +72,7 @@ def test_service_override(client: FlaskClient, app: Flask):
     mocked_foo = MagicMock()
     mocked_foo.is_test = "mocked"
 
-    with get_app_container(app).override.injectable(IsTestService, new=mocked_foo):
+    with get_app_container(app).override({IsTestService: mocked_foo}):
         res = client.get("/foo")
         assert res.status_code == 200
         assert res.json == {"test": "mocked"}

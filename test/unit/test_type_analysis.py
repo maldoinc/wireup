@@ -1,10 +1,9 @@
 from __future__ import annotations
 
 import typing
-from typing import Optional
+from typing import Annotated, Optional
 
 import pytest
-from typing_extensions import Annotated
 from wireup.ioc.type_analysis import TypeAnalysis, analyze_type
 
 
@@ -21,11 +20,17 @@ def test_analyze_basic_types(type_hint: type, expected: TypeAnalysis) -> None:
     assert res == expected
 
 
+def optional_hint(tp: object) -> object:
+    return Optional.__getitem__(tp)
+
+
 @pytest.mark.parametrize(
     "type_hint, expected",
     [
-        (Optional[int], TypeAnalysis(normalized_type=Optional[int], raw_type=int, is_optional=True, annotations=())),
-        (Optional[str], TypeAnalysis(normalized_type=Optional[str], raw_type=str, is_optional=True, annotations=())),
+        (optional_hint(int), TypeAnalysis(normalized_type=int | None, raw_type=int, is_optional=True, annotations=())),
+        (int | None, TypeAnalysis(normalized_type=int | None, raw_type=int, is_optional=True, annotations=())),
+        (optional_hint(str), TypeAnalysis(normalized_type=str | None, raw_type=str, is_optional=True, annotations=())),
+        (str | None, TypeAnalysis(normalized_type=str | None, raw_type=str, is_optional=True, annotations=())),
     ],
 )
 def test_analyze_optional_types(type_hint: type, expected: TypeAnalysis) -> None:
@@ -38,10 +43,10 @@ def test_analyze_optional_types(type_hint: type, expected: TypeAnalysis) -> None
     "type_hint, expected",
     [
         (
-            typing.Union[int, str, None],
+            int | str | None,
             TypeAnalysis(
-                normalized_type=typing.Optional[typing.Union[int, str]],
-                raw_type=typing.Union[int, str],
+                normalized_type=int | str | None,
+                raw_type=int | str,
                 is_optional=True,
                 annotations=(),
             ),
@@ -74,12 +79,20 @@ def test_analyze_annotated_plain(type_hint: type, expected: TypeAnalysis) -> Non
     "type_hint, expected",
     [
         (
-            Annotated[Optional[int], "a"],
-            TypeAnalysis(normalized_type=Optional[int], raw_type=int, is_optional=True, annotations=("a",)),
+            Annotated[optional_hint(int), "a"],
+            TypeAnalysis(normalized_type=int | None, raw_type=int, is_optional=True, annotations=("a",)),
         ),
         (
-            Optional[Annotated[int, "b"]],
-            TypeAnalysis(normalized_type=Optional[int], raw_type=int, is_optional=True, annotations=("b",)),
+            Annotated[int | None, "a"],
+            TypeAnalysis(normalized_type=int | None, raw_type=int, is_optional=True, annotations=("a",)),
+        ),
+        (
+            optional_hint(Annotated[int, "b"]),
+            TypeAnalysis(normalized_type=int | None, raw_type=int, is_optional=True, annotations=("b",)),
+        ),
+        (
+            Annotated[int, "b"] | None,
+            TypeAnalysis(normalized_type=int | None, raw_type=int, is_optional=True, annotations=("b",)),
         ),
     ],
 )

@@ -4,11 +4,12 @@ import importlib
 import sys
 from collections.abc import Iterator  # noqa: TC003
 from dataclasses import dataclass
+from typing import Annotated, get_args
 
 import pytest
 import wireup
-from typing_extensions import Annotated
 from wireup import Injected, inject_from_container
+from wireup.ioc.util import ensure_is_type
 
 
 @wireup.injectable
@@ -49,6 +50,13 @@ def test_eval_type_evaluates_strings() -> None:
     assert isinstance(container.get(A), A)
     assert isinstance(container.get(B), B)
     assert isinstance(container.get(C), C)
+
+
+def test_eval_type_resolves_cached_forward_references_in_each_namespace() -> None:
+    for dependency in (A, B, A):
+        namespace = {"Injected": Injected, "Dependency": dependency}
+        resolved = ensure_is_type("Injected['Dependency']", globalns_supplier=lambda namespace=namespace: namespace)
+        assert get_args(resolved)[0] is dependency
 
 
 @pytest.mark.skipif(sys.version_info < (3, 11), reason="eval_type_backport only needed for Python < 3.11")

@@ -229,36 +229,51 @@ This is useful for patterns like:
 - carrying request, tenant, auth, or tracing context into worker scopes,
 - reusing immutable per-request metadata without sharing the rest of the scoped graph.
 
-A common advanced use case is fan-out:
+A common advanced use case is fan-out, where you process multiple items concurrently while sharing request-level context across isolated worker scopes:
 
-```python hl_lines="9 10 15-17"
+```python
 import asyncio
+from wireup import Injected
 
 
-async def run_worker(
-    container: wireup.AsyncContainer,
-    provided: dict[object, object],
-    item_id: str,
-) -> None:
-    async with container.enter_scope(provided) as worker_scope:
-        worker = await worker_scope.get(WorkerService)
-        return await worker.process(item_id)
-
-
-async def main():
-    async with root_container.enter_scope() as parent_scope:
-        request_ctx = await parent_scope.get(RequestContext)
-        tenant_scope = await parent_scope.get(TenantScope)
-
-        tasks = []
-        for item_id in ("a", "b", "c"):
-            provided = {
+@app.post("/batch")
+async def process_batch(
+    doc_ids: list[str],
+    container: Injected[wireup.AsyncContainer],
+    request_ctx: Injected[RequestContext],
+    tenant_ctx: Injected[TenantContext],
+) -> list[Result]:
+    # RequestContext and TenantContext are shared while everything else is isolated per worker.
+    async def process_one(doc_id: str) -> Result:
+        async with container.enter_scope(
+            {
                 RequestContext: request_ctx,
-                TenantScope: tenant_scope,
+                TenantContext: tenant_ctx,
             }
-            tasks.append(run_worker(container, provided, item_id))
+        ) as scope:
+            # DocumentService and all its dependencies (db connections, transactions, etc.)
+            # are isolated per worker
+            document_service = await scope.get(DocumentService)
+            return await process_document(document_service, doc_id)
 
-        await asyncio.gather(*tasks)
+    return await asyncio.gather(*[process_one(doc_id) for doc_id in doc_ids])
+```
+
+Services resolved inside a child scope can also depend on the active scoped container directly:
+
+```python
+from wireup import ScopedAsyncContainer, injectable
+
+
+@injectable(lifetime="scoped")
+class WorkerService:
+    def __init__(
+        self,
+        scope: ScopedAsyncContainer,
+        request_ctx: RequestContext,
+    ) -> None:
+        self.scope = scope
+        self.request_ctx = request_ctx
 ```
 
 ### Abstractions and Qualifiers

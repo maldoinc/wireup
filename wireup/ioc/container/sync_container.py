@@ -14,6 +14,8 @@ if TYPE_CHECKING:
 
 
 class BareSyncContainer(BaseContainer):
+    __slots__ = ()
+
     get = BaseContainer._synchronous_get
 
     def close(self) -> None:
@@ -22,6 +24,8 @@ class BareSyncContainer(BaseContainer):
 
 
 class ScopedSyncContainer(BareSyncContainer):
+    __slots__ = ()
+
     def __enter__(self) -> Self:
         return self
 
@@ -36,6 +40,8 @@ class ScopedSyncContainer(BareSyncContainer):
 
 
 class SyncContainer(BareSyncContainer):
+    __slots__ = ()
+
     def enter_scope(self, provided: dict[ContainerObjectIdentifier, Any] | None = None, /) -> ScopedSyncContainer:
         """Enter a new scope.
 
@@ -48,14 +54,17 @@ class SyncContainer(BareSyncContainer):
         See the documentation for more details:
         https://maldoinc.github.io/wireup/latest/lifetimes_and_scopes/#working-with-scopes
         """
-        return ScopedSyncContainer(
+        current_scope_objects = dict(provided) if provided else {}
+        scoped = ScopedSyncContainer(
             registry=self._registry,
             override_manager=self._override_mgr,
             global_scope_objects=self._global_scope_objects,
             global_scope_exit_stack=self._global_scope_exit_stack,
-            current_scope_objects=dict(provided) if provided else {},
+            current_scope_objects=current_scope_objects,
             current_scope_exit_stack=[],
             factory_compiler=self._scoped_compiler,
             scoped_compiler=self._scoped_compiler,
             concurrent_scoped_access=self._concurrent_scoped_access,
         )
+        current_scope_objects[ScopedSyncContainer] = scoped
+        return scoped

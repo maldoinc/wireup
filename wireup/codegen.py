@@ -1,7 +1,5 @@
-from __future__ import annotations
-
 import contextlib
-from typing import Iterator
+from collections.abc import Iterator
 
 from typing_extensions import Self
 

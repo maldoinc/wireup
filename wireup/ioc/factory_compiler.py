@@ -1,10 +1,9 @@
 from __future__ import annotations
 
 import asyncio
-import sys
 import threading
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, Callable
+from typing import TYPE_CHECKING, Any
 
 from wireup.codegen import Codegen
 from wireup.errors import WireupError
@@ -18,12 +17,14 @@ from wireup.ioc.types import (
 from wireup.util import format_name
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
     from wireup.ioc.container.base_container import BaseContainer
     from wireup.ioc.registry import ContainerRegistry, InjectableFactory
     from wireup.ioc.types import ContainerObjectIdentifier, Qualifier
 
 
-@dataclass(**({"slots": True} if sys.version_info >= (3, 10) else {}))
+@dataclass(slots=True)
 class CompiledFactory:
     factory: Callable[[BaseContainer], Any]
     is_async: bool
@@ -132,6 +133,7 @@ class FactoryCompiler:
         lifetime: str,
         *,
         is_interface: bool,
+        enable_factory_replacement: bool,
     ) -> GetFactoryResult:
         cg = Codegen()
 
@@ -179,7 +181,7 @@ class FactoryCompiler:
                 cg += "storage[OBJ_ID] = instance"
                 if is_interface:
                     cg += "storage[ORIGINAL_OBJ_ID] = instance"
-                if is_singleton:
+                if is_singleton and enable_factory_replacement:
                     cg += "factories[OBJ_FACTORY_KEY].factory = _create_singleton_instance_factory(instance)"
 
             cg += "return instance"
@@ -246,7 +248,12 @@ class FactoryCompiler:
             )
 
         obj_factory_key = get_container_object_id(impl, qualifier)
-        result = self._get_factory_code(factory, lifetime, is_interface=is_interface)
+        result = self._get_factory_code(
+            factory,
+            lifetime,
+            is_interface=is_interface,
+            enable_factory_replacement=not factory.is_synthetic,
+        )
 
         try:
             namespace: dict[str, Any] = {

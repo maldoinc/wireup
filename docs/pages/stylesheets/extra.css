@@ -11,22 +11,6 @@
     font-size: .75rem;
 }
 
-dd,
-dd p {
-    margin-top: 0 !important;
-}
-
-.doc-heading {
-    font-size: 1rem !important;
-}
-
-.card-container {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: space-between;
-    gap: 10px;
-}
-
 body[data-md-color-scheme="default"] .grid.cards>ul>li {
     border: 1px solid #ddd !important;
 }
@@ -36,14 +20,8 @@ body[data-md-color-scheme="slate"] .grid.cards>ul>li {
 }
 
 .grid.cards>ul>li span.twemoji {
-    vertical-align: text-bottom;
+    vertical-align: top !important;
 }
-
-
-.grid .twemoji {
-    vertical-align: middle !important;
-}
-
 
 .color-fastapi {
     color: rgb(0, 148, 133) !important
@@ -51,33 +29,4 @@ body[data-md-color-scheme="slate"] .grid.cards>ul>li {
 
 .color-django {
     color: #0C4B33 !important;
-}
-
-.announce-star-link,
-.announce-star-link:visited,
-.announce-star-link:hover,
-.announce-star-link:focus {
-    color: #fff !important;
-}
-
-.announce-right {
-    width: 100%;
-    text-align: right;
-    padding-right: 0;
-}
-
-@media screen and (min-width: 60em) {
-    .announce-right {
-        padding-right: 60px;
-    }
-}
-
-/* Benchmark table deltas */
-.bench-diff {
-    color: var(--md-default-fg-color--light);
-}
-
-.bench-worse {
-    color: #c62828;
-    font-weight: 700;
 }

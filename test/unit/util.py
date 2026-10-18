@@ -1,7 +1,10 @@
 from __future__ import annotations
 
 import asyncio
-from typing import Coroutine, TypeVar
+from typing import TYPE_CHECKING, TypeVar
+
+if TYPE_CHECKING:
+    from collections.abc import Coroutine
 
 T = TypeVar("T")
 

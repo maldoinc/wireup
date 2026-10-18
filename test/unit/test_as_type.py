@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import sys
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import Optional, Protocol, runtime_checkable
@@ -150,24 +149,27 @@ def make_optional_impl() -> OptionalImpl | None:
     return OptionalImpl()
 
 
+def _optional_hint(tp: object) -> object:
+    return Optional.__getitem__(tp)
+
+
 def test_as_type_on_optional_factory():
     container = create_sync_container(injectables=[make_optional_impl])
 
-    # Should be resolvable via Optional[OptionalProto]
-    # This requires the container to register it as Optional[OptionalProto] (or Proto | None)
+    # Should be resolvable via Optional[OptionalProto].
+    # This requires the container to register it equivalently to OptionalProto | None.
     # because the factory returns Impl | None.
 
-    instance = container.get(Optional[OptionalProto])
+    instance = container.get(_optional_hint(OptionalProto))
     assert isinstance(instance, OptionalImpl)
     assert instance.opt() == "opt"
 
 
-@pytest.mark.skipif(sys.version_info < (3, 10), reason="Union types not available in python versions")
 def test_as_type_on_optional_factory_new_union_optional():
     container = create_sync_container(injectables=[make_optional_impl])
 
-    # Should be resolvable via Optional[OptionalProto]
-    # This requires the container to register it as Optional[OptionalProto] (or Proto | None)
+    # Should be resolvable via OptionalProto | None.
+    # This requires the container to register it equivalently to Optional[OptionalProto].
     # because the factory returns Impl | None.
 
     instance = container.get(OptionalProto | None)

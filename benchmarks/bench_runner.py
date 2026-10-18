@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 # /// script
 # dependencies = [
 #     "rich==14.2.0",
@@ -35,7 +37,7 @@ import urllib.error
 import urllib.request
 from contextlib import suppress
 from io import StringIO
-from typing import Any, Callable, Dict, List, Optional, TextIO, Tuple
+from typing import TYPE_CHECKING, Any, TextIO
 
 import psutil
 from rich.console import Console, Group
@@ -43,6 +45,9 @@ from rich.live import Live
 from rich.panel import Panel
 from rich.text import Text
 from rich.table import Table
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
 
 # Configuration
 PROJECTS = {
@@ -68,8 +73,8 @@ SERVER_LOG = "benchmarks/server.log"
 HEY_BIN = "hey"
 STARTUP_TIMEOUT_S = 20.0
 STARTUP_POLL_INTERVAL_S = 0.1
-BenchIteration = Dict[str, Any]
-BenchResult = Dict[str, Any]
+BenchIteration = dict[str, Any]
+BenchResult = dict[str, Any]
 TIMING_COLUMNS = [
     ("response-time", "latency"),
 ]
@@ -130,7 +135,7 @@ def get_free_port() -> int:
         return s.getsockname()[1]
 
 
-def resolve_repo_paths() -> Tuple[str, str]:
+def resolve_repo_paths() -> tuple[str, str]:
     benchmarks_dir = os.path.dirname(os.path.abspath(__file__))
     repo_root = os.path.dirname(benchmarks_dir)
     return repo_root, benchmarks_dir
@@ -138,7 +143,7 @@ def resolve_repo_paths() -> Tuple[str, str]:
 
 def build_runner_env(
     project: str, bench_assert: bool, use_local_version: bool, repo_root: str, benchmarks_dir: str
-) -> Dict[str, str]:
+) -> dict[str, str]:
     env = os.environ.copy()
     env["PROJECT"] = project
     if bench_assert:
@@ -178,7 +183,7 @@ def wait_for_server_ready(process: subprocess.Popen[Any], port: int, timeout_s: 
     raise TimeoutError(msg)
 
 
-def start_server(port: int, env: Dict[str, str], benchmarks_dir: str, log_file: TextIO) -> subprocess.Popen[Any]:
+def start_server(port: int, env: dict[str, str], benchmarks_dir: str, log_file: TextIO) -> subprocess.Popen[Any]:
     cmd = [sys.executable, "-m", "uvicorn", "wireup_benchmarks.app:app", "--port", str(port)]
     log_file.flush()
     process = subprocess.Popen(
@@ -201,7 +206,7 @@ def start_server(port: int, env: Dict[str, str], benchmarks_dir: str, log_file: 
     return process
 
 
-def percentile(values: List[float], p: float) -> float:
+def percentile(values: list[float], p: float) -> float:
     if not values:
         return 0.0
     if p <= 0:
@@ -216,7 +221,7 @@ def percentile(values: List[float], p: float) -> float:
     return values[lo] + (values[hi] - values[lo]) * (idx - lo)
 
 
-def compute_series_stats_ms(values_seconds: List[float]) -> Dict[str, float]:
+def compute_series_stats_ms(values_seconds: list[float]) -> dict[str, float]:
     if not values_seconds:
         return {
             "p50_ms": 0.0,
@@ -238,7 +243,7 @@ def compute_series_stats_ms(values_seconds: List[float]) -> Dict[str, float]:
 
 def monitor_memory_usage(
     process: psutil.Process, stop_event: threading.Event, sample_interval_s: float = 0.02
-) -> Dict[str, float]:
+) -> dict[str, float]:
     rss_peak = 0.0
 
     while not stop_event.is_set():
@@ -252,9 +257,9 @@ def monitor_memory_usage(
     return {"rss_peak_mb": rss_peak}
 
 
-def run_load_test(url: str, total_requests: int, concurrency: int) -> Dict[str, Any]:
-    latencies: List[float] = []
-    status_codes: List[int] = []
+def run_load_test(url: str, total_requests: int, concurrency: int) -> dict[str, Any]:
+    latencies: list[float] = []
+    status_codes: list[int] = []
 
     cmd = [HEY_BIN, "-n", str(total_requests), "-c", str(concurrency), "-o", "csv", url]
     start_global = time.perf_counter()
@@ -310,7 +315,7 @@ def run_load_test(url: str, total_requests: int, concurrency: int) -> Dict[str, 
     }
 
 
-def assert_workload(port: int) -> Tuple[bool, Dict[str, Any]]:
+def assert_workload(port: int) -> tuple[bool, dict[str, Any]]:
     url = f"http://127.0.0.1:{port}/assert-workload"
     try:
         with urllib.request.urlopen(url) as response:  # noqa: S310
@@ -333,7 +338,7 @@ def run_benchmark(
     warmup_requests: int,
     use_local_version: bool,
     bench_assert: bool,
-) -> Optional[BenchIteration]:
+) -> BenchIteration | None:
     print(f"--- Benchmarking {project} - {test_name} ---")
 
     # Start Server
@@ -360,7 +365,7 @@ def run_benchmark(
 
         # Run single measured load test
         stop_event = threading.Event()
-        monitor_result: Dict[str, float] = {"rss_peak_mb": 0.0}
+        monitor_result: dict[str, float] = {"rss_peak_mb": 0.0}
 
         def sample_memory() -> None:
             nonlocal monitor_result
@@ -422,7 +427,7 @@ def run_benchmark(
 def summarize_runs(
     project_id: str,
     test_name: str,
-    runs: List[BenchIteration],
+    runs: list[BenchIteration],
     runs_completed: int,
     runs_total: int,
 ) -> BenchResult:
@@ -502,10 +507,10 @@ def main() -> None:
     completed_runs = 0
     benchmark_start = time.perf_counter()
 
-    all_results: List[BenchResult] = []
+    all_results: list[BenchResult] = []
     fieldnames = SUMMARY_FIELDNAMES
     run_fieldnames = RUN_FIELDNAMES
-    run_state: Dict[Tuple[str, str], List[BenchIteration]] = {pair: [] for pair in pairs}
+    run_state: dict[tuple[str, str], list[BenchIteration]] = {pair: [] for pair in pairs}
 
     # Ensure output directory exists
     output_dir = os.path.dirname(args.output)
@@ -525,7 +530,7 @@ def main() -> None:
 
     console = Console()
 
-    def build_table(title: str, results: List[BenchResult]) -> Optional[Table]:
+    def build_table(title: str, results: list[BenchResult]) -> Table | None:
         if not results:
             return None
 
@@ -557,7 +562,7 @@ def main() -> None:
 
         return table
 
-    in_progress: Dict[Tuple[str, str], BenchResult] = {}
+    in_progress: dict[tuple[str, str], BenchResult] = {}
     current_iteration_line = ""
     current_iteration_progress = ""
 
@@ -581,7 +586,7 @@ def main() -> None:
             f"Elapsed: {format_duration(elapsed)}  ETA: {format_duration(eta)}"
         )
 
-        parts: List[Any] = []
+        parts: list[Any] = []
         parts.append(Panel(progress, title="Progress", expand=False))
         singleton_table = build_table("Benchmark Results - Singleton (So Far)", singleton_results)
         scoped_table = build_table("Benchmark Results - Scoped (So Far)", scoped_results)
@@ -642,7 +647,7 @@ def main() -> None:
                     bench_assert=args.bench_assert,
                 )
                 if res:
-                    run_row: Dict[str, Any] = dict.fromkeys(run_fieldnames, "")
+                    run_row: dict[str, Any] = dict.fromkeys(run_fieldnames, "")
                     run_row.update(
                         {
                             "project_id": project_id,

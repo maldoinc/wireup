@@ -1,6 +1,7 @@
+from typing import Annotated
+
 from django.http import HttpRequest, HttpResponse
 from django.views import View
-from typing_extensions import Annotated
 from wireup import Inject, Injected
 
 from test.integration.django.injectable.current_request_service import CurrentDjangoRequest

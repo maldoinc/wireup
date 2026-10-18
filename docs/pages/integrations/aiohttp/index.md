@@ -149,10 +149,9 @@ def test_override(aiohttp_client):
         def greet(self, name: str) -> str:
             return f"Hi, {name}"
 
-    with get_app_container(app).override.injectable(
-        GreeterService,
-        new=DummyGreeter(),
-    ):
+    container = get_app_container(app)
+
+    with container.override({GreeterService: DummyGreeter()}):
         res = aiohttp_client.get("/greet?name=Test")
 ```
 
@@ -185,6 +184,13 @@ async def users_list(
 ) -> web.Response:
     pass
 ```
+
+### Dependency Validation
+
+The aiohttp integration validates handlers during app startup.
+Missing dependencies and config values fail before requests are served.
+
+See [What Wireup Validates](../../what_wireup_validates.md) for the full rules.
 
 ### API Reference
 

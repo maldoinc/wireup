@@ -1,4 +1,5 @@
-from typing_extensions import Annotated
+from typing import Annotated
+
 from wireup import Inject, injectable
 
 

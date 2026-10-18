@@ -62,9 +62,9 @@ def test_override_http_endpoint():
             return f"Hi {name}"
 
     client = Client()
-    with get_app_container().override.injectable(
-        GreeterService, new=FakeGreeter()
-    ):
+    container = get_app_container()
+
+    with container.override({GreeterService: FakeGreeter()}):
         response = client.get("/greet/?name=World")
 
     assert response.status_code == 200
@@ -87,9 +87,9 @@ def test_override_command():
             return f"Hi {name}"
 
     out = StringIO()
-    with get_app_container().override.injectable(
-        GreeterService, new=FakeGreeter()
-    ):
+    container = get_app_container()
+
+    with container.override({GreeterService: FakeGreeter()}):
         call_command("greet", "--name=World", stdout=out)
 
     assert out.getvalue().strip() == "Hi World"
@@ -101,4 +101,4 @@ DRF and Ninja handlers should use `@inject` explicitly. Their tests follow the s
 
 - call endpoint via test client
 - assert response
-- use `override.injectable(...)` when needed
+- use `container.override({...})` when needed

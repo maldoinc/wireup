@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from contextvars import ContextVar, Token
 from threading import Lock
-from typing import TYPE_CHECKING, Any, Callable
+from typing import TYPE_CHECKING, Any
 
 from celery.signals import task_postrun, task_prerun, worker_process_shutdown, worker_shutdown
 
@@ -11,6 +11,8 @@ from wireup.errors import WireupError
 from wireup.ioc.util import hide_annotated_names
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
     from celery import Celery
     from celery.app.task import Task
 

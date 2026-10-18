@@ -2,7 +2,7 @@
 description: FastAPI dependency injection with Wireup: type-safe DI for routes, WebSockets, request-time injection, class-based handlers, and background tasks.
 ---
 
-# :simple-fastapi: FastAPI Integration
+# :simple-fastapi:{.color-fastapi} FastAPI Integration
 
 <div class="grid cards annotate" markdown>
 
@@ -86,10 +86,17 @@ Run the server with:
 fastapi dev main.py
 ```
 
+## Dependency Validation
+
+`wireup.integration.fastapi.setup(...)` validates route handlers up front.
+For regular route handlers, missing dependencies and config values fail during setup. For Class-based handlers, they fail during app startup.
+
+See [What Wireup Validates](../../what_wireup_validates.md) for the full rules.
+
 ## Detailed Guides
 
 - [Inject in Routes](inject_in_routes.md): HTTP/WebSocket handler injection and config value injection in route signatures.
-- [Request and WebSocket Context in Services](context_in_services.md): inject `fastapi.Request` and `fastapi.WebSocket` into Wireup services.
+- [Request and WebSocket Context in Services](context_in_services.md): inject `fastapi.Request` and `fastapi.WebSocket` into Wireup services, including FastAPI security/OAuth context.
 - [Class-Based Handlers](class_based_handlers.md): zero per-request constructor resolution and `WireupRoute` optimizations.
 - [Request-Time Injection](request_time_injection.md): injection in decorators, middleware, and other request-time call sites.
 - [Background Tasks](background_tasks.md): inject dependencies into scheduled callbacks with `WireupTask`.

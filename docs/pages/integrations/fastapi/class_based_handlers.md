@@ -24,7 +24,7 @@ This removes dependency resolution from the request cycle entirely, resulting in
 
 ### 1. Define the Handler
 
-Create a class with a `router` attribute. Use `WireupRoute` to enable method injection.
+Create a class with a `router` attribute.
 
 ```python title="controllers/user_controller.py"
 import fastapi
@@ -33,7 +33,7 @@ from wireup.integration.fastapi import WireupRoute
 
 
 class UserHandler:
-    # 1. Define a router. Use WireupRoute to enable injection in methods.
+    # 1. Define a router. (1)
     router = fastapi.APIRouter(
         prefix="/users", tags=["Users"], route_class=WireupRoute
     )
@@ -60,6 +60,9 @@ class UserHandler:
     ) -> fastapi.Response:
         return self.user_service.get_profile(auth.current_user)
 ```
+
+1. Optionally use `WireupRoute` for improved performance on endpoints that require per-request injection.
+    See [Inject In Routes: Improve Injection Performance](../fastapi/inject_in_routes.md#improve-injection-performance).
 
 !!! note "Why the different injection syntax?"
 
@@ -119,9 +122,9 @@ from wireup.integration.fastapi import get_app_container
 
 
 def test_user_handler(app):
-    with get_app_container(app).override.injectable(
-        UserProfileService, new=MockUserService()
-    ):
+    container = get_app_container(app)
+
+    with container.override({UserProfileService: MockUserService()}):
         # Start the client INSIDE the override block
         # The handler is initialized with the mock during startup
         with TestClient(app) as client:
@@ -130,11 +133,11 @@ def test_user_handler(app):
 
 ```python title="Don't"
 def test_user_handler_wrong(app):
+    container = get_app_container(app)
+
     # Handler has already been instantiated at startup.
     with TestClient(app) as client:
-        with get_app_container(app).override.injectable(
-            UserProfileService, new=MockUserService()
-        ):
+        with container.override({UserProfileService: MockUserService()}):
             client.get("/users/")
 ```
 

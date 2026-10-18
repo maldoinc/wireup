@@ -54,6 +54,13 @@ from wireup.integration.typer import get_app_container
 container = get_app_container(app)
 ```
 
+### Dependency Validation
+
+`wireup.integration.typer.setup(...)` validates command callbacks during setup.
+Missing dependencies and config values fail during setup.
+
+See [What Wireup Validates](../../what_wireup_validates.md) for the full rules.
+
 ### API Reference
 
 Visit [API Reference](../../class/typer_integration.md) for detailed information about the Typer integration module.

@@ -1,19 +1,14 @@
-import sys
 from dataclasses import dataclass
-from typing import Any, List, Optional, Tuple, Union
-
-from typing_extensions import Annotated, get_args, get_origin
-
-if sys.version_info >= (3, 10):
-    from types import UnionType
-else:
-    UnionType = object()
+from functools import reduce
+from operator import or_
+from types import UnionType
+from typing import Annotated, Any, Union, get_args, get_origin
 
 
 @dataclass(eq=True)
 class TypeAnalysis:
     normalized_type: type
-    """The type normalized to Optional[T] (if optional) or T."""
+    """The type normalized to T | None (if optional) or T."""
 
     raw_type: type
     """The core inner type T, stripped of all Optional/Annotated wrappers."""
@@ -21,13 +16,13 @@ class TypeAnalysis:
     is_optional: bool
     """True if None was found anywhere in the wrapping layers."""
 
-    annotations: Tuple[Any, ...]
+    annotations: tuple[Any, ...]
     """All metadata collected from every Annotated layer found."""
 
 
 def analyze_type(type_hint: Any) -> TypeAnalysis:
     current_type = type_hint
-    annotations: List[Any] = []
+    annotations: list[Any] = []
     is_optional = False
 
     while True:
@@ -39,18 +34,22 @@ def analyze_type(type_hint: Any) -> TypeAnalysis:
             annotations.extend(args[1:])
             continue
 
-        # Handle Union[T, None] / Optional[T] / T | None (if on 3.10+)
+        # Handle Union[T, None] / Optional[T] / T | None.
         if (origin is Union or origin is UnionType) and type(None) in args:
             is_optional = True
             union_without_none = tuple(arg for arg in args if arg is not type(None))
 
-            current_type = union_without_none[0] if len(union_without_none) == 1 else Union[union_without_none]  # type:ignore[reportUnknownVariableType, unused-ignore]
+            current_type = (
+                union_without_none[0]
+                if len(union_without_none) == 1
+                else reduce(or_, union_without_none[1:], union_without_none[0])
+            )
             continue
 
         break
 
     return TypeAnalysis(
-        normalized_type=Optional[current_type] if is_optional else current_type,  # type:ignore[arg-type]
+        normalized_type=current_type | None if is_optional else current_type,
         raw_type=current_type,  # type:ignore[arg-type, unused-ignore]
         is_optional=is_optional,
         annotations=tuple(annotations),

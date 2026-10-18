@@ -36,9 +36,9 @@ def test_override(app: FastAPI):
         def greet(self, name: str) -> str:
             return f"Hi, {name}"
 
-    with get_app_container(app).override.injectable(
-        GreeterService, new=DummyGreeter()
-    ):
+    container = get_app_container(app)
+
+    with container.override({GreeterService: DummyGreeter()}):
         with TestClient(app) as client:
             response = client.get("/greet?name=Test")
 
@@ -73,24 +73,22 @@ from fastapi import FastAPI
 from fastapi.testclient import TestClient
 import wireup
 import wireup.integration.fastapi
-from wireup import InjectableOverride
 from wireup.integration.fastapi import get_app_container
 
 
 @contextlib.contextmanager
 def create_test_app(
-    overrides: list[InjectableOverride] | None = None,
+    overrides: dict[type[Any], Any] | None = None,
 ) -> Iterator[FastAPI]:
     app = create_app()  # Create app, add routes, setup Wireup.
+    container = get_app_container(app)
 
-    with get_app_container(app).override.injectables(overrides or []):
+    with container.override(overrides or {}):
         yield app
 
 
 def test_user_handler_with_override():
-    overrides = [
-        InjectableOverride(target=UserProfileService, new=MockUserService())
-    ]
+    overrides = {UserProfileService: MockUserService()}
 
     # Override first, then start app lifecycle.
     with create_test_app(overrides=overrides) as app:

@@ -38,7 +38,7 @@ make lint test
 
 ## Guidelines
 
-- **Python Support**: Target Python 3.8+ compatibility
+- **Python Support**: Target Python 3.10+ compatibility
 - **Dependencies**: No new dependencies without approval
 - **Documentation**: Update docs for user-facing changes
 - **Testing**: Maintain test coverage for new code

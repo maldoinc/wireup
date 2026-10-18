@@ -144,7 +144,7 @@ class UppercaseGreeter(GreeterService):
 def test_override():
     container = get_app_container(app)
 
-    with container.override.injectable(GreeterService, new=UppercaseGreeter()):
+    with container.override({GreeterService: UppercaseGreeter()}):
         response = client.get("/hello", params={"name": "world"})
 
     assert response.text == "HELLO WORLD"

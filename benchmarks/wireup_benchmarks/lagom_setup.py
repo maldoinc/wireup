@@ -1,4 +1,4 @@
-from typing import Dict, Iterator
+from collections.abc import Iterator
 
 import fastapi
 from lagom import Container, Singleton, context_dependency_definition
@@ -43,7 +43,7 @@ deps = FastApiIntegration(container, request_singletons=[C, D, E, F, G], request
 async def lagom_singleton(
     a=deps.depends(A),
     b=deps.depends(B),
-) -> Dict[str, str]:
+) -> dict[str, str]:
     services.record_request("singleton")
     assert a.start == 10
     assert isinstance(a, A)
@@ -63,7 +63,7 @@ async def lagom_scoped(
     g=deps.depends(G),
     h=deps.depends(H),
     i=deps.depends(I),
-) -> Dict[str, str]:
+) -> dict[str, str]:
     services.record_request("scoped")
     assert isinstance(c, C)
     assert c is cc

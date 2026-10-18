@@ -93,16 +93,22 @@ def test_override():
         def greet(self, name: str) -> str:
             return f"Hi, {name}"
 
-    with get_app_container(app).override.injectable(
-        GreeterService,
-        new=DummyGreeter(),
-    ):
+    container = get_app_container(app)
+
+    with container.override({GreeterService: DummyGreeter()}):
         res = self.client.get("/greet?name=Test")
 ```
 
 See
 [Flask integration tests](https://github.com/maldoinc/wireup/blob/master/test/integration/flask/test_flask_integration.py)
 for more examples.
+
+### Dependency Validation
+
+`wireup.integration.flask.setup(...)` validates the views it wraps up front.
+Missing dependencies and config values fail during setup.
+
+See [What Wireup Validates](../../what_wireup_validates.md) for the full rules.
 
 ### API Reference
 

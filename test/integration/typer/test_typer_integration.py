@@ -1,10 +1,9 @@
-from typing import Optional
+from typing import Annotated, Optional
 
 import pytest
 import typer
 import wireup
 from typer.testing import CliRunner
-from typing_extensions import Annotated
 from wireup import Inject, Injected, injectable
 from wireup.integration import typer as wireup_typer
 
@@ -81,7 +80,7 @@ def test_hides_injected_parameters_from_help(runner: CliRunner, container: wireu
     @app.command()
     def lucky_number(  # type: ignore[reportUnusedFunction]
         generator: Injected[NumberGenerator],
-        message: Optional[str] = typer.Option("Your lucky number is", "--message"),
+        message: str | None = typer.Option("Your lucky number is", "--message"),
     ) -> None:
         typer.echo(f"{message}: {generator.get_lucky_number()}")
 

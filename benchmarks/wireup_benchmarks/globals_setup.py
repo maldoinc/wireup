@@ -1,5 +1,4 @@
 import contextlib
-from typing import Dict
 
 import fastapi
 
@@ -15,7 +14,7 @@ router = fastapi.APIRouter()
 
 
 @router.get("/globals/singleton")
-async def fastapi_singleton() -> Dict[str, str]:
+async def fastapi_singleton() -> dict[str, str]:
     services.record_request("singleton")
     assert a.start == 10
     assert isinstance(a, A)
@@ -24,7 +23,7 @@ async def fastapi_singleton() -> Dict[str, str]:
 
 
 @router.get("/globals/scoped")
-async def globals_scoped() -> Dict[str, str]:
+async def globals_scoped() -> dict[str, str]:
     services.record_request("scoped")
     c = C()
     d = D(c=c)

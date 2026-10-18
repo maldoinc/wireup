@@ -2,7 +2,6 @@ import os
 import sys
 from io import StringIO
 from pathlib import Path
-from typing import List
 from unittest.mock import patch
 
 import django
@@ -71,7 +70,7 @@ urlpatterns = [
 if django.VERSION >= (6, 0):
     from django.tasks import TaskResultStatus, task
 
-    background_task_results: List[str] = []
+    background_task_results: list[str] = []
 
     @inject_app
     def background_greet(*, name: str, greeter: Injected[GreeterService]) -> str:
@@ -134,7 +133,7 @@ def test_override(client: Client):
         def greet(self, name: str) -> str:
             return f"Bad day to you, {name}"
 
-    with get_app_container().override.injectable(GreeterService, new=RudeGreeter()):
+    with get_app_container().override({GreeterService: RudeGreeter()}):
         res = client.get("/classbased?name=Test")
 
     assert res.status_code == 200
@@ -236,9 +235,10 @@ def test_auto_inject_views_disabled_skips_injection():
     # WHEN we call ready() with auto_inject_views=False
     wireup_config = apps.get_app_config("wireup")
 
-    with patch("wireup.integration.django.apps.settings") as mock_settings, patch.object(
-        wireup_config, "_inject"
-    ) as mock_inject:
+    with (
+        patch("wireup.integration.django.apps.settings") as mock_settings,
+        patch.object(wireup_config, "_inject") as mock_inject,
+    ):
         mock_settings.WIREUP = settings_disabled
 
         wireup_config.ready()
@@ -257,9 +257,10 @@ def test_auto_inject_views_enabled_calls_injection():
     # WHEN we call ready() with auto_inject_views=True
     wireup_config = apps.get_app_config("wireup")
 
-    with patch("wireup.integration.django.apps.settings") as mock_settings, patch.object(
-        wireup_config, "_inject"
-    ) as mock_inject:
+    with (
+        patch("wireup.integration.django.apps.settings") as mock_settings,
+        patch.object(wireup_config, "_inject") as mock_inject,
+    ):
         mock_settings.WIREUP = settings_enabled
 
         wireup_config.ready()
@@ -302,7 +303,7 @@ def test_inject_app_django_management_command_override():
             return f"Guten Tag, {name}!"
 
     stdout = StringIO()
-    with get_app_container().override.injectable(GreeterService, new=GermanGreeter()):
+    with get_app_container().override({GreeterService: GermanGreeter()}):
         call_command("wireup_greet", "--name=Django", stdout=stdout)
 
     assert stdout.getvalue().strip() == "Guten Tag, Django!"
@@ -386,7 +387,7 @@ def test_ninja_override_injected_service(client: Client):
             return f"Go away, {name}"
 
     # WHEN using override context manager
-    with get_app_container().override.injectable(GreeterService, new=RudeGreeter()):
+    with get_app_container().override({GreeterService: RudeGreeter()}):
         res = client.get("/ninja/greet?name=Bob")
 
     # THEN the overridden service is used

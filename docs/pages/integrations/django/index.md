@@ -2,7 +2,7 @@
 description: Django dependency injection with Wireup: a type-safe DI container for Django, DRF, and Ninja with setup, request/app injection patterns, testing, and troubleshooting.
 ---
 
-# :simple-django: Django Integration
+# :simple-django:{.color-django} Django Integration 
 
 <div class="grid cards annotate" markdown>
 
@@ -105,6 +105,16 @@ urlpatterns = [
 ```
 
 Run the app with `python manage.py runserver`, then open `http://127.0.0.1:8000/greet/?name=World`.
+
+## Dependency Validation
+
+When `auto_inject_views=True`, Wireup validates Django views during app setup.
+Missing dependencies and config values fail before requests are served.
+
+When you use `@inject` or `@inject_app` explicitly, validation happens when those callables are invoked,
+not as part of the root Django startup guarantee.
+
+See [What Wireup Validates](../../what_wireup_validates.md) for the full rules.
 
 ## Detailed Guides
 

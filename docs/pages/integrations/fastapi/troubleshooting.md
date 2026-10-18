@@ -83,16 +83,3 @@ Fix:
 
 - Add middleware before calling `setup(...)`.
 - If middleware needs request-scoped DI, also enable `middleware_mode=True`.
-
-## Class-based handlers fail with “endpoint has been modified”
-
-Symptom:
-
-- Error says class-based handler method was modified (often by route decorators).
-
-Fix:
-
-- For class-based handlers, make sure endpoint methods are not wrapped after router registration.
-- If decorating methods, place decorators before router registration and follow the class-based handlers guide.
-
-See [Class-Based Handlers](class_based_handlers.md) for the supported pattern.
