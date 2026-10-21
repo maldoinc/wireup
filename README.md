@@ -54,6 +54,29 @@ Override dependencies with context managers, keep tests isolated, and restore th
 </tr>
 </table>
 
+> [!TIP]
+> **Decorators can have dependencies, too.** [`@wrap_with_dependencies`](https://maldoinc.github.io/wireup/latest/cross_cutting_concerns/)
+> lets ordinary Python decorators declare injected dependencies in any Wireup injection site. Ideal for reusable
+> authorization, audit logging, rate limiting, and more.
+>
+> ```python
+> def rate_limited(requests_per_minute: int):
+>     def decorator(fn):
+>         @wrap_with_dependencies(fn)
+>         async def wrapped(*args, limiter: Injected[RateLimiter], **kwargs):
+>             await limiter.check(requests_per_minute)
+>             return await fn(*args, **kwargs)
+>
+>         return wrapped
+>
+>     return decorator
+>
+>
+> @rate_limited(requests_per_minute=10)
+> async def create_user(user: User, service: Injected[UserService]) -> None:
+>     await service.create(user)
+> ```
+
 ## Benchmarks
 
 <p align="center">
