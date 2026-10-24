@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING, Annotated, Any, TypeVar, overload
 
 from typing_extensions import ParamSpec
 
+from wireup.errors import WireupError
 from wireup.ioc.types import (
     ConfigInjectionRequest,
     EmptyContainerInjectionRequest,
@@ -103,6 +104,19 @@ class AbstractDeclaration:
     obj: Any
 
 
+def _register_wireup_declaration(declaration: AbstractDeclaration | InjectableDeclaration) -> None:
+    existing = getattr(declaration.obj, "__wireup_registration__", None)
+    # Inherited or copied metadata belongs to the original provider.
+    if existing is not None and existing.obj is declaration.obj:
+        msg = (
+            f"Cannot register {stringify_type(declaration.obj)} more than once. "
+            "Stacking @injectable or @abstract decorators is not supported. "
+            "Use a separate factory function for additional registrations."
+        )
+        raise WireupError(msg)
+    declaration.obj.__wireup_registration__ = declaration
+
+
 @overload
 def injectable(
     obj: None = None,
@@ -148,11 +162,13 @@ def injectable(
 
     # Allow this to be used as a decorator factory or as a decorator directly.
     def _injectable_decorator(decorated_obj: T) -> T:
-        decorated_obj.__wireup_registration__ = InjectableDeclaration(  # type: ignore[attr-defined]
-            obj=decorated_obj,
-            qualifier=qualifier,
-            lifetime=lifetime,
-            as_type=as_type,
+        _register_wireup_declaration(
+            InjectableDeclaration(
+                obj=decorated_obj,
+                qualifier=qualifier,
+                lifetime=lifetime,
+                as_type=as_type,
+            )
         )
         return decorated_obj
 
@@ -206,7 +222,7 @@ def abstract(cls: type[T]) -> type[T]:
     See the documentation for more details:
     https://maldoinc.github.io/wireup/latest/interfaces/
     """
-    cls.__wireup_registration__ = AbstractDeclaration(cls)  # type: ignore[attr-defined]
+    _register_wireup_declaration(AbstractDeclaration(cls))
 
     warnings.warn(
         (
