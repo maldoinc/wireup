@@ -211,9 +211,12 @@ async def test_unknown_service_with_default_value() -> None:
     container = wireup.create_async_container(services=[BarWithDefaultValue])
 
     @inject_from_container(container)
-    def _(
-        _: Annotated[BarWithDefaultValue, Inject()],
-    ) -> None: ...
+    def target(service: Injected[BarWithDefaultValue]) -> BarWithDefaultValue:
+        return service
+
+    result = target()
+    assert isinstance(result, BarWithDefaultValue)
+    assert result.unknown_class is None
 
 
 async def test_injects_service_with_provided_async_scoped_container() -> None:
@@ -362,28 +365,30 @@ def test_inject_from_container_handles_optionals() -> None:
     main()
 
 
-async def test_raises_generator_cleanup() -> None:
+async def test_target_exception_reaches_generator_cleanup_and_propagates() -> None:
     Something = NewType("Something", str)
-    exception_notified = False
+    error = ValueError("boom!")
+    cleanup_errors: list[ValueError] = []
 
     @wireup.injectable(lifetime="scoped")
     async def f1() -> AsyncIterator[Something]:
         try:
             yield Something("Something")
-        except:  # noqa: E722
-            nonlocal exception_notified
-            exception_notified = True
+        except ValueError as exc:
+            cleanup_errors.append(exc)
 
     c = wireup.create_async_container(injectables=[f1])
 
     @inject_from_container(c)
-    async def main(_: Injected[Something]):
-        raise ValueError("boom!")
+    async def main(value: Injected[Something]) -> None:
+        assert value == "Something"
+        raise error
 
-    with contextlib.suppress(Exception):
+    with pytest.raises(ValueError, match=r"^boom!$") as exc_info:
         await main()
 
-    assert exception_notified
+    assert exc_info.value is error
+    assert cleanup_errors == [error]
 
 
 def test_inject_from_container_generator(container: Container) -> None:
@@ -400,7 +405,7 @@ def test_inject_from_container_generator(container: Container) -> None:
     gen = generator_target()
     assert next(gen) == "test"
     assert next(gen) == "after_yield"
-    with contextlib.suppress(StopIteration):
+    with pytest.raises(StopIteration):
         next(gen)
 
 

@@ -9,8 +9,6 @@ from wireup._annotations import injectable
 from wireup.errors import ContainerCloseError, WireupError
 from wireup.ioc.types import InjectableLifetime
 
-from test.conftest import Container
-
 
 class AsyncContextManagerResource:
     def __init__(self, cleanup_events: list[str]) -> None:
@@ -27,7 +25,7 @@ class AsyncContextManagerResource:
         self.cleanup_events.append("resource")
 
 
-def test_cleans_up_on_exit(container: Container) -> None:
+def test_cleans_up_on_exit() -> None:
     _cleanup_performed = False
     Something = NewType("Something", str)
 

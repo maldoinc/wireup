@@ -1,6 +1,5 @@
 import functools
 import inspect
-import unittest
 from collections.abc import Callable
 from typing import Annotated
 
@@ -23,53 +22,38 @@ from wireup.ioc.util import (
 )
 
 
-class TestUtilityFunctions(unittest.TestCase):
-    def test_get_annotated_parameter_retrieves_first_injectable_type(self):
-        class Dummy(InjectableType): ...
+def test_get_annotated_parameter_retrieves_first_injectable_type() -> None:
+    class Dummy(InjectableType): ...
 
-        d1 = Dummy()
-        d2 = Dummy()
+    d1 = Dummy()
+    d2 = Dummy()
 
-        def inner(
-            _a: Annotated[str, "ignored", unittest.TestCase, d1],
-            _b,
-            _c: str,
-            _d: Annotated[str, Inject(config="d")],
-            _e: str = Inject(config="e"),
-            _f=Inject(config="f"),
-            _g=d2,
-        ): ...
+    def inner(
+        _a: Annotated[str, "ignored", int, d1],
+        _b,
+        _c: str,
+        _d: Annotated[str, Inject(config="d")],
+        _e: str = Inject(config="e"),
+        _f=Inject(config="f"),
+        _g=d2,
+    ): ...
 
-        _param_get_annotation = functools.partial(param_get_annotation, globalns_supplier=lambda: globals())
+    _param_get_annotation = functools.partial(param_get_annotation, globalns_supplier=lambda: globals())
 
-        params = inspect.signature(inner)
-        self.assertEqual(
-            _param_get_annotation(params.parameters["_a"]),
-            AnnotatedParameter(str, d1),
-        )
-        self.assertEqual(_param_get_annotation(params.parameters["_b"]), None)
-        self.assertEqual(
-            _param_get_annotation(params.parameters["_c"]),
-            AnnotatedParameter(str, None),
-        )
-        self.assertEqual(
-            _param_get_annotation(params.parameters["_d"]),
-            AnnotatedParameter(str, ConfigInjectionRequest("d")),
-        )
-        self.assertEqual(
-            _param_get_annotation(params.parameters["_e"]),
-            AnnotatedParameter(str, has_default_value=True),
-        )
-        self.assertIsNone(
-            _param_get_annotation(params.parameters["_f"]),
-        )
-        self.assertEqual(_param_get_annotation(params.parameters["_g"]), None)
+    params = inspect.signature(inner)
+    assert _param_get_annotation(params.parameters["_a"]) == AnnotatedParameter(str, d1)
+    assert _param_get_annotation(params.parameters["_b"]) is None
+    assert _param_get_annotation(params.parameters["_c"]) == AnnotatedParameter(str, None)
+    assert _param_get_annotation(params.parameters["_d"]) == AnnotatedParameter(str, ConfigInjectionRequest("d"))
+    assert _param_get_annotation(params.parameters["_e"]) == AnnotatedParameter(str, has_default_value=True)
+    assert _param_get_annotation(params.parameters["_f"]) is None
+    assert _param_get_annotation(params.parameters["_g"]) is None
 
-    def test_annotated_parameter_hash_equality(self):
-        self.assertEqual(
-            hash(AnnotatedParameter(AnnotatedParameter, InjectableQualifier("wow"))),
-            hash(AnnotatedParameter(AnnotatedParameter, InjectableQualifier("wow"))),
-        )
+
+def test_annotated_parameter_hash_equality() -> None:
+    assert hash(AnnotatedParameter(AnnotatedParameter, InjectableQualifier("wow"))) == hash(
+        AnnotatedParameter(AnnotatedParameter, InjectableQualifier("wow"))
+    )
 
 
 def test_raises_multiple_annotations() -> None:

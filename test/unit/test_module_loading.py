@@ -1,5 +1,3 @@
-import unittest
-
 import wireup
 
 from test.unit.services import with_annotations
@@ -10,19 +8,19 @@ from test.unit.services.with_annotations.env import EnvService
 from test.unit.services.with_annotations.services import Foo
 
 
-class ModuleLoadingTest(unittest.TestCase):
-    def test_warmup_loads_all_in_module_with_annotations(self):
-        container = wireup.create_sync_container(injectables=[with_annotations], config={"env_name": "dev"})
+def test_warmup_loads_all_in_module_with_annotations() -> None:
+    container = wireup.create_sync_container(injectables=[with_annotations], config={"env_name": "dev"})
 
-        self.assertEqual("dev", container.get(EnvService).env_name)
-        self.assertEqual("foo", container.get(Foo).get_foo())
-        self.assertEqual(5, container.get(TrulyRandomService, qualifier="foo").get_truly_random())
-        self.assertEqual(4, container.get(RandomService, qualifier="foo").get_random())
+    assert container.get(EnvService).env_name == "dev"
+    assert container.get(Foo).get_foo() == "foo"
+    assert container.get(TrulyRandomService, qualifier="foo").get_truly_random() == 5
+    assert container.get(RandomService, qualifier="foo").get_random() == 4
 
-    def test_loads_module_is_file(self):
-        # Assert that loading works when the module is a file instead of the entire module
-        container = wireup.create_sync_container(config={"env_name": "dev"}, injectables=[services])
 
-        self.assertEqual("foo", container.get(services.Foo).get_foo())
-        self.assertEqual(4, container.get(RandomService, qualifier="foo").get_random())
-        self.assertEqual(5, container.get(TrulyRandomService, qualifier="foo").get_truly_random())
+def test_loads_module_is_file() -> None:
+    # Assert that loading works when the module is a file instead of the entire module
+    container = wireup.create_sync_container(config={"env_name": "dev"}, injectables=[services])
+
+    assert container.get(services.Foo).get_foo() == "foo"
+    assert container.get(RandomService, qualifier="foo").get_random() == 4
+    assert container.get(TrulyRandomService, qualifier="foo").get_truly_random() == 5
