@@ -126,7 +126,8 @@ import sqlite3
 @injectable
 class DatabaseService:
     def __init__(
-        self, config: Annotated[DatabaseConfig, Inject(config="db_config")]
+        self,
+        config: Annotated[DatabaseConfig, Inject(config="db_config")],
     ) -> None:
         self.connection = sqlite3.connect(config.url)
 ```

@@ -21,7 +21,7 @@ check-mypy:
 	uv run mypy benchmarks --ignore-missing-imports
 
 check-docs:
-	find docs -name "*.md" -not -path "docs/pages/class/*" | xargs uv run --python 3.14 blacken-docs -l 80 --check
+	uv run ruff format docs --line-length 80 --exclude docs/pages/class --check
 
 test:
 	uv run pytest test/unit
@@ -61,13 +61,13 @@ profile ./profile_tests $(num_runs):
 	uv run python ./profile_tests.py $(num_runs)
 
 format: format-docs
-	uv run ruff format .
+	uv run ruff format . --extend-exclude '*.md'
 
 fix: format
 	uv run ruff check wireup test benchmarks --fix
 
 format-docs:
-	find docs -name "*.md" -not -path "docs/pages/class/*" | xargs uv run --python 3.14 blacken-docs -l 80 || true
+	uv run ruff format docs --line-length 80 --exclude docs/pages/class
 
 build-docs:
 	uv run --python 3.14 mkdocs build --strict -f docs/mkdocs.yml

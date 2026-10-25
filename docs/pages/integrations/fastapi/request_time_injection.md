@@ -151,7 +151,6 @@ from fastapi.testclient import TestClient
 import wireup
 import wireup.integration.fastapi
 
-
 # Set up app with middleware_mode enabled
 app = FastAPI()
 container = wireup.create_async_container(

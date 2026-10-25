@@ -153,10 +153,8 @@ class Database:
     def __init__(self, url: Annotated[str, Inject(config="db_url")]) -> None:
         self.engine = sqlalchemy.create_engine(url)
 
-container = wireup.create_sync_container(
-    injectables=[Database],
-    config={"db_url": os.environ["DB_URL"]}
-)
+
+container = wireup.create_sync_container(injectables=[Database], config={"db_url": os.environ["DB_URL"]})
 ```
 
 **2. Clean Architecture**
@@ -169,6 +167,7 @@ class Database:
     def __init__(self, url: str) -> None:
         self.engine = create_engine(url)
 
+
 # 2. Configuration (Pydantic)
 class Settings(BaseModel):
     db_url: str = "sqlite://"
@@ -180,9 +179,11 @@ class Settings(BaseModel):
 def make_settings() -> Settings:
     return Settings()
 
+
 @injectable
 def make_database(settings: Settings) -> Database:
     return Database(url=settings.db_url)
+
 
 container = wireup.create_sync_container(injectables=[make_settings, make_database])
 ```
@@ -196,13 +197,7 @@ you want a more visible composition root in larger applications.
 import app
 import wireup
 
-container = wireup.create_sync_container(
-    injectables=[
-        app.services,
-        app.repositories,
-        app.factories
-    ]
-)
+container = wireup.create_sync_container(injectables=[app.services, app.repositories, app.factories])
 ```
 
 ## More Features
@@ -217,6 +212,7 @@ Instead of separate registration APIs for services, factories, resources, and as
 @injectable
 class UserService: ...
 
+
 # Dataclass → dependency (auto-generated __init__)
 @injectable
 @dataclass
@@ -224,10 +220,12 @@ class OrderProcessor:
     payment_gateway: PaymentGateway
     inventory_service: InventoryService
 
+
 # Function → factory
 @injectable
 def make_client() -> Client:
     return Client()
+
 
 # Generator → resource with cleanup
 @injectable
@@ -237,6 +235,7 @@ def database() -> Iterator[Database]:
         yield db
     finally:
         db.close()
+
 
 # Async generator → async resource with cleanup
 @injectable
@@ -248,7 +247,7 @@ async def database() -> AsyncIterator[Database]:
 These modifiers compose. A request-scoped async resource with cleanup is just:
 
 ```python
-@injectable(lifetime="scoped") # Scoped lifetime.
+@injectable(lifetime="scoped")  # Scoped lifetime.
 # async def → async dependency
 async def make_foo() -> AsyncIterator[Foo]:
     async with Foo() as foo:
@@ -289,8 +288,7 @@ Inject dependencies into CLI commands, background tasks, event handlers, or any 
 
 ```python
 @inject_from_container(container)
-def migrate_database(db: Injected[Database], settings: Injected[Settings]) -> None:
-    ...
+def migrate_database(db: Injected[Database], settings: Injected[Settings]) -> None: ...
 ```
 
 
@@ -303,6 +301,7 @@ Full support for sync, async, and generator factories. Wireup handles cleanup at
 class WeatherClient:
     def __init__(self, client: requests.Session) -> None:
         self.client = client
+
 
 @injectable
 def weather_client_factory() -> Iterator[WeatherClient]:
@@ -317,6 +316,7 @@ def weather_client_factory() -> Iterator[WeatherClient]:
 class WeatherClient:
     def __init__(self, client: aiohttp.ClientSession) -> None:
         self.client = client
+
 
 @injectable
 async def weather_client_factory() -> AsyncIterator[WeatherClient]:
@@ -337,11 +337,13 @@ Wireup has three lifetimes: `singleton`, `scoped`, and `transient`, plus explici
 class Settings:
     pass
 
+
 # Async singleton with cleanup
 @injectable
 async def database_factory(settings: Settings) -> AsyncIterator[AsyncConnection]:
     async with create_async_engine(settings.db_url).connect() as connection:
         yield connection
+
 
 # Scoped: one instance for the duration of the current scope.
 # In a web request, that's the request. In a WebSocket, the connection.
@@ -350,6 +352,7 @@ async def database_factory(settings: Settings) -> AsyncIterator[AsyncConnection]
 class RequestContext:
     def __init__(self) -> None:
         self.request_id = uuid4()
+
 
 # Transient: fresh instance every time
 @injectable(lifetime="transient")
@@ -369,9 +372,11 @@ Bind implementations to interfaces using Protocols or ABCs.
 class Notifier(Protocol):
     def notify(self) -> None: ...
 
+
 @injectable(as_type=Notifier)
 class SlackNotifier:
     def notify(self) -> None: ...
+
 
 # SlackNotifier is injected wherever Notifier is requested
 @app.post("/notify")
@@ -386,9 +391,11 @@ When multiple implementations exist, distinguish them with qualifiers:
 def primary_database(settings: Settings) -> Database:
     return Database(url=settings.db.primary_dsn)
 
+
 @injectable(qualifier="readonly")
 def readonly_database(settings: Settings) -> Database:
     return Database(url=settings.db.replica_dsn)
+
 
 # Primary (no qualifier) and replica (qualifier) in one service
 @injectable
@@ -441,6 +448,7 @@ Wireup validates the dependency graph when the container is created. See <a href
 @injectable
 class Foo:
     def __init__(self, unknown: NotManagedByWireup) -> None: ...
+
 
 container = wireup.create_sync_container(injectables=[Foo])
 # ❌ Parameter 'unknown' of 'Foo' depends on an unknown injectable 'NotManagedByWireup'.

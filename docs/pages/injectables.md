@@ -229,7 +229,6 @@ If you already have an object and want to make it injectable, use `wireup.instan
 ```python
 import wireup
 
-
 settings = AppSettings()
 
 container = wireup.create_sync_container(

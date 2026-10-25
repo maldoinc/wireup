@@ -131,7 +131,6 @@ from wireup.integration.django import inject
 
 from myapp.services import GreeterService
 
-
 router = Router()
 
 

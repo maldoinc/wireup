@@ -22,7 +22,6 @@ class UserRepository: ...
 import wireup
 import team_name_sqlalchemy
 
-
 container = wireup.create_sync_container(
     injectables=[team_name_sqlalchemy],
 )
@@ -50,7 +49,6 @@ INJECTABLES = [database_session, UserRepository]
 ```python title="app.py"
 import wireup
 import team_name_sqlalchemy
-
 
 container = wireup.create_sync_container(
     injectables=[*team_name_sqlalchemy.INJECTABLES],
@@ -91,7 +89,6 @@ def make_injectables(
 ```python title="app.py"
 import wireup
 from team_name_sqlalchemy import make_injectables
-
 
 container = wireup.create_sync_container(
     injectables=[*make_injectables(backend=settings.cache_backend)],
