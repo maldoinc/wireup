@@ -263,7 +263,7 @@ def test_inject_from_container_falsy_qualifier_injected() -> None:
 
     container = wireup.create_sync_container(injectables=[EmptyQualifierService])
 
-    @inject_from_container_unchecked(lambda: container.enter_scope())
+    @inject_from_container_unchecked(container.enter_scope)
     def target(
         svc: Annotated[EmptyQualifierService, Inject(qualifier="")],
     ) -> None:

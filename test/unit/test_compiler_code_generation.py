@@ -431,7 +431,7 @@ def test_unchecked_sync_container_singleton_config_optimized(sync_container: Syn
     -   Manually retrieves scope from supplier and uses `_synchronous_get`.
     -   Fetches config from scope at runtime.
     """
-    decorated = inject_from_container_unchecked(lambda: sync_container.enter_scope())(singleton_config_target)
+    decorated = inject_from_container_unchecked(sync_container.enter_scope)(singleton_config_target)
     code = _get_generated_code(decorated)
 
     expected = textwrap.dedent("""
@@ -457,7 +457,7 @@ def test_unchecked_sync_container_singleton_scoped_config_optimized(sync_contain
     -   Manually retrieves scope.
     -   Uses `_synchronous_get` for all dependencies.
     """
-    decorated = inject_from_container_unchecked(lambda: sync_container.enter_scope())(singleton_scoped_config_target)
+    decorated = inject_from_container_unchecked(sync_container.enter_scope)(singleton_scoped_config_target)
     code = _get_generated_code(decorated)
 
     expected = textwrap.dedent("""
@@ -482,7 +482,7 @@ def test_unchecked_async_container_sync_target_singleton_config_optimized(async_
     **Expectation**:
     -   Uses `_synchronous_get` (Fallback for async container in sync context).
     """
-    decorated = inject_from_container_unchecked(lambda: async_container.enter_scope())(singleton_config_target)
+    decorated = inject_from_container_unchecked(async_container.enter_scope)(singleton_config_target)
     code = _get_generated_code(decorated)
 
     expected = textwrap.dedent("""
@@ -506,7 +506,7 @@ def test_unchecked_async_container_sync_target_singleton_scoped_config_optimized
     **Expectation**:
     -   Uses `_synchronous_get` for all dependencies.
     """
-    decorated = inject_from_container_unchecked(lambda: async_container.enter_scope())(singleton_scoped_config_target)
+    decorated = inject_from_container_unchecked(async_container.enter_scope)(singleton_scoped_config_target)
     code = _get_generated_code(decorated)
 
     expected = textwrap.dedent("""
@@ -537,7 +537,7 @@ def test_unchecked_sync_container_falsy_qualifier(sync_container: SyncContainer)
     def target(q: Annotated[QualifiedService, wireup.Inject(qualifier="")]) -> None:
         pass
 
-    decorated = inject_from_container_unchecked(lambda: sync_container.enter_scope())(target)
+    decorated = inject_from_container_unchecked(sync_container.enter_scope)(target)
     code = _get_generated_code(decorated)
 
     expected = textwrap.dedent("""
@@ -560,7 +560,7 @@ def test_unchecked_async_container_async_target_singleton_config_optimized(async
     **Expectation**:
     -   Uses `await scope.get(...)` for dependencies.
     """
-    decorated = inject_from_container_unchecked(lambda: async_container.enter_scope())(async_singleton_config_target)
+    decorated = inject_from_container_unchecked(async_container.enter_scope)(async_singleton_config_target)
     code = _get_generated_code(decorated)
 
     expected = textwrap.dedent("""
@@ -584,9 +584,7 @@ def test_unchecked_async_container_async_target_singleton_scoped_config_optimize
     **Expectation**:
     -   Uses `await scope.get(...)` for all dependencies.
     """
-    decorated = inject_from_container_unchecked(lambda: async_container.enter_scope())(
-        async_singleton_scoped_config_target
-    )
+    decorated = inject_from_container_unchecked(async_container.enter_scope)(async_singleton_scoped_config_target)
     code = _get_generated_code(decorated)
 
     expected = textwrap.dedent("""
@@ -667,7 +665,7 @@ def test_unchecked_async_container_sync_target_async_dep_optimized(async_contain
     -   Bypasses optimization.
     -   Uses `scope._synchronous_get`.
     """
-    decorated = inject_from_container_unchecked(lambda: async_container.enter_scope())(sync_target_with_async_dep)
+    decorated = inject_from_container_unchecked(async_container.enter_scope)(sync_target_with_async_dep)
     code = _get_generated_code(decorated)
 
     expected = textwrap.dedent("""
@@ -691,7 +689,7 @@ def test_unchecked_async_container_async_target_async_dep_optimized(async_contai
     -   Bypasses optimization.
     -   Uses `await scope.get(...)`.
     """
-    decorated = inject_from_container_unchecked(lambda: async_container.enter_scope())(async_target_with_async_dep)
+    decorated = inject_from_container_unchecked(async_container.enter_scope)(async_target_with_async_dep)
     code = _get_generated_code(decorated)
 
     expected = textwrap.dedent("""

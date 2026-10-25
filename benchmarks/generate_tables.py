@@ -131,8 +131,10 @@ def generate_stability_table(
     lines = [
         "#### Stability (Across Runs)",
         "",
-        "These values summarize all runs for each project in this test. "
-        "**Median P50/P95/P99** are the medians of those per-run latency percentiles, while **Within ±3%** shows the share of runs whose RPS stayed within 3% of that project's median-run RPS.",
+        (
+            "These values summarize all runs for each project in this test. "
+            "**Median P50/P95/P99** are the medians of those per-run latency percentiles, while **Within ±3%** shows the share of runs whose RPS stayed within 3% of that project's median-run RPS."
+        ),
         "Look for **smaller Δ RPS**, **higher Within ±3%**, and **lower median tail latencies (P95/P99)** for the most consistent behavior.",
         "",
         "| Project | Min RPS | Max RPS | Δ RPS | Within ±3% | Med P50 (ms) | Med P95 (ms) | Med P99 (ms) |",

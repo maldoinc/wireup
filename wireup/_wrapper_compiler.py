@@ -63,7 +63,7 @@ def compile_injection_wrapper(
     return functools.wraps(target)(wrapper)
 
 
-def generate_injection_body(  # noqa: PLR0913
+def generate_injection_body(  # noqa: PLR0913, PLR0917
     gen: Codegen,
     names_to_inject: dict[str, AnnotatedParameter],
     container: BaseContainer | None,

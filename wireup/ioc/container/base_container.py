@@ -45,7 +45,7 @@ class BaseContainer:
         "_scoped_compiler",
     )
 
-    def __init__(  # noqa: PLR0913
+    def __init__(  # noqa: PLR0913, PLR0917
         self,
         registry: ContainerRegistry,
         override_manager: OverrideManager,

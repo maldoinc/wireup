@@ -31,7 +31,7 @@ def Inject(  # noqa: N802
     config: str | None = None,
     param: str | None = None,
     expr: str | None = None,
-    qualifier: Qualifier | None | object = _UNSET,
+    qualifier: Qualifier | object | None = _UNSET,
 ) -> InjectableType:
     """Let the Wireup container know how to inject this parameter.
 

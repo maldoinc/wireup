@@ -4,6 +4,7 @@ from typing import NewType
 
 import pytest
 import wireup
+from typing_extensions import Self
 from wireup import Injected, inject_from_container
 from wireup._annotations import injectable
 from wireup.errors import ContainerCloseError, WireupError
@@ -16,7 +17,7 @@ class AsyncContextManagerResource:
         self.entered = False
         self.exited = False
 
-    async def __aenter__(self) -> "AsyncContextManagerResource":
+    async def __aenter__(self) -> Self:
         self.entered = True
         return self
 

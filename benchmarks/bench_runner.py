@@ -168,7 +168,7 @@ def wait_for_server_ready(process: subprocess.Popen[Any], port: int, timeout_s: 
             raise RuntimeError(msg)
 
         try:
-            with urllib.request.urlopen(url, timeout=1.0) as response:  # noqa: S310
+            with urllib.request.urlopen(url, timeout=1.0) as response:
                 if response.status == 200:
                     return
                 last_error = f"unexpected status: {response.status}"
@@ -318,7 +318,7 @@ def run_load_test(url: str, total_requests: int, concurrency: int) -> dict[str, 
 def assert_workload(port: int) -> tuple[bool, dict[str, Any]]:
     url = f"http://127.0.0.1:{port}/assert-workload"
     try:
-        with urllib.request.urlopen(url) as response:  # noqa: S310
+        with urllib.request.urlopen(url) as response:
             payload = json.loads(response.read().decode("utf-8"))
             return response.status == 200, payload
     except urllib.error.HTTPError as e:
