@@ -1,5 +1,6 @@
 ---
-description: Django dependency injection with Wireup: a type-safe DI container for Django, DRF, and Ninja with setup, request/app injection patterns, testing, and troubleshooting.
+description: >-
+  Django dependency injection with Wireup: a type-safe DI container for Django, DRF, and Ninja with setup, request/app injection patterns, testing, and troubleshooting.
 ---
 
 # :simple-django:{.color-django} Django Integration 

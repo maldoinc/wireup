@@ -1,4 +1,4 @@
-.PHONY: install lint check-fmt check-ruff check-mypy test profile fix format docs-deploy publish docs-serve
+.PHONY: install lint check-fmt check-ruff check-mypy test profile fix format docs-deploy publish docs-serve docs-preview
 
 ifdef GITHUB_ACTIONS
 RUFF_ARGS := --output-format github
@@ -70,15 +70,16 @@ format-docs:
 	uv run ruff format docs --line-length 80 --exclude docs/pages/class
 
 build-docs:
-	uv run --python 3.14 mkdocs build --strict -f docs/mkdocs.yml
+	uv run --python 3.14 zensical build --strict -f docs/zensical.toml
 
 
 docs-serve:
-	uv run mkdocs serve -f docs/mkdocs.yml --livereload
+	uv run --python 3.14 zensical serve -f docs/zensical.toml
 
 # make docs-deploy version=...
 docs-deploy $(version):
-	cd docs && uv run mike deploy --push --update-aliases $(version) latest
+	git fetch origin gh-pages:gh-pages
+	cd docs && uv run --python 3.14 mike deploy -F zensical.toml --push --update-aliases $(version) latest
 
 publish:
 	uv build
