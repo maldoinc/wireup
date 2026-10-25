@@ -65,6 +65,9 @@ def test_eval_type_backport_not_imported_on_py311_and_newer() -> None:
 
     container.get(A)
     container.get(B)
+    with pytest.raises(TypeError):
+        ensure_is_type("int + str", globalns_supplier=dict)
 
-    # On Python 3.11+, eval_type_backport should not be imported since the native typing._eval_type should suffice.
+    # On Python 3.11+, eval_type_backport should not be imported since native
+    # typing._eval_type either resolves the annotation or reports its error.
     assert "eval_type_backport" not in sys.modules

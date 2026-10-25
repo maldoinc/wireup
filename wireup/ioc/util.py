@@ -163,18 +163,26 @@ def ensure_is_type(value: type[T] | str, globalns_supplier: Callable[[], dict[st
         # See: https://github.com/pydantic/pydantic/blob/f42171c760d43b9522fde513ae6e209790f7fefb/pydantic/_internal/_typing_extra.py#L485-L512
         return _eval_type_native(forward_ref, globalns=globalns_supplier())  # type:ignore[no-any-return]
     except TypeError as eval_type_error:
-        try:
-            import eval_type_backport  # noqa: PLC0415
-        except ImportError as import_error:
-            msg = (
-                f"Error evaluating type annotation '{value}'. "
-                f"Got: TypeError: {eval_type_error}.\n"
-                "Tip: Try using the eval_type_backport package to resolve stringified types.\n"
-                "See: https://maldoinc.github.io/wireup/latest/future_annotations/"
-            )
-            raise WireupError(msg) from import_error
+        if sys.version_info < (3, 11):
+            try:
+                import eval_type_backport  # noqa: PLC0415
+            except ImportError as import_error:
+                msg = (
+                    f"Error evaluating type annotation '{value}'. "
+                    f"Got: TypeError: {eval_type_error}.\n"
+                    "Tip: Try using the eval_type_backport package to resolve stringified types.\n"
+                    "See: https://maldoinc.github.io/wireup/latest/future_annotations/"
+                )
+                raise WireupError(msg) from import_error
 
-        return eval_type_backport.eval_type_backport(forward_ref, globalns=globalns_supplier(), try_default=False)  # type:ignore[no-any-return]
+            return eval_type_backport.eval_type_backport(  # type:ignore[no-any-return]
+                forward_ref, globalns=globalns_supplier(), try_default=False
+            )
+
+        # Native evaluation supports modern annotation syntax on Python 3.11+.
+        # A TypeError here means an invalid annotation rather than
+        # syntax that eval_type_backport can resolve.
+        raise
 
     except NameError as e:
         msg = (
