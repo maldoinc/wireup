@@ -19,6 +19,7 @@ check-ruff:
 check-mypy:
 	uv run mypy wireup --strict
 	uv run mypy benchmarks --ignore-missing-imports
+	uv run mypy test/typing_tests.py --strict
 
 check-docs:
 	uv run ruff format docs --line-length 80 --exclude docs/pages/class --check
