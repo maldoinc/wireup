@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, TypeVar, overload
 
-from typing_extensions import Self
+from typing_extensions import Self, TypeForm
 
 from wireup.errors import UnknownServiceRequestedError
 from wireup.ioc._exit_stack import async_clean_exit_stack
@@ -22,13 +22,13 @@ class BareAsyncContainer(BaseContainer):
     __slots__ = ()
 
     @overload
-    async def get(self, klass: type[T], qualifier: Qualifier | None = None) -> T: ...
+    async def get(self, klass: TypeForm[T], qualifier: Qualifier | None = None) -> T: ...
     @overload
     async def get(self, klass: Callable[..., T], qualifier: Qualifier | None = None) -> T: ...
 
     async def get(
         self,
-        klass: Callable[..., T] | None,
+        klass: TypeForm[T] | Callable[..., T],
         qualifier: Qualifier | None = None,
     ) -> T | None:
         """Get an instance of the requested type.

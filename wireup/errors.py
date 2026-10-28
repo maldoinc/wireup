@@ -6,6 +6,8 @@ from collections.abc import Mapping as AbcMapping
 from collections.abc import Sequence as AbcSequence
 from typing import TYPE_CHECKING, Any, get_args, get_origin
 
+from typing_extensions import TypeForm
+
 from wireup.util import format_name, stringify_type
 
 if TYPE_CHECKING:
@@ -65,7 +67,7 @@ class WireupError(Exception):
 class DuplicateServiceRegistrationError(WireupError):
     """Raised when attempting to register a injectable with the same qualifier twice."""
 
-    def __init__(self, klass: type[Any], qualifier: Qualifier | None) -> None:
+    def __init__(self, klass: TypeForm[Any], qualifier: Qualifier | None) -> None:
         self.klass = klass
         self.qualifier = qualifier
 
@@ -75,7 +77,7 @@ class DuplicateServiceRegistrationError(WireupError):
 class DuplicateQualifierForInterfaceError(WireupError):
     """Raised when registering an impl for an interface using a qualifier that is already known."""
 
-    def __init__(self, klass: type[Any], qualifier: Qualifier | None) -> None:
+    def __init__(self, klass: TypeForm[Any], qualifier: Qualifier | None) -> None:
         super().__init__(
             f"Cannot register implementation class {format_name(klass, qualifier)} for {klass.__base__} "
             "as it already exists",
@@ -114,7 +116,7 @@ class UnknownQualifiedServiceRequestedError(WireupError):
 
     def __init__(
         self,
-        klass: type[Any],
+        klass: TypeForm[Any],
         qualifier: Qualifier | None,
         available_qualifiers: set[Qualifier | None],
     ) -> None:
@@ -171,7 +173,7 @@ class InvalidAsTypeError(WireupError):
 class UnknownOverrideRequestedError(WireupError):
     """Raised when attempting to override a injectable which does not exist."""
 
-    def __init__(self, klass: type, qualifier: Qualifier | None) -> None:
+    def __init__(self, klass: TypeForm[Any], qualifier: Qualifier | None) -> None:
         if collection_message := get_unknown_collection_message(action="override", klass=klass, qualifier=qualifier):
             super().__init__(collection_message)
             return

@@ -5,6 +5,8 @@ import threading
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any
 
+from typing_extensions import TypeForm
+
 from wireup.codegen import Codegen
 from wireup.errors import WireupError
 from wireup.ioc.types import (
@@ -231,7 +233,7 @@ class FactoryCompiler:
         )
 
     def _compile_and_create_function(
-        self, factory: InjectableFactory, impl: type, qualifier: Qualifier | None
+        self, factory: InjectableFactory, impl: TypeForm[Any], qualifier: Qualifier | None
     ) -> CompiledFactory:
         obj_id = get_container_object_id(impl, qualifier)
         implementation = self._registry.get_implementation(impl, qualifier)
@@ -288,7 +290,7 @@ class FactoryCompiler:
 
     @staticmethod
     def _create_scope_mismatch_error_factory(
-        impl: type,
+        impl: TypeForm[Any],
         qualifier: Qualifier | None,
         lifetime: str,
     ) -> Callable[[BaseContainer], Any]:

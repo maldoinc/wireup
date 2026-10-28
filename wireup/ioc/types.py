@@ -3,7 +3,9 @@ from __future__ import annotations
 from collections.abc import AsyncGenerator, Callable, Generator, Hashable
 from dataclasses import dataclass
 from enum import Enum, auto
-from typing import Any, Literal
+from typing import Any, Literal, TypeAlias
+
+from typing_extensions import TypeForm
 
 from wireup.errors import WireupError
 
@@ -51,10 +53,10 @@ class ConfigInjectionRequest(InjectableType):
 
 
 Qualifier = Hashable
-ContainerObjectIdentifier = type[Any] | tuple[type[Any], Qualifier]
+ContainerObjectIdentifier: TypeAlias = TypeForm[Any] | tuple[TypeForm[Any], Qualifier]
 
 
-def get_container_object_id(klass: type[Any], qualifier: Qualifier | None) -> ContainerObjectIdentifier:
+def get_container_object_id(klass: TypeForm[Any], qualifier: Qualifier | None) -> ContainerObjectIdentifier:
     return klass if qualifier is None else (klass, qualifier)
 
 
@@ -87,7 +89,7 @@ class AnnotatedParameter:
     __slots__ = ("annotation", "has_default_value", "is_parameter", "klass", "qualifier_value")
 
     def __init__(
-        self, klass: type[Any], annotation: InjectableType | None = None, *, has_default_value: bool = False
+        self, klass: TypeForm[Any], annotation: InjectableType | None = None, *, has_default_value: bool = False
     ) -> None:
         """Create a new AnnotatedParameter.
 
@@ -130,7 +132,7 @@ class InjectableOverride:
     :param qualifier: The qualifier of the dependency to override (if any).
     """
 
-    target: type[Any]
+    target: TypeForm[Any]
     new: Any
     qualifier: Qualifier | None = None
 

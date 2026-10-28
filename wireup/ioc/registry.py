@@ -8,6 +8,8 @@ from collections.abc import Callable, Hashable, Mapping, Sequence
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Annotated, Any, TypeVar
 
+from typing_extensions import TypeForm
+
 from wireup.errors import (
     AsTypeMismatchError,
     DuplicateQualifierForInterfaceError,
@@ -56,7 +58,7 @@ class InjectableFactory:
     is_synthetic: bool = False
 
 
-def _function_get_unwrapped_return_type(fn: Callable[..., T]) -> type[T] | None:
+def _function_get_unwrapped_return_type(fn: Callable[..., T]) -> TypeForm[T] | None:
     if isinstance(fn, type):
         return fn
 
@@ -88,8 +90,8 @@ class ContainerRegistry:
         impls: list[InjectableDeclaration] | None = None,
     ) -> None:
         self.parameters = config or ConfigStore()
-        self.interfaces: dict[type, dict[Qualifier, type]] = {}
-        self.impls: dict[type, list[Qualifier | None]] = defaultdict(list)
+        self.interfaces: dict[TypeForm[Any], dict[Qualifier, TypeForm[Any]]] = {}
+        self.impls: dict[TypeForm[Any], list[Qualifier | None]] = defaultdict(list)
         self.factories: dict[ContainerObjectIdentifier, InjectableFactory] = {}
         self.dependencies: dict[InjectionTarget, dict[str, AnnotatedParameter]] = defaultdict(dict)
         self.lifetime: dict[ContainerObjectIdentifier, InjectableLifetime] = {}
@@ -306,7 +308,7 @@ class ContainerRegistry:
             )
 
     def _update_factories_async_flag(self) -> None:
-        def _is_dependency_async(impl: type, qualifier: Qualifier | None) -> bool:
+        def _is_dependency_async(impl: TypeForm[Any], qualifier: Qualifier | None) -> bool:
             factory = self.factories[get_container_object_id(self.get_implementation(impl, qualifier), qualifier)]
 
             if factory.is_async:
@@ -329,7 +331,7 @@ class ContainerRegistry:
 
     def _register(  # noqa: PLR0913
         self,
-        klass: type[Any],
+        klass: TypeForm[Any],
         factory_fn: Callable[..., Any],
         lifetime: InjectableLifetime = "singleton",
         qualifier: Qualifier | None = None,
@@ -415,11 +417,11 @@ class ContainerRegistry:
     def _register_abstract(self, klass: type) -> None:
         self.interfaces[klass] = {}
 
-    def is_impl_with_qualifier_known(self, klass: type, qualifier_value: Qualifier | None) -> bool:
+    def is_impl_with_qualifier_known(self, klass: TypeForm[Any], qualifier_value: Qualifier | None) -> bool:
         """Determine if klass representing a concrete implementation + qualifier is known by the registry."""
         return klass in self.impls and qualifier_value in self.impls[klass]
 
-    def is_type_with_qualifier_known(self, klass: type, qualifier: Qualifier | None) -> bool:
+    def is_type_with_qualifier_known(self, klass: TypeForm[Any], qualifier: Qualifier | None) -> bool:
         """Determine if klass+qualifier is known. Klass can be a concrete class or one registered as abstract."""
         is_known_impl = self.is_impl_with_qualifier_known(klass, qualifier)
         is_known_intf = self.__is_interface_with_qualifier_known(klass, qualifier)
@@ -428,15 +430,15 @@ class ContainerRegistry:
 
     def __is_interface_with_qualifier_known(
         self,
-        klass: type,
+        klass: TypeForm[Any],
         qualifier: Qualifier | None,
     ) -> bool:
         return klass in self.interfaces and qualifier in self.interfaces[klass]
 
-    def is_interface_known(self, klass: type) -> bool:
+    def is_interface_known(self, klass: TypeForm[Any]) -> bool:
         return klass in self.interfaces
 
-    def interface_resolve_impl(self, klass: type, qualifier: Qualifier | None) -> type:
+    def interface_resolve_impl(self, klass: TypeForm[Any], qualifier: Qualifier | None) -> TypeForm[Any]:
         """Given an interface and qualifier return the concrete implementation."""
         impls = self.interfaces.get(klass, {})
 
@@ -445,12 +447,12 @@ class ContainerRegistry:
 
         raise UnknownQualifiedServiceRequestedError(klass, qualifier, set(impls.keys()))
 
-    def get_implementation(self, klass: type, qualifier: Qualifier | None) -> type:
+    def get_implementation(self, klass: TypeForm[Any], qualifier: Qualifier | None) -> TypeForm[Any]:
         """Return the concrete implementation for a given class/interface and qualifier."""
         if self.is_interface_known(klass):
             return self.interface_resolve_impl(klass, qualifier)
 
         return klass
 
-    def get_lifetime(self, klass: type, qualifier: Qualifier | None) -> InjectableLifetime:
+    def get_lifetime(self, klass: TypeForm[Any], qualifier: Qualifier | None) -> InjectableLifetime:
         return self.lifetime[get_container_object_id(self.get_implementation(klass, qualifier), qualifier)]
