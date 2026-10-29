@@ -36,7 +36,7 @@ classifiers = [
     "Typing :: Typed",
     "Topic :: Software Development :: Libraries :: Python Modules",
 ]
-dependencies = ["typing_extensions>=4.7"]
+dependencies = ["typing_extensions>=4.13"]
 
 [project.optional-dependencies]
 eval-type = ["eval-type-backport>=0.2.0; python_version < '3.11'"]
@@ -52,7 +52,7 @@ dev = [
     "setuptools>=68.0.0",
     "mkdocstrings-python>=1.6.2",
     "mike>=2.1.3",
-    "typing-extensions>=4.7.1",
+    "typing-extensions>=4.13",
     "mypy==1.20.2",
     "coverage>=7.3.2",
     "tox>=4.14.2",
@@ -178,6 +178,7 @@ exclude_also = [
 ]
 
 [tool.mypy]
+enable_incomplete_feature = ["TypeForm"]
 exclude = "wireup.integration"
 
 [tool.pytest.ini_options]

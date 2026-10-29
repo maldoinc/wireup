@@ -6,6 +6,8 @@ from contextlib import contextmanager
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any
 
+from typing_extensions import TypeForm
+
 from wireup.errors import UnknownOverrideRequestedError
 from wireup.ioc.factory_compiler import CompiledFactory, FactoryCompiler
 from wireup.ioc.types import InjectableOverride, Qualifier, get_container_object_id
@@ -34,7 +36,7 @@ class OverrideManager:
 
     def __init__(
         self,
-        is_valid_override: Callable[[type, Qualifier], bool],
+        is_valid_override: Callable[[TypeForm[Any], Qualifier], bool],
         factory_compiler: FactoryCompiler,
         scoped_factory_compiler: FactoryCompiler,
     ) -> None:
@@ -45,7 +47,7 @@ class OverrideManager:
 
     @contextmanager
     def __call__(self, overrides: Mapping[Any, Any]) -> Iterator[None]:
-        parsed_overrides: list[tuple[type[Any], Qualifier | None, Any]] = []
+        parsed_overrides: list[tuple[TypeForm[Any], Qualifier | None, Any]] = []
         for key, new in overrides.items():
             if isinstance(key, tuple):
                 target, qualifier = key  # pyright: ignore[reportUnknownVariableType]
@@ -82,7 +84,7 @@ class OverrideManager:
     ) -> None:
         compiler.factories[obj_id] = original
 
-    def set(self, target: type, new: Any, qualifier: Qualifier | None = None) -> None:
+    def set(self, target: TypeForm[Any], new: Any, qualifier: Qualifier | None = None) -> None:
         """Override the `target` injectable with `new`.
 
         Future requests to inject `target` will result in `new` being injected.
@@ -132,7 +134,7 @@ class OverrideManager:
             is_async=is_async,
         )
 
-    def _restore_factory_methods(self, target: type, qualifier: Qualifier | None) -> None:
+    def _restore_factory_methods(self, target: TypeForm[Any], qualifier: Qualifier | None) -> None:
         """Restore original factory methods after override is removed."""
         obj_id = get_container_object_id(target, qualifier)
 
@@ -160,7 +162,7 @@ class OverrideManager:
         value = self._original_factories[container_object_identifier][-1].new_value
         return _GetActiveOverrideResult(found=True, value=value)
 
-    def delete(self, target: type, qualifier: Qualifier | None = None) -> None:
+    def delete(self, target: TypeForm[Any], qualifier: Qualifier | None = None) -> None:
         """Clear active override for the `target` injectable."""
         obj_id = get_container_object_id(target, qualifier)
         self._restore_factory_methods(target, qualifier)
@@ -178,7 +180,7 @@ class OverrideManager:
         self._original_factories.clear()
 
     @contextmanager
-    def injectable(self, target: type, new: Any, qualifier: Qualifier | None = None) -> Iterator[None]:
+    def injectable(self, target: TypeForm[Any], new: Any, qualifier: Qualifier | None = None) -> Iterator[None]:
         """Override the `target` injectable with `new` for the duration of the context manager.
 
         Deprecated: Use `container.override` instead.
