@@ -63,7 +63,7 @@ def wireup_middleware(
         with async_container_force_sync_scope(container, {HttpRequest: request}) as scoped:
             container_token = _request_container.set(scoped)
             try:
-                return cast(HttpResponse, get_response(request))
+                return cast("HttpResponse", get_response(request))
             finally:
                 _request_container.reset(container_token)
 

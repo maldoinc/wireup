@@ -1,6 +1,7 @@
 from collections.abc import Callable, Hashable
 from typing import Annotated, Any, TypeVar
 
+from django.http import HttpRequest, HttpResponse
 from typing_extensions import ParamSpec, TypeAliasType, TypeForm, assert_type
 from wireup import (
     AsyncContainer,
@@ -17,6 +18,7 @@ from wireup import (
     qualified,
     wrap_with_dependencies,
 )
+from wireup.integration.django import wireup_middleware
 
 
 @injectable
@@ -162,8 +164,6 @@ async def check_async_type_expression_tokens(container: AsyncContainer) -> None:
 
 
 async def check_django_middleware_response_types() -> None:
-    from django.http import HttpRequest, HttpResponse
-    from wireup.integration.django import wireup_middleware
 
     def sync_response(request: HttpRequest) -> HttpResponse:
         return HttpResponse(request.path)
