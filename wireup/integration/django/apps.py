@@ -2,11 +2,11 @@ import functools
 import importlib
 import inspect
 import warnings
-from collections.abc import Awaitable, Callable
+from collections.abc import Awaitable, Callable, Coroutine
 from contextvars import ContextVar
 from dataclasses import dataclass
 from types import ModuleType
-from typing import Any
+from typing import Any, cast, overload
 
 import django
 import django.urls
@@ -29,9 +29,21 @@ from wireup.ioc.util import get_valid_injection_annotated_parameters
 _request_container: ContextVar[BaseContainer] = ContextVar("_wireup_request_container")
 
 
-@sync_and_async_middleware
+@overload
+def wireup_middleware(
+    get_response: Callable[[HttpRequest], Coroutine[Any, Any, HttpResponse]],
+) -> Callable[[HttpRequest], Coroutine[Any, Any, HttpResponse]]: ...
+
+
+@overload
 def wireup_middleware(
     get_response: Callable[[HttpRequest], HttpResponse],
+) -> Callable[[HttpRequest], HttpResponse]: ...
+
+
+@sync_and_async_middleware
+def wireup_middleware(
+    get_response: Callable[[HttpRequest], HttpResponse | Awaitable[HttpResponse]],
 ) -> Callable[[HttpRequest], HttpResponse | Awaitable[HttpResponse]]:
     container = get_app_container()
 
@@ -51,7 +63,7 @@ def wireup_middleware(
         with async_container_force_sync_scope(container, {HttpRequest: request}) as scoped:
             container_token = _request_container.set(scoped)
             try:
-                return get_response(request)
+                return cast(HttpResponse, get_response(request))
             finally:
                 _request_container.reset(container_token)
 

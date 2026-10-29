@@ -159,3 +159,19 @@ def check_type_expression_tokens(container: SyncContainer) -> None:
 async def check_async_type_expression_tokens(container: AsyncContainer) -> None:
     assert_type(await container.get(Repository | None), Repository | None)
     assert_type(await container.get(RepositorySelector), RepositorySelector)
+
+
+async def check_django_middleware_response_types() -> None:
+    from django.http import HttpRequest, HttpResponse
+    from wireup.integration.django import wireup_middleware
+
+    def sync_response(request: HttpRequest) -> HttpResponse:
+        return HttpResponse(request.path)
+
+    async def async_response(request: HttpRequest) -> HttpResponse:
+        return HttpResponse(request.path)
+
+    request = HttpRequest()
+    assert_type(wireup_middleware(sync_response)(request), HttpResponse)
+
+    assert_type(await wireup_middleware(async_response)(request), HttpResponse)
