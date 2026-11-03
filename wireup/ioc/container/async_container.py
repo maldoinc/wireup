@@ -83,7 +83,7 @@ class AsyncContainer(BareAsyncContainer):
         https://maldoinc.github.io/wireup/latest/lifetimes_and_scopes/#working-with-scopes
         """
         current_scope_objects = dict(provided) if provided else {}
-        scoped = ScopedAsyncContainer(
+        return ScopedAsyncContainer(
             registry=self._registry,
             override_manager=self._override_mgr,
             global_scope_objects=self._global_scope_objects,
@@ -94,8 +94,6 @@ class AsyncContainer(BareAsyncContainer):
             scoped_compiler=self._scoped_compiler,
             concurrent_scoped_access=self._concurrent_scoped_access,
         )
-        current_scope_objects[ScopedAsyncContainer] = scoped
-        return scoped
 
 
 def async_container_force_sync_scope(
@@ -109,7 +107,7 @@ def async_container_force_sync_scope(
     in an environment that supports both sync and async.
     """
     current_scope_objects = dict(provided) if provided else {}
-    scoped = ScopedSyncContainer(
+    return ScopedSyncContainer(
         registry=container._registry,
         override_manager=container._override_mgr,
         global_scope_objects=container._global_scope_objects,
@@ -120,5 +118,3 @@ def async_container_force_sync_scope(
         scoped_compiler=container._scoped_compiler,
         concurrent_scoped_access=container._concurrent_scoped_access,
     )
-    current_scope_objects[ScopedSyncContainer] = scoped
-    return scoped

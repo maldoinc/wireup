@@ -3,7 +3,7 @@ from __future__ import annotations
 import asyncio
 import threading
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, NoReturn
 
 from wireup.codegen import Codegen
 from wireup.errors import WireupError
@@ -40,6 +40,11 @@ _CONTAINER_SCOPE_ERROR_MSG = (
 
 _WIREUP_GENERATED_FACTORY_NAME = "_wireup_factory"
 _SENTINEL = object()
+
+
+def _scoped_container_factory() -> NoReturn:
+    msg = "Scoped container self-injection is not supported when entering a synchronous scope from an async container."
+    raise WireupError(msg)
 
 
 def _create_sync_singleton_instance_factory(value: Any) -> Callable[[BaseContainer], Any]:
@@ -187,6 +192,15 @@ class FactoryCompiler:
             cg += "return instance"
 
         with cg.indent():
+            if factory.factory is _scoped_container_factory:
+                # Return the scope itself only if it matches the requested container type.
+                # A sync scope created from an async container shares its compiler, but
+                # cannot return itself as a ScopedAsyncContainer. In that case, look for
+                # a provided instance below, or raise an error if none was provided.
+                cg += "if isinstance(container, OBJ_ID):"
+                with cg.indent():
+                    cg += "return container"
+
             if cache_created_instance:
                 if lifetime == "singleton":
                     cg += "storage = container._global_scope_objects"

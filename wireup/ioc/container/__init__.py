@@ -11,7 +11,7 @@ from wireup.ioc.configuration import ConfigStore
 from wireup.ioc.container.async_container import AsyncContainer, ScopedAsyncContainer
 from wireup.ioc.container.base_container import BaseContainer
 from wireup.ioc.container.sync_container import ScopedSyncContainer, SyncContainer
-from wireup.ioc.factory_compiler import FactoryCompiler
+from wireup.ioc.factory_compiler import FactoryCompiler, _scoped_container_factory
 from wireup.ioc.override_manager import OverrideManager
 from wireup.ioc.registry import ContainerRegistry
 
@@ -97,10 +97,6 @@ def _create_container(  # noqa: PLR0913
     # Always create a simple factory that returns the container instance in order to also expose itself as an injectable
     def _container_factory() -> _ContainerT:
         return container  # type:ignore[return-value]
-
-    def _scoped_container_factory() -> _ContainerT:
-        msg = "Scoped Container Self Injection Failed. This should not happen"
-        raise WireupError(msg)
 
     impls.append(InjectableDeclaration(_container_factory, as_type=klass))
     impls.append(

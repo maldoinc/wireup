@@ -55,7 +55,7 @@ class SyncContainer(BareSyncContainer):
         https://maldoinc.github.io/wireup/latest/lifetimes_and_scopes/#working-with-scopes
         """
         current_scope_objects = dict(provided) if provided else {}
-        scoped = ScopedSyncContainer(
+        return ScopedSyncContainer(
             registry=self._registry,
             override_manager=self._override_mgr,
             global_scope_objects=self._global_scope_objects,
@@ -66,5 +66,3 @@ class SyncContainer(BareSyncContainer):
             scoped_compiler=self._scoped_compiler,
             concurrent_scoped_access=self._concurrent_scoped_access,
         )
-        current_scope_objects[ScopedSyncContainer] = scoped
-        return scoped

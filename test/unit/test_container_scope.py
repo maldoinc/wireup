@@ -5,7 +5,8 @@ from unittest.mock import MagicMock
 import pytest
 import wireup
 from wireup import create_sync_container, injectable
-from wireup.ioc.container.async_container import ScopedAsyncContainer
+from wireup.errors import WireupError
+from wireup.ioc.container.async_container import ScopedAsyncContainer, async_container_force_sync_scope
 from wireup.ioc.container.sync_container import ScopedSyncContainer
 from wireup.util import qualified
 
@@ -266,3 +267,84 @@ async def test_scoped_container_gets_itself_async() -> None:
 
     async with c.enter_scope() as scoped:
         assert await scoped.get(ScopedAsyncContainer) is scoped
+
+
+@pytest.mark.parametrize("concurrent_scoped_access", [False, True])
+def test_scoped_self_injection_without_caching(*, concurrent_scoped_access: bool) -> None:
+    @injectable(lifetime="transient")
+    def scope_identity(scope: ScopedSyncContainer) -> int:
+        return id(scope)
+
+    c = wireup.create_sync_container(injectables=[scope_identity], concurrent_scoped_access=concurrent_scoped_access)
+
+    with pytest.raises(WireupError, match="Scope mismatch"):
+        c.get(ScopedSyncContainer)
+
+    with c.enter_scope() as first, c.enter_scope() as second:
+        assert first.get(ScopedSyncContainer) is first
+        assert second.get(ScopedSyncContainer) is second
+        assert first.get(int) == id(first)
+        assert second.get(int) == id(second)
+
+        with c.override({ScopedSyncContainer: second}):
+            assert first.get(ScopedSyncContainer) is second
+            assert first.get(int) == id(second)
+
+        assert first.get(ScopedSyncContainer) is first
+        assert first.get(int) == id(first)
+        assert first._current_scope_objects == {}
+        assert second._current_scope_objects == {}
+
+
+@pytest.mark.parametrize("concurrent_scoped_access", [False, True])
+async def test_scoped_self_injection_without_caching_async(*, concurrent_scoped_access: bool) -> None:
+    @injectable(lifetime="transient")
+    def scope_identity(scope: ScopedAsyncContainer) -> int:
+        return id(scope)
+
+    c = wireup.create_async_container(injectables=[scope_identity], concurrent_scoped_access=concurrent_scoped_access)
+
+    with pytest.raises(WireupError, match="Scope mismatch"):
+        await c.get(ScopedAsyncContainer)
+
+    async with c.enter_scope() as first, c.enter_scope() as second:
+        assert await first.get(ScopedAsyncContainer) is first
+        assert await second.get(ScopedAsyncContainer) is second
+        assert await first.get(int) == id(first)
+        assert await second.get(int) == id(second)
+
+        with c.override({ScopedAsyncContainer: second}):
+            assert await first.get(ScopedAsyncContainer) is second
+            assert await first.get(int) == id(second)
+
+        assert await first.get(ScopedAsyncContainer) is first
+        assert await first.get(int) == id(first)
+        assert first._current_scope_objects == {}
+        assert second._current_scope_objects == {}
+
+
+def test_scoped_self_injection_takes_precedence_over_provided_instance() -> None:
+    c = wireup.create_sync_container()
+    with c.enter_scope() as other, c.enter_scope({ScopedSyncContainer: other}) as scoped:
+        assert scoped.get(ScopedSyncContainer) is scoped
+
+
+async def test_scoped_self_injection_takes_precedence_over_provided_instance_async() -> None:
+    c = wireup.create_async_container()
+    async with c.enter_scope() as other, c.enter_scope({ScopedAsyncContainer: other}) as scoped:
+        assert await scoped.get(ScopedAsyncContainer) is scoped
+
+
+async def test_forced_sync_scope_does_not_inject_itself_as_async_scope() -> None:
+    c = wireup.create_async_container()
+    with async_container_force_sync_scope(c) as scoped:
+        assert scoped._current_scope_objects == {}
+        with pytest.raises(
+            WireupError,
+            match="self-injection is not supported when entering a synchronous scope from an async container",
+        ):
+            scoped.get(ScopedAsyncContainer)
+
+    async with c.enter_scope() as async_scope:
+        with async_container_force_sync_scope(c, {ScopedAsyncContainer: async_scope}) as scoped:
+            assert scoped.get(ScopedAsyncContainer) is async_scope
