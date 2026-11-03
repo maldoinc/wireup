@@ -210,6 +210,78 @@ def test_validates_container_does_not_raise_when_no_dependency_cycle() -> None:
     wireup.create_sync_container(injectables=[make_foo, make_bar, make_foo_no_dependency])
 
 
+@pytest.mark.parametrize("consumer_first", [True, False])
+def test_validates_container_skips_unknown_dependency_with_default_regardless_of_registration_order(
+    *,
+    consumer_first: bool,
+) -> None:
+    class Unknown: ...
+
+    @wireup.injectable
+    class Service:
+        def __init__(self, *, unknown: Unknown | None = None) -> None:
+            self.unknown = unknown
+
+    @wireup.injectable
+    class Consumer:
+        def __init__(self, service: Service) -> None:
+            self.service = service
+
+    injectables = [Consumer, Service] if consumer_first else [Service, Consumer]
+    container = wireup.create_sync_container(injectables=injectables)
+
+    assert container.get(Consumer).service.unknown is None
+
+
+@pytest.mark.parametrize("consumer_first", [True, False])
+def test_validates_container_skips_unknown_dependency_with_default_on_as_type_regardless_of_registration_order(
+    *,
+    consumer_first: bool,
+) -> None:
+    class Unknown: ...
+
+    class Port: ...
+
+    @wireup.injectable(as_type=Port)
+    class Adapter(Port):
+        def __init__(self, *, unknown: Unknown | None = None) -> None:
+            self.unknown = unknown
+
+    @wireup.injectable
+    class Consumer:
+        def __init__(self, port: Port) -> None:
+            self.port = port
+
+    injectables = [Consumer, Adapter] if consumer_first else [Adapter, Consumer]
+    container = wireup.create_sync_container(injectables=injectables)
+
+    assert container.get(Consumer).port.unknown is None  # type: ignore[attr-defined]
+
+
+@pytest.mark.parametrize("consumer_first", [True, False])
+def test_validates_container_reports_unknown_dependency_regardless_of_registration_order(
+    *,
+    consumer_first: bool,
+) -> None:
+    class Unknown: ...
+
+    @wireup.injectable
+    class Service:
+        def __init__(self, unknown: Unknown) -> None: ...
+
+    @wireup.injectable
+    class Consumer:
+        def __init__(self, service: Service) -> None: ...
+
+    injectables = [Consumer, Service] if consumer_first else [Service, Consumer]
+
+    with pytest.raises(
+        WireupError,
+        match=re.escape(f"Parameter 'unknown' of {Service!r} has an unknown dependency on {Unknown!r}."),
+    ):
+        wireup.create_sync_container(injectables=injectables)
+
+
 def test_validates_container_walks_shared_dependencies_once(monkeypatch: pytest.MonkeyPatch) -> None:
     @wireup.injectable
     class Leaf: ...
