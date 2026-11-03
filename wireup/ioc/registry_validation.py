@@ -143,7 +143,13 @@ def assert_valid_resolution_path(  # noqa: PLR0913
     if object_id in known_cycle_free_objects:
         return
 
-    dependency_injectable_factory = factories[object_id]
+    dependency_injectable_factory = factories.get(object_id)
+
+    # The walk can reach an injectable before validate_registry has dropped its unknown dependencies with a default,
+    # or reported its unknown required ones. Both are handled when that injectable is validated, so skip them here.
+    if dependency_injectable_factory is None:
+        return
+
     new_path: list[tuple[AnnotatedParameter, Any]] = [*path, (dependency, dependency_injectable_factory)]
 
     if any(p.klass == dependency.klass and p.qualifier_value == dependency.qualifier_value for p, _ in path):
