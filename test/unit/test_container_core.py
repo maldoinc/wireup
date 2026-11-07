@@ -112,9 +112,7 @@ async def test_get_unknown_class(container: Container):
 
     with pytest.raises(
         UnknownServiceRequestedError,
-        match=re.escape(
-            f"Cannot create unknown injectable {TestGetUnknown!r}. Make sure it is registered with the container."
-        ),
+        match=re.escape(f"Cannot create {TestGetUnknown!r}.")
     ):
         await run(container.get(TestGetUnknown))
 
@@ -122,10 +120,7 @@ async def test_get_unknown_class(container: Container):
 async def test_container_get_interface_without_impls_raises(container: Container) -> None:
     with pytest.raises(
         WireupError,
-        match=re.escape(
-            f"Cannot create unknown injectable {InterfaceWithoutImpls!r}. "
-            "Make sure it is registered with the container."
-        ),
+        match=re.escape(f"Cannot create {InterfaceWithoutImpls!r}.")
     ):
         await run(container.get(InterfaceWithoutImpls))
 
@@ -133,10 +128,7 @@ async def test_container_get_interface_without_impls_raises(container: Container
 async def test_container_get_interface_unknown_impl_errors_known_impls(container: Container) -> None:
     with pytest.raises(
         WireupError,
-        match=re.escape(
-            f"Cannot create unknown injectable {Foo!r} "
-            "with qualifier 'does-not-exist'. Make sure it is registered with the container."
-        ),
+        match=re.escape(f"Cannot create {Foo!r} with qualifier 'does-not-exist'.")
     ):
         await run(container.get(Foo, qualifier="does-not-exist"))
 
@@ -315,10 +307,7 @@ def test_services_from_multiple_bases_are_injected():
 def test_inject_qualifier_on_unknown_type():
     with pytest.raises(
         UnknownServiceRequestedError,
-        match=re.escape(
-            f"Cannot create unknown injectable {str!r} with qualifier '{__name__}'. "
-            "Make sure it is registered with the container."
-        ),
+        match=re.escape(f"Cannot create {str!r} with qualifier '{__name__}'.")
     ):
         wireup.create_sync_container().get(str, qualifier=__name__)
 

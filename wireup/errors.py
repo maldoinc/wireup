@@ -120,11 +120,47 @@ class UnknownQualifiedServiceRequestedError(WireupError):
     ) -> None:
         self.klass = klass
         self.qualifier = qualifier
-        qualifiers_str = ", ".join(sorted(f"'{q}'" for q in available_qualifiers))
 
-        super().__init__(
-            f"Cannot create {klass} as qualifier '{qualifier}' is unknown. Available qualifiers: [{qualifiers_str}].",
+        available_lines = []
+        for q in sorted(available_qualifiers, key=lambda x: (x is not None, str(x))):
+            label = "(default)" if q is None else f'"{q}"'
+            available_lines.append(f"  {label}")
+
+        available_block = "
+".join(available_lines) if available_lines else "  (none)"
+
+        msg = (
+            f"Cannot create {format_name(klass, qualifier)}.
+"
+            f"
+"
+            f"Type {stringify_type(klass)} is registered, but not with the qualifier {qualifier!r}.
+"
+            f"
+"
+            f"Available qualifiers:
+"
+            f"{available_block}
+"
+            f"
+"
+            f"How to fix:
+"
+            f"  Option 1: Use an existing qualifier.
+"
+            f"
+"
+            f"  Option 2: Register with the requested qualifier:
+"
+            f"    @injectable(qualifier={qualifier!r})
+"
+            f"    class {klass.__name__}: ...
+"
+            f"
+"
+            f"Documentation: https://maldoinc.github.io/wireup/latest/injectables/"
         )
+        super().__init__(msg)
 
 
 class UnknownServiceRequestedError(WireupError):
@@ -135,9 +171,44 @@ class UnknownServiceRequestedError(WireupError):
             super().__init__(collection_message)
             return
 
+        qualifier_code = f', qualifier={qualifier!r}' if qualifier is not None else ""
+
         msg = (
-            f"Cannot create unknown injectable {format_name(klass, qualifier)}. "
-            "Make sure it is registered with the container."
+            f"Cannot create {format_name(klass, qualifier)}.
+"
+            f"
+"
+            f"Type {stringify_type(klass)} is not known to the container.
+"
+            f"
+"
+            f"How to fix:
+"
+            f"  Register it with the container using @injectable:
+"
+            f"
+"
+            f"    @injectable{qualifier_code}
+"
+            f"    class {getattr(klass, '__name__', 'YourClass')}: ...
+"
+            f"
+"
+            f"  Then include it in your container:
+"
+            f"    container = wireup.create_sync_container(  # or create_async_container
+"
+            f"        injectables=[{getattr(klass, '__name__', 'YourClass')}],  # Direct registration
+"
+            f"        # or
+"
+            f"        injectables=[app.services],  # Package registration
+"
+            f"    )
+"
+            f"
+"
+            f"Documentation: https://maldoinc.github.io/wireup/latest/injectables/"
         )
         super().__init__(msg)
 
