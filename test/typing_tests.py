@@ -1,7 +1,8 @@
-from collections.abc import Callable
+from collections.abc import Callable, Hashable
 from typing import Annotated, Any, TypeVar
 
-from typing_extensions import ParamSpec, assert_type
+from django.http import HttpRequest, HttpResponse
+from typing_extensions import ParamSpec, TypeAliasType, TypeForm, assert_type
 from wireup import (
     AsyncContainer,
     Inject,
@@ -14,8 +15,10 @@ from wireup import (
     inject_from_container,
     injectable,
     instance,
+    qualified,
     wrap_with_dependencies,
 )
+from wireup.integration.django import wireup_middleware
 
 
 @injectable
@@ -141,3 +144,34 @@ async def check_wrappers() -> None:
     wrapped(value=1)  # type: ignore[call-arg]
     wrapped()  # type: ignore[call-arg]
     await async_wrapped("invalid")  # type: ignore[arg-type]
+
+
+RepositorySelector = TypeAliasType("RepositorySelector", Callable[[str], Repository])
+
+
+def check_type_expression_tokens(container: SyncContainer) -> None:
+    assert_type(container.get(Repository | None), Repository | None)
+    assert_type(container.get(RepositorySelector), RepositorySelector)
+    assert_type(qualified(Repository | None, "optional"), tuple[TypeForm[Repository | None], Hashable])
+    assert_type(qualified(RepositorySelector, "selector"), tuple[TypeForm[RepositorySelector], Hashable])
+    with container.override({qualified(RepositorySelector, "selector"): lambda _: Repository()}):
+        assert_type(container.get(RepositorySelector, qualifier="selector"), RepositorySelector)
+
+
+async def check_async_type_expression_tokens(container: AsyncContainer) -> None:
+    assert_type(await container.get(Repository | None), Repository | None)
+    assert_type(await container.get(RepositorySelector), RepositorySelector)
+
+
+async def check_django_middleware_response_types() -> None:
+
+    def sync_response(request: HttpRequest) -> HttpResponse:
+        return HttpResponse(request.path)
+
+    async def async_response(request: HttpRequest) -> HttpResponse:
+        return HttpResponse(request.path)
+
+    request = HttpRequest()
+    assert_type(wireup_middleware(sync_response)(request), HttpResponse)
+
+    assert_type(await wireup_middleware(async_response)(request), HttpResponse)

@@ -1472,7 +1472,7 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "eval-type-backport", marker = "python_full_version < '3.11' and extra == 'eval-type'", specifier = ">=0.2.0" },
-    { name = "typing-extensions", specifier = ">=4.7" },
+    { name = "typing-extensions", specifier = ">=4.13" },
 ]
 provides-extras = ["eval-type"]
 
@@ -1487,7 +1487,7 @@ dev = [
     { name = "pytest-asyncio", specifier = ">=0.24.0" },
     { name = "ruff", specifier = ">=0.17.2" },
     { name = "tox", specifier = ">=4.14.2" },
-    { name = "typing-extensions", specifier = ">=4.7.1" },
+    { name = "typing-extensions", specifier = ">=4.13" },
     { name = "zensical", specifier = ">=0.0.67" },
 ]
 

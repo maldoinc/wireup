@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any
 
+from typing_extensions import TypeForm
+
 from wireup.errors import (
     UnknownParameterError,
     WireupError,
@@ -126,7 +128,7 @@ def assert_dependency_exists(
 
 def assert_valid_resolution_path(  # noqa: PLR0913
     *,
-    interfaces: dict[type, dict[Qualifier | None, type]],
+    interfaces: dict[TypeForm[Any], dict[Qualifier, TypeForm[Any]]],
     factories: dict[Any, InjectableFactory],
     dependencies: dict[Any, dict[str, AnnotatedParameter]],
     dependency: AnnotatedParameter,

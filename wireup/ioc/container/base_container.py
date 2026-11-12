@@ -8,6 +8,8 @@ from typing import (
     overload,
 )
 
+from typing_extensions import TypeForm
+
 from wireup.errors import (
     UnknownServiceRequestedError,
     WireupError,
@@ -124,13 +126,13 @@ class BaseContainer:
         return self._override_mgr
 
     @overload
-    def _synchronous_get(self, klass: type[T], qualifier: Qualifier | None = None) -> T: ...
+    def _synchronous_get(self, klass: TypeForm[T], qualifier: Qualifier | None = None) -> T: ...
     @overload
     def _synchronous_get(self, klass: Callable[..., T], qualifier: Qualifier | None = None) -> T: ...
 
     def _synchronous_get(
         self,
-        klass: Callable[..., T],
+        klass: TypeForm[T] | Callable[..., T],
         qualifier: Qualifier | None = None,
     ) -> T | None:
         """Get an instance of the requested type.
