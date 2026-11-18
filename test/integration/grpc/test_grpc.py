@@ -61,13 +61,13 @@ async def async_scoped_with_teardown(tracker: LifecycleTracker) -> AsyncIterator
 @injectable(lifetime="scoped")
 class SyncMetadataReader:
     def __init__(self, context: grpc.ServicerContext) -> None:
-        self.metadata = dict(context.invocation_metadata())
+        self.metadata: dict[str, str | bytes] = dict(context.invocation_metadata() or ())
 
 
 @injectable(lifetime="scoped")
 class AsyncMetadataReader:
     def __init__(self, context: grpc.aio.ServicerContext) -> None:
-        self.metadata = dict(context.invocation_metadata())
+        self.metadata: dict[str, str | bytes] = dict(context.invocation_metadata() or ())
 
 
 class UnregisteredService:
@@ -148,7 +148,8 @@ def test_sync_grpc_unary_stream_scoping_and_context() -> None:
             _context: grpc.ServicerContext,
             reader: Injected[SyncMetadataReader],
         ) -> str:
-            return reader.metadata.get("x-custom-header", "missing")
+            val = reader.metadata.get("x-custom-header", "missing")
+            return val if isinstance(val, str) else val.decode("utf-8")
 
     container = wireup.create_sync_container(
         injectables=[
@@ -245,7 +246,8 @@ async def test_async_grpc_unary_stream_scoping_and_context() -> None:
             _context: grpc.aio.ServicerContext,
             reader: Injected[AsyncMetadataReader],
         ) -> str:
-            return reader.metadata.get("x-async-header", "missing")
+            val = reader.metadata.get("x-async-header", "missing")
+            return val if isinstance(val, str) else val.decode("utf-8")
 
     container = wireup.create_async_container(
         injectables=[
