@@ -29,7 +29,9 @@ For non-request entry points (commands, signals, checks, scripts), use `@inject_
 
 
     @inject
-    def greet(request: HttpRequest, greeter: Injected[GreeterService]) -> HttpResponse:
+    def greet(
+        request: HttpRequest, greeter: Injected[GreeterService]
+    ) -> HttpResponse:
         name = request.GET.get("name", "World")
         return HttpResponse(greeter.greet(name))
     ```
@@ -45,7 +47,9 @@ For non-request entry points (commands, signals, checks, scripts), use `@inject_
 
 
     @inject
-    async def greet(request: HttpRequest, greeter: Injected[AsyncGreeterService]) -> HttpResponse:
+    async def greet(
+        request: HttpRequest, greeter: Injected[AsyncGreeterService]
+    ) -> HttpResponse:
         name = request.GET.get("name", "World")
         return HttpResponse(await greeter.agreet(name))
     ```
@@ -91,21 +95,27 @@ from myapp.services import GreeterService
 
 @api_view(("GET",))
 @inject
-def drf_function_view(request: Request, greeter: Injected[GreeterService]) -> Response:
+def drf_function_view(
+    request: Request, greeter: Injected[GreeterService]
+) -> Response:
     name = request.query_params.get("name", "World")
     return Response({"message": greeter.greet(name)})
 
 
 class GreetingAPIView(APIView):
     @inject
-    def get(self, request: Request, greeter: Injected[GreeterService]) -> Response:
+    def get(
+        self, request: Request, greeter: Injected[GreeterService]
+    ) -> Response:
         name = request.query_params.get("name", "World")
         return Response({"message": greeter.greet(name)})
 
 
 class GreetingViewSet(ViewSet):
     @inject
-    def list(self, request: Request, greeter: Injected[GreeterService]) -> Response:
+    def list(
+        self, request: Request, greeter: Injected[GreeterService]
+    ) -> Response:
         name = request.query_params.get("name", "World")
         return Response({"message": greeter.greet(name)})
 ```

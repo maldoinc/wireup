@@ -33,7 +33,9 @@ def cli():
     pass
 
 
-container = wireup.create_sync_container(injectables=[services], config={"env": "development", "debug": True})
+container = wireup.create_sync_container(
+    injectables=[services], config={"env": "development", "debug": True}
+)
 ```
 
 Then initialize the integration by calling `wireup.integration.click.setup` after adding all commands:

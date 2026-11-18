@@ -34,10 +34,14 @@ from wireup.integration.fastapi import WireupRoute
 
 class UserHandler:
     # 1. Define a router. (1)
-    router = fastapi.APIRouter(prefix="/users", tags=["Users"], route_class=WireupRoute)
+    router = fastapi.APIRouter(
+        prefix="/users", tags=["Users"], route_class=WireupRoute
+    )
 
     # 2. Inject Singletons/Config here (Zero Overhead)
-    def __init__(self, user_service: UserProfileService, db_pool: DbPool) -> None:
+    def __init__(
+        self, user_service: UserProfileService, db_pool: DbPool
+    ) -> None:
         self.user_service = user_service
         self.db_pool = db_pool
 

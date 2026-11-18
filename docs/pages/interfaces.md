@@ -300,7 +300,9 @@ class RedisCache:
 def filtered_caches(
     caches: Mapping[Hashable, Cache],
 ) -> FilteredCaches:
-    return FilteredCaches([cache for key, cache in caches.items() if key is not None])
+    return FilteredCaches(
+        [cache for key, cache in caches.items() if key is not None]
+    )
 ```
 
 `filtered_caches` receives the built-in qualifier mapping for `Cache`, removes the default entry under `None`, and
@@ -336,7 +338,11 @@ def cache_map(caches: Mapping[Hashable, Cache]) -> CacheMap:
     return CacheMap(
         {
             "default": caches[None],
-            **{str(key): value for key, value in caches.items() if key is not None},
+            **{
+                str(key): value
+                for key, value in caches.items()
+                if key is not None
+            },
         }
     )
 ```

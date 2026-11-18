@@ -34,7 +34,9 @@ class GreeterHandler:
 
         return web.json_response(
             {
-                "greeting": self.greeter.greet(request.query.get("name", "world")),
+                "greeting": self.greeter.greet(
+                    request.query.get("name", "world")
+                ),
                 "counter": self.counter,
             }
         )

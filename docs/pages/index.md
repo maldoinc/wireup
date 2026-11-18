@@ -164,7 +164,9 @@ pip install wireup
         return Database(url=settings.db_url)
 
 
-    container = wireup.create_sync_container(injectables=[make_settings, make_database])
+    container = wireup.create_sync_container(
+        injectables=[make_settings, make_database]
+    )
     ```
 
 ## Browse by Topic

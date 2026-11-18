@@ -37,7 +37,9 @@ def audited(fn):
     return wrapped
 
 
-container = wireup.create_sync_container(injectables=[AuditRepository, AuditService])
+container = wireup.create_sync_container(
+    injectables=[AuditRepository, AuditService]
+)
 
 
 @wireup.inject_from_container(container)

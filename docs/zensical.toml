@@ -95,6 +95,11 @@ nav = [
                 { "Celery Integration" = "integrations/celery/index.md" },
             ] },
         ] },
+        { "RPC Frameworks" = [
+            { "gRPC" = [
+                { "gRPC Integration" = "integrations/grpc/index.md" },
+            ] },
+        ] },
     ] },
     { "Migrate to Wireup" = [
         { "Overview" = "migrate_to_wireup/index.md" },
@@ -116,6 +121,7 @@ nav = [
             { "Celery" = "class/celery_integration.md" },
             { "Click" = "class/click_integration.md" },
             { "Typer" = "class/typer_integration.md" },
+            { "gRPC" = "class/grpc_integration.md" },
         ] },
     ] },
 ]

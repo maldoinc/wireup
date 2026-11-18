@@ -55,7 +55,9 @@ decorator will use that scope instead of creating a new one.
 from contextvars import ContextVar
 from wireup import ScopedSyncContainer, inject_from_container
 
-scoped_container: ContextVar[ScopedSyncContainer] = ContextVar("scoped_container")
+scoped_container: ContextVar[ScopedSyncContainer] = ContextVar(
+    "scoped_container"
+)
 
 
 @inject_from_container(container, scoped_container.get)
