@@ -89,9 +89,7 @@ from mysite.services import GreeterService
 
 
 @inject
-def greet(
-    request: HttpRequest, greeter: Injected[GreeterService]
-) -> HttpResponse:
+def greet(request: HttpRequest, greeter: Injected[GreeterService]) -> HttpResponse:
     return HttpResponse(greeter.greet(request.GET.get("name", "World")))
 ```
 

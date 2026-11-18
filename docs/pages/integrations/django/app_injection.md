@@ -64,9 +64,7 @@ class Command(BaseCommand):
         parser.add_argument("--name", default="World")
 
     @inject_app
-    def handle(
-        self, *args, name: str, greeter: Injected[GreeterService], **options
-    ):
+    def handle(self, *args, name: str, greeter: Injected[GreeterService], **options):
         self.stdout.write(greeter.greet(name))
 ```
 

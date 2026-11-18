@@ -37,9 +37,7 @@ Dependency injection for AIOHTTP is available in the `wireup.integration.aiohttp
 First, [create an async container](../../container.md).
 
 ```python
-container = wireup.create_async_container(
-    injectables=[services], config={"db_dsn": os.environ.get("APP_DB_DSN")}
-)
+container = wireup.create_async_container(injectables=[services], config={"db_dsn": os.environ.get("APP_DB_DSN")})
 ```
 
 Then initialize the integration:
@@ -114,9 +112,7 @@ request_container: ScopedAsyncContainer = get_request_container()
 behavior:
 
 ```python
-wireup.integration.aiohttp.setup(
-    container, app, middleware_mode=True
-)  # default
+wireup.integration.aiohttp.setup(container, app, middleware_mode=True)  # default
 ```
 
 This mode adds AIOHTTP middleware so the request-scoped container is available everywhere in request lifecycle code (for

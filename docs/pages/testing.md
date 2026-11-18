@@ -38,9 +38,7 @@ def create_app() -> FastAPI:
     app = FastAPI()
 
     @app.get("/greet")
-    async def greet(
-        name: str, greeter: Injected[GreeterService]
-    ) -> dict[str, str]:
+    async def greet(name: str, greeter: Injected[GreeterService]) -> dict[str, str]:
         return {"message": greeter.greet(name)}
 
     container = wireup.create_async_container(injectables=[GreeterService])

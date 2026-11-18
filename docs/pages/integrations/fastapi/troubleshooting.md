@@ -18,9 +18,7 @@ Fix:
 2. Make sure routes use `Injected[...]` or `@inject` where expected.
 
 ```python
-container = wireup.create_async_container(
-    injectables=[services, wireup.integration.fastapi]
-)
+container = wireup.create_async_container(injectables=[services, wireup.integration.fastapi])
 app = FastAPI()
 
 wireup.integration.fastapi.setup(container, app)

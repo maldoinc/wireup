@@ -245,9 +245,7 @@ class Container(containers.DeclarativeContainer):
     service = providers.Singleton(Service)  # missing arg is not validated here
 
 
-container = (
-    Container()
-)  # ❌ silently succeeds - misconfiguration not caught here
+container = Container()  # ❌ silently succeeds - misconfiguration not caught here
 container.service()  # ❌ fails only when resolved/called
 ```
 
@@ -272,9 +270,7 @@ class SingletonService:
 
 
 # Fails during validation.
-container = wireup.create_sync_container(
-    injectables=[RequestCtx, SingletonService]
-)
+container = wireup.create_sync_container(injectables=[RequestCtx, SingletonService])
 ```
 
 Dependency Injector behavior (easy to define, not globally validated at startup):
@@ -294,9 +290,7 @@ class SingletonService:
 
 
 class Container(containers.DeclarativeContainer):
-    request_ctx = providers.ContextLocalSingleton(
-        RequestCtx, request_id="req-1"
-    )
+    request_ctx = providers.ContextLocalSingleton(RequestCtx, request_id="req-1")
     singleton_service = providers.Singleton(SingletonService, ctx=request_ctx)
 
 
@@ -408,9 +402,7 @@ Type: One shared instance for the entire application/container lifetime.
 
     @injectable
     class Settings:
-        def __init__(
-            self, api_key: Annotated[str, Inject(config="api_key")]
-        ) -> None:
+        def __init__(self, api_key: Annotated[str, Inject(config="api_key")]) -> None:
             self.api_key = api_key
 
 

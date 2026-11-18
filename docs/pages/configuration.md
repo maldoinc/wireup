@@ -147,9 +147,7 @@ class FileStorageService:
         # Becomes "/tmp/uploads/prod"
         upload_path: Annotated[str, Inject(expr="/tmp/uploads/${env}")],
         # Becomes "postgresql://localhost:5432/mydb"
-        db_url: Annotated[
-            str, Inject(expr="postgresql://${host}:${port}/mydb")
-        ],
+        db_url: Annotated[str, Inject(expr="postgresql://${host}:${port}/mydb")],
     ) -> None:
         self.upload_path = upload_path
 ```

@@ -44,9 +44,7 @@ import redis
 
 @injectable  # (1)!
 class KeyValueStore:
-    def __init__(
-        self, dsn: Annotated[str, Inject(config="redis_url")]
-    ) -> None:  # (2)!
+    def __init__(self, dsn: Annotated[str, Inject(config="redis_url")]) -> None:  # (2)!
         self.client = redis.from_url(dsn)
 ```
 

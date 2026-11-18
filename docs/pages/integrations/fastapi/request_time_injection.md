@@ -153,9 +153,7 @@ import wireup.integration.fastapi
 
 # Set up app with middleware_mode enabled
 app = FastAPI()
-container = wireup.create_async_container(
-    injectables=[AuthService, UserService]
-)
+container = wireup.create_async_container(injectables=[AuthService, UserService])
 wireup.integration.fastapi.setup(container, app, middleware_mode=True)
 
 
