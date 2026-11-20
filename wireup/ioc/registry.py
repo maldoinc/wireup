@@ -454,3 +454,26 @@ class ContainerRegistry:
 
     def get_lifetime(self, klass: type, qualifier: Qualifier | None) -> InjectableLifetime:
         return self.lifetime[get_container_object_id(self.get_implementation(klass, qualifier), qualifier)]
+
+    def get_registrations_for_type(self, klass: Any) -> list[tuple[Qualifier | None, AnyCallable]]:
+        """Return registered (qualifier, provider) pairs for a type or abstract interface."""
+        registrations: list[tuple[Qualifier | None, AnyCallable]] = []
+        seen_qualifiers: set[Qualifier | None] = set()
+
+        if klass in self.impls:
+            for qualifier in self.impls[klass]:
+                factory = self.factories.get(get_container_object_id(klass, qualifier))
+                if factory is not None and not factory.is_synthetic:
+                    registrations.append((qualifier, factory.factory))
+                    seen_qualifiers.add(qualifier)
+
+        if klass in self.interfaces:
+            for qualifier, impl_cls in self.interfaces[klass].items():
+                if qualifier in seen_qualifiers:
+                    continue
+                factory = self.factories.get(get_container_object_id(impl_cls, qualifier))
+                if factory is not None and not factory.is_synthetic:
+                    registrations.append((qualifier, factory.factory))
+                    seen_qualifiers.add(qualifier)
+
+        return registrations
