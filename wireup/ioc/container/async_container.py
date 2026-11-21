@@ -4,7 +4,6 @@ from typing import TYPE_CHECKING, Any, TypeVar, overload
 
 from typing_extensions import Self
 
-from wireup.errors import UnknownServiceRequestedError
 from wireup.ioc._exit_stack import async_clean_exit_stack
 from wireup.ioc.container.base_container import BaseContainer
 from wireup.ioc.container.sync_container import ScopedSyncContainer
@@ -44,7 +43,7 @@ class BareAsyncContainer(BaseContainer):
 
             return await res if compiled_factory.is_async else res  # type:ignore[no-any-return]
 
-        raise UnknownServiceRequestedError(klass, qualifier)
+        raise self._build_unknown_service_error(klass, qualifier, is_async=True)
 
     async def close(self) -> None:
         """Close the container and clean up all resources."""

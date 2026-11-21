@@ -110,32 +110,32 @@ async def test_get_unknown_class(container: Container):
     class TestGetUnknown:
         pass
 
+    full_name = f"{TestGetUnknown.__module__}.{TestGetUnknown.__qualname__}"
     with pytest.raises(
         UnknownServiceRequestedError,
-        match=re.escape(
-            f"Cannot create unknown injectable {TestGetUnknown!r}. Make sure it is registered with the container."
-        ),
+        match=re.escape(f"Cannot create '{full_name}'\n\nType '{full_name}' is not known to the container."),
     ):
         await run(container.get(TestGetUnknown))
 
 
 async def test_container_get_interface_without_impls_raises(container: Container) -> None:
+    full_name = f"{InterfaceWithoutImpls.__module__}.{InterfaceWithoutImpls.__qualname__}"
     with pytest.raises(
         WireupError,
-        match=re.escape(
-            f"Cannot create unknown injectable {InterfaceWithoutImpls!r}. "
-            "Make sure it is registered with the container."
-        ),
+        match=re.escape(f"Cannot create '{full_name}'\n\nType '{full_name}' is not known to the container."),
     ):
         await run(container.get(InterfaceWithoutImpls))
 
 
 async def test_container_get_interface_unknown_impl_errors_known_impls(container: Container) -> None:
+    full_name = f"{Foo.__module__}.{Foo.__qualname__}"
     with pytest.raises(
         WireupError,
         match=re.escape(
-            f"Cannot create unknown injectable {Foo!r} "
-            "with qualifier 'does-not-exist'. Make sure it is registered with the container."
+            f"Cannot create '{full_name}' with qualifier 'does-not-exist'\n\n"
+            f"Type '{full_name}' is registered, but not with the qualifier 'does-not-exist'.\n\n"
+            "Available qualifiers:\n"
+            "  (default) -> registered via class FooImpl"
         ),
     ):
         await run(container.get(Foo, qualifier="does-not-exist"))
@@ -316,8 +316,8 @@ def test_inject_qualifier_on_unknown_type():
     with pytest.raises(
         UnknownServiceRequestedError,
         match=re.escape(
-            f"Cannot create unknown injectable {str!r} with qualifier '{__name__}'. "
-            "Make sure it is registered with the container."
+            f"Cannot create 'builtins.str' with qualifier '{__name__}'\n\n"
+            "Type 'builtins.str' is not known to the container."
         ),
     ):
         wireup.create_sync_container().get(str, qualifier=__name__)

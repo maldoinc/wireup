@@ -162,7 +162,21 @@ class BaseContainer:
 
             return compiled_factory.factory(self)  # type:ignore[no-any-return]
 
-        raise UnknownServiceRequestedError(klass, qualifier)
+        raise self._build_unknown_service_error(klass, qualifier, is_async=False)
+
+    def _build_unknown_service_error(
+        self,
+        klass: Any,
+        qualifier: Qualifier | None,
+        *,
+        is_async: bool,
+    ) -> UnknownServiceRequestedError:
+        return UnknownServiceRequestedError(
+            klass,
+            qualifier,
+            registrations=self._registry.get_registrations_for_type(klass),
+            is_async=is_async,
+        )
 
     def _recompile(self) -> None:
         """Update internal container state after registry changes"""
