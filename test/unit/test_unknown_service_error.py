@@ -38,15 +38,21 @@ def test_unknown_type_without_qualifier_sync() -> None:
         f"Type '{full_name}' is not known to the container.\n\n"
         "How to fix:\n"
         "  Register it with the container using @injectable:\n\n"
+        "    # Class injectable:\n"
         "    @injectable\n"
         "    class _UnregisteredFoo: ...\n\n"
+        "    # Factory injectable:\n"
+        "    @injectable\n"
+        "    def create_unregistered_foo() -> _UnregisteredFoo: ...\n\n"
         "  Then include it in your container:\n"
         "    container = wireup.create_sync_container(\n"
-        "        injectables=[_UnregisteredFoo],  # Direct registration\n"
+        "        injectables=[_UnregisteredFoo],  # Direct registration (class or factory)\n"
         "        # or\n"
         "        injectables=[app.services],      # Package registration\n"
         "    )\n\n"
-        "Documentation: https://maldoinc.github.io/wireup/latest/injectables/"
+        "Documentation:\n"
+        "  Injectables: https://maldoinc.github.io/wireup/latest/injectables/\n"
+        "  Factories:   https://maldoinc.github.io/wireup/latest/factories/"
     )
 
 
@@ -62,15 +68,21 @@ async def test_unknown_type_with_qualifier_async() -> None:
         f"Type '{full_name}' is not known to the container.\n\n"
         "How to fix:\n"
         "  Register it with the container using @injectable:\n\n"
+        "    # Class injectable:\n"
         '    @injectable(qualifier="bar")\n'
         "    class _UnregisteredFoo: ...\n\n"
+        "    # Factory injectable:\n"
+        '    @injectable(qualifier="bar")\n'
+        "    def create_unregistered_foo() -> _UnregisteredFoo: ...\n\n"
         "  Then include it in your container:\n"
         "    container = wireup.create_async_container(\n"
-        "        injectables=[_UnregisteredFoo],  # Direct registration\n"
+        "        injectables=[_UnregisteredFoo],  # Direct registration (class or factory)\n"
         "        # or\n"
         "        injectables=[app.services],      # Package registration\n"
         "    )\n\n"
-        "Documentation: https://maldoinc.github.io/wireup/latest/injectables/"
+        "Documentation:\n"
+        "  Injectables: https://maldoinc.github.io/wireup/latest/injectables/\n"
+        "  Factories:   https://maldoinc.github.io/wireup/latest/factories/"
     )
 
 
@@ -106,11 +118,15 @@ def test_known_type_unknown_qualifier_class_and_factory() -> None:
         "How to fix:\n"
         "  Option 1: Use an existing qualifier.\n\n"
         "  Option 2: Register with the 'bar' qualifier:\n"
+        "    # Class injectable:\n"
         '    @injectable(qualifier="bar")\n'
         "    class _FooWithFactory: ...\n\n"
+        "    # Factory injectable:\n"
         '    @injectable(qualifier="bar")\n'
         "    def create_foo_with_factory() -> _FooWithFactory: ...\n\n"
-        "Documentation: https://maldoinc.github.io/wireup/latest/injectables/"
+        "Documentation:\n"
+        "  Injectables: https://maldoinc.github.io/wireup/latest/injectables/\n"
+        "  Factories:   https://maldoinc.github.io/wireup/latest/factories/"
     )
 
 
@@ -126,8 +142,11 @@ def test_known_type_unknown_qualifier_class_only() -> None:
 
     message = str(exc_info.value)
     assert "(default) -> registered via class UserService" in message
-    assert '    @injectable(qualifier="alt")\n    class UserService: ...' in message
-    assert "def create_user_service" not in message
+    assert '    # Class injectable:\n    @injectable(qualifier="alt")\n    class UserService: ...' in message
+    assert (
+        '    # Factory injectable:\n    @injectable(qualifier="alt")\n    def create_user_service() -> UserService: ...'
+        in message
+    )
 
 
 def test_known_type_unknown_qualifier_factory_only() -> None:
@@ -142,8 +161,12 @@ def test_known_type_unknown_qualifier_factory_only() -> None:
 
     message = str(exc_info.value)
     assert '"primary" -> registered via build_service()' in message
-    assert '    @injectable(qualifier="secondary")\n    def create_registered_foo() -> _RegisteredFoo: ...' in message
-    assert "class _RegisteredFoo: ..." not in message
+    assert '    # Class injectable:\n    @injectable(qualifier="secondary")\n    class _RegisteredFoo: ...' in message
+    assert (
+        "    # Factory injectable:\n"
+        '    @injectable(qualifier="secondary")\n'
+        "    def create_registered_foo() -> _RegisteredFoo: ..."
+    ) in message
 
 
 async def test_known_type_requested_without_qualifier() -> None:
@@ -166,9 +189,15 @@ async def test_known_type_requested_without_qualifier() -> None:
         "How to fix:\n"
         "  Option 1: Use an existing qualifier.\n\n"
         "  Option 2: Register without a qualifier:\n"
+        "    # Class injectable:\n"
         "    @injectable\n"
         "    class _Proto: ...\n\n"
-        "Documentation: https://maldoinc.github.io/wireup/latest/injectables/"
+        "    # Factory injectable:\n"
+        "    @injectable\n"
+        "    def create_proto() -> _Proto: ...\n\n"
+        "Documentation:\n"
+        "  Injectables: https://maldoinc.github.io/wireup/latest/injectables/\n"
+        "  Factories:   https://maldoinc.github.io/wireup/latest/factories/"
     )
 
 

@@ -15,6 +15,8 @@ if TYPE_CHECKING:
 
 
 _INJECTABLES_DOC_URL = "https://maldoinc.github.io/wireup/latest/injectables/"
+_FACTORIES_DOC_URL = "https://maldoinc.github.io/wireup/latest/factories/"
+_DOCUMENTATION_FOOTER = f"Documentation:\n  Injectables: {_INJECTABLES_DOC_URL}\n  Factories:   {_FACTORIES_DOC_URL}"
 
 
 def _format_type_full_name(klass: Any) -> str:
@@ -63,6 +65,19 @@ def _format_provider(provider: AnyCallable) -> str:
     return f"{provider_name}()"
 
 
+def _format_injectable_examples(short_name: str, qualifier: Qualifier | None) -> str:
+    decorator = _format_decorator(qualifier)
+    factory_name = _to_factory_name(short_name)
+    return (
+        "    # Class injectable:\n"
+        f"    {decorator}\n"
+        f"    class {short_name}: ...\n\n"
+        "    # Factory injectable:\n"
+        f"    {decorator}\n"
+        f"    def {factory_name}() -> {short_name}: ..."
+    )
+
+
 def _format_unregistered_service_message(
     *,
     header: str,
@@ -71,7 +86,7 @@ def _format_unregistered_service_message(
     qualifier: Qualifier | None,
     is_async: bool,
 ) -> str:
-    decorator = _format_decorator(qualifier)
+    examples_block = _format_injectable_examples(short_name, qualifier)
     container_fn = "create_async_container" if is_async else "create_sync_container"
     direct_line = f"injectables=[{short_name}],"
     package_line = "injectables=[app.services],"
@@ -82,15 +97,14 @@ def _format_unregistered_service_message(
         f"Type '{full_name}' is not known to the container.\n\n"
         "How to fix:\n"
         "  Register it with the container using @injectable:\n\n"
-        f"    {decorator}\n"
-        f"    class {short_name}: ...\n\n"
+        f"{examples_block}\n\n"
         "  Then include it in your container:\n"
         f"    container = wireup.{container_fn}(\n"
-        f"        {direct_line.ljust(pad_width)}# Direct registration\n"
+        f"        {direct_line.ljust(pad_width)}# Direct registration (class or factory)\n"
         "        # or\n"
         f"        {package_line.ljust(pad_width)}# Package registration\n"
         "    )\n\n"
-        f"Documentation: {_INJECTABLES_DOC_URL}"
+        f"{_DOCUMENTATION_FOOTER}"
     )
 
 
@@ -111,17 +125,7 @@ def _format_unknown_qualifier_message(
         f"  {label.ljust(max_label_len)} -> registered via {provider}" for label, provider in labeled
     )
 
-    decorator = _format_decorator(qualifier)
-    has_class_registration = any(isinstance(provider, type) for _, provider in ordered)
-    has_factory_registration = any(not isinstance(provider, type) for _, provider in ordered)
-
-    examples: list[str] = []
-    if has_class_registration:
-        examples.append(f"    {decorator}\n    class {short_name}: ...")
-    if has_factory_registration:
-        factory_name = _to_factory_name(short_name)
-        examples.append(f"    {decorator}\n    def {factory_name}() -> {short_name}: ...")
-    examples_block = "\n\n".join(examples)
+    examples_block = _format_injectable_examples(short_name, qualifier)
 
     if qualifier is not None:
         reason = f"Type '{full_name}' is registered, but not with the qualifier {qualifier!r}."
@@ -139,7 +143,7 @@ def _format_unknown_qualifier_message(
         "  Option 1: Use an existing qualifier.\n\n"
         f"{option2_header}\n"
         f"{examples_block}\n\n"
-        f"Documentation: {_INJECTABLES_DOC_URL}"
+        f"{_DOCUMENTATION_FOOTER}"
     )
 
 
