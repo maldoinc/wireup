@@ -16,6 +16,8 @@ jobs:
           python-version: "3.10"
       - name: Install uv
         uses: astral-sh/setup-uv@v5
+      - name: Check lockfile
+        run: uv lock --check
       - name: Install dependencies
         run: make install
       - name: Lint
