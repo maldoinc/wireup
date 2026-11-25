@@ -1,4 +1,4 @@
-.PHONY: install lint check-fmt check-ruff check-mypy test profile fix format docs-deploy publish docs-serve docs-preview
+.PHONY: install lint check-fmt check-ruff check-mypy test fix format docs-deploy publish docs-serve
 
 ifdef GITHUB_ACTIONS
 RUFF_ARGS := --output-format github
@@ -57,9 +57,6 @@ bench:
 	uv run benchmarks/generate_charts.py $(output)
 	BENCH_WIREUP_VERSION="$(BENCH_WIREUP_VERSION)" uv run benchmarks/generate_versions.py
 	uv run benchmarks/generate_tables.py $(output)
-
-profile ./profile_tests $(num_runs):
-	uv run python ./profile_tests.py $(num_runs)
 
 format: format-docs
 	uv run ruff format . --extend-exclude '*.md'
