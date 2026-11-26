@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import importlib
 import inspect
+import warnings
 from pathlib import Path
 from types import FunctionType, ModuleType
 from typing import TYPE_CHECKING, Any
@@ -52,7 +53,9 @@ def _find_objects_in_module(module: ModuleType, predicate: Callable[[Any], bool]
 
     def _find_in_path(path: Path, parent_module_name: str) -> None:
         for file in sorted(path.iterdir()):
-            if file.name == "__pycache__":
+            # Hidden entries such as .git or .mypy_cache cannot be imported. Their names
+            # are not valid module names and importing them raises ModuleNotFoundError.
+            if file.name.startswith(".") or file.name == "__pycache__":
                 continue
 
             full_path = path / file
@@ -64,11 +67,24 @@ def _find_objects_in_module(module: ModuleType, predicate: Callable[[Any], bool]
                 full_module_name = (
                     parent_module_name if file.name == "__init__.py" else f"{parent_module_name}.{file.name[:-3]}"
                 )
-                sub_module = importlib.import_module(full_module_name)
+                try:
+                    sub_module = importlib.import_module(full_module_name)
+                except ImportError as e:
+                    # A single submodule with a broken import, such as a missing optional
+                    # dependency, must not abort discovery of the remaining modules.
+                    warnings.warn(
+                        f"Failed to import '{full_module_name}' while scanning for Wireup registrations. "
+                        f"Skipping it. Original error: {e}",
+                        stacklevel=2,
+                    )
+                    continue
                 classes.update(dict.fromkeys(_module_get_objects(sub_module)))
 
-    if f := module.__file__:
-        if f.endswith("__init__.py"):
+    # PEP 420 namespace packages do not define __file__.
+    if f := getattr(module, "__file__", None):
+        # Compare the file name as a whole. endswith() would also match files
+        # such as not__init__.py and wrongly treat them as packages.
+        if Path(f).name == "__init__.py":
             _find_in_path(Path(f).parent, module.__name__)
         else:
             classes.update(dict.fromkeys(_module_get_objects(module)))
