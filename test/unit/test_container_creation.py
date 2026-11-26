@@ -1,3 +1,4 @@
+import inspect
 import re
 import typing
 from collections.abc import Hashable as AbcHashable
@@ -11,7 +12,8 @@ import wireup
 from wireup._annotations import Inject, abstract, injectable
 from wireup.errors import WireupError
 from wireup.ioc import registry_validation
-from wireup.ioc.types import get_container_object_id
+from wireup.ioc.registry import ContainerRegistry
+from wireup.ioc.types import Qualifier, get_container_object_id
 
 from test.unit.services.no_annotations.random.random_service import RandomService
 
@@ -405,6 +407,87 @@ def test_validates_container_does_not_reuse_walked_dependencies_between_containe
         ),
     ):
         wireup.create_sync_container(injectables=[make_cyclical_foo, make_bar])
+
+
+def test_async_flag_reaches_every_injectable_behind_a_shared_dependency() -> None:
+    class Leaf: ...
+
+    @wireup.injectable
+    async def make_leaf() -> Leaf:
+        return Leaf()
+
+    @wireup.injectable
+    @dataclass
+    class Shared:
+        leaf: Leaf
+
+    @wireup.injectable
+    @dataclass
+    class Foo:
+        shared: Shared
+
+    @wireup.injectable
+    @dataclass
+    class Bar:
+        shared: Shared
+
+    @wireup.injectable
+    @dataclass
+    class Baz:
+        foo: Foo
+        bar: Bar
+
+    @wireup.injectable
+    class Unrelated: ...
+
+    container = wireup.create_async_container(injectables=[make_leaf, Shared, Foo, Bar, Baz, Unrelated])
+    factories = container._registry.factories
+
+    assert all(factories[get_container_object_id(klass, None)].is_async for klass in (Leaf, Shared, Foo, Bar, Baz))
+    assert not factories[get_container_object_id(Unrelated, None)].is_async
+
+
+def _ladder_of_shared_dependencies(depth: int) -> list[typing.Callable[..., object]]:
+    """Two injectables per rung, each depending on both injectables of the rung below."""
+    factories: list[typing.Callable[..., object]] = []
+    rung_below: list[type] = []
+    for rung in range(depth):
+        current_rung: list[type] = []
+        for side in ("Left", "Right"):
+            klass = type(f"{side}{rung}", (), {})
+
+            def factory(klass: type = klass, **_dependencies: object) -> object:
+                return klass()
+
+            factory.__signature__ = inspect.Signature(  # type: ignore[attr-defined]
+                [
+                    inspect.Parameter(f"dependency{index}", inspect.Parameter.KEYWORD_ONLY, annotation=dependency)
+                    for index, dependency in enumerate(rung_below)
+                ]
+            )
+            factory.__annotations__ = {"return": klass}
+            factories.append(wireup.injectable(factory))
+            current_rung.append(klass)
+        rung_below = current_rung
+    return factories
+
+
+def test_async_flag_walks_shared_dependencies_once(monkeypatch: pytest.MonkeyPatch) -> None:
+    depth = 16
+    lookups = 0
+    get_implementation = ContainerRegistry.get_implementation
+
+    def counting_get_implementation(self: ContainerRegistry, klass: type, qualifier: Qualifier | None) -> type:
+        nonlocal lookups
+        lookups += 1
+        return get_implementation(self, klass, qualifier)
+
+    monkeypatch.setattr(ContainerRegistry, "get_implementation", counting_get_implementation)
+    wireup.create_sync_container(injectables=_ladder_of_shared_dependencies(depth))
+
+    # The ladder has 2**depth paths from its top rung to its bottom one. Walking every path instead of every
+    # injectable once took about 800,000 lookups here, against fewer than 1,000 for all of container creation.
+    assert lookups < 2**depth
 
 
 def test_lifetimes_match_factories() -> None:

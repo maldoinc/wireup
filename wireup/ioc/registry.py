@@ -306,20 +306,23 @@ class ContainerRegistry:
             )
 
     def _update_factories_async_flag(self) -> None:
+        # Remember the outcome per object: dependencies shared by many injectables would otherwise be walked
+        # once per path leading to them, which grows exponentially with the depth of the graph.
+        # validate_registry has already rejected cycles, so every walk ends.
+        known: dict[ContainerObjectIdentifier, bool] = {}
+
         def _is_dependency_async(impl: type, qualifier: Qualifier | None) -> bool:
-            factory = self.factories[get_container_object_id(self.get_implementation(impl, qualifier), qualifier)]
+            object_id = get_container_object_id(self.get_implementation(impl, qualifier), qualifier)
+            if object_id in known:
+                return known[object_id]
 
-            if factory.is_async:
-                return True
-
-            for dep in self.dependencies[factory.factory].values():
-                if dep.is_parameter:
-                    continue
-
-                if _is_dependency_async(dep.klass, dep.qualifier_value):
-                    return True
-
-            return False
+            factory = self.factories[object_id]
+            known[object_id] = factory.is_async or any(
+                _is_dependency_async(dep.klass, dep.qualifier_value)
+                for dep in self.dependencies[factory.factory].values()
+                if not dep.is_parameter
+            )
+            return known[object_id]
 
         for impl, qualifiers in self.impls.items():
             for qualifier in qualifiers:
