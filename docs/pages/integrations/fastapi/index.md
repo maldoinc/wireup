@@ -94,6 +94,104 @@ For regular route handlers, missing dependencies and config values fail during s
 
 See [What Wireup Validates](../../what_wireup_validates.md) for the full rules.
 
+## How the Integration Works
+
+The diagrams below show what Wireup does at each stage of a FastAPI application's life.
+
+### App Lifecycle
+
+`setup(...)` wires the container into the app and wraps the FastAPI lifespan, so Wireup runs on startup and shutdown.
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant App as Your code
+    participant Wireup
+    participant FastAPI
+    participant Container as Wireup container
+
+    Note over App,Container: Container setup
+    App->>Container: wireup.create_async_container(injectables=[...])
+    App->>FastAPI: app = FastAPI(), add routes
+
+    Note over App,Container: Integration setup
+    App->>Wireup: wireup.integration.fastapi.setup(container, app)
+    Wireup->>FastAPI: Store container in app.state
+    opt middleware_mode=True
+        Wireup->>FastAPI: Add WireupAsgiMiddleware
+    end
+    Wireup->>FastAPI: Wrap the app lifespan
+    Wireup->>FastAPI: Wrap routes that use Injected[T]
+    Note right of Wireup: Missing dependencies fail here
+
+    Note over App,Container: App startup (lifespan enter)
+    FastAPI->>Wireup: Run the wrapped lifespan
+    opt class_based_handlers given
+        Wireup->>Container: Create each handler class
+        Wireup->>FastAPI: Include the handler routers
+    end
+    Wireup->>FastAPI: Wrap routes added since setup
+    Wireup->>App: Enter your original lifespan
+    Note over FastAPI: App serves requests
+
+    Note over App,Container: Teardown (lifespan exit)
+    FastAPI->>Wireup: Exit the wrapped lifespan
+    Wireup->>App: Exit your original lifespan
+    Wireup->>Container: container.close()
+    Note right of Container: Singleton generator factories run their cleanup
+```
+
+### Per-Request Lifecycle
+
+Each request gets its own scope, and where that scope lives depends on `middleware_mode`.
+In the default mode, a route that only injects singletons skips scope creation entirely.
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant Client
+    participant FastAPI
+    participant Middleware as WireupAsgiMiddleware
+    participant Wrapper as Wireup route wrapper
+    participant Scope as Scoped container
+    participant Handler as Route handler
+
+    Client->>FastAPI: HTTP request
+
+    alt Default (middleware_mode=False)
+        FastAPI->>Wrapper: Call the route
+        Wrapper->>Scope: container.enter_scope({Request: request})
+        Wrapper->>Scope: Resolve each Injected[T]
+        Scope-->>Wrapper: Singletons are reused, scoped and transient deps are created
+        Wrapper->>Handler: Call handler with the injected arguments
+        Handler-->>Wrapper: Return value
+        Wrapper->>Scope: Exit the scope
+        Note right of Scope: Scoped and transient generator factories run their cleanup
+        Wrapper-->>FastAPI: Return value
+        FastAPI-->>Client: Response
+    else middleware_mode=True
+        FastAPI->>Middleware: ASGI call
+        Middleware->>Scope: container.enter_scope({Request: request})
+        Middleware->>Middleware: Store the scope in a context variable
+        Middleware->>FastAPI: Continue to the route
+        FastAPI->>Wrapper: Call the route
+        Wrapper->>Scope: get_request_container(), then resolve each Injected[T]
+        Scope-->>Wrapper: Singletons are reused, scoped and transient deps are created
+        Wrapper->>Handler: Call handler with the injected arguments
+        Handler-->>Wrapper: Return value
+        Wrapper-->>FastAPI: Return value
+        FastAPI-->>Client: Response
+        FastAPI-->>Middleware: Route finished
+        Middleware->>Scope: Exit the scope
+        Note right of Scope: Scoped and transient generator factories run their cleanup
+    end
+```
+
+In the default mode the scope closes when the handler returns, before FastAPI sends the response.
+With `middleware_mode=True` the scope stays open for the whole request, so request-time helpers such as
+[`@inject`](request_time_injection.md) can use it, and it closes after the response is sent.
+WebSocket routes always use the default flow, with `WebSocket` in place of `Request`.
+
 ## Detailed Guides
 
 - [Inject in Routes](inject_in_routes.md): HTTP/WebSocket handler injection and config value injection in route signatures.
