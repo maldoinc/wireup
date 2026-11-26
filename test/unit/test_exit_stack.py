@@ -3,7 +3,7 @@ import re
 from collections.abc import AsyncGenerator, Generator
 
 import pytest
-from wireup.errors import WireupError
+from wireup.errors import ContainerCloseError, WireupError
 from wireup.ioc._exit_stack import async_clean_exit_stack, clean_exit_stack
 
 
@@ -78,6 +78,46 @@ def test_clean_exit_stack_continues_teardown_when_unwinding_base_exception() -> 
 
     assert teardowns == ["second", "first"]
     assert exit_stack == []
+
+
+def test_clean_exit_stack_chains_close_errors_to_unwinding_exception() -> None:
+    original_error = ValueError("body failed")
+    gen_error = RuntimeError("teardown failed")
+
+    def gen() -> Generator[None, None, None]:
+        try:
+            yield
+        finally:
+            raise gen_error
+
+    g = gen()
+    next(g)
+
+    with pytest.raises(ContainerCloseError) as raised:
+        clean_exit_stack([(g, False)], exc_val=original_error)
+
+    assert raised.value.__cause__ is original_error
+    assert raised.value.errors == [gen_error]
+
+
+async def test_async_clean_exit_stack_chains_close_errors_to_unwinding_exception() -> None:
+    original_error = ValueError("body failed")
+    gen_error = RuntimeError("teardown failed")
+
+    async def gen() -> AsyncGenerator[None, None]:
+        try:
+            yield
+        finally:
+            raise gen_error
+
+    g = gen()
+    await g.__anext__()
+
+    with pytest.raises(ContainerCloseError) as raised:
+        await async_clean_exit_stack([(g, True)], exc_val=original_error)
+
+    assert raised.value.__cause__ is original_error
+    assert raised.value.errors == [gen_error]
 
 
 async def test_async_clean_exit_stack_continues_teardown_on_cancellation() -> None:

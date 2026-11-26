@@ -93,11 +93,11 @@ def maybe_raise_exc(
 ) -> None:
     if not exc_val:
         if container_close_errors:
-            raise ContainerCloseError(_CONTAINER_CLOSE_ERR, container_close_errors)
+            raise ContainerCloseError(_CONTAINER_CLOSE_ERR, container_close_errors) from exc_val
         return
 
     if exc_tb is not None:
         exc_val.__traceback__ = exc_tb
 
     if container_close_errors:
-        raise ContainerCloseError(_CONTAINER_CLOSE_ERR, container_close_errors)
+        raise ContainerCloseError(_CONTAINER_CLOSE_ERR, container_close_errors) from exc_val
