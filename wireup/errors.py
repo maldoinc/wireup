@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import json
+import re
 import sys
 from collections.abc import Hashable
 from collections.abc import Mapping as AbcMapping
@@ -10,6 +12,139 @@ from wireup.util import format_name, stringify_type
 
 if TYPE_CHECKING:
     from wireup.ioc.types import AnyCallable, Qualifier
+
+
+_INJECTABLES_DOC_URL = "https://maldoinc.github.io/wireup/latest/injectables/"
+_FACTORIES_DOC_URL = "https://maldoinc.github.io/wireup/latest/factories/"
+_DOCUMENTATION_FOOTER = f"Documentation:\n  Injectables: {_INJECTABLES_DOC_URL}\n  Factories:   {_FACTORIES_DOC_URL}"
+
+
+def _format_type_full_name(klass: Any) -> str:
+    if isinstance(klass, type):
+        return f"{klass.__module__}.{klass.__qualname__}"
+    return repr(klass)
+
+
+def _format_type_short_name(klass: Any) -> str:
+    if isinstance(klass, type):
+        return klass.__name__
+    return getattr(klass, "__name__", repr(klass))
+
+
+def _format_qualifier_code(qualifier: Qualifier) -> str:
+    if isinstance(qualifier, str):
+        return json.dumps(qualifier)
+    return repr(qualifier)
+
+
+def _format_qualifier_label(qualifier: Qualifier | None) -> str:
+    if qualifier is None:
+        return "(default)"
+    return _format_qualifier_code(qualifier)
+
+
+def _format_decorator(qualifier: Qualifier | None) -> str:
+    if qualifier is None:
+        return "@injectable"
+    return f"@injectable(qualifier={_format_qualifier_code(qualifier)})"
+
+
+def _to_factory_name(short_name: str) -> str:
+    cleaned = short_name.lstrip("_")
+    if not cleaned or not cleaned.isidentifier():
+        return "create_instance"
+    step1 = re.sub(r"([A-Z]+)([A-Z][a-z])", r"\1_\2", cleaned)
+    snake = re.sub(r"([a-z0-9])([A-Z])", r"\1_\2", step1).lower()
+    return f"create_{snake}"
+
+
+def _format_provider(provider: AnyCallable) -> str:
+    if isinstance(provider, type):
+        return f"class {provider.__name__}"
+    provider_name = getattr(provider, "__name__", repr(provider))
+    return f"{provider_name}()"
+
+
+def _format_injectable_examples(short_name: str, qualifier: Qualifier | None) -> str:
+    decorator = _format_decorator(qualifier)
+    factory_name = _to_factory_name(short_name)
+    return (
+        "    # Class injectable:\n"
+        f"    {decorator}\n"
+        f"    class {short_name}: ...\n\n"
+        "    # Factory injectable:\n"
+        f"    {decorator}\n"
+        f"    def {factory_name}() -> {short_name}: ..."
+    )
+
+
+def _format_unregistered_service_message(
+    *,
+    header: str,
+    full_name: str,
+    short_name: str,
+    qualifier: Qualifier | None,
+    is_async: bool,
+) -> str:
+    examples_block = _format_injectable_examples(short_name, qualifier)
+    container_fn = "create_async_container" if is_async else "create_sync_container"
+    direct_line = f"injectables=[{short_name}],"
+    package_line = "injectables=[app.services],"
+    pad_width = max(len(direct_line), len(package_line)) + 2
+
+    return (
+        f"{header}\n\n"
+        f"Type '{full_name}' is not known to the container.\n\n"
+        "How to fix:\n"
+        "  Register it with the container using @injectable:\n\n"
+        f"{examples_block}\n\n"
+        "  Then include it in your container:\n"
+        f"    container = wireup.{container_fn}(\n"
+        f"        {direct_line.ljust(pad_width)}# Direct registration (class or factory)\n"
+        "        # or\n"
+        f"        {package_line.ljust(pad_width)}# Package registration\n"
+        "    )\n\n"
+        f"{_DOCUMENTATION_FOOTER}"
+    )
+
+
+def _format_unknown_qualifier_message(
+    *,
+    header: str,
+    full_name: str,
+    short_name: str,
+    qualifier: Qualifier | None,
+    registrations: AbcSequence[tuple[Qualifier | None, AnyCallable]],
+) -> str:
+    ordered = sorted(registrations, key=lambda item: item[0] is not None)
+    labeled = [
+        (_format_qualifier_label(reg_qualifier), _format_provider(provider)) for reg_qualifier, provider in ordered
+    ]
+    max_label_len = max(len(label) for label, _ in labeled)
+    available_lines = "\n".join(
+        f"  {label.ljust(max_label_len)} -> registered via {provider}" for label, provider in labeled
+    )
+
+    examples_block = _format_injectable_examples(short_name, qualifier)
+
+    if qualifier is not None:
+        reason = f"Type '{full_name}' is registered, but not with the qualifier {qualifier!r}."
+        option2_header = f"  Option 2: Register with the {qualifier!r} qualifier:"
+    else:
+        reason = f"Type '{full_name}' is registered, but not without a qualifier."
+        option2_header = "  Option 2: Register without a qualifier:"
+
+    return (
+        f"{header}\n\n"
+        f"{reason}\n\n"
+        "Available qualifiers:\n"
+        f"{available_lines}\n\n"
+        "How to fix:\n"
+        "  Option 1: Use an existing qualifier.\n\n"
+        f"{option2_header}\n"
+        f"{examples_block}\n\n"
+        f"{_DOCUMENTATION_FOOTER}"
+    )
 
 
 def try_get_wireup_collection_replacement(type_hint: Any) -> Any | None:
@@ -130,15 +265,42 @@ class UnknownQualifiedServiceRequestedError(WireupError):
 class UnknownServiceRequestedError(WireupError):
     """Raised when requesting an unknown type."""
 
-    def __init__(self, klass: Any, qualifier: Qualifier | None = None) -> None:
+    def __init__(
+        self,
+        klass: Any,
+        qualifier: Qualifier | None = None,
+        *,
+        registrations: AbcSequence[tuple[Qualifier | None, AnyCallable]] | None = None,
+        is_async: bool = False,
+    ) -> None:
+        self.klass = klass
+        self.qualifier = qualifier
+
         if collection_message := get_unknown_collection_message(action="create", klass=klass, qualifier=qualifier):
             super().__init__(collection_message)
             return
 
-        msg = (
-            f"Cannot create unknown injectable {format_name(klass, qualifier)}. "
-            "Make sure it is registered with the container."
-        )
+        full_name = _format_type_full_name(klass)
+        short_name = _format_type_short_name(klass)
+        qualifier_suffix = f" with qualifier {qualifier!r}" if qualifier is not None else ""
+        header = f"Cannot create '{full_name}'{qualifier_suffix}"
+
+        if registrations:
+            msg = _format_unknown_qualifier_message(
+                header=header,
+                full_name=full_name,
+                short_name=short_name,
+                qualifier=qualifier,
+                registrations=registrations,
+            )
+        else:
+            msg = _format_unregistered_service_message(
+                header=header,
+                full_name=full_name,
+                short_name=short_name,
+                qualifier=qualifier,
+                is_async=is_async,
+            )
         super().__init__(msg)
 
 
